@@ -56,7 +56,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   // Drop cached data of the previous session, but keep the observed "me" query.
   const clearUserData = useCallback(
-    () => qc.removeQueries({ predicate: (q) => q.queryKey[0] !== 'auth' && q.queryKey.join('/') !== 'settings/public' }),
+    () =>
+      qc.removeQueries({
+        predicate: (q) => q.queryKey[0] !== 'auth' && q.queryKey.join('/') !== 'settings/public',
+      }),
     [qc],
   );
 

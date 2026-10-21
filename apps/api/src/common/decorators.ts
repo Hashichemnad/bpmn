@@ -27,8 +27,10 @@ export const CurrentUser = createParamDecorator(
     ctx.switchToHttp().getRequest<Request & { user: AuthUser }>().user,
 );
 
-export const ReqMeta = createParamDecorator((_data: unknown, ctx: ExecutionContext): RequestMeta => {
-  const req = ctx.switchToHttp().getRequest<Request>();
-  const ua = req.headers['user-agent'];
-  return { ip: req.ip ?? null, userAgent: typeof ua === 'string' ? ua.slice(0, 500) : null };
-});
+export const ReqMeta = createParamDecorator(
+  (_data: unknown, ctx: ExecutionContext): RequestMeta => {
+    const req = ctx.switchToHttp().getRequest<Request>();
+    const ua = req.headers['user-agent'];
+    return { ip: req.ip ?? null, userAgent: typeof ua === 'string' ? ua.slice(0, 500) : null };
+  },
+);

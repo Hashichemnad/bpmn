@@ -1,5 +1,13 @@
 import request from 'supertest';
-import { Client, PASSWORD, createApp, createUser, loggedIn, resetDb, type TestContext } from './helpers';
+import {
+  Client,
+  PASSWORD,
+  createApp,
+  createUser,
+  loggedIn,
+  resetDb,
+  type TestContext,
+} from './helpers';
 
 describe('Auth (e2e)', () => {
   let ctx: TestContext;
@@ -163,13 +171,20 @@ describe('Auth (e2e)', () => {
   it('POST /auth/change-password validates and revokes other sessions', async () => {
     const other = await loggedIn(ctx.app, 'admin@test.local');
     const c = await loggedIn(ctx.app, 'admin@test.local');
-    const wrong = await c.post('/auth/change-password').send({ currentPassword: 'nope', newPassword: 'New-Password12' });
+    const wrong = await c
+      .post('/auth/change-password')
+      .send({ currentPassword: 'nope', newPassword: 'New-Password12' });
     expect(wrong.body.code).toBe('INVALID_CURRENT_PASSWORD');
-    const weak = await c.post('/auth/change-password').send({ currentPassword: PASSWORD, newPassword: 'short' });
+    const weak = await c
+      .post('/auth/change-password')
+      .send({ currentPassword: PASSWORD, newPassword: 'short' });
     expect(weak.status).toBe(400);
     expect(weak.body.code).toBe('WEAK_PASSWORD');
     expect(weak.body.details.errors).toContain('TOO_SHORT');
-    await c.post('/auth/change-password').send({ currentPassword: PASSWORD, newPassword: 'New-Password12' }).expect(204);
+    await c
+      .post('/auth/change-password')
+      .send({ currentPassword: PASSWORD, newPassword: 'New-Password12' })
+      .expect(204);
     await c.get('/auth/me').expect(200);
     await other.post('/auth/refresh').expect(401);
     const fresh = await new Client(ctx.app).init();

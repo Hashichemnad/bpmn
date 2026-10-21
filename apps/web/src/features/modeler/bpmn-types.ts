@@ -34,7 +34,11 @@ export interface EventBus {
 
 export interface Modeling {
   updateLabel(element: DiagramElement, text: string | null): void;
-  updateModdleProperties(element: DiagramElement, bo: BusinessObject, props: Record<string, unknown>): void;
+  updateModdleProperties(
+    element: DiagramElement,
+    bo: BusinessObject,
+    props: Record<string, unknown>,
+  ): void;
 }
 
 export interface CommandStack {
@@ -54,7 +58,11 @@ export interface Canvas {
 }
 
 export interface Overlays {
-  add(element: DiagramElement | string, type: string, overlay: { position: Record<string, number>; html: HTMLElement }): string;
+  add(
+    element: DiagramElement | string,
+    type: string,
+    overlay: { position: Record<string, number>; html: HTMLElement },
+  ): string;
   remove(filter: { type?: string; element?: DiagramElement | string }): void;
 }
 

@@ -1,7 +1,14 @@
 import CommandInterceptor from 'diagram-js/lib/command/CommandInterceptor';
 import { isFlowNode, type BpmnGraphElement, type Locale } from '@processhub/shared';
 import { exportName, labelAttr, normaliseLabel, pickLabel, type LabelHolder } from './labels';
-import type { BpmnInstance, BusinessObject, DiagramElement, ElementRegistry, EventBus, Modeling } from './bpmn-types';
+import type {
+  BpmnInstance,
+  BusinessObject,
+  DiagramElement,
+  ElementRegistry,
+  EventBus,
+  Modeling,
+} from './bpmn-types';
 
 export interface LabelState {
   locale: Locale;
@@ -27,14 +34,18 @@ class BilingualLabelBehavior extends CommandInterceptor {
 
   constructor(eventBus: EventBus, modeling: Modeling, state: LabelState) {
     super(eventBus as never);
-    this.postExecute('element.updateLabel', (event: { context: { element: DiagramElement; newLabel?: string } }) => {
-      const { element, newLabel } = event.context;
-      const target = element.labelTarget ?? element;
-      const bo = target.businessObject;
-      const attr = `ph:${labelAttr(state.locale)}`;
-      const value = newLabel?.trim() ? newLabel : undefined;
-      if ((bo.get(attr) ?? undefined) !== value) modeling.updateModdleProperties(target, bo, { [attr]: value });
-    });
+    this.postExecute(
+      'element.updateLabel',
+      (event: { context: { element: DiagramElement; newLabel?: string } }) => {
+        const { element, newLabel } = event.context;
+        const target = element.labelTarget ?? element;
+        const bo = target.businessObject;
+        const attr = `ph:${labelAttr(state.locale)}`;
+        const value = newLabel?.trim() ? newLabel : undefined;
+        if ((bo.get(attr) ?? undefined) !== value)
+          modeling.updateModdleProperties(target, bo, { [attr]: value });
+      },
+    );
   }
 }
 
@@ -47,7 +58,9 @@ export function bilingualModule(state: LabelState) {
 }
 
 function labelled(registry: ElementRegistry) {
-  return registry.filter((el) => el.type !== 'label' && !!el.businessObject && el.type !== 'bpmn:Process');
+  return registry.filter(
+    (el) => el.type !== 'label' && !!el.businessObject && el.type !== 'bpmn:Process',
+  );
 }
 
 /** Moves plain `name` values of imported diagrams into the bilingual attributes. */
@@ -112,6 +125,8 @@ export function buildGraph(instance: BpmnInstance): BpmnGraphElement[] {
     });
 }
 
-const ACTIVITY = /^bpmn:(Task|UserTask|ServiceTask|ManualTask|ScriptTask|BusinessRuleTask|SendTask|ReceiveTask|SubProcess|CallActivity)$/;
+const ACTIVITY =
+  /^bpmn:(Task|UserTask|ServiceTask|ManualTask|ScriptTask|BusinessRuleTask|SendTask|ReceiveTask|SubProcess|CallActivity)$/;
 export const isActivityElement = (el: DiagramElement) => ACTIVITY.test(el.type);
-export const canDrillDown = (el: DiagramElement) => el.type === 'bpmn:CallActivity' || el.type === 'bpmn:SubProcess';
+export const canDrillDown = (el: DiagramElement) =>
+  el.type === 'bpmn:CallActivity' || el.type === 'bpmn:SubProcess';

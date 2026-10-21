@@ -1,4 +1,10 @@
-import { Navigate, Outlet, createBrowserRouter, useLocation, type RouteObject } from 'react-router-dom';
+import {
+  Navigate,
+  Outlet,
+  createBrowserRouter,
+  useLocation,
+  type RouteObject,
+} from 'react-router-dom';
 import { Result, Button } from 'antd';
 import { useTranslation } from 'react-i18next';
 import { useEffect } from 'react';
@@ -27,7 +33,8 @@ function DefaultLocale() {
   const settings = usePublicSettings();
   const { explicit, locale, setLocale } = useLocale();
   useEffect(() => {
-    if (!explicit && settings.data && settings.data.defaultLocale !== locale) setLocale(settings.data.defaultLocale);
+    if (!explicit && settings.data && settings.data.defaultLocale !== locale)
+      setLocale(settings.data.defaultLocale);
   }, [explicit, settings.data, locale, setLocale]);
   return <Outlet />;
 }
@@ -36,7 +43,8 @@ function RequireAuth() {
   const { user, loading } = useAuth();
   const location = useLocation();
   if (loading) return <LoadingState />;
-  if (!user) return <Navigate to="/login" replace state={{ from: location.pathname + location.search }} />;
+  if (!user)
+    return <Navigate to="/login" replace state={{ from: location.pathname + location.search }} />;
   return <Outlet />;
 }
 
@@ -69,22 +77,82 @@ export const routes: RouteObject[] = [
           {
             element: <AppLayout />,
             children: [
-              { index: true, element: <RequirePermission all={[P.PROCESSES_READ]}><ProcessHousePage /></RequirePermission> },
+              {
+                index: true,
+                element: (
+                  <RequirePermission all={[P.PROCESSES_READ]}>
+                    <ProcessHousePage />
+                  </RequirePermission>
+                ),
+              },
               {
                 path: 'processes',
-                element: <RequirePermission all={[P.PROCESSES_READ]}><RepositoryLayout /></RequirePermission>,
+                element: (
+                  <RequirePermission all={[P.PROCESSES_READ]}>
+                    <RepositoryLayout />
+                  </RequirePermission>
+                ),
                 children: [
                   { index: true, element: <ProcessListPage /> },
                   { path: ':id', element: <ProcessDetailPage /> },
                 ],
               },
-              { path: 'library/roles', element: <RequirePermission all={[P.OBJECTS_READ]}><ObjectLibraryPage key="ROLE" type="ROLE" /></RequirePermission> },
-              { path: 'library/systems', element: <RequirePermission all={[P.OBJECTS_READ]}><ObjectLibraryPage key="SYSTEM" type="SYSTEM" /></RequirePermission> },
-              { path: 'library/objects/:id', element: <RequirePermission all={[P.OBJECTS_READ]}><ObjectDetailPage /></RequirePermission> },
-              { path: 'admin/users', element: <RequirePermission all={[P.USERS_MANAGE]}><UsersPage /></RequirePermission> },
-              { path: 'admin/departments', element: <RequirePermission all={[P.DEPARTMENTS_MANAGE]}><DepartmentsPage /></RequirePermission> },
-              { path: 'admin/audit', element: <RequirePermission all={[P.AUDIT_READ]}><AuditLogPage /></RequirePermission> },
-              { path: 'settings', element: <RequirePermission all={[P.SETTINGS_MANAGE]}><SettingsPage /></RequirePermission> },
+              {
+                path: 'library/roles',
+                element: (
+                  <RequirePermission all={[P.OBJECTS_READ]}>
+                    <ObjectLibraryPage key="ROLE" type="ROLE" />
+                  </RequirePermission>
+                ),
+              },
+              {
+                path: 'library/systems',
+                element: (
+                  <RequirePermission all={[P.OBJECTS_READ]}>
+                    <ObjectLibraryPage key="SYSTEM" type="SYSTEM" />
+                  </RequirePermission>
+                ),
+              },
+              {
+                path: 'library/objects/:id',
+                element: (
+                  <RequirePermission all={[P.OBJECTS_READ]}>
+                    <ObjectDetailPage />
+                  </RequirePermission>
+                ),
+              },
+              {
+                path: 'admin/users',
+                element: (
+                  <RequirePermission all={[P.USERS_MANAGE]}>
+                    <UsersPage />
+                  </RequirePermission>
+                ),
+              },
+              {
+                path: 'admin/departments',
+                element: (
+                  <RequirePermission all={[P.DEPARTMENTS_MANAGE]}>
+                    <DepartmentsPage />
+                  </RequirePermission>
+                ),
+              },
+              {
+                path: 'admin/audit',
+                element: (
+                  <RequirePermission all={[P.AUDIT_READ]}>
+                    <AuditLogPage />
+                  </RequirePermission>
+                ),
+              },
+              {
+                path: 'settings',
+                element: (
+                  <RequirePermission all={[P.SETTINGS_MANAGE]}>
+                    <SettingsPage />
+                  </RequirePermission>
+                ),
+              },
               { path: 'profile', element: <ProfilePage /> },
               { path: '*', element: <NotFound /> },
             ],

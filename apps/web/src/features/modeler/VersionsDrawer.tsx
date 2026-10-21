@@ -31,7 +31,15 @@ function VersionViewer({ xml }: { xml: string }) {
   return <div ref={ref} dir="ltr" className="ph-version-canvas" />;
 }
 
-export function VersionsDrawer({ processId, open, onClose }: { processId: string; open: boolean; onClose: () => void }) {
+export function VersionsDrawer({
+  processId,
+  open,
+  onClose,
+}: {
+  processId: string;
+  open: boolean;
+  onClose: () => void;
+}) {
   const { t } = useTranslation();
   const loc = useLocalized();
   const formatDate = useFormatDate();
@@ -55,7 +63,12 @@ export function VersionsDrawer({ processId, open, onClose }: { processId: string
   return (
     <>
       <Drawer title={t('modeler:versionHistory')} open={open} onClose={onClose} width={440}>
-        <Alert type="info" showIcon message={t('modeler:versionsPhase2')} style={{ marginBottom: 16 }} />
+        <Alert
+          type="info"
+          showIcon
+          message={t('modeler:versionsPhase2')}
+          style={{ marginBottom: 16 }}
+        />
         {versions.isError ? (
           <ErrorState error={versions.error} onRetry={() => void versions.refetch()} />
         ) : (
@@ -66,7 +79,13 @@ export function VersionsDrawer({ processId, open, onClose }: { processId: string
             renderItem={(v) => (
               <List.Item
                 actions={[
-                  <Button key="view" size="small" icon={<EyeOutlined />} loading={loadingId === v.id} onClick={() => void view(v)}>
+                  <Button
+                    key="view"
+                    size="small"
+                    icon={<EyeOutlined />}
+                    loading={loadingId === v.id}
+                    onClick={() => void view(v)}
+                  >
                     {t('view')}
                   </Button>,
                 ]}

@@ -17,7 +17,7 @@ const optionalText = (max: number) =>
   trimmed(max)
     .optional()
     .nullable()
-    .transform((v) => (v === undefined ? undefined : v ?? ''));
+    .transform((v) => (v === undefined ? undefined : (v ?? '')));
 
 export const uuidSchema = z.string().uuid();
 export const localeSchema = z.enum(LOCALES);
@@ -208,19 +208,28 @@ export type ProcessListQuery = z.infer<typeof processListQuerySchema>;
 
 // ---------- Models & versions ----------
 export const saveModelSchema = z.object({
-  bpmnXml: z.string().min(1).max(5 * 1024 * 1024),
+  bpmnXml: z
+    .string()
+    .min(1)
+    .max(5 * 1024 * 1024),
 });
 export type SaveModelInput = z.infer<typeof saveModelSchema>;
 
 export const createVersionSchema = z.object({
-  bpmnXml: z.string().min(1).max(5 * 1024 * 1024),
+  bpmnXml: z
+    .string()
+    .min(1)
+    .max(5 * 1024 * 1024),
   changeNote: trimmed(1000).min(1),
 });
 export type CreateVersionInput = z.infer<typeof createVersionSchema>;
 
 // ---------- Object repository ----------
 export const objectAttributesSchema = z
-  .record(z.string().trim().min(1).max(100), z.union([z.string().max(2000), z.number(), z.boolean()]))
+  .record(
+    z.string().trim().min(1).max(100),
+    z.union([z.string().max(2000), z.number(), z.boolean()]),
+  )
   .refine((v) => Object.keys(v).length <= 50, 'TOO_MANY_ATTRIBUTES');
 
 export const createObjectSchema = z

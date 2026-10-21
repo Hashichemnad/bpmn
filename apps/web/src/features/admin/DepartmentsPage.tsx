@@ -1,5 +1,17 @@
 import { useMemo, useState } from 'react';
-import { App, Button, Card, Form, Input, Modal, Space, Table, TreeSelect, Typography, type TableProps } from 'antd';
+import {
+  App,
+  Button,
+  Card,
+  Form,
+  Input,
+  Modal,
+  Space,
+  Table,
+  TreeSelect,
+  Typography,
+  type TableProps,
+} from 'antd';
 import { DeleteOutlined, EditOutlined, PlusOutlined } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
 import { buildTree, descendantIds, type DepartmentDto, type TreeNode } from '@processhub/shared';
@@ -25,30 +37,47 @@ export function DepartmentsPage() {
   const rows = useMemo(() => {
     // Ant Design treats an empty children array as expandable; drop it for leaves.
     const strip = (nodes: TreeNode<DepartmentDto>[]): Row[] =>
-      nodes.map(({ children, ...d }) => ({ ...d, children: children.length ? strip(children) : undefined }));
+      nodes.map(({ children, ...d }) => ({
+        ...d,
+        children: children.length ? strip(children) : undefined,
+      }));
     return strip(buildTree(departments.data ?? []));
   }, [departments.data]);
 
   const parentOptions = useMemo(() => {
     const exclude = new Set(
-      editing && editing !== 'new' ? [editing.id, ...descendantIds(departments.data ?? [], editing.id)] : [],
+      editing && editing !== 'new'
+        ? [editing.id, ...descendantIds(departments.data ?? [], editing.id)]
+        : [],
     );
     type Node = { title: string; value: string; disabled: boolean; children: Node[] };
     const map = (nodes: TreeNode<DepartmentDto>[]): Node[] =>
-      nodes.map((d) => ({ title: loc(d), value: d.id, disabled: exclude.has(d.id), children: map(d.children) }));
+      nodes.map((d) => ({
+        title: loc(d),
+        value: d.id,
+        disabled: exclude.has(d.id),
+        children: map(d.children),
+      }));
     return map(buildTree(departments.data ?? []));
   }, [departments.data, editing, loc]);
 
   const open = (d: DepartmentDto | 'new', parentId?: string) => {
     setEditing(d);
     form.resetFields();
-    form.setFieldsValue(d === 'new' ? { parentId: parentId ?? null } : { nameEn: d.nameEn, nameAr: d.nameAr, code: d.code, parentId: d.parentId });
+    form.setFieldsValue(
+      d === 'new'
+        ? { parentId: parentId ?? null }
+        : { nameEn: d.nameEn, nameAr: d.nameAr, code: d.code, parentId: d.parentId },
+    );
   };
 
   const submit = async () => {
     const values = await form.validateFields();
     try {
-      await save.mutateAsync({ id: editing === 'new' ? undefined : editing?.id, body: { ...values, parentId: values.parentId ?? null } });
+      await save.mutateAsync({
+        id: editing === 'new' ? undefined : editing?.id,
+        body: { ...values, parentId: values.parentId ?? null },
+      });
       message.success(t('saved'));
       setEditing(null);
     } catch (err) {
@@ -74,8 +103,17 @@ export function DepartmentsPage() {
     });
 
   const columns: TableProps<Row>['columns'] = [
-    { title: t('fields.name'), key: 'name', render: (_, d) => <Typography.Text strong>{loc(d)}</Typography.Text> },
-    { title: t('fields.code'), dataIndex: 'code', render: (v: string | null) => v || '—', width: 140 },
+    {
+      title: t('fields.name'),
+      key: 'name',
+      render: (_, d) => <Typography.Text strong>{loc(d)}</Typography.Text>,
+    },
+    {
+      title: t('fields.code'),
+      dataIndex: 'code',
+      render: (v: string | null) => v || '—',
+      width: 140,
+    },
     { title: t('admin:departments.users'), dataIndex: 'userCount', width: 120 },
     {
       title: '',
@@ -83,9 +121,31 @@ export function DepartmentsPage() {
       width: 160,
       render: (_, d) => (
         <Space size={0}>
-          <Button type="text" size="small" icon={<PlusOutlined />} onClick={() => open('new', d.id)} aria-label={t('admin:departments.addChild')} title={t('admin:departments.addChild')} />
-          <Button type="text" size="small" icon={<EditOutlined />} onClick={() => open(d)} aria-label={t('edit')} title={t('edit')} />
-          <Button type="text" size="small" danger icon={<DeleteOutlined />} onClick={() => confirmDelete(d)} aria-label={t('delete')} title={t('delete')} />
+          <Button
+            type="text"
+            size="small"
+            icon={<PlusOutlined />}
+            onClick={() => open('new', d.id)}
+            aria-label={t('admin:departments.addChild')}
+            title={t('admin:departments.addChild')}
+          />
+          <Button
+            type="text"
+            size="small"
+            icon={<EditOutlined />}
+            onClick={() => open(d)}
+            aria-label={t('edit')}
+            title={t('edit')}
+          />
+          <Button
+            type="text"
+            size="small"
+            danger
+            icon={<DeleteOutlined />}
+            onClick={() => confirmDelete(d)}
+            aria-label={t('delete')}
+            title={t('delete')}
+          />
         </Space>
       ),
     },
@@ -141,7 +201,12 @@ export function DepartmentsPage() {
             <Input dir="ltr" maxLength={50} style={{ maxWidth: 200 }} />
           </Form.Item>
           <Form.Item name="parentId" label={t('admin:departments.parent')}>
-            <TreeSelect allowClear treeData={parentOptions} treeDefaultExpandAll placeholder={t('admin:departments.topLevel')} />
+            <TreeSelect
+              allowClear
+              treeData={parentOptions}
+              treeDefaultExpandAll
+              placeholder={t('admin:departments.topLevel')}
+            />
           </Form.Item>
         </Form>
       </Modal>

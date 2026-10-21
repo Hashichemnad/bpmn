@@ -79,7 +79,11 @@ export class UsersService {
       this.prisma.user.findMany({
         where,
         include,
-        orderBy: orderBy(q, ['email', 'nameEn', 'nameAr', 'createdAt', 'lastLoginAt', 'status'], 'email'),
+        orderBy: orderBy(
+          q,
+          ['email', 'nameEn', 'nameAr', 'createdAt', 'lastLoginAt', 'status'],
+          'email',
+        ),
         ...pageArgs(q),
       }),
       this.prisma.user.count({ where }),
@@ -136,7 +140,10 @@ export class UsersService {
     const before = await this.get(id);
     if (input.roles) this.assertCanGrant(input.roles, actor);
     if (id === actor.id && (input.status === 'INACTIVE' || input.roles)) {
-      throw badRequest('CANNOT_CHANGE_OWN_ACCESS', 'You cannot deactivate or change roles of yourself');
+      throw badRequest(
+        'CANNOT_CHANGE_OWN_ACCESS',
+        'You cannot deactivate or change roles of yourself',
+      );
     }
     if (before.roles.includes('SUPER_ADMIN') && !actor.roles.includes('SUPER_ADMIN')) {
       throw forbidden('Only a Super Admin can change a Super Admin');
@@ -256,7 +263,8 @@ export class UsersService {
         roles: { some: { role: { key: 'SUPER_ADMIN' } } },
       },
     });
-    if (others === 0) throw conflict('LAST_SUPER_ADMIN', 'At least one active Super Admin is required');
+    if (others === 0)
+      throw conflict('LAST_SUPER_ADMIN', 'At least one active Super Admin is required');
   }
 
   private async assertEmailFree(email: string) {

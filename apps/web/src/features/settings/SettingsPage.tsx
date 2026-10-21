@@ -1,5 +1,21 @@
 import { useEffect } from 'react';
-import { Alert, App, Button, Card, Col, Flex, Form, Input, Popconfirm, Radio, Row, Space, Tag, Typography, Upload } from 'antd';
+import {
+  Alert,
+  App,
+  Button,
+  Card,
+  Col,
+  Flex,
+  Form,
+  Input,
+  Popconfirm,
+  Radio,
+  Row,
+  Space,
+  Tag,
+  Typography,
+  Upload,
+} from 'antd';
 import { DeleteOutlined, GithubOutlined, GitlabOutlined, UploadOutlined } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
 import { LOGO_MAX_BYTES, LOGO_MIME_TYPES, type UpdateSettingsInput } from '@processhub/shared';
@@ -30,7 +46,8 @@ export function SettingsPage() {
   }, [settings.data, form]);
 
   if (settings.isLoading) return <LoadingState />;
-  if (settings.isError) return <ErrorState error={settings.error} onRetry={() => void settings.refetch()} />;
+  if (settings.isError)
+    return <ErrorState error={settings.error} onRetry={() => void settings.refetch()} />;
 
   const save = async (values: UpdateSettingsInput) => {
     try {
@@ -66,17 +83,29 @@ export function SettingsPage() {
             <Form form={form} layout="vertical" onFinish={save}>
               <Row gutter={16}>
                 <Col xs={24} md={12}>
-                  <Form.Item name="orgNameEn" label={t('admin:settings.orgNameEn')} rules={[{ max: 200 }]}>
+                  <Form.Item
+                    name="orgNameEn"
+                    label={t('admin:settings.orgNameEn')}
+                    rules={[{ max: 200 }]}
+                  >
                     <Input dir="ltr" lang="en" />
                   </Form.Item>
                 </Col>
                 <Col xs={24} md={12}>
-                  <Form.Item name="orgNameAr" label={t('admin:settings.orgNameAr')} rules={[{ max: 200 }]}>
+                  <Form.Item
+                    name="orgNameAr"
+                    label={t('admin:settings.orgNameAr')}
+                    rules={[{ max: 200 }]}
+                  >
                     <Input dir="rtl" lang="ar" />
                   </Form.Item>
                 </Col>
               </Row>
-              <Form.Item name="defaultLocale" label={t('admin:settings.defaultLanguage')} extra={t('admin:settings.defaultLanguageHint')}>
+              <Form.Item
+                name="defaultLocale"
+                label={t('admin:settings.defaultLanguage')}
+                extra={t('admin:settings.defaultLanguageHint')}
+              >
                 <Radio.Group
                   optionType="button"
                   options={[
@@ -98,7 +127,12 @@ export function SettingsPage() {
                 <BrandMark settings={settings.data} size={72} />
               </div>
               <Space direction="vertical">
-                <Upload accept={LOGO_MIME_TYPES.join(',')} showUploadList={false} beforeUpload={beforeUpload} maxCount={1}>
+                <Upload
+                  accept={LOGO_MIME_TYPES.join(',')}
+                  showUploadList={false}
+                  beforeUpload={beforeUpload}
+                  maxCount={1}
+                >
                   <Button icon={<UploadOutlined />} loading={upload.isPending}>
                     {t('admin:settings.uploadLogo')}
                   </Button>
@@ -109,9 +143,18 @@ export function SettingsPage() {
                     okText={t('delete')}
                     cancelText={t('cancel')}
                     okButtonProps={{ danger: true }}
-                    onConfirm={() => removeLogo.mutate(undefined, { onError: (e) => message.error(errorMessage(e)) })}
+                    onConfirm={() =>
+                      removeLogo.mutate(undefined, {
+                        onError: (e) => message.error(errorMessage(e)),
+                      })
+                    }
                   >
-                    <Button danger type="link" icon={<DeleteOutlined />} style={{ paddingInline: 0 }}>
+                    <Button
+                      danger
+                      type="link"
+                      icon={<DeleteOutlined />}
+                      style={{ paddingInline: 0 }}
+                    >
                       {t('admin:settings.removeLogo')}
                     </Button>
                   </Popconfirm>
@@ -124,8 +167,16 @@ export function SettingsPage() {
           </Card>
         </Col>
         <Col span={24}>
-          <Card title={t('admin:settings.integrations')} extra={<Tag>{t('admin:settings.comingPhase2')}</Tag>}>
-            <Alert type="info" showIcon message={t('admin:settings.integrationsInfo')} style={{ marginBottom: 16 }} />
+          <Card
+            title={t('admin:settings.integrations')}
+            extra={<Tag>{t('admin:settings.comingPhase2')}</Tag>}
+          >
+            <Alert
+              type="info"
+              showIcon
+              message={t('admin:settings.integrationsInfo')}
+              style={{ marginBottom: 16 }}
+            />
             <Row gutter={[16, 16]}>
               {[
                 { key: 'github', icon: <GithubOutlined />, name: 'GitHub' },

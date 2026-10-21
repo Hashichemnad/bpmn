@@ -49,7 +49,11 @@ export const SYSTEM_ROLES: Record<
   SystemRoleKey,
   { nameEn: string; nameAr: string; permissions: Permission[] }
 > = {
-  SUPER_ADMIN: { nameEn: 'Super Admin', nameAr: 'مسؤول النظام الأعلى', permissions: ALL_PERMISSIONS },
+  SUPER_ADMIN: {
+    nameEn: 'Super Admin',
+    nameAr: 'مسؤول النظام الأعلى',
+    permissions: ALL_PERMISSIONS,
+  },
   ADMIN: {
     nameEn: 'Admin',
     nameAr: 'مسؤول',

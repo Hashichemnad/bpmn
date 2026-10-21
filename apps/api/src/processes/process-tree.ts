@@ -40,7 +40,11 @@ function siblingsOf(items: TreeProcess[], parentId: string | null, category: Pro
  * row updates: the moved process, re-numbered siblings, and descendants whose
  * category or level changes.
  */
-export function planMove(items: TreeProcess[], movingId: string, target: MoveTarget): ProcessUpdate[] {
+export function planMove(
+  items: TreeProcess[],
+  movingId: string,
+  target: MoveTarget,
+): ProcessUpdate[] {
   const byId = new Map(items.map((p) => [p.id, p]));
   const moving = byId.get(movingId);
   if (!moving) throw new MoveError('NOT_FOUND');
@@ -55,7 +59,9 @@ export function planMove(items: TreeProcess[], movingId: string, target: MoveTar
     updates.set(id, { ...(updates.get(id) ?? { id }), ...patch });
 
   // Close the gap at the old position.
-  const oldSiblings = siblingsOf(items, moving.parentId, moving.category).filter((p) => p.id !== movingId);
+  const oldSiblings = siblingsOf(items, moving.parentId, moving.category).filter(
+    (p) => p.id !== movingId,
+  );
   oldSiblings.forEach((p, i) => p.sortOrder !== i && set(p.id, { sortOrder: i }));
 
   // Insert at the new position.

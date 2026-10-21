@@ -54,7 +54,10 @@ export class ModelsService {
     assertSafeBpmnXml(bpmnXml);
     const ids = [...extractBpmnElementIds(bpmnXml)];
     await this.prisma.$transaction(async (tx) => {
-      const existing = await tx.processModel.findUnique({ where: { processId }, select: { processId: true } });
+      const existing = await tx.processModel.findUnique({
+        where: { processId },
+        select: { processId: true },
+      });
       await tx.processModel.upsert({
         where: { processId },
         create: { processId, bpmnXml, createdById: actor.id, updatedById: actor.id },
@@ -69,7 +72,11 @@ export class ModelsService {
           entityType: 'ProcessModel',
           entityId: processId,
           userId: actor.id,
-          summary: { elements: countFlowElements(bpmnXml), bytes: bpmnXml.length, prunedLinks: pruned.count },
+          summary: {
+            elements: countFlowElements(bpmnXml),
+            bytes: bpmnXml.length,
+            prunedLinks: pruned.count,
+          },
           meta,
         },
         tx,
@@ -83,7 +90,13 @@ export class ModelsService {
     const rows = await this.prisma.processVersion.findMany({
       where: { processId },
       orderBy: { versionNumber: 'desc' },
-      select: { id: true, versionNumber: true, changeNote: true, createdAt: true, createdById: true },
+      select: {
+        id: true,
+        versionNumber: true,
+        changeNote: true,
+        createdAt: true,
+        createdById: true,
+      },
     });
     const userIds = [...new Set(rows.map((r) => r.createdById).filter((v): v is string => !!v))];
     const users = await this.prisma.user.findMany({ where: { id: { in: userIds } }, ...userRef });
@@ -101,14 +114,28 @@ export class ModelsService {
     await this.processes.findActive(processId);
     const v = await this.prisma.processVersion.findFirst({ where: { id: versionId, processId } });
     if (!v) throw notFound('Version');
-    return { id: v.id, versionNumber: v.versionNumber, changeNote: v.changeNote, bpmnXml: v.bpmnXml, createdAt: v.createdAt.toISOString() };
+    return {
+      id: v.id,
+      versionNumber: v.versionNumber,
+      changeNote: v.changeNote,
+      bpmnXml: v.bpmnXml,
+      createdAt: v.createdAt.toISOString(),
+    };
   }
 
   /** Saves the working model and snapshots it as the next version. */
-  async createVersion(processId: string, input: CreateVersionInput, actor: AuthUser, meta: RequestMeta) {
+  async createVersion(
+    processId: string,
+    input: CreateVersionInput,
+    actor: AuthUser,
+    meta: RequestMeta,
+  ) {
     await this.saveModel(processId, input.bpmnXml, actor, meta);
     const version = await this.prisma.$transaction(async (tx) => {
-      const last = await tx.processVersion.aggregate({ where: { processId }, _max: { versionNumber: true } });
+      const last = await tx.processVersion.aggregate({
+        where: { processId },
+        _max: { versionNumber: true },
+      });
       const v = await tx.processVersion.create({
         data: {
           processId,
@@ -147,7 +174,9 @@ export class ModelsService {
     const [rows, model] = await Promise.all([
       this.prisma.objectLink.findMany({
         where: { processId, repoObject: { deletedAt: null } },
-        include: { repoObject: { select: { id: true, type: true, code: true, nameEn: true, nameAr: true } } },
+        include: {
+          repoObject: { select: { id: true, type: true, code: true, nameEn: true, nameAr: true } },
+        },
         orderBy: { createdAt: 'asc' },
       }),
       this.prisma.processModel.findUnique({ where: { processId }, select: { bpmnXml: true } }),
@@ -165,7 +194,9 @@ export class ModelsService {
 
   async createLink(processId: string, input: CreateLinkInput, actor: AuthUser, meta: RequestMeta) {
     await this.assertCanEdit(processId, actor);
-    const obj = await this.prisma.repoObject.findFirst({ where: { id: input.repoObjectId, deletedAt: null } });
+    const obj = await this.prisma.repoObject.findFirst({
+      where: { id: input.repoObjectId, deletedAt: null },
+    });
     if (!obj) throw badRequest('OBJECT_NOT_FOUND');
     const relation = input.relation ?? DEFAULT_RELATION_FOR_TYPE[obj.type as ObjectType];
     const existing = await this.prisma.objectLink.findFirst({
@@ -174,7 +205,13 @@ export class ModelsService {
     if (!existing) {
       await this.prisma.$transaction(async (tx) => {
         const link = await tx.objectLink.create({
-          data: { processId, bpmnElementId: input.bpmnElementId, repoObjectId: obj.id, relation, createdById: actor.id },
+          data: {
+            processId,
+            bpmnElementId: input.bpmnElementId,
+            repoObjectId: obj.id,
+            relation,
+            createdById: actor.id,
+          },
         });
         await this.audit.log(
           {
@@ -182,7 +219,12 @@ export class ModelsService {
             entityType: 'ObjectLink',
             entityId: link.id,
             userId: actor.id,
-            summary: { processId, bpmnElementId: input.bpmnElementId, repoObjectId: obj.id, relation },
+            summary: {
+              processId,
+              bpmnElementId: input.bpmnElementId,
+              repoObjectId: obj.id,
+              relation,
+            },
             meta,
           },
           tx,
@@ -204,7 +246,12 @@ export class ModelsService {
           entityType: 'ObjectLink',
           entityId: linkId,
           userId: actor.id,
-          summary: { processId, bpmnElementId: link.bpmnElementId, repoObjectId: link.repoObjectId, relation: link.relation },
+          summary: {
+            processId,
+            bpmnElementId: link.bpmnElementId,
+            repoObjectId: link.repoObjectId,
+            relation: link.relation,
+          },
           meta,
         },
         tx,

@@ -28,7 +28,8 @@ export function ObjectDetailPage() {
   const confirmDelete = useConfirmDeleteObject();
 
   if (object.isLoading) return <LoadingState />;
-  if (object.isError || !object.data) return <ErrorState error={object.error} onRetry={() => void object.refetch()} />;
+  if (object.isError || !object.data)
+    return <ErrorState error={object.error} onRetry={() => void object.refetch()} />;
   const o = object.data;
   const libraryPath = LIBRARY_PATH[o.type];
   const attributes = Object.entries(o.attributes);
@@ -38,7 +39,12 @@ export function ObjectDetailPage() {
       <PageHeader
         crumbs={[
           { title: t('nav.library') },
-          { title: t(`objects:library.${o.type}.title`, { defaultValue: t(`objects:types.${o.type}`) }), to: libraryPath },
+          {
+            title: t(`objects:library.${o.type}.title`, {
+              defaultValue: t(`objects:types.${o.type}`),
+            }),
+            to: libraryPath,
+          },
           { title: loc(o) },
         ]}
         title={loc(o)}
@@ -54,7 +60,11 @@ export function ObjectDetailPage() {
               <Button icon={<EditOutlined />} onClick={() => setEditing(true)}>
                 {t('edit')}
               </Button>
-              <Button danger icon={<DeleteOutlined />} onClick={() => confirmDelete(o, () => navigate(libraryPath ?? '/'))}>
+              <Button
+                danger
+                icon={<DeleteOutlined />}
+                onClick={() => confirmDelete(o, () => navigate(libraryPath ?? '/'))}
+              >
                 {t('delete')}
               </Button>
             </>
@@ -72,12 +82,18 @@ export function ObjectDetailPage() {
                 <span dir="rtl">{o.nameAr || '—'}</span>
               </Descriptions.Item>
               <Descriptions.Item label={t('fields.descriptionEn')}>
-                <span dir="ltr" className="ph-prewrap">{o.descriptionEn || '—'}</span>
+                <span dir="ltr" className="ph-prewrap">
+                  {o.descriptionEn || '—'}
+                </span>
               </Descriptions.Item>
               <Descriptions.Item label={t('fields.descriptionAr')}>
-                <span dir="rtl" className="ph-prewrap">{o.descriptionAr || '—'}</span>
+                <span dir="rtl" className="ph-prewrap">
+                  {o.descriptionAr || '—'}
+                </span>
               </Descriptions.Item>
-              <Descriptions.Item label={t('fields.updatedAt')}>{formatDate(o.updatedAt)}</Descriptions.Item>
+              <Descriptions.Item label={t('fields.updatedAt')}>
+                {formatDate(o.updatedAt)}
+              </Descriptions.Item>
             </Descriptions>
           </Card>
           <Card title={t('objects:attributes')} style={{ marginTop: 24 }}>
@@ -95,7 +111,12 @@ export function ObjectDetailPage() {
           </Card>
         </Col>
         <Col xs={24} xl={15}>
-          <Card title={t('objects:whereUsed')} extra={<Tag color="blue">{t('objects:usedInSteps', { count: usage.data?.length ?? 0 })}</Tag>}>
+          <Card
+            title={t('objects:whereUsed')}
+            extra={
+              <Tag color="blue">{t('objects:usedInSteps', { count: usage.data?.length ?? 0 })}</Tag>
+            }
+          >
             {usage.isError ? (
               <ErrorState error={usage.error} onRetry={() => void usage.refetch()} />
             ) : (
@@ -118,24 +139,38 @@ export function ObjectDetailPage() {
                       </Link>
                     ),
                   },
-                  { title: t('fields.category'), key: 'category', width: 150, render: (_, u) => <CategoryTag category={u.process.category} /> },
+                  {
+                    title: t('fields.category'),
+                    key: 'category',
+                    width: 150,
+                    render: (_, u) => <CategoryTag category={u.process.category} />,
+                  },
                   {
                     title: t('objects:step'),
                     key: 'step',
                     render: (_, u) => (
-                      <Link to={`/processes/${u.process.id}?tab=model&element=${encodeURIComponent(u.bpmnElementId)}`}>
+                      <Link
+                        to={`/processes/${u.process.id}?tab=model&element=${encodeURIComponent(u.bpmnElementId)}`}
+                      >
                         {loc(u.element) || <span dir="ltr">{u.bpmnElementId}</span>}
                       </Link>
                     ),
                   },
-                  { title: t('objects:relation'), key: 'relation', width: 140, render: (_, u) => <Tag>{t(`objects:relations.${u.relation}`)}</Tag> },
+                  {
+                    title: t('objects:relation'),
+                    key: 'relation',
+                    width: 140,
+                    render: (_, u) => <Tag>{t(`objects:relations.${u.relation}`)}</Tag>,
+                  },
                 ]}
               />
             )}
           </Card>
         </Col>
       </Row>
-      {editing && <ObjectFormModal open type={o.type} object={o} onClose={() => setEditing(false)} />}
+      {editing && (
+        <ObjectFormModal open type={o.type} object={o} onClose={() => setEditing(false)} />
+      )}
     </>
   );
 }

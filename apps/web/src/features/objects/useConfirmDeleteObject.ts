@@ -14,7 +14,10 @@ export function useConfirmDeleteObject() {
   return (o: RepoObjectDto, onDone?: () => void) =>
     modal.confirm({
       title: t('objects:deleteTitle', { name: loc(o) }),
-      content: o.usageCount > 0 ? t('objects:deleteInUse', { count: o.usageCount }) : t('objects:deleteText'),
+      content:
+        o.usageCount > 0
+          ? t('objects:deleteInUse', { count: o.usageCount })
+          : t('objects:deleteText'),
       okText: t('delete'),
       okButtonProps: { danger: true },
       cancelText: t('cancel'),

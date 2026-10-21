@@ -16,7 +16,13 @@ export function ObjectLibraryPage({ type }: { type: ObjectType }) {
   const { t } = useTranslation();
   const { can } = useAuth();
   const loc = useLocalized();
-  const [query, setQuery] = useState({ page: 1, pageSize: 20, q: undefined as string | undefined, sort: 'nameEn', order: 'asc' as 'asc' | 'desc' });
+  const [query, setQuery] = useState({
+    page: 1,
+    pageSize: 20,
+    q: undefined as string | undefined,
+    sort: 'nameEn',
+    order: 'asc' as 'asc' | 'desc',
+  });
   const objects = useObjects({ ...query, type });
   const [editing, setEditing] = useState<RepoObjectDto | 'new' | null>(null);
   const confirmDelete = useConfirmDeleteObject();
@@ -44,13 +50,20 @@ export function ObjectLibraryPage({ type }: { type: ObjectType }) {
       title: t('fields.description'),
       key: 'description',
       ellipsis: true,
-      render: (_, o) => <Typography.Text type="secondary">{loc(o, 'description') || '—'}</Typography.Text>,
+      render: (_, o) => (
+        <Typography.Text type="secondary">{loc(o, 'description') || '—'}</Typography.Text>
+      ),
     },
     {
       title: t('objects:usage'),
       dataIndex: 'usageCount',
       width: 140,
-      render: (n: number) => (n ? <Tag color="blue">{t('objects:usedInSteps', { count: n })}</Tag> : <Tag>{t('objects:unused')}</Tag>),
+      render: (n: number) =>
+        n ? (
+          <Tag color="blue">{t('objects:usedInSteps', { count: n })}</Tag>
+        ) : (
+          <Tag>{t('objects:unused')}</Tag>
+        ),
     },
     ...(canManage
       ? [
@@ -60,8 +73,23 @@ export function ObjectLibraryPage({ type }: { type: ObjectType }) {
             width: 100,
             render: (_: unknown, o: RepoObjectDto) => (
               <Space size={0}>
-                <Button type="text" size="small" icon={<EditOutlined />} onClick={() => setEditing(o)} aria-label={t('edit')} title={t('edit')} />
-                <Button type="text" size="small" danger icon={<DeleteOutlined />} onClick={() => confirmDelete(o)} aria-label={t('delete')} title={t('delete')} />
+                <Button
+                  type="text"
+                  size="small"
+                  icon={<EditOutlined />}
+                  onClick={() => setEditing(o)}
+                  aria-label={t('edit')}
+                  title={t('edit')}
+                />
+                <Button
+                  type="text"
+                  size="small"
+                  danger
+                  icon={<DeleteOutlined />}
+                  onClick={() => confirmDelete(o)}
+                  aria-label={t('delete')}
+                  title={t('delete')}
+                />
               </Space>
             ),
           },
@@ -104,7 +132,11 @@ export function ObjectLibraryPage({ type }: { type: ObjectType }) {
               emptyText: (
                 <EmptyState
                   description={t(`objects:library.${type}.empty`)}
-                  action={canManage && <Button onClick={() => setEditing('new')}>{t(`objects:new.${type}`)}</Button>}
+                  action={
+                    canManage && (
+                      <Button onClick={() => setEditing('new')}>{t(`objects:new.${type}`)}</Button>
+                    )
+                  }
                 />
               ),
             }}
@@ -128,7 +160,12 @@ export function ObjectLibraryPage({ type }: { type: ObjectType }) {
         )}
       </Card>
       {editing && (
-        <ObjectFormModal open type={type} object={editing === 'new' ? undefined : editing} onClose={() => setEditing(null)} />
+        <ObjectFormModal
+          open
+          type={type}
+          object={editing === 'new' ? undefined : editing}
+          onClose={() => setEditing(null)}
+        />
       )}
     </>
   );

@@ -20,7 +20,10 @@ import { AuthService, toCurrentUser } from './auth.service';
 import { clearAuthCookies, setAuthCookies, setCsrfCookie } from './cookies';
 
 const loginLimit = () => ({
-  default: { limit: getConfig().LOGIN_RATE_LIMIT_MAX, ttl: getConfig().RATE_LIMIT_TTL_SECONDS * 1000 },
+  default: {
+    limit: getConfig().LOGIN_RATE_LIMIT_MAX,
+    ttl: getConfig().RATE_LIMIT_TTL_SECONDS * 1000,
+  },
 });
 
 @ApiTags('auth')
@@ -37,7 +40,9 @@ export class AuthController {
   csrf(@Req() req: Request, @Res({ passthrough: true }) res: Response) {
     const existing: unknown = req.cookies?.[CSRF_COOKIE];
     const csrfToken =
-      typeof existing === 'string' && existing.length >= 32 ? existing : setCsrfCookie(res, this.config);
+      typeof existing === 'string' && existing.length >= 32
+        ? existing
+        : setCsrfCookie(res, this.config);
     return { csrfToken };
   }
 
@@ -66,7 +71,10 @@ export class AuthController {
     @Res({ passthrough: true }) res: Response,
   ) {
     try {
-      const tokens = await this.auth.refresh(req.cookies?.[REFRESH_COOKIE] as string | undefined, meta);
+      const tokens = await this.auth.refresh(
+        req.cookies?.[REFRESH_COOKIE] as string | undefined,
+        meta,
+      );
       setAuthCookies(res, tokens, this.config);
       return { ok: true };
     } catch (err) {

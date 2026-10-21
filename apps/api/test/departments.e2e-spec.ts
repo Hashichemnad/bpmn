@@ -18,14 +18,23 @@ describe('Departments (e2e)', () => {
   });
 
   it('creates, lists, updates and deletes a hierarchy', async () => {
-    const fin = (await admin.post('/departments').send({ nameEn: 'Finance', nameAr: 'المالية', code: 'FIN' }).expect(201)).body;
-    const proc = (await admin.post('/departments').send({ nameAr: 'المشتريات', parentId: fin.id }).expect(201)).body;
+    const fin = (
+      await admin
+        .post('/departments')
+        .send({ nameEn: 'Finance', nameAr: 'المالية', code: 'FIN' })
+        .expect(201)
+    ).body;
+    const proc = (
+      await admin.post('/departments').send({ nameAr: 'المشتريات', parentId: fin.id }).expect(201)
+    ).body;
     expect(proc).toMatchObject({ parentId: fin.id, nameEn: '', nameAr: 'المشتريات' });
 
     const list = (await admin.get('/departments').expect(200)).body;
     expect(list).toHaveLength(2);
 
-    const updated = (await admin.patch(`/departments/${proc.id}`).send({ nameEn: 'Procurement' }).expect(200)).body;
+    const updated = (
+      await admin.patch(`/departments/${proc.id}`).send({ nameEn: 'Procurement' }).expect(200)
+    ).body;
     expect(updated.nameEn).toBe('Procurement');
 
     // Parent with children cannot be deleted
@@ -39,14 +48,23 @@ describe('Departments (e2e)', () => {
   it('prevents cycles and requires a name', async () => {
     const a = (await admin.post('/departments').send({ nameEn: 'A' })).body;
     const b = (await admin.post('/departments').send({ nameEn: 'B', parentId: a.id })).body;
-    expect((await admin.patch(`/departments/${a.id}`).send({ parentId: b.id })).body.code).toBe('INVALID_PARENT');
-    expect((await admin.patch(`/departments/${a.id}`).send({ parentId: a.id })).body.code).toBe('INVALID_PARENT');
-    expect((await admin.post('/departments').send({ code: 'X' })).body.code).toBe('VALIDATION_ERROR');
+    expect((await admin.patch(`/departments/${a.id}`).send({ parentId: b.id })).body.code).toBe(
+      'INVALID_PARENT',
+    );
+    expect((await admin.patch(`/departments/${a.id}`).send({ parentId: a.id })).body.code).toBe(
+      'INVALID_PARENT',
+    );
+    expect((await admin.post('/departments').send({ code: 'X' })).body.code).toBe(
+      'VALIDATION_ERROR',
+    );
   });
 
   it('blocks deleting departments with users', async () => {
     const d = (await admin.post('/departments').send({ nameEn: 'HR' })).body;
-    await ctx.prisma.user.update({ where: { email: 'viewer@test.local' }, data: { departmentId: d.id } });
+    await ctx.prisma.user.update({
+      where: { email: 'viewer@test.local' },
+      data: { departmentId: d.id },
+    });
     expect((await admin.delete(`/departments/${d.id}`)).status).toBe(409);
     expect((await admin.get('/departments')).body[0].userCount).toBe(1);
   });

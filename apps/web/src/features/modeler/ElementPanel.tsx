@@ -1,6 +1,19 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { App, Button, Divider, Empty, Flex, Form, Input, Select, Space, Tag, TreeSelect, Typography } from 'antd';
+import {
+  App,
+  Button,
+  Divider,
+  Empty,
+  Flex,
+  Form,
+  Input,
+  Select,
+  Space,
+  Tag,
+  TreeSelect,
+  Typography,
+} from 'antd';
 import { ExportOutlined, LinkOutlined } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
 import {
@@ -33,7 +46,8 @@ function useElementVersion(instance: BpmnInstance | null, element: DiagramElemen
     if (!instance || !element) return;
     const eventBus = instance.get<EventBus>('eventBus');
     const handler = (e: { element: DiagramElement }) => {
-      if (e.element.id === element.id || e.element.labelTarget?.id === element.id) setVersion((v) => v + 1);
+      if (e.element.id === element.id || e.element.labelTarget?.id === element.id)
+        setVersion((v) => v + 1);
     };
     eventBus.on('element.changed', handler as never);
     return () => eventBus.off('element.changed', handler as never);
@@ -99,7 +113,12 @@ export function ElementPanel({ instance, element, process, links, canEdit }: Pro
   const processTree = useMemo(() => {
     type Node = { title: string; value: string; disabled: boolean; children: Node[] };
     const map = (nodes: TreeNode<ProcessSummaryDto>[]): Node[] =>
-      nodes.map((p) => ({ title: `${p.code} ${loc(p)}`, value: p.id, disabled: p.id === process.id, children: map(p.children) }));
+      nodes.map((p) => ({
+        title: `${p.code} ${loc(p)}`,
+        value: p.id,
+        disabled: p.id === process.id,
+        children: map(p.children),
+      }));
     return map(buildTree(tree.data ?? []));
   }, [tree.data, loc, process.id]);
 
@@ -234,11 +253,15 @@ export function ElementPanel({ instance, element, process, links, canEdit }: Pro
                 value={linkedProcessId ?? undefined}
                 placeholder={t('modeler:chooseProcess')}
                 onChange={(value: string | undefined) =>
-                  modeling?.updateModdleProperties(element, bo, { 'ph:linkedProcessId': value || undefined })
+                  modeling?.updateModdleProperties(element, bo, {
+                    'ph:linkedProcessId': value || undefined,
+                  })
                 }
               />
             ) : (
-              <Typography.Text>{linkedProcess ? `${linkedProcess.code} ${loc(linkedProcess)}` : t('none')}</Typography.Text>
+              <Typography.Text>
+                {linkedProcess ? `${linkedProcess.code} ${loc(linkedProcess)}` : t('none')}
+              </Typography.Text>
             )}
             {linkedProcessId && (
               <Button

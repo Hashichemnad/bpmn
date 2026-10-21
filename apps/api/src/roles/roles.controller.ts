@@ -1,6 +1,12 @@
 import { Controller, Get } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
-import { PERMISSIONS, type Permission, type RoleDto, type SystemRoleKey, SYSTEM_ROLE_KEYS } from '@processhub/shared';
+import {
+  PERMISSIONS,
+  type Permission,
+  type RoleDto,
+  type SystemRoleKey,
+  SYSTEM_ROLE_KEYS,
+} from '@processhub/shared';
 import { RequireAnyPermission } from '../common/decorators';
 import { PrismaService } from '../prisma/prisma.service';
 

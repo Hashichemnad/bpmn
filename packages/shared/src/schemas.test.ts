@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { createProcessSchema, createUserSchema, moveProcessSchema, paginationQuerySchema } from './schemas';
+import {
+  createProcessSchema,
+  createUserSchema,
+  moveProcessSchema,
+  paginationQuerySchema,
+} from './schemas';
 import { SYSTEM_ROLES, PERMISSIONS } from './constants';
 
 describe('createProcessSchema', () => {
@@ -21,16 +26,30 @@ describe('createProcessSchema', () => {
     expect(r.success).toBe(true);
   });
   it('rejects malformed codes', () => {
-    expect(createProcessSchema.safeParse({ code: 'C..1', nameEn: 'x', category: 'CORE' }).success).toBe(false);
-    expect(createProcessSchema.safeParse({ code: '<script>', nameEn: 'x', category: 'CORE' }).success).toBe(false);
+    expect(
+      createProcessSchema.safeParse({ code: 'C..1', nameEn: 'x', category: 'CORE' }).success,
+    ).toBe(false);
+    expect(
+      createProcessSchema.safeParse({ code: '<script>', nameEn: 'x', category: 'CORE' }).success,
+    ).toBe(false);
   });
 });
 
 describe('createUserSchema', () => {
   it('normalises email and requires a role', () => {
-    const r = createUserSchema.safeParse({ email: ' Admin@Example.COM ', nameEn: 'A', password: 'x', roles: [] });
+    const r = createUserSchema.safeParse({
+      email: ' Admin@Example.COM ',
+      nameEn: 'A',
+      password: 'x',
+      roles: [],
+    });
     expect(r.success).toBe(false);
-    const ok = createUserSchema.parse({ email: ' Admin@Example.COM ', nameEn: 'A', password: 'x', roles: ['VIEWER'] });
+    const ok = createUserSchema.parse({
+      email: ' Admin@Example.COM ',
+      nameEn: 'A',
+      password: 'x',
+      roles: ['VIEWER'],
+    });
     expect(ok.email).toBe('admin@example.com');
     expect(ok.locale).toBe('en');
   });
@@ -38,14 +57,19 @@ describe('createUserSchema', () => {
 
 describe('paginationQuerySchema', () => {
   it('coerces and caps values', () => {
-    expect(paginationQuerySchema.parse({ page: '2', pageSize: '10' })).toMatchObject({ page: 2, pageSize: 10 });
+    expect(paginationQuerySchema.parse({ page: '2', pageSize: '10' })).toMatchObject({
+      page: 2,
+      pageSize: 10,
+    });
     expect(paginationQuerySchema.safeParse({ pageSize: '1000' }).success).toBe(false);
   });
 });
 
 describe('moveProcessSchema', () => {
   it('accepts root moves', () => {
-    expect(moveProcessSchema.parse({ parentId: null, index: 0, category: 'SUPPORT' }).parentId).toBeNull();
+    expect(
+      moveProcessSchema.parse({ parentId: null, index: 0, category: 'SUPPORT' }).parentId,
+    ).toBeNull();
   });
 });
 

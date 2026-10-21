@@ -5,7 +5,13 @@
  *    roles & systems, and two bilingual BPMN models.
  */
 import { PrismaClient, type ProcessCategory } from '@prisma/client';
-import { ALL_PERMISSIONS, SETTING_KEYS, SYSTEM_ROLES, SYSTEM_ROLE_KEYS, checkPasswordPolicy } from '@processhub/shared';
+import {
+  ALL_PERMISSIONS,
+  SETTING_KEYS,
+  SYSTEM_ROLES,
+  SYSTEM_ROLE_KEYS,
+  checkPasswordPolicy,
+} from '@processhub/shared';
 import { hashPassword } from '../src/auth/argon';
 import { buildBpmn } from './bpmn-builder';
 
@@ -50,7 +56,8 @@ async function ensureSuperAdmin(): Promise<string | null> {
     requireDigit: true,
     requireSymbol: false,
   });
-  if (violations.length) throw new Error(`SEED_ADMIN_PASSWORD is too weak: ${violations.join(', ')}`);
+  if (violations.length)
+    throw new Error(`SEED_ADMIN_PASSWORD is too weak: ${violations.join(', ')}`);
   const role = await prisma.role.findUniqueOrThrow({ where: { key: 'SUPER_ADMIN' } });
   const user = await prisma.user.create({
     data: {
@@ -63,7 +70,12 @@ async function ensureSuperAdmin(): Promise<string | null> {
     },
   });
   await prisma.auditLog.create({
-    data: { action: 'CREATE', entityType: 'User', entityId: user.id, summary: { seed: true, email } },
+    data: {
+      action: 'CREATE',
+      entityType: 'User',
+      entityId: user.id,
+      summary: { seed: true, email },
+    },
   });
   console.log(`Created Super Admin ${email}.`);
   return user.id;
@@ -88,8 +100,12 @@ async function seedDemoData(adminId: string | null): Promise<void> {
   const audit = { createdById: adminId, updatedById: adminId };
 
   // Departments
-  const dept = async (code: string, nameEn: string, nameAr: string, parentId: string | null = null) =>
-    (await prisma.department.create({ data: { code, nameEn, nameAr, parentId, ...audit } })).id;
+  const dept = async (
+    code: string,
+    nameEn: string,
+    nameAr: string,
+    parentId: string | null = null,
+  ) => (await prisma.department.create({ data: { code, nameEn, nameAr, parentId, ...audit } })).id;
   const exec = await dept('EXE', 'Executive Office', 'المكتب التنفيذي');
   const finance = await dept('FIN', 'Finance', 'المالية');
   const procurement = await dept('PRC', 'Procurement', 'المشتريات', finance);
@@ -131,96 +147,378 @@ async function seedDemoData(adminId: string | null): Promise<void> {
     });
     return p.id;
   };
-  await proc('M.01', 'Strategic Planning', 'التخطيط الاستراتيجي', 'MANAGEMENT', exec,
+  await proc(
+    'M.01',
+    'Strategic Planning',
+    'التخطيط الاستراتيجي',
+    'MANAGEMENT',
+    exec,
     'Defines the organisation’s vision, strategic objectives and annual plans.',
-    'تحديد رؤية المؤسسة وأهدافها الاستراتيجية وخططها السنوية.');
-  await proc('M.02', 'Performance Management', 'إدارة الأداء', 'MANAGEMENT', exec,
+    'تحديد رؤية المؤسسة وأهدافها الاستراتيجية وخططها السنوية.',
+  );
+  await proc(
+    'M.02',
+    'Performance Management',
+    'إدارة الأداء',
+    'MANAGEMENT',
+    exec,
     'Monitors KPIs and reviews organisational performance against targets.',
-    'متابعة مؤشرات الأداء ومراجعة أداء المؤسسة مقارنة بالمستهدفات.');
-  await proc('M.03', 'Risk & Compliance Management', 'إدارة المخاطر والامتثال', 'MANAGEMENT', risk,
+    'متابعة مؤشرات الأداء ومراجعة أداء المؤسسة مقارنة بالمستهدفات.',
+  );
+  await proc(
+    'M.03',
+    'Risk & Compliance Management',
+    'إدارة المخاطر والامتثال',
+    'MANAGEMENT',
+    risk,
     'Identifies, assesses and mitigates risks; ensures regulatory compliance.',
-    'تحديد المخاطر وتقييمها والحد منها، وضمان الامتثال للأنظمة.');
-  const onboarding = await proc('C.01', 'Customer Onboarding', 'تسجيل العملاء', 'CORE', cs,
+    'تحديد المخاطر وتقييمها والحد منها، وضمان الامتثال للأنظمة.',
+  );
+  const onboarding = await proc(
+    'C.01',
+    'Customer Onboarding',
+    'تسجيل العملاء',
+    'CORE',
+    cs,
     'From application receipt to an active customer account.',
-    'من استلام الطلب حتى تفعيل حساب العميل.');
-  const verify = await proc('C.01.01', 'Customer Identity Verification', 'التحقق من هوية العميل', 'CORE', risk,
+    'من استلام الطلب حتى تفعيل حساب العميل.',
+  );
+  const verify = await proc(
+    'C.01.01',
+    'Customer Identity Verification',
+    'التحقق من هوية العميل',
+    'CORE',
+    risk,
     'KYC checks on new customers before account opening.',
-    'إجراءات اعرف عميلك قبل فتح الحساب.', onboarding);
-  await proc('C.02', 'Order to Cash', 'من الطلب إلى التحصيل', 'CORE', finance,
-    'Customer orders, invoicing and collection.', 'طلبات العملاء والفوترة والتحصيل.');
-  await proc('C.03', 'Service Delivery', 'تقديم الخدمة', 'CORE', cs,
+    'إجراءات اعرف عميلك قبل فتح الحساب.',
+    onboarding,
+  );
+  await proc(
+    'C.02',
+    'Order to Cash',
+    'من الطلب إلى التحصيل',
+    'CORE',
+    finance,
+    'Customer orders, invoicing and collection.',
+    'طلبات العملاء والفوترة والتحصيل.',
+  );
+  await proc(
+    'C.03',
+    'Service Delivery',
+    'تقديم الخدمة',
+    'CORE',
+    cs,
     'Delivering services to customers according to agreed service levels.',
-    'تقديم الخدمات للعملاء وفق مستويات الخدمة المتفق عليها.');
-  const p2p = await proc('S.01', 'Procure to Pay', 'من الشراء إلى الدفع', 'SUPPORT', procurement,
-    'Purchasing goods and services and paying suppliers.', 'شراء السلع والخدمات والدفع للموردين.');
-  const requisition = await proc('S.01.01', 'Purchase Requisition', 'طلب الشراء', 'SUPPORT', procurement,
-    'Raising and approving internal purchase requests.', 'إنشاء طلبات الشراء الداخلية واعتمادها.', p2p);
-  await proc('S.02', 'Hire to Retire', 'من التوظيف إلى التقاعد', 'SUPPORT', hr,
-    'Employee lifecycle from recruitment to exit.', 'دورة حياة الموظف من التوظيف حتى انتهاء الخدمة.');
-  await proc('S.03', 'IT Service Management', 'إدارة خدمات تقنية المعلومات', 'SUPPORT', it,
+    'تقديم الخدمات للعملاء وفق مستويات الخدمة المتفق عليها.',
+  );
+  const p2p = await proc(
+    'S.01',
+    'Procure to Pay',
+    'من الشراء إلى الدفع',
+    'SUPPORT',
+    procurement,
+    'Purchasing goods and services and paying suppliers.',
+    'شراء السلع والخدمات والدفع للموردين.',
+  );
+  const requisition = await proc(
+    'S.01.01',
+    'Purchase Requisition',
+    'طلب الشراء',
+    'SUPPORT',
+    procurement,
+    'Raising and approving internal purchase requests.',
+    'إنشاء طلبات الشراء الداخلية واعتمادها.',
+    p2p,
+  );
+  await proc(
+    'S.02',
+    'Hire to Retire',
+    'من التوظيف إلى التقاعد',
+    'SUPPORT',
+    hr,
+    'Employee lifecycle from recruitment to exit.',
+    'دورة حياة الموظف من التوظيف حتى انتهاء الخدمة.',
+  );
+  await proc(
+    'S.03',
+    'IT Service Management',
+    'إدارة خدمات تقنية المعلومات',
+    'SUPPORT',
+    it,
     'Incident, request and change management for IT services.',
-    'إدارة الحوادث والطلبات والتغييرات لخدمات تقنية المعلومات.');
+    'إدارة الحوادث والطلبات والتغييرات لخدمات تقنية المعلومات.',
+  );
 
   // Object repository: roles and IT systems
-  const obj = async (type: 'ROLE' | 'SYSTEM', code: string, nameEn: string, nameAr: string, descriptionEn: string, descriptionAr: string, attributes: Record<string, string> = {}) =>
-    (await prisma.repoObject.create({ data: { type, code, nameEn, nameAr, descriptionEn, descriptionAr, attributes, ...audit } })).id;
-  const requester = await obj('ROLE', 'R-01', 'Requester', 'مقدم الطلب', 'Employee who raises a request.', 'الموظف الذي يقدم الطلب.');
-  const manager = await obj('ROLE', 'R-02', 'Department Manager', 'مدير الإدارة', 'Approves requests for the department.', 'يعتمد طلبات الإدارة.');
-  const buyer = await obj('ROLE', 'R-03', 'Procurement Officer', 'موظف المشتريات', 'Handles sourcing and purchase orders.', 'يتولى التوريد وأوامر الشراء.');
-  await obj('ROLE', 'R-04', 'Finance Officer', 'موظف المالية', 'Processes invoices and payments.', 'يعالج الفواتير والمدفوعات.');
-  const agent = await obj('ROLE', 'R-05', 'Customer Service Agent', 'موظف خدمة العملاء', 'First point of contact for customers.', 'نقطة الاتصال الأولى مع العملاء.');
-  const compliance = await obj('ROLE', 'R-06', 'Compliance Officer', 'موظف الامتثال', 'Performs KYC and compliance checks.', 'يجري فحوصات اعرف عميلك والامتثال.');
-  const erp = await obj('SYSTEM', 'SYS-01', 'ERP (SAP S/4HANA)', 'نظام تخطيط موارد المؤسسة', 'Finance, procurement and HR platform.', 'منصة المالية والمشتريات والموارد البشرية.', { vendor: 'SAP', hosting: 'On-premise' });
-  const crm = await obj('SYSTEM', 'SYS-02', 'CRM (Salesforce)', 'نظام إدارة علاقات العملاء', 'Customer relationship management.', 'إدارة علاقات العملاء.', { vendor: 'Salesforce', hosting: 'Cloud' });
-  const email = await obj('SYSTEM', 'SYS-03', 'Email', 'البريد الإلكتروني', 'Corporate email service.', 'خدمة البريد الإلكتروني المؤسسي.');
-  const banking = await obj('SYSTEM', 'SYS-04', 'Core Banking', 'النظام المصرفي الأساسي', 'Accounts and transactions.', 'الحسابات والمعاملات.', { hosting: 'On-premise' });
-  await obj('SYSTEM', 'SYS-05', 'Document Management', 'نظام إدارة الوثائق', 'Stores policies, forms and records.', 'حفظ السياسات والنماذج والسجلات.');
+  const obj = async (
+    type: 'ROLE' | 'SYSTEM',
+    code: string,
+    nameEn: string,
+    nameAr: string,
+    descriptionEn: string,
+    descriptionAr: string,
+    attributes: Record<string, string> = {},
+  ) =>
+    (
+      await prisma.repoObject.create({
+        data: { type, code, nameEn, nameAr, descriptionEn, descriptionAr, attributes, ...audit },
+      })
+    ).id;
+  const requester = await obj(
+    'ROLE',
+    'R-01',
+    'Requester',
+    'مقدم الطلب',
+    'Employee who raises a request.',
+    'الموظف الذي يقدم الطلب.',
+  );
+  const manager = await obj(
+    'ROLE',
+    'R-02',
+    'Department Manager',
+    'مدير الإدارة',
+    'Approves requests for the department.',
+    'يعتمد طلبات الإدارة.',
+  );
+  const buyer = await obj(
+    'ROLE',
+    'R-03',
+    'Procurement Officer',
+    'موظف المشتريات',
+    'Handles sourcing and purchase orders.',
+    'يتولى التوريد وأوامر الشراء.',
+  );
+  await obj(
+    'ROLE',
+    'R-04',
+    'Finance Officer',
+    'موظف المالية',
+    'Processes invoices and payments.',
+    'يعالج الفواتير والمدفوعات.',
+  );
+  const agent = await obj(
+    'ROLE',
+    'R-05',
+    'Customer Service Agent',
+    'موظف خدمة العملاء',
+    'First point of contact for customers.',
+    'نقطة الاتصال الأولى مع العملاء.',
+  );
+  const compliance = await obj(
+    'ROLE',
+    'R-06',
+    'Compliance Officer',
+    'موظف الامتثال',
+    'Performs KYC and compliance checks.',
+    'يجري فحوصات اعرف عميلك والامتثال.',
+  );
+  const erp = await obj(
+    'SYSTEM',
+    'SYS-01',
+    'ERP (SAP S/4HANA)',
+    'نظام تخطيط موارد المؤسسة',
+    'Finance, procurement and HR platform.',
+    'منصة المالية والمشتريات والموارد البشرية.',
+    { vendor: 'SAP', hosting: 'On-premise' },
+  );
+  const crm = await obj(
+    'SYSTEM',
+    'SYS-02',
+    'CRM (Salesforce)',
+    'نظام إدارة علاقات العملاء',
+    'Customer relationship management.',
+    'إدارة علاقات العملاء.',
+    { vendor: 'Salesforce', hosting: 'Cloud' },
+  );
+  const email = await obj(
+    'SYSTEM',
+    'SYS-03',
+    'Email',
+    'البريد الإلكتروني',
+    'Corporate email service.',
+    'خدمة البريد الإلكتروني المؤسسي.',
+  );
+  const banking = await obj(
+    'SYSTEM',
+    'SYS-04',
+    'Core Banking',
+    'النظام المصرفي الأساسي',
+    'Accounts and transactions.',
+    'الحسابات والمعاملات.',
+    { hosting: 'On-premise' },
+  );
+  await obj(
+    'SYSTEM',
+    'SYS-05',
+    'Document Management',
+    'نظام إدارة الوثائق',
+    'Stores policies, forms and records.',
+    'حفظ السياسات والنماذج والسجلات.',
+  );
 
   // Model 1: Purchase Requisition
-  const reqXml = buildBpmn('PurchaseRequisition', [
-    { id: 'Start_1', type: 'startEvent', en: 'Need identified', ar: 'تحديد الاحتياج', x: 160, y: 182 },
-    { id: 'Task_Create', type: 'userTask', en: 'Create purchase requisition', ar: 'إنشاء طلب الشراء', x: 250, y: 160 },
-    { id: 'Task_Approve', type: 'userTask', en: 'Review requisition', ar: 'مراجعة الطلب', x: 410, y: 160 },
-    { id: 'Gateway_Approved', type: 'exclusiveGateway', en: 'Approved?', ar: 'معتمد؟', x: 570, y: 175 },
-    { id: 'Task_PO', type: 'serviceTask', en: 'Create purchase order', ar: 'إنشاء أمر الشراء', x: 680, y: 160 },
-    { id: 'End_Done', type: 'endEvent', en: 'Order placed', ar: 'تم إصدار الأمر', x: 842, y: 182 },
-    { id: 'Task_Notify', type: 'task', en: 'Notify requester', ar: 'إشعار مقدم الطلب', x: 680, y: 300 },
-    { id: 'End_Rejected', type: 'endEvent', en: 'Request rejected', ar: 'تم رفض الطلب', x: 842, y: 322 },
-  ], [
-    { id: 'Flow_1', from: 'Start_1', to: 'Task_Create' },
-    { id: 'Flow_2', from: 'Task_Create', to: 'Task_Approve' },
-    { id: 'Flow_3', from: 'Task_Approve', to: 'Gateway_Approved' },
-    { id: 'Flow_4', from: 'Gateway_Approved', to: 'Task_PO', en: 'Yes', ar: 'نعم' },
-    { id: 'Flow_5', from: 'Task_PO', to: 'End_Done' },
-    { id: 'Flow_6', from: 'Gateway_Approved', to: 'Task_Notify', en: 'No', ar: 'لا' },
-    { id: 'Flow_7', from: 'Task_Notify', to: 'End_Rejected' },
-  ]);
+  const reqXml = buildBpmn(
+    'PurchaseRequisition',
+    [
+      {
+        id: 'Start_1',
+        type: 'startEvent',
+        en: 'Need identified',
+        ar: 'تحديد الاحتياج',
+        x: 160,
+        y: 182,
+      },
+      {
+        id: 'Task_Create',
+        type: 'userTask',
+        en: 'Create purchase requisition',
+        ar: 'إنشاء طلب الشراء',
+        x: 250,
+        y: 160,
+      },
+      {
+        id: 'Task_Approve',
+        type: 'userTask',
+        en: 'Review requisition',
+        ar: 'مراجعة الطلب',
+        x: 410,
+        y: 160,
+      },
+      {
+        id: 'Gateway_Approved',
+        type: 'exclusiveGateway',
+        en: 'Approved?',
+        ar: 'معتمد؟',
+        x: 570,
+        y: 175,
+      },
+      {
+        id: 'Task_PO',
+        type: 'serviceTask',
+        en: 'Create purchase order',
+        ar: 'إنشاء أمر الشراء',
+        x: 680,
+        y: 160,
+      },
+      {
+        id: 'End_Done',
+        type: 'endEvent',
+        en: 'Order placed',
+        ar: 'تم إصدار الأمر',
+        x: 842,
+        y: 182,
+      },
+      {
+        id: 'Task_Notify',
+        type: 'task',
+        en: 'Notify requester',
+        ar: 'إشعار مقدم الطلب',
+        x: 680,
+        y: 300,
+      },
+      {
+        id: 'End_Rejected',
+        type: 'endEvent',
+        en: 'Request rejected',
+        ar: 'تم رفض الطلب',
+        x: 842,
+        y: 322,
+      },
+    ],
+    [
+      { id: 'Flow_1', from: 'Start_1', to: 'Task_Create' },
+      { id: 'Flow_2', from: 'Task_Create', to: 'Task_Approve' },
+      { id: 'Flow_3', from: 'Task_Approve', to: 'Gateway_Approved' },
+      { id: 'Flow_4', from: 'Gateway_Approved', to: 'Task_PO', en: 'Yes', ar: 'نعم' },
+      { id: 'Flow_5', from: 'Task_PO', to: 'End_Done' },
+      { id: 'Flow_6', from: 'Gateway_Approved', to: 'Task_Notify', en: 'No', ar: 'لا' },
+      { id: 'Flow_7', from: 'Task_Notify', to: 'End_Rejected' },
+    ],
+  );
 
   // Model 2: Customer Onboarding (with a call activity drilling down into C.01.01)
-  const onbXml = buildBpmn('CustomerOnboarding', [
-    { id: 'Start_1', type: 'startEvent', en: 'Application received', ar: 'استلام الطلب', x: 160, y: 182 },
-    { id: 'Task_Register', type: 'userTask', en: 'Register application', ar: 'تسجيل الطلب', x: 250, y: 160 },
-    { id: 'Call_Verify', type: 'callActivity', en: 'Verify customer identity', ar: 'التحقق من هوية العميل', x: 410, y: 160, linkedProcessId: verify },
-    { id: 'Task_Open', type: 'serviceTask', en: 'Open account', ar: 'فتح الحساب', x: 570, y: 160 },
-    { id: 'Task_Welcome', type: 'task', en: 'Send welcome pack', ar: 'إرسال حزمة الترحيب', x: 730, y: 160 },
-    { id: 'End_1', type: 'endEvent', en: 'Customer active', ar: 'العميل نشط', x: 892, y: 182 },
-  ], [
-    { id: 'Flow_1', from: 'Start_1', to: 'Task_Register' },
-    { id: 'Flow_2', from: 'Task_Register', to: 'Call_Verify' },
-    { id: 'Flow_3', from: 'Call_Verify', to: 'Task_Open' },
-    { id: 'Flow_4', from: 'Task_Open', to: 'Task_Welcome' },
-    { id: 'Flow_5', from: 'Task_Welcome', to: 'End_1' },
-  ]);
+  const onbXml = buildBpmn(
+    'CustomerOnboarding',
+    [
+      {
+        id: 'Start_1',
+        type: 'startEvent',
+        en: 'Application received',
+        ar: 'استلام الطلب',
+        x: 160,
+        y: 182,
+      },
+      {
+        id: 'Task_Register',
+        type: 'userTask',
+        en: 'Register application',
+        ar: 'تسجيل الطلب',
+        x: 250,
+        y: 160,
+      },
+      {
+        id: 'Call_Verify',
+        type: 'callActivity',
+        en: 'Verify customer identity',
+        ar: 'التحقق من هوية العميل',
+        x: 410,
+        y: 160,
+        linkedProcessId: verify,
+      },
+      {
+        id: 'Task_Open',
+        type: 'serviceTask',
+        en: 'Open account',
+        ar: 'فتح الحساب',
+        x: 570,
+        y: 160,
+      },
+      {
+        id: 'Task_Welcome',
+        type: 'task',
+        en: 'Send welcome pack',
+        ar: 'إرسال حزمة الترحيب',
+        x: 730,
+        y: 160,
+      },
+      { id: 'End_1', type: 'endEvent', en: 'Customer active', ar: 'العميل نشط', x: 892, y: 182 },
+    ],
+    [
+      { id: 'Flow_1', from: 'Start_1', to: 'Task_Register' },
+      { id: 'Flow_2', from: 'Task_Register', to: 'Call_Verify' },
+      { id: 'Flow_3', from: 'Call_Verify', to: 'Task_Open' },
+      { id: 'Flow_4', from: 'Task_Open', to: 'Task_Welcome' },
+      { id: 'Flow_5', from: 'Task_Welcome', to: 'End_1' },
+    ],
+  );
 
-  for (const [processId, xml] of [[requisition, reqXml], [onboarding, onbXml]] as const) {
-    await prisma.processModel.create({ data: { processId, bpmnXml: xml, createdById: adminId, updatedById: adminId } });
+  for (const [processId, xml] of [
+    [requisition, reqXml],
+    [onboarding, onbXml],
+  ] as const) {
+    await prisma.processModel.create({
+      data: { processId, bpmnXml: xml, createdById: adminId, updatedById: adminId },
+    });
     await prisma.processVersion.create({
-      data: { processId, versionNumber: 1, bpmnXml: xml, changeNote: 'Initial version (seed)', createdById: adminId },
+      data: {
+        processId,
+        versionNumber: 1,
+        bpmnXml: xml,
+        changeNote: 'Initial version (seed)',
+        createdById: adminId,
+      },
     });
   }
 
-  const link = (processId: string, bpmnElementId: string, repoObjectId: string, relation: 'PERFORMS' | 'SUPPORTS') =>
-    prisma.objectLink.create({ data: { processId, bpmnElementId, repoObjectId, relation, createdById: adminId } });
+  const link = (
+    processId: string,
+    bpmnElementId: string,
+    repoObjectId: string,
+    relation: 'PERFORMS' | 'SUPPORTS',
+  ) =>
+    prisma.objectLink.create({
+      data: { processId, bpmnElementId, repoObjectId, relation, createdById: adminId },
+    });
   await link(requisition, 'Task_Create', requester, 'PERFORMS');
   await link(requisition, 'Task_Create', erp, 'SUPPORTS');
   await link(requisition, 'Task_Approve', manager, 'PERFORMS');

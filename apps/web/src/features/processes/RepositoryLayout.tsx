@@ -7,7 +7,13 @@ export function RepositoryLayout() {
   const { id } = useParams();
   return (
     <Layout hasSider className="ph-repo">
-      <Layout.Sider width={300} theme="light" className="ph-repo-sider" breakpoint="md" collapsedWidth={0}>
+      <Layout.Sider
+        width={300}
+        theme="light"
+        className="ph-repo-sider"
+        breakpoint="md"
+        collapsedWidth={0}
+      >
         <ProcessTree selectedId={id} />
       </Layout.Sider>
       <Layout.Content className="ph-repo-content">

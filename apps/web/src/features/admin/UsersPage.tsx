@@ -18,7 +18,15 @@ import {
   Typography,
   type TableProps,
 } from 'antd';
-import { EditOutlined, KeyOutlined, LockOutlined, MoreOutlined, PlusOutlined, StopOutlined, UnlockOutlined } from '@ant-design/icons';
+import {
+  EditOutlined,
+  KeyOutlined,
+  LockOutlined,
+  MoreOutlined,
+  PlusOutlined,
+  StopOutlined,
+  UnlockOutlined,
+} from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
 import {
   SYSTEM_ROLE_KEYS,
@@ -53,7 +61,12 @@ export function UsersPage() {
   const formatDate = useFormatDate();
   const errorMessage = useErrorMessage();
   const { message, modal } = App.useApp();
-  const [filters, setFilters] = useState<Filters>({ page: 1, pageSize: 20, order: 'asc', sort: 'email' });
+  const [filters, setFilters] = useState<Filters>({
+    page: 1,
+    pageSize: 20,
+    order: 'asc',
+    sort: 'email',
+  });
   const users = useUsers({ ...filters });
   const saveUser = useSaveUser();
   const unlock = useUnlockUser();
@@ -64,9 +77,9 @@ export function UsersPage() {
   const [form] = Form.useForm();
   const [resetForm] = Form.useForm();
 
-  const roleOptions = SYSTEM_ROLE_KEYS.filter((r) => r !== 'SUPER_ADMIN' || me?.roles.includes('SUPER_ADMIN')).map(
-    (r) => ({ value: r, label: t(`admin:roles.${r}`) }),
-  );
+  const roleOptions = SYSTEM_ROLE_KEYS.filter(
+    (r) => r !== 'SUPER_ADMIN' || me?.roles.includes('SUPER_ADMIN'),
+  ).map((r) => ({ value: r, label: t(`admin:roles.${r}`) }));
 
   const openEditor = (u: UserDto | 'new') => {
     setEditing(u);
@@ -74,7 +87,14 @@ export function UsersPage() {
     form.setFieldsValue(
       u === 'new'
         ? { locale: 'en', roles: ['VIEWER'] }
-        : { email: u.email, nameEn: u.nameEn, nameAr: u.nameAr, locale: u.locale, roles: u.roles, departmentId: u.department?.id ?? null },
+        : {
+            email: u.email,
+            nameEn: u.nameEn,
+            nameAr: u.nameAr,
+            locale: u.locale,
+            roles: u.roles,
+            departmentId: u.department?.id ?? null,
+          },
     );
   };
 
@@ -92,14 +112,19 @@ export function UsersPage() {
   const toggleStatus = (u: UserDto) => {
     const deactivate = u.status === 'ACTIVE';
     modal.confirm({
-      title: deactivate ? t('admin:users.deactivateTitle', { name: loc(u) || u.email }) : t('admin:users.activateTitle', { name: loc(u) || u.email }),
+      title: deactivate
+        ? t('admin:users.deactivateTitle', { name: loc(u) || u.email })
+        : t('admin:users.activateTitle', { name: loc(u) || u.email }),
       content: deactivate ? t('admin:users.deactivateText') : undefined,
       okText: deactivate ? t('admin:users.deactivate') : t('admin:users.activate'),
       okButtonProps: { danger: deactivate },
       cancelText: t('cancel'),
       onOk: async () => {
         try {
-          await saveUser.mutateAsync({ id: u.id, body: { status: deactivate ? 'INACTIVE' : 'ACTIVE' } });
+          await saveUser.mutateAsync({
+            id: u.id,
+            body: { status: deactivate ? 'INACTIVE' : 'ACTIVE' },
+          });
           message.success(t('saved'));
         } catch (err) {
           message.error(errorMessage(err));
@@ -136,9 +161,14 @@ export function UsersPage() {
     {
       title: t('fields.roles'),
       dataIndex: 'roles',
-      render: (roles: SystemRoleKey[]) => roles.map((r) => <Tag key={r}>{t(`admin:roles.${r}`)}</Tag>),
+      render: (roles: SystemRoleKey[]) =>
+        roles.map((r) => <Tag key={r}>{t(`admin:roles.${r}`)}</Tag>),
     },
-    { title: t('fields.department'), key: 'department', render: (_, u) => loc(u.department) || '—' },
+    {
+      title: t('fields.department'),
+      key: 'department',
+      render: (_, u) => loc(u.department) || '—',
+    },
     {
       title: t('fields.status'),
       dataIndex: 'status',
@@ -147,10 +177,18 @@ export function UsersPage() {
         u.lockedUntil ? (
           <Badge status="warning" text={t('admin:users.locked')} />
         ) : (
-          <Badge status={u.status === 'ACTIVE' ? 'success' : 'default'} text={t(`admin:status.${u.status}`)} />
+          <Badge
+            status={u.status === 'ACTIVE' ? 'success' : 'default'}
+            text={t(`admin:status.${u.status}`)}
+          />
         ),
     },
-    { title: t('admin:users.lastLogin'), dataIndex: 'lastLoginAt', sorter: true, render: (v: string | null) => formatDate(v) },
+    {
+      title: t('admin:users.lastLogin'),
+      dataIndex: 'lastLoginAt',
+      sorter: true,
+      render: (v: string | null) => formatDate(v),
+    },
     {
       title: '',
       key: 'actions',
@@ -160,19 +198,48 @@ export function UsersPage() {
           trigger={['click']}
           menu={{
             items: [
-              { key: 'edit', icon: <EditOutlined />, label: t('edit'), onClick: () => openEditor(u) },
-              { key: 'reset', icon: <KeyOutlined />, label: t('admin:users.resetPassword'), onClick: () => { resetForm.resetFields(); setResetting(u); } },
+              {
+                key: 'edit',
+                icon: <EditOutlined />,
+                label: t('edit'),
+                onClick: () => openEditor(u),
+              },
+              {
+                key: 'reset',
+                icon: <KeyOutlined />,
+                label: t('admin:users.resetPassword'),
+                onClick: () => {
+                  resetForm.resetFields();
+                  setResetting(u);
+                },
+              },
               ...(u.lockedUntil
-                ? [{ key: 'unlock', icon: <UnlockOutlined />, label: t('admin:users.unlock'), onClick: () => void unlock.mutateAsync(u.id).then(() => message.success(t('saved')), (e) => message.error(errorMessage(e))) }]
+                ? [
+                    {
+                      key: 'unlock',
+                      icon: <UnlockOutlined />,
+                      label: t('admin:users.unlock'),
+                      onClick: () =>
+                        void unlock.mutateAsync(u.id).then(
+                          () => message.success(t('saved')),
+                          (e) => message.error(errorMessage(e)),
+                        ),
+                    },
+                  ]
                 : []),
               ...(u.id !== me?.id
-                ? [{
-                    key: 'status',
-                    icon: u.status === 'ACTIVE' ? <StopOutlined /> : <LockOutlined />,
-                    danger: u.status === 'ACTIVE',
-                    label: u.status === 'ACTIVE' ? t('admin:users.deactivate') : t('admin:users.activate'),
-                    onClick: () => toggleStatus(u),
-                  }]
+                ? [
+                    {
+                      key: 'status',
+                      icon: u.status === 'ACTIVE' ? <StopOutlined /> : <LockOutlined />,
+                      danger: u.status === 'ACTIVE',
+                      label:
+                        u.status === 'ACTIVE'
+                          ? t('admin:users.deactivate')
+                          : t('admin:users.activate'),
+                      onClick: () => toggleStatus(u),
+                    },
+                  ]
                 : []),
             ],
           }}
@@ -213,7 +280,10 @@ export function UsersPage() {
             allowClear
             placeholder={t('fields.status')}
             style={{ width: 160 }}
-            options={(['ACTIVE', 'INACTIVE'] as const).map((s) => ({ value: s, label: t(`admin:status.${s}`) }))}
+            options={(['ACTIVE', 'INACTIVE'] as const).map((s) => ({
+              value: s,
+              label: t(`admin:status.${s}`),
+            }))}
             onChange={(status) => setFilters((f) => ({ ...f, status, page: 1 }))}
           />
         </Flex>
@@ -264,29 +334,61 @@ export function UsersPage() {
         }
       >
         <Form form={form} layout="vertical" requiredMark="optional">
-          <Form.Item name="email" label={t('fields.email')} rules={[{ required: true, message: t('validation.required') }, { type: 'email', message: t('validation.email') }]}>
+          <Form.Item
+            name="email"
+            label={t('fields.email')}
+            rules={[
+              { required: true, message: t('validation.required') },
+              { type: 'email', message: t('validation.email') },
+            ]}
+          >
             <Input dir="ltr" autoComplete="off" />
           </Form.Item>
           <BilingualFields />
           {editing === 'new' && (
-            <Form.Item name="password" label={t('admin:users.initialPassword')} rules={passwordRules(t)} extra={<PasswordPolicyHint />}>
+            <Form.Item
+              name="password"
+              label={t('admin:users.initialPassword')}
+              rules={passwordRules(t)}
+              extra={<PasswordPolicyHint />}
+            >
               <Input.Password autoComplete="new-password" />
             </Form.Item>
           )}
-          <Form.Item name="roles" label={t('fields.roles')} rules={[{ required: true, message: t('validation.required') }]}>
-            <Select mode="multiple" options={roleOptions} disabled={editing !== 'new' && editing?.id === me?.id} />
+          <Form.Item
+            name="roles"
+            label={t('fields.roles')}
+            rules={[{ required: true, message: t('validation.required') }]}
+          >
+            <Select
+              mode="multiple"
+              options={roleOptions}
+              disabled={editing !== 'new' && editing?.id === me?.id}
+            />
           </Form.Item>
           <Form.Item name="departmentId" label={t('fields.department')}>
-            <TreeSelect allowClear treeData={departmentTree} treeDefaultExpandAll placeholder={t('none')} />
+            <TreeSelect
+              allowClear
+              treeData={departmentTree}
+              treeDefaultExpandAll
+              placeholder={t('none')}
+            />
           </Form.Item>
           <Form.Item name="locale" label={t('profile.language')}>
-            <Select options={[{ value: 'en', label: 'English' }, { value: 'ar', label: 'العربية' }]} />
+            <Select
+              options={[
+                { value: 'en', label: 'English' },
+                { value: 'ar', label: 'العربية' },
+              ]}
+            />
           </Form.Item>
         </Form>
       </Drawer>
 
       <Modal
-        title={t('admin:users.resetPasswordFor', { name: resetting ? loc(resetting) || resetting.email : '' })}
+        title={t('admin:users.resetPasswordFor', {
+          name: resetting ? loc(resetting) || resetting.email : '',
+        })}
         open={!!resetting}
         onCancel={() => setResetting(null)}
         onOk={() => void submitReset()}
@@ -295,9 +397,16 @@ export function UsersPage() {
         confirmLoading={resetPassword.isPending}
         destroyOnHidden
       >
-        <Typography.Paragraph type="secondary">{t('admin:users.resetPasswordText')}</Typography.Paragraph>
+        <Typography.Paragraph type="secondary">
+          {t('admin:users.resetPasswordText')}
+        </Typography.Paragraph>
         <Form form={resetForm} layout="vertical">
-          <Form.Item name="newPassword" label={t('profile.newPassword')} rules={passwordRules(t)} extra={<PasswordPolicyHint />}>
+          <Form.Item
+            name="newPassword"
+            label={t('profile.newPassword')}
+            rules={passwordRules(t)}
+            extra={<PasswordPolicyHint />}
+          >
             <Input.Password autoComplete="new-password" />
           </Form.Item>
         </Form>

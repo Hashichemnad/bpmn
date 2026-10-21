@@ -27,7 +27,9 @@ describe('Audit log (e2e)', () => {
     expect(logins.total).toBe(1);
     const byEntity = (await admin.get('/audit-logs?entityType=Department').expect(200)).body;
     expect(byEntity.total).toBe(1);
-    const future = (await admin.get(`/audit-logs?from=${new Date(Date.now() + 3600_000).toISOString()}`)).body;
+    const future = (
+      await admin.get(`/audit-logs?from=${new Date(Date.now() + 3600_000).toISOString()}`)
+    ).body;
     expect(future.total).toBe(0);
     await admin.get('/audit-logs?action=HACK').expect(400);
   });

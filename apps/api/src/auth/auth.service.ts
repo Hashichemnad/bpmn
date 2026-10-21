@@ -173,7 +173,13 @@ export class AuthService {
       }
     }
     if (userId) {
-      await this.audit.log({ action: 'LOGOUT', entityType: 'Auth', entityId: userId, userId, meta });
+      await this.audit.log({
+        action: 'LOGOUT',
+        entityType: 'Auth',
+        entityId: userId,
+        userId,
+        meta,
+      });
     }
   }
 

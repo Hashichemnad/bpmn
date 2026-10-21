@@ -68,7 +68,9 @@ export class DepartmentsService {
           entityType: 'Department',
           entityId: d.id,
           userId: actor.id,
-          summary: { after: { code: d.code, nameEn: d.nameEn, nameAr: d.nameAr, parentId: d.parentId } },
+          summary: {
+            after: { code: d.code, nameEn: d.nameEn, nameAr: d.nameAr, parentId: d.parentId },
+          },
           meta,
         },
         tx,

@@ -1,7 +1,28 @@
 import { useMemo, useState } from 'react';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
-import { App, Button, Card, Col, Descriptions, Dropdown, Flex, List, Row, Space, Table, Tabs, Tag, Typography } from 'antd';
-import { BranchesOutlined, DeleteOutlined, DownOutlined, EditOutlined, PlusOutlined } from '@ant-design/icons';
+import {
+  App,
+  Button,
+  Card,
+  Col,
+  Descriptions,
+  Dropdown,
+  Flex,
+  List,
+  Row,
+  Space,
+  Table,
+  Tabs,
+  Tag,
+  Typography,
+} from 'antd';
+import {
+  BranchesOutlined,
+  DeleteOutlined,
+  DownOutlined,
+  EditOutlined,
+  PlusOutlined,
+} from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
 import { PERMISSIONS, type ObjectLinkDto } from '@processhub/shared';
 import { useDeleteProcess, useLinks, useProcess } from '@/api/hooks';
@@ -32,7 +53,10 @@ export function ProcessDetailPage() {
   const tab = (params.get('tab') as Tab) || 'overview';
 
   const linksByObject = useMemo(() => {
-    const grouped = new Map<string, { object: ObjectLinkDto['repoObject']; elements: ObjectLinkDto[] }>();
+    const grouped = new Map<
+      string,
+      { object: ObjectLinkDto['repoObject']; elements: ObjectLinkDto[] }
+    >();
     for (const l of links.data ?? []) {
       const g = grouped.get(l.repoObject.id) ?? { object: l.repoObject, elements: [] };
       g.elements.push(l);
@@ -42,7 +66,8 @@ export function ProcessDetailPage() {
   }, [links.data]);
 
   if (process.isLoading) return <LoadingState />;
-  if (process.isError || !process.data) return <ErrorState error={process.error} onRetry={() => void process.refetch()} />;
+  if (process.isError || !process.data)
+    return <ErrorState error={process.error} onRetry={() => void process.refetch()} />;
   const p = process.data;
 
   const confirmDelete = () =>
@@ -67,10 +92,25 @@ export function ProcessDetailPage() {
 
   const actionItems = [
     ...(can(PERMISSIONS.PROCESSES_CREATE)
-      ? [{ key: 'sub', icon: <PlusOutlined />, label: t('processes:addSubProcess'), onClick: () => setModalState('sub') }]
+      ? [
+          {
+            key: 'sub',
+            icon: <PlusOutlined />,
+            label: t('processes:addSubProcess'),
+            onClick: () => setModalState('sub'),
+          },
+        ]
       : []),
     ...(p.canDelete
-      ? [{ key: 'delete', icon: <DeleteOutlined />, danger: true, label: t('delete'), onClick: confirmDelete }]
+      ? [
+          {
+            key: 'delete',
+            icon: <DeleteOutlined />,
+            danger: true,
+            label: t('delete'),
+            onClick: confirmDelete,
+          },
+        ]
       : []),
   ];
 
@@ -116,10 +156,16 @@ export function ProcessDetailPage() {
             <Descriptions.Item label={t('fields.status')}>
               <StatusTag status={p.status} />
             </Descriptions.Item>
-            <Descriptions.Item label={t('fields.owner')}>{loc(p.owner) || p.owner?.email || '—'}</Descriptions.Item>
-            <Descriptions.Item label={t('fields.department')}>{loc(p.department) || '—'}</Descriptions.Item>
+            <Descriptions.Item label={t('fields.owner')}>
+              {loc(p.owner) || p.owner?.email || '—'}
+            </Descriptions.Item>
+            <Descriptions.Item label={t('fields.department')}>
+              {loc(p.department) || '—'}
+            </Descriptions.Item>
             <Descriptions.Item label={t('processes:level')}>{p.level}</Descriptions.Item>
-            <Descriptions.Item label={t('fields.updatedAt')}>{formatDate(p.updatedAt)}</Descriptions.Item>
+            <Descriptions.Item label={t('fields.updatedAt')}>
+              {formatDate(p.updatedAt)}
+            </Descriptions.Item>
           </Descriptions>
         </Card>
       </Col>
@@ -182,8 +228,14 @@ export function ProcessDetailPage() {
             render: (_, r) => (
               <Space wrap size={4}>
                 {r.elements.map((l) => (
-                  <Tag key={l.id} className="ph-clickable" onClick={() => openModelAt(l.bpmnElementId)} color="blue">
-                    {loc(l.element) || <span dir="ltr">{l.bpmnElementId}</span>} · {t(`objects:relations.${l.relation}`)}
+                  <Tag
+                    key={l.id}
+                    className="ph-clickable"
+                    onClick={() => openModelAt(l.bpmnElementId)}
+                    color="blue"
+                  >
+                    {loc(l.element) || <span dir="ltr">{l.bpmnElementId}</span>} ·{' '}
+                    {t(`objects:relations.${l.relation}`)}
                   </Tag>
                 ))}
               </Space>
@@ -262,8 +314,12 @@ export function ProcessDetailPage() {
           },
         ]}
       />
-      {modalState === 'edit' && <ProcessFormModal open mode="edit" process={p} onClose={() => setModalState(null)} />}
-      {modalState === 'sub' && <ProcessFormModal open mode="create" parent={p} onClose={() => setModalState(null)} />}
+      {modalState === 'edit' && (
+        <ProcessFormModal open mode="edit" process={p} onClose={() => setModalState(null)} />
+      )}
+      {modalState === 'sub' && (
+        <ProcessFormModal open mode="create" parent={p} onClose={() => setModalState(null)} />
+      )}
     </>
   );
 }

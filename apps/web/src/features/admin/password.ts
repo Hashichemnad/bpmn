@@ -14,7 +14,15 @@ export function passwordRules(t: TFunction): Rule[] {
         if (!v) return Promise.resolve();
         const errors = checkPasswordPolicy(v, DEFAULT_PASSWORD_POLICY);
         return errors.length
-          ? Promise.reject(new Error(errors.map((e) => t(`validation.password.${e}`, { min: DEFAULT_PASSWORD_POLICY.minLength })).join(' · ')))
+          ? Promise.reject(
+              new Error(
+                errors
+                  .map((e) =>
+                    t(`validation.password.${e}`, { min: DEFAULT_PASSWORD_POLICY.minLength }),
+                  )
+                  .join(' · '),
+              ),
+            )
           : Promise.resolve();
       },
     },

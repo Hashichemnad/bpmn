@@ -46,7 +46,9 @@ const esc = (s: string) =>
   s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 
 const labelAttrs = (en?: string, ar?: string) =>
-  en || ar ? ` name="${esc(en || ar || '')}" ph:nameEn="${esc(en ?? '')}" ph:nameAr="${esc(ar ?? '')}"` : '';
+  en || ar
+    ? ` name="${esc(en || ar || '')}" ph:nameEn="${esc(en ?? '')}" ph:nameAr="${esc(ar ?? '')}"`
+    : '';
 
 export function buildBpmn(processKey: string, nodes: DiagramNode[], flows: DiagramFlow[]): string {
   const byId = new Map(nodes.map((n) => [n.id, n]));
@@ -95,7 +97,12 @@ export function buildBpmn(processKey: string, nodes: DiagramNode[], flows: Diagr
               { x: a.x + aw / 2, y: end.y },
               end,
             ]
-          : [start, { x: (start.x + end.x) / 2, y: start.y }, { x: (start.x + end.x) / 2, y: end.y }, end];
+          : [
+              start,
+              { x: (start.x + end.x) / 2, y: start.y },
+              { x: (start.x + end.x) / 2, y: end.y },
+              end,
+            ];
       }
       const wps = points.map((p) => `        <di:waypoint x="${p.x}" y="${p.y}" />`).join('\n');
       return `      <bpmndi:BPMNEdge id="${f.id}_di" bpmnElement="${f.id}">\n${wps}\n      </bpmndi:BPMNEdge>`;

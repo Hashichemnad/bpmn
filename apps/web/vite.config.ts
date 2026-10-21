@@ -8,7 +8,9 @@ export default defineConfig({
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url)),
       // Consume the shared package from source so web and api always agree.
-      '@processhub/shared': fileURLToPath(new URL('../../packages/shared/src/index.ts', import.meta.url)),
+      '@processhub/shared': fileURLToPath(
+        new URL('../../packages/shared/src/index.ts', import.meta.url),
+      ),
     },
   },
   server: {

@@ -43,7 +43,10 @@ export async function createApp(): Promise<TestContext> {
     .overrideProvider(StorageService)
     .useValue(storage)
     .compile();
-  const app = moduleRef.createNestApplication<NestExpressApplication>({ bodyParser: false, logger: false });
+  const app = moduleRef.createNestApplication<NestExpressApplication>({
+    bodyParser: false,
+    logger: false,
+  });
   configureApp(app);
   await app.init();
   return { app, prisma: app.get(PrismaService), storage };
@@ -143,7 +146,8 @@ export class Client {
 export async function loggedIn(app: INestApplication, email: string, password = PASSWORD) {
   const c = await new Client(app).init();
   const res = await c.login(email, password);
-  if (res.status !== 200) throw new Error(`login failed for ${email}: ${res.status} ${JSON.stringify(res.body)}`);
+  if (res.status !== 200)
+    throw new Error(`login failed for ${email}: ${res.status} ${JSON.stringify(res.body)}`);
   return c;
 }
 

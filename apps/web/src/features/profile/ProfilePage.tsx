@@ -91,7 +91,12 @@ export function ProfilePage() {
               >
                 <Input.Password autoComplete="current-password" />
               </Form.Item>
-              <Form.Item name="newPassword" label={t('profile.newPassword')} rules={passwordRules(t)} extra={<PasswordPolicyHint />}>
+              <Form.Item
+                name="newPassword"
+                label={t('profile.newPassword')}
+                rules={passwordRules(t)}
+                extra={<PasswordPolicyHint />}
+              >
                 <Input.Password autoComplete="new-password" />
               </Form.Item>
               <Form.Item

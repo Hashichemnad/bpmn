@@ -43,12 +43,18 @@ describe('Route security declarations', () => {
               : reflector.getAllAndOverride(AUTHENTICATED_KEY, targets)
                 ? 'authenticated'
                 : 'NONE';
-        routes.push({ route: `${method} /${[base, path].filter((x) => x && x !== '/').join('/')}`, access });
+        routes.push({
+          route: `${method} /${[base, path].filter((x) => x && x !== '/').join('/')}`,
+          access,
+        });
       }
     }
     expect(routes.length).toBeGreaterThan(40);
     expect(routes.filter((r) => r.access === 'NONE')).toEqual([]);
-    const publicRoutes = routes.filter((r) => r.access === 'public').map((r) => r.route).sort();
+    const publicRoutes = routes
+      .filter((r) => r.access === 'public')
+      .map((r) => r.route)
+      .sort();
     expect(publicRoutes).toEqual([
       'GET /auth/csrf',
       'GET /health',

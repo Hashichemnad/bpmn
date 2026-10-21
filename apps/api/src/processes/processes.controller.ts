@@ -11,7 +11,12 @@ import {
   type ProcessListQuery,
   type UpdateProcessInput,
 } from '@processhub/shared';
-import { CurrentUser, ReqMeta, RequireAnyPermission, RequirePermissions } from '../common/decorators';
+import {
+  CurrentUser,
+  ReqMeta,
+  RequireAnyPermission,
+  RequirePermissions,
+} from '../common/decorators';
 import type { AuthUser, RequestMeta } from '../common/auth-user';
 import { UuidPipe, ZodPipe } from '../common/zod.pipe';
 import { ProcessesService } from './processes.service';

@@ -134,8 +134,7 @@ html[lang='ar'] body {
   padding: 24px;
   background:
     radial-gradient(circle at 15% 20%, rgb(29 78 216 / 12%), transparent 40%),
-    radial-gradient(circle at 85% 80%, rgb(15 118 110 / 10%), transparent 40%),
-    var(--ph-bg);
+    radial-gradient(circle at 85% 80%, rgb(15 118 110 / 10%), transparent 40%), var(--ph-bg);
 }
 
 .ph-login-card {
@@ -199,7 +198,9 @@ html[lang='ar'] body {
 .ph-tile {
   block-size: 100%;
   border-color: var(--ph-border);
-  transition: transform 0.12s ease, box-shadow 0.12s ease;
+  transition:
+    transform 0.12s ease,
+    box-shadow 0.12s ease;
 }
 
 .ph-tile:hover {

@@ -10,7 +10,8 @@ const items: TreeProcess[] = [
   { id: 'S1', parentId: null, category: 'SUPPORT', level: 1, sortOrder: 0 },
 ];
 
-const byId = (updates: ReturnType<typeof planMove>) => Object.fromEntries(updates.map((u) => [u.id, u]));
+const byId = (updates: ReturnType<typeof planMove>) =>
+  Object.fromEntries(updates.map((u) => [u.id, u]));
 
 describe('planMove', () => {
   it('re-orders siblings within the same parent', () => {

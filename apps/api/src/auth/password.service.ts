@@ -5,7 +5,6 @@ import { APP_CONFIG, type AppConfig } from '../config/config';
 import { badRequest } from '../common/app-exception';
 import { hashPassword } from './argon';
 
-
 @Injectable()
 export class PasswordService {
   private dummyHash?: Promise<string>;

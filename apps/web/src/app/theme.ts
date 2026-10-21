@@ -20,7 +20,12 @@ export function buildTheme(locale: Locale): ThemeConfig {
       controlHeight: 34,
     },
     components: {
-      Layout: { headerBg: '#ffffff', siderBg: '#0f1b3d', headerHeight: 56, headerPadding: '0 20px' },
+      Layout: {
+        headerBg: '#ffffff',
+        siderBg: '#0f1b3d',
+        headerHeight: 56,
+        headerPadding: '0 20px',
+      },
       Menu: {
         darkItemBg: '#0f1b3d',
         darkSubMenuItemBg: '#0b1530',

@@ -3,7 +3,12 @@ import { Link } from 'react-router-dom';
 import { Button, Card, Flex, Input, Segmented, Table, type TableProps } from 'antd';
 import { PlusOutlined } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
-import { PERMISSIONS, PROCESS_CATEGORIES, type ProcessCategory, type ProcessSummaryDto } from '@processhub/shared';
+import {
+  PERMISSIONS,
+  PROCESS_CATEGORIES,
+  type ProcessCategory,
+  type ProcessSummaryDto,
+} from '@processhub/shared';
 import { useProcessTree } from '@/api/hooks';
 import { useAuth } from '@/auth/AuthProvider';
 import { PageHeader } from '@/components/PageHeader';
@@ -25,7 +30,10 @@ export function ProcessListPage() {
     const needle = q.trim().toLowerCase();
     return (tree.data ?? [])
       .filter((p) => category === 'ALL' || p.category === category)
-      .filter((p) => !needle || [p.code, p.nameEn, p.nameAr].some((v) => v.toLowerCase().includes(needle)))
+      .filter(
+        (p) =>
+          !needle || [p.code, p.nameEn, p.nameAr].some((v) => v.toLowerCase().includes(needle)),
+      )
       .sort((a, b) => a.code.localeCompare(b.code, undefined, { numeric: true }));
   }, [tree.data, q, category]);
 
@@ -40,10 +48,24 @@ export function ProcessListPage() {
         </Link>
       ),
     },
-    { title: t('fields.name'), key: 'name', render: (_, p) => <Link to={`/processes/${p.id}`}>{loc(p)}</Link> },
-    { title: t('fields.category'), dataIndex: 'category', width: 150, render: (c) => <CategoryTag category={c} /> },
+    {
+      title: t('fields.name'),
+      key: 'name',
+      render: (_, p) => <Link to={`/processes/${p.id}`}>{loc(p)}</Link>,
+    },
+    {
+      title: t('fields.category'),
+      dataIndex: 'category',
+      width: 150,
+      render: (c) => <CategoryTag category={c} />,
+    },
     { title: t('processes:level'), dataIndex: 'level', width: 90 },
-    { title: t('fields.status'), dataIndex: 'status', width: 130, render: (s) => <StatusTag status={s} /> },
+    {
+      title: t('fields.status'),
+      dataIndex: 'status',
+      width: 130,
+      render: (s) => <StatusTag status={s} />,
+    },
   ];
 
   return (
@@ -61,7 +83,12 @@ export function ProcessListPage() {
       />
       <Card>
         <Flex gap={12} wrap="wrap" style={{ marginBottom: 16 }}>
-          <Input.Search allowClear placeholder={t('processes:tree.search')} style={{ width: 280 }} onChange={(e) => setQ(e.target.value)} />
+          <Input.Search
+            allowClear
+            placeholder={t('processes:tree.search')}
+            style={{ width: 280 }}
+            onChange={(e) => setQ(e.target.value)}
+          />
           <Segmented
             value={category}
             onChange={(v) => setCategory(v as ProcessCategory | 'ALL')}

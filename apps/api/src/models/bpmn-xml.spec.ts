@@ -7,7 +7,9 @@ describe('assertSafeBpmnXml', () => {
   it('accepts a BPMN definitions document', () => {
     expect(() => assertSafeBpmnXml(valid)).not.toThrow();
     expect(() =>
-      assertSafeBpmnXml('<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"></definitions>'),
+      assertSafeBpmnXml(
+        '<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"></definitions>',
+      ),
     ).not.toThrow();
   });
   it('rejects DTDs and entities', () => {

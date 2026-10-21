@@ -94,7 +94,11 @@ export class ProcessesService {
       this.prisma.process.findMany({
         where,
         select: summarySelect,
-        orderBy: orderBy(q, ['code', 'nameEn', 'nameAr', 'sortOrder', 'level', 'updatedAt'], 'code'),
+        orderBy: orderBy(
+          q,
+          ['code', 'nameEn', 'nameAr', 'sortOrder', 'level', 'updatedAt'],
+          'code',
+        ),
         ...pageArgs(q),
       }),
       this.prisma.process.count({ where }),
@@ -124,7 +128,11 @@ export class ProcessesService {
       include: {
         owner: { select: { id: true, email: true, nameEn: true, nameAr: true } },
         department: { select: { id: true, nameEn: true, nameAr: true } },
-        children: { where: { deletedAt: null }, select: summarySelect, orderBy: { sortOrder: 'asc' } },
+        children: {
+          where: { deletedAt: null },
+          select: summarySelect,
+          orderBy: { sortOrder: 'asc' },
+        },
         model: { select: { processId: true } },
       },
     });
@@ -199,7 +207,15 @@ export class ProcessesService {
           entityType: 'Process',
           entityId: p.id,
           userId: actor.id,
-          summary: { after: { code: p.code, nameEn: p.nameEn, nameAr: p.nameAr, category, parentId: p.parentId } },
+          summary: {
+            after: {
+              code: p.code,
+              nameEn: p.nameEn,
+              nameAr: p.nameAr,
+              category,
+              parentId: p.parentId,
+            },
+          },
           meta,
         },
         tx,
@@ -262,7 +278,11 @@ export class ProcessesService {
     });
   }
 
-  private async cascadeCategory(tx: Prisma.TransactionClient, rootId: string, category: ProcessCategory) {
+  private async cascadeCategory(
+    tx: Prisma.TransactionClient,
+    rootId: string,
+    category: ProcessCategory,
+  ) {
     let frontier = [rootId];
     while (frontier.length) {
       const children = await tx.process.findMany({
@@ -305,7 +325,11 @@ export class ProcessesService {
           entityId: id,
           userId: actor.id,
           summary: {
-            from: { parentId: before.parentId, category: before.category, sortOrder: before.sortOrder },
+            from: {
+              parentId: before.parentId,
+              category: before.category,
+              sortOrder: before.sortOrder,
+            },
             to: input,
             affected: updates.length,
           },
@@ -324,14 +348,19 @@ export class ProcessesService {
       throw conflict('PROCESS_HAS_CHILDREN', 'Delete or move the sub-processes first');
     }
     await this.prisma.$transaction(async (tx) => {
-      await tx.process.update({ where: { id }, data: { deletedAt: new Date(), updatedById: actor.id } });
+      await tx.process.update({
+        where: { id },
+        data: { deletedAt: new Date(), updatedById: actor.id },
+      });
       await this.audit.log(
         {
           action: 'DELETE',
           entityType: 'Process',
           entityId: id,
           userId: actor.id,
-          summary: { before: { code: p.code, nameEn: p.nameEn, nameAr: p.nameAr, category: p.category } },
+          summary: {
+            before: { code: p.code, nameEn: p.nameEn, nameAr: p.nameAr, category: p.category },
+          },
           meta,
         },
         tx,
@@ -356,7 +385,9 @@ export class ProcessesService {
       if (!u) throw badRequest('OWNER_NOT_FOUND');
     }
     if (departmentId) {
-      const d = await this.prisma.department.findFirst({ where: { id: departmentId, deletedAt: null } });
+      const d = await this.prisma.department.findFirst({
+        where: { id: departmentId, deletedAt: null },
+      });
       if (!d) throw badRequest('DEPARTMENT_NOT_FOUND');
     }
   }

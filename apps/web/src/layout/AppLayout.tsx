@@ -1,6 +1,17 @@
 import { useMemo, useState } from 'react';
 import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
-import { Avatar, Button, Dropdown, Flex, Layout, Menu, Segmented, Tooltip, Typography, type MenuProps } from 'antd';
+import {
+  Avatar,
+  Button,
+  Dropdown,
+  Flex,
+  Layout,
+  Menu,
+  Segmented,
+  Tooltip,
+  Typography,
+  type MenuProps,
+} from 'antd';
 import {
   ApartmentOutlined,
   AppstoreOutlined,
@@ -68,8 +79,16 @@ export function AppLayout() {
         type: 'group',
         label: t('nav.repository'),
         children: [
-          { key: '/', icon: <AppstoreOutlined />, label: <Link to="/">{t('nav.processHouse')}</Link> },
-          { key: '/processes', icon: <ApartmentOutlined />, label: <Link to="/processes">{t('nav.processes')}</Link> },
+          {
+            key: '/',
+            icon: <AppstoreOutlined />,
+            label: <Link to="/">{t('nav.processHouse')}</Link>,
+          },
+          {
+            key: '/processes',
+            icon: <ApartmentOutlined />,
+            label: <Link to="/processes">{t('nav.processes')}</Link>,
+          },
         ],
       });
     }
@@ -78,23 +97,47 @@ export function AppLayout() {
         type: 'group',
         label: t('nav.library'),
         children: [
-          { key: '/library/roles', icon: <TeamOutlined />, label: <Link to="/library/roles">{t('nav.roles')}</Link> },
-          { key: '/library/systems', icon: <DesktopOutlined />, label: <Link to="/library/systems">{t('nav.systems')}</Link> },
+          {
+            key: '/library/roles',
+            icon: <TeamOutlined />,
+            label: <Link to="/library/roles">{t('nav.roles')}</Link>,
+          },
+          {
+            key: '/library/systems',
+            icon: <DesktopOutlined />,
+            label: <Link to="/library/systems">{t('nav.systems')}</Link>,
+          },
         ],
       });
     }
     const admin: NonNullable<MenuProps['items']> = [];
     if (can(PERMISSIONS.USERS_READ) && can(PERMISSIONS.USERS_MANAGE)) {
-      admin.push({ key: '/admin/users', icon: <UserOutlined />, label: <Link to="/admin/users">{t('nav.users')}</Link> });
+      admin.push({
+        key: '/admin/users',
+        icon: <UserOutlined />,
+        label: <Link to="/admin/users">{t('nav.users')}</Link>,
+      });
     }
     if (can(PERMISSIONS.DEPARTMENTS_MANAGE)) {
-      admin.push({ key: '/admin/departments', icon: <ClusterOutlined />, label: <Link to="/admin/departments">{t('nav.departments')}</Link> });
+      admin.push({
+        key: '/admin/departments',
+        icon: <ClusterOutlined />,
+        label: <Link to="/admin/departments">{t('nav.departments')}</Link>,
+      });
     }
     if (can(PERMISSIONS.AUDIT_READ)) {
-      admin.push({ key: '/admin/audit', icon: <AuditOutlined />, label: <Link to="/admin/audit">{t('nav.audit')}</Link> });
+      admin.push({
+        key: '/admin/audit',
+        icon: <AuditOutlined />,
+        label: <Link to="/admin/audit">{t('nav.audit')}</Link>,
+      });
     }
     if (can(PERMISSIONS.SETTINGS_MANAGE)) {
-      admin.push({ key: '/settings', icon: <SettingOutlined />, label: <Link to="/settings">{t('nav.settings')}</Link> });
+      admin.push({
+        key: '/settings',
+        icon: <SettingOutlined />,
+        label: <Link to="/settings">{t('nav.settings')}</Link>,
+      });
     }
     if (admin.length) list.push({ type: 'group', label: t('nav.administration'), children: admin });
     return list;
@@ -105,15 +148,28 @@ export function AppLayout() {
     if (p === '/') return ['/'];
     if (p.startsWith('/processes')) return ['/processes'];
     if (p.startsWith('/library/objects')) return [];
-    const match = ['/library/roles', '/library/systems', '/admin/users', '/admin/departments', '/admin/audit', '/settings'].find((k) => p.startsWith(k));
+    const match = [
+      '/library/roles',
+      '/library/systems',
+      '/admin/users',
+      '/admin/departments',
+      '/admin/audit',
+      '/settings',
+    ].find((k) => p.startsWith(k));
     return match ? [match] : [];
   }, [location.pathname]);
 
-  const orgName = loc({ nameEn: settings.data?.orgNameEn, nameAr: settings.data?.orgNameAr }) || 'ProcessHub';
+  const orgName =
+    loc({ nameEn: settings.data?.orgNameEn, nameAr: settings.data?.orgNameAr }) || 'ProcessHub';
   const userName = loc(user) || user?.email;
 
   const userMenu: MenuProps['items'] = [
-    { key: 'profile', icon: <UserOutlined />, label: t('nav.profile'), onClick: () => navigate('/profile') },
+    {
+      key: 'profile',
+      icon: <UserOutlined />,
+      label: t('nav.profile'),
+      onClick: () => navigate('/profile'),
+    },
     { type: 'divider' },
     {
       key: 'logout',
@@ -123,7 +179,9 @@ export function AppLayout() {
     },
   ];
 
-  const CollapseIcon = (collapsed ? dir === 'rtl' : dir !== 'rtl') ? MenuFoldOutlined : MenuUnfoldOutlined;
+  const CollapseIcon = (collapsed ? dir === 'rtl' : dir !== 'rtl')
+    ? MenuFoldOutlined
+    : MenuUnfoldOutlined;
 
   return (
     <Layout style={{ minHeight: '100vh' }}>
@@ -161,7 +219,11 @@ export function AppLayout() {
                 <LanguageToggle />
               </span>
             </Tooltip>
-            <Dropdown menu={{ items: userMenu }} placement={dir === 'rtl' ? 'bottomLeft' : 'bottomRight'} trigger={['click']}>
+            <Dropdown
+              menu={{ items: userMenu }}
+              placement={dir === 'rtl' ? 'bottomLeft' : 'bottomRight'}
+              trigger={['click']}
+            >
               <Button type="text" className="ph-user-button">
                 <Avatar size="small" style={{ background: '#1d4ed8' }} icon={<UserOutlined />} />
                 <span className="ph-user-name">{userName}</span>

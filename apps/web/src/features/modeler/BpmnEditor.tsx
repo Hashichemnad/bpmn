@@ -1,6 +1,23 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useBlocker, useNavigate } from 'react-router-dom';
-import { Alert, App, Badge, Button, Card, Dropdown, Flex, Form, Input, Modal, Space, Tabs, Tag, Tooltip, Typography, Upload } from 'antd';
+import {
+  Alert,
+  App,
+  Badge,
+  Button,
+  Card,
+  Dropdown,
+  Flex,
+  Form,
+  Input,
+  Modal,
+  Space,
+  Tabs,
+  Tag,
+  Tooltip,
+  Typography,
+  Upload,
+} from 'antd';
 import {
   CompressOutlined,
   DownloadOutlined,
@@ -20,12 +37,26 @@ import NavigatedViewer from 'bpmn-js/lib/NavigatedViewer';
 import 'bpmn-js/dist/assets/diagram-js.css';
 import 'bpmn-js/dist/assets/bpmn-js.css';
 import 'bpmn-js/dist/assets/bpmn-font/css/bpmn-embedded.css';
-import { BPMN_MAX_BYTES, validateBpmnGraph, type BpmnIssue, type ProcessDto } from '@processhub/shared';
+import {
+  BPMN_MAX_BYTES,
+  validateBpmnGraph,
+  type BpmnIssue,
+  type ProcessDto,
+} from '@processhub/shared';
 import { useCreateVersion, useLinks, useProcessModel, useSaveModel } from '@/api/hooks';
 import { useLocale } from '@/app/LocaleProvider';
 import { useErrorMessage, useFormatDate, useLocalized } from '@/components/i18n-helpers';
 import { ErrorState, LoadingState } from '@/components/states';
-import type { BpmnInstance, Canvas, CommandStack, DiagramElement, ElementRegistry, EventBus, Overlays, Selection } from './bpmn-types';
+import type {
+  BpmnInstance,
+  Canvas,
+  CommandStack,
+  DiagramElement,
+  ElementRegistry,
+  EventBus,
+  Overlays,
+  Selection,
+} from './bpmn-types';
 import {
   applyLanguage,
   bilingualModule,
@@ -104,7 +135,8 @@ export function BpmnEditor({ process, focusElementId }: Props) {
     overlays.remove({ type: 'ph-badge' });
     overlays.remove({ type: 'ph-drill' });
     const counts = new Map<string, number>();
-    for (const l of links.data ?? []) counts.set(l.bpmnElementId, (counts.get(l.bpmnElementId) ?? 0) + 1);
+    for (const l of links.data ?? [])
+      counts.set(l.bpmnElementId, (counts.get(l.bpmnElementId) ?? 0) + 1);
     for (const [elementId, count] of counts) {
       if (!registry.get(elementId)) continue;
       const badge = document.createElement('div');
@@ -113,7 +145,9 @@ export function BpmnEditor({ process, focusElementId }: Props) {
       badge.title = t('modeler:linkedObjectsCount', { count });
       overlays.add(elementId, 'ph-badge', { position: { top: -8, right: 8 }, html: badge });
     }
-    for (const el of registry.filter((e) => canDrillDown(e) && !!linkedProcessOf(e.businessObject))) {
+    for (const el of registry.filter(
+      (e) => canDrillDown(e) && !!linkedProcessOf(e.businessObject),
+    )) {
       const target = linkedProcessOf(el.businessObject)!;
       const button = document.createElement('button');
       button.type = 'button';
@@ -134,9 +168,14 @@ export function BpmnEditor({ process, focusElementId }: Props) {
     const options = {
       container: containerRef.current,
       moddleExtensions: { ph: phModdleDescriptor },
-      additionalModules: [translateModule(stateRef.current), ...(canEdit ? [bilingualModule(stateRef.current)] : [])],
+      additionalModules: [
+        translateModule(stateRef.current),
+        ...(canEdit ? [bilingualModule(stateRef.current)] : []),
+      ],
     };
-    const instance = (canEdit ? new Modeler(options) : new NavigatedViewer(options)) as unknown as BpmnInstance;
+    const instance = (canEdit
+      ? new Modeler(options)
+      : new NavigatedViewer(options)) as unknown as BpmnInstance;
     instanceRef.current = instance;
     const eventBus = instance.get<EventBus>('eventBus');
     eventBus.on('selection.changed', (e: { newSelection: DiagramElement[] }) => {
@@ -153,7 +192,9 @@ export function BpmnEditor({ process, focusElementId }: Props) {
     if (!canEdit) {
       eventBus.on('element.click', (e: { element: DiagramElement }) => {
         const el = e.element;
-        setSelected(el.type === 'bpmn:Process' || el.type === 'label' ? (el.labelTarget ?? null) : el);
+        setSelected(
+          el.type === 'bpmn:Process' || el.type === 'label' ? (el.labelTarget ?? null) : el,
+        );
       });
     }
     const observer = new ResizeObserver(() => instance.get<Canvas>('canvas').resized());
@@ -220,7 +261,10 @@ export function BpmnEditor({ process, focusElementId }: Props) {
   }, [refreshOverlays]);
 
   // Warn before leaving with unsaved changes.
-  const blocker = useBlocker(({ currentLocation, nextLocation }) => dirty && currentLocation.pathname !== nextLocation.pathname);
+  const blocker = useBlocker(
+    ({ currentLocation, nextLocation }) =>
+      dirty && currentLocation.pathname !== nextLocation.pathname,
+  );
   useEffect(() => {
     if (blocker.state !== 'blocked') return;
     modal.confirm({
@@ -240,7 +284,10 @@ export function BpmnEditor({ process, focusElementId }: Props) {
     return () => window.removeEventListener('beforeunload', handler);
   }, [dirty]);
 
-  const currentXml = useCallback(() => exportXml(instanceRef.current!, stateRef.current.locale), []);
+  const currentXml = useCallback(
+    () => exportXml(instanceRef.current!, stateRef.current.locale),
+    [],
+  );
 
   const save = useCallback(async () => {
     if (!instanceRef.current || !canEdit) return;
@@ -283,11 +330,18 @@ export function BpmnEditor({ process, focusElementId }: Props) {
     if (!instance) return;
     try {
       if (kind === 'bpmn') {
-        downloadBlob(new Blob([await currentXml()], { type: 'application/xml' }), exportFileName(process.code, fileBase, 'bpmn'));
+        downloadBlob(
+          new Blob([await currentXml()], { type: 'application/xml' }),
+          exportFileName(process.code, fileBase, 'bpmn'),
+        );
         return;
       }
       const { svg } = await instance.saveSVG();
-      if (kind === 'svg') downloadBlob(new Blob([svg], { type: 'image/svg+xml' }), exportFileName(process.code, fileBase, 'svg'));
+      if (kind === 'svg')
+        downloadBlob(
+          new Blob([svg], { type: 'image/svg+xml' }),
+          exportFileName(process.code, fileBase, 'svg'),
+        );
       else downloadBlob(await svgToPng(svg), exportFileName(process.code, fileBase, 'png'));
     } catch (err) {
       message.error((err as Error).message);
@@ -332,7 +386,13 @@ export function BpmnEditor({ process, focusElementId }: Props) {
 
   const warnings = issues.filter((i) => i.severity === 'warning').length;
   const lastSaved = useMemo(
-    () => (model.data?.updatedAt ? t('modeler:lastSaved', { time: formatDate(model.data.updatedAt), name: loc(model.data.updatedBy) || model.data.updatedBy?.email || '—' }) : t('modeler:neverSaved')),
+    () =>
+      model.data?.updatedAt
+        ? t('modeler:lastSaved', {
+            time: formatDate(model.data.updatedAt),
+            name: loc(model.data.updatedBy) || model.data.updatedBy?.email || '—',
+          })
+        : t('modeler:neverSaved'),
     [model.data, formatDate, loc, t],
   );
 
@@ -340,34 +400,68 @@ export function BpmnEditor({ process, focusElementId }: Props) {
 
   return (
     <Card className="ph-modeler-card" styles={{ body: { padding: 0 } }}>
-      <Flex className="ph-modeler-toolbar" justify="space-between" align="center" wrap="wrap" gap={8}>
+      <Flex
+        className="ph-modeler-toolbar"
+        justify="space-between"
+        align="center"
+        wrap="wrap"
+        gap={8}
+      >
         <Space wrap size={6}>
           {canEdit ? (
             <>
-              <Button type="primary" icon={<SaveOutlined />} onClick={() => void save()} loading={saveModel.isPending} disabled={!dirty && !!model.data?.bpmnXml}>
+              <Button
+                type="primary"
+                icon={<SaveOutlined />}
+                onClick={() => void save()}
+                loading={saveModel.isPending}
+                disabled={!dirty && !!model.data?.bpmnXml}
+              >
                 {t('save')}
               </Button>
               <Button icon={<TagsOutlined />} onClick={() => setVersionOpen(true)}>
                 {t('modeler:saveAsVersion')}
               </Button>
               <Tooltip title={t('modeler:undo')}>
-                <Button icon={<UndoOutlined />} disabled={!canUndo} onClick={() => instanceRef.current?.get<CommandStack>('commandStack').undo()} aria-label={t('modeler:undo')} />
+                <Button
+                  icon={<UndoOutlined />}
+                  disabled={!canUndo}
+                  onClick={() => instanceRef.current?.get<CommandStack>('commandStack').undo()}
+                  aria-label={t('modeler:undo')}
+                />
               </Tooltip>
               <Tooltip title={t('modeler:redo')}>
-                <Button icon={<RedoOutlined />} disabled={!canRedo} onClick={() => instanceRef.current?.get<CommandStack>('commandStack').redo()} aria-label={t('modeler:redo')} />
+                <Button
+                  icon={<RedoOutlined />}
+                  disabled={!canRedo}
+                  onClick={() => instanceRef.current?.get<CommandStack>('commandStack').redo()}
+                  aria-label={t('modeler:redo')}
+                />
               </Tooltip>
             </>
           ) : (
             <Tag color="default">{t('modeler:readOnly')}</Tag>
           )}
           <Tooltip title={t('modeler:zoomIn')}>
-            <Button icon={<ZoomInOutlined />} onClick={() => zoom(0.2)} aria-label={t('modeler:zoomIn')} />
+            <Button
+              icon={<ZoomInOutlined />}
+              onClick={() => zoom(0.2)}
+              aria-label={t('modeler:zoomIn')}
+            />
           </Tooltip>
           <Tooltip title={t('modeler:zoomOut')}>
-            <Button icon={<ZoomOutOutlined />} onClick={() => zoom(-0.2)} aria-label={t('modeler:zoomOut')} />
+            <Button
+              icon={<ZoomOutOutlined />}
+              onClick={() => zoom(-0.2)}
+              aria-label={t('modeler:zoomOut')}
+            />
           </Tooltip>
           <Tooltip title={t('modeler:fit')}>
-            <Button icon={<CompressOutlined />} onClick={() => zoom('fit')} aria-label={t('modeler:fit')} />
+            <Button
+              icon={<CompressOutlined />}
+              onClick={() => zoom('fit')}
+              aria-label={t('modeler:fit')}
+            />
           </Tooltip>
         </Space>
         <Space wrap size={6}>
@@ -380,7 +474,14 @@ export function BpmnEditor({ process, focusElementId }: Props) {
             {t('modeler:versions')}
           </Button>
           {canEdit && (
-            <Upload accept=".bpmn,.xml,application/xml,text/xml" showUploadList={false} beforeUpload={(f) => { void importFile(f); return false; }}>
+            <Upload
+              accept=".bpmn,.xml,application/xml,text/xml"
+              showUploadList={false}
+              beforeUpload={(f) => {
+                void importFile(f);
+                return false;
+              }}
+            >
               <Button icon={<UploadOutlined />}>{t('modeler:import')}</Button>
             </Upload>
           )}
@@ -388,7 +489,11 @@ export function BpmnEditor({ process, focusElementId }: Props) {
             trigger={['click']}
             menu={{
               items: [
-                { key: 'bpmn', label: t('modeler:exportBpmn'), onClick: () => void doExport('bpmn') },
+                {
+                  key: 'bpmn',
+                  label: t('modeler:exportBpmn'),
+                  onClick: () => void doExport('bpmn'),
+                },
                 { key: 'svg', label: t('modeler:exportSvg'), onClick: () => void doExport('svg') },
                 { key: 'png', label: t('modeler:exportPng'), onClick: () => void doExport('png') },
               ],
@@ -398,11 +503,26 @@ export function BpmnEditor({ process, focusElementId }: Props) {
           </Dropdown>
         </Space>
       </Flex>
-      {importError && <Alert type="error" showIcon banner message={t('modeler:importFailed')} description={importError} closable onClose={() => setImportError(null)} />}
+      {importError && (
+        <Alert
+          type="error"
+          showIcon
+          banner
+          message={t('modeler:importFailed')}
+          description={importError}
+          closable
+          onClose={() => setImportError(null)}
+        />
+      )}
       <div className="ph-modeler-body">
         {/* bpmn-js renders its own UI; keep it LTR so palette and canvas behave consistently. */}
         <div className="ph-modeler-canvas-wrap">
-          <div className="ph-modeler-canvas" dir="ltr" ref={containerRef} aria-label={t('modeler:canvas')} />
+          <div
+            className="ph-modeler-canvas"
+            dir="ltr"
+            ref={containerRef}
+            aria-label={t('modeler:canvas')}
+          />
           {model.isLoading && (
             <div className="ph-modeler-loading">
               <LoadingState />
@@ -433,7 +553,13 @@ export function BpmnEditor({ process, focusElementId }: Props) {
                 label: (
                   <Space size={4}>
                     {t('modeler:issues')}
-                    {issues.length > 0 && <Badge count={issues.length} size="small" color={warnings ? '#b45309' : '#64748b'} />}
+                    {issues.length > 0 && (
+                      <Badge
+                        count={issues.length}
+                        size="small"
+                        color={warnings ? '#b45309' : '#64748b'}
+                      />
+                    )}
                   </Space>
                 ),
                 children:
@@ -443,8 +569,15 @@ export function BpmnEditor({ process, focusElementId }: Props) {
                     <ul className="ph-issues">
                       {issues.map((i, idx) => (
                         <li key={`${i.code}-${i.elementId ?? idx}`}>
-                          <button type="button" className="ph-issue" onClick={() => focusElement(i.elementId)} disabled={!i.elementId}>
-                            <Tag color={i.severity === 'warning' ? 'orange' : 'default'}>{t(`modeler:severity.${i.severity}`)}</Tag>
+                          <button
+                            type="button"
+                            className="ph-issue"
+                            onClick={() => focusElement(i.elementId)}
+                            disabled={!i.elementId}
+                          >
+                            <Tag color={i.severity === 'warning' ? 'orange' : 'default'}>
+                              {t(`modeler:severity.${i.severity}`)}
+                            </Tag>
                             <span>{t(`modeler:rules.${i.code}`)}</span>
                             {i.elementId && (
                               <Typography.Text type="secondary" className="ph-issue-id" dir="ltr">
@@ -479,12 +612,23 @@ export function BpmnEditor({ process, focusElementId }: Props) {
       >
         <Typography.Paragraph type="secondary">{t('modeler:versionHint')}</Typography.Paragraph>
         <Form form={versionForm} layout="vertical">
-          <Form.Item name="changeNote" label={t('modeler:changeNote')} rules={[{ required: true, whitespace: true, message: t('validation.required') }, { max: 1000 }]}>
+          <Form.Item
+            name="changeNote"
+            label={t('modeler:changeNote')}
+            rules={[
+              { required: true, whitespace: true, message: t('validation.required') },
+              { max: 1000 },
+            ]}
+          >
             <Input.TextArea rows={3} maxLength={1000} showCount autoFocus />
           </Form.Item>
         </Form>
       </Modal>
-      <VersionsDrawer processId={process.id} open={historyOpen} onClose={() => setHistoryOpen(false)} />
+      <VersionsDrawer
+        processId={process.id}
+        open={historyOpen}
+        onClose={() => setHistoryOpen(false)}
+      />
     </Card>
   );
 }

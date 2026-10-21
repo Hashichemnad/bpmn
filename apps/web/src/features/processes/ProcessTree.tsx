@@ -90,7 +90,10 @@ export function ProcessTree({ selectedId }: { selectedId?: string }) {
   }, [items, matches, loc, t]);
 
   const defaultExpanded = useMemo<Key[]>(
-    () => [...PROCESS_CATEGORIES.map(categoryNodeKey), ...(selectedId ? ancestorsOf(items, selectedId) : [])],
+    () => [
+      ...PROCESS_CATEGORIES.map(categoryNodeKey),
+      ...(selectedId ? ancestorsOf(items, selectedId) : []),
+    ],
     [items, selectedId],
   );
   const expandedKeys = matches
@@ -138,8 +141,14 @@ export function ProcessTree({ selectedId }: { selectedId?: string }) {
         <Tree
           blockNode
           showLine={{ showLeafIcon: false }}
-          draggable={canDrag ? { icon: false, nodeDraggable: (n) => !parseCategoryKey(String(n.key)) } : false}
-          allowDrop={({ dropNode, dropPosition }) => !(parseCategoryKey(String(dropNode.key)) && dropPosition !== 0)}
+          draggable={
+            canDrag
+              ? { icon: false, nodeDraggable: (n) => !parseCategoryKey(String(n.key)) }
+              : false
+          }
+          allowDrop={({ dropNode, dropPosition }) =>
+            !(parseCategoryKey(String(dropNode.key)) && dropPosition !== 0)
+          }
           treeData={treeData}
           selectedKeys={selectedId ? [selectedId] : []}
           expandedKeys={expandedKeys}

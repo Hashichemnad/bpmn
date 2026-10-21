@@ -9,7 +9,12 @@ import {
   type CreateVersionInput,
   type SaveModelInput,
 } from '@processhub/shared';
-import { CurrentUser, ReqMeta, RequireAnyPermission, RequirePermissions } from '../common/decorators';
+import {
+  CurrentUser,
+  ReqMeta,
+  RequireAnyPermission,
+  RequirePermissions,
+} from '../common/decorators';
 import type { AuthUser, RequestMeta } from '../common/auth-user';
 import { UuidPipe, ZodPipe } from '../common/zod.pipe';
 import { ModelsService } from './models.service';
@@ -46,7 +51,10 @@ export class ModelsController {
 
   @Get('versions/:versionId')
   @RequirePermissions(PERMISSIONS.PROCESSES_READ)
-  getVersion(@Param('id', UuidPipe()) id: string, @Param('versionId', UuidPipe()) versionId: string) {
+  getVersion(
+    @Param('id', UuidPipe()) id: string,
+    @Param('versionId', UuidPipe()) versionId: string,
+  ) {
     return this.models.getVersion(id, versionId);
   }
 

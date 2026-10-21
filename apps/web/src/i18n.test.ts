@@ -64,9 +64,16 @@ describe('translations', () => {
       ...AUDIT_ACTIONS.map((a) => `admin:audit.actions.${a}`),
       ...AUDIT_ENTITY_TYPES.map((e) => `admin:audit.entities.${e}`),
       ...['ACTIVE', 'INACTIVE'].map((s) => `admin:status.${s}`),
-      ...PROCESS_CATEGORIES.flatMap((c) => [`processes:category.${c}`, `processes:house.bandHint.${c}`]),
+      ...PROCESS_CATEGORIES.flatMap((c) => [
+        `processes:category.${c}`,
+        `processes:house.bandHint.${c}`,
+      ]),
       ...PROCESS_STATUSES.map((s) => `processes:status.${s}`),
-      ...OBJECT_TYPES.flatMap((o) => [`objects:types.${o}`, `objects:new.${o}`, `objects:edit.${o}`]),
+      ...OBJECT_TYPES.flatMap((o) => [
+        `objects:types.${o}`,
+        `objects:new.${o}`,
+        `objects:edit.${o}`,
+      ]),
       ...LINK_RELATIONS.map((r) => `objects:relations.${r}`),
       ...['ROLE', 'SYSTEM'].flatMap((o) => [
         `objects:library.${o}.title`,
@@ -75,7 +82,9 @@ describe('translations', () => {
         `modeler:add.${o}`,
         `modeler:linked.${o}`,
       ]),
-      ...['TOO_SHORT', 'MISSING_UPPER', 'MISSING_LOWER', 'MISSING_DIGIT', 'MISSING_SYMBOL'].map((e) => `common:validation.password.${e}`),
+      ...['TOO_SHORT', 'MISSING_UPPER', 'MISSING_LOWER', 'MISSING_DIGIT', 'MISSING_SYMBOL'].map(
+        (e) => `common:validation.password.${e}`,
+      ),
       ...[
         'NO_START_EVENT',
         'NO_END_EVENT',

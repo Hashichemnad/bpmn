@@ -7,7 +7,8 @@ export interface LabelHolder {
   nameAr?: string;
 }
 
-export const labelAttr = (locale: Locale): 'nameEn' | 'nameAr' => (locale === 'ar' ? 'nameAr' : 'nameEn');
+export const labelAttr = (locale: Locale): 'nameEn' | 'nameAr' =>
+  locale === 'ar' ? 'nameAr' : 'nameEn';
 
 const ARABIC = /[؀-ۿݐ-ݿࢠ-ࣿ]/;
 

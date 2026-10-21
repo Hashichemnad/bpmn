@@ -32,7 +32,8 @@ export function ProcessFormModal({ open, mode, process, parent, defaultCategory,
   const { message } = App.useApp();
   const save = useSaveProcess();
   const [form] = Form.useForm();
-  const canPickOwner = can(PERMISSIONS.USERS_READ) && (mode === 'create' || can(PERMISSIONS.PROCESSES_EDIT));
+  const canPickOwner =
+    can(PERMISSIONS.USERS_READ) && (mode === 'create' || can(PERMISSIONS.PROCESSES_EDIT));
   const users = useUsers({ pageSize: 100, status: 'ACTIVE', sort: 'nameEn' }, canPickOwner && open);
   const departmentTree = useDepartmentTreeData();
   const isTopLevel = mode === 'create' ? !parent : !process?.parentId;
@@ -113,10 +114,17 @@ export function ProcessFormModal({ open, mode, process, parent, defaultCategory,
             </Form.Item>
           </Col>
           <Col xs={24} md={16}>
-            <Form.Item name="category" label={t('fields.category')} extra={!isTopLevel ? t('processes:categoryInherited') : undefined}>
+            <Form.Item
+              name="category"
+              label={t('fields.category')}
+              extra={!isTopLevel ? t('processes:categoryInherited') : undefined}
+            >
               <Select
                 disabled={!isTopLevel}
-                options={PROCESS_CATEGORIES.map((c) => ({ value: c, label: t(`processes:category.${c}`) }))}
+                options={PROCESS_CATEGORIES.map((c) => ({
+                  value: c,
+                  label: t(`processes:category.${c}`),
+                }))}
               />
             </Form.Item>
           </Col>
@@ -132,14 +140,22 @@ export function ProcessFormModal({ open, mode, process, parent, defaultCategory,
                   placeholder={t('none')}
                   loading={users.isLoading}
                   optionFilterProp="label"
-                  options={(users.data?.items ?? []).map((u) => ({ value: u.id, label: `${loc(u) || u.email}` }))}
+                  options={(users.data?.items ?? []).map((u) => ({
+                    value: u.id,
+                    label: `${loc(u) || u.email}`,
+                  }))}
                 />
               </Form.Item>
             </Col>
           )}
           <Col xs={24} md={12}>
             <Form.Item name="departmentId" label={t('fields.department')}>
-              <TreeSelect allowClear treeData={departmentTree} treeDefaultExpandAll placeholder={t('none')} />
+              <TreeSelect
+                allowClear
+                treeData={departmentTree}
+                treeDefaultExpandAll
+                placeholder={t('none')}
+              />
             </Form.Item>
           </Col>
         </Row>

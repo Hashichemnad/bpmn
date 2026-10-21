@@ -34,13 +34,20 @@ export function configureApp(app: NestExpressApplication): INestApplication {
   if (config.ENABLE_SWAGGER) {
     const doc = SwaggerModule.createDocument(
       app,
-      new DocumentBuilder().setTitle('ProcessHub API').setVersion('1').addCookieAuth('ph_access').build(),
+      new DocumentBuilder()
+        .setTitle('ProcessHub API')
+        .setVersion('1')
+        .addCookieAuth('ph_access')
+        .build(),
     );
     // Swagger UI needs inline scripts/styles; relax CSP only for the docs route.
-    app.use('/api/docs', (_req: unknown, res: { removeHeader: (h: string) => void }, next: () => void) => {
-      res.removeHeader('Content-Security-Policy');
-      next();
-    });
+    app.use(
+      '/api/docs',
+      (_req: unknown, res: { removeHeader: (h: string) => void }, next: () => void) => {
+        res.removeHeader('Content-Security-Policy');
+        next();
+      },
+    );
     SwaggerModule.setup('api/docs', app, doc);
   }
   return app;

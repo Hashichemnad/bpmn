@@ -95,7 +95,9 @@ export class AuditService {
       this.prisma.auditLog.findMany({
         where,
         include: { user: { select: { id: true, email: true, nameEn: true, nameAr: true } } },
-        orderBy: q.sort ? orderBy(q, ['createdAt', 'action', 'entityType'], 'createdAt') : { createdAt: 'desc' },
+        orderBy: q.sort
+          ? orderBy(q, ['createdAt', 'action', 'entityType'], 'createdAt')
+          : { createdAt: 'desc' },
         ...pageArgs(q),
       }),
       this.prisma.auditLog.count({ where }),

@@ -1,7 +1,9 @@
 /** @type {import('jest').Config} */
 const base = {
   moduleFileExtensions: ['js', 'json', 'ts'],
-  transform: { '^.+\\.ts$': ['ts-jest', { tsconfig: '<rootDir>/tsconfig.json', diagnostics: false }] },
+  transform: {
+    '^.+\\.ts$': ['ts-jest', { tsconfig: '<rootDir>/tsconfig.json', diagnostics: false }],
+  },
   testEnvironment: 'node',
   moduleNameMapper: { '^@processhub/shared$': '<rootDir>/../../packages/shared/src/index.ts' },
 };

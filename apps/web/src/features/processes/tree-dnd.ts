@@ -5,7 +5,9 @@ export const CATEGORY_NODE_PREFIX = 'category:';
 export const categoryNodeKey = (c: ProcessCategory) => `${CATEGORY_NODE_PREFIX}${c}`;
 
 export function parseCategoryKey(key: string): ProcessCategory | null {
-  return key.startsWith(CATEGORY_NODE_PREFIX) ? (key.slice(CATEGORY_NODE_PREFIX.length) as ProcessCategory) : null;
+  return key.startsWith(CATEGORY_NODE_PREFIX)
+    ? (key.slice(CATEGORY_NODE_PREFIX.length) as ProcessCategory)
+    : null;
 }
 
 function siblings(items: ProcessSummaryDto[], parentId: string | null, category: ProcessCategory) {

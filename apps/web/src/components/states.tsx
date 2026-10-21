@@ -28,9 +28,19 @@ export function ErrorState({ error, onRetry }: { error: unknown; onRetry?: () =>
   );
 }
 
-export function EmptyState({ description, action }: { description: ReactNode; action?: ReactNode }) {
+export function EmptyState({
+  description,
+  action,
+}: {
+  description: ReactNode;
+  action?: ReactNode;
+}) {
   return (
-    <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description={description} style={{ padding: '32px 0' }}>
+    <Empty
+      image={Empty.PRESENTED_IMAGE_SIMPLE}
+      description={description}
+      style={{ padding: '32px 0' }}
+    >
       {action}
     </Empty>
   );

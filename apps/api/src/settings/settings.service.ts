@@ -77,7 +77,11 @@ export class SettingsService {
           entityId: 'organisation',
           userId: actor.id,
           summary: {
-            before: { orgNameEn: before.orgNameEn, orgNameAr: before.orgNameAr, defaultLocale: before.defaultLocale },
+            before: {
+              orgNameEn: before.orgNameEn,
+              orgNameAr: before.orgNameAr,
+              defaultLocale: before.defaultLocale,
+            },
             after: Object.fromEntries(entries),
           },
           meta,
@@ -93,7 +97,10 @@ export class SettingsService {
     if (file.size > LOGO_MAX_BYTES) throw badRequest('FILE_TOO_LARGE');
     const type = sniffImageType(file.buffer);
     if (!type) throw badRequest('UNSUPPORTED_FILE_TYPE');
-    const data = type === 'image/svg+xml' ? Buffer.from(sanitizeSvg(file.buffer.toString('utf8'))) : file.buffer;
+    const data =
+      type === 'image/svg+xml'
+        ? Buffer.from(sanitizeSvg(file.buffer.toString('utf8')))
+        : file.buffer;
     const version = Date.now().toString(36);
     const key = `branding/logo-${version}`;
     const previous = (await this.prisma.setting.findUnique({ where: { key: SETTING_KEYS.LOGO } }))

@@ -38,11 +38,7 @@ export const DEFAULT_PASSWORD_POLICY: PasswordPolicy = {
 };
 
 export type PasswordPolicyError =
-  | 'TOO_SHORT'
-  | 'MISSING_UPPER'
-  | 'MISSING_LOWER'
-  | 'MISSING_DIGIT'
-  | 'MISSING_SYMBOL';
+  'TOO_SHORT' | 'MISSING_UPPER' | 'MISSING_LOWER' | 'MISSING_DIGIT' | 'MISSING_SYMBOL';
 
 /** Returns a list of policy violations (empty when the password is acceptable). */
 export function checkPasswordPolicy(

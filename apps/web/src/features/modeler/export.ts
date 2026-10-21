@@ -11,7 +11,10 @@ export function downloadBlob(blob: Blob, filename: string): void {
 
 /** Safe file name from a process code and name. */
 export function exportFileName(code: string, name: string, ext: string): string {
-  const base = `${code} ${name}`.trim().replace(/[\\/:*?"<>|]+/g, '').replace(/\s+/g, '_');
+  const base = `${code} ${name}`
+    .trim()
+    .replace(/[\\/:*?"<>|]+/g, '')
+    .replace(/\s+/g, '_');
   return `${base || 'process'}.${ext}`;
 }
 

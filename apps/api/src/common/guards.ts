@@ -72,7 +72,10 @@ export class PermissionsGuard implements CanActivate {
     const user = ctx.switchToHttp().getRequest<AuthRequest>().user;
     if (!user) throw unauthenticated();
 
-    const all = this.reflector.getAllAndOverride<Permission[] | undefined>(PERMISSIONS_KEY, targets);
+    const all = this.reflector.getAllAndOverride<Permission[] | undefined>(
+      PERMISSIONS_KEY,
+      targets,
+    );
     const any = this.reflector.getAllAndOverride<Permission[] | undefined>(
       ANY_PERMISSION_KEY,
       targets,

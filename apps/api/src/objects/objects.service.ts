@@ -85,7 +85,9 @@ export class ObjectsService {
     await this.get(id);
     const links = await this.prisma.objectLink.findMany({
       where: { repoObjectId: id, ...activeLinks },
-      include: { process: { select: { id: true, code: true, nameEn: true, nameAr: true, category: true } } },
+      include: {
+        process: { select: { id: true, code: true, nameEn: true, nameAr: true, category: true } },
+      },
       orderBy: [{ process: { code: 'asc' } }, { bpmnElementId: 'asc' }],
     });
     const models = await this.prisma.processModel.findMany({
@@ -174,14 +176,20 @@ export class ObjectsService {
     if (!o) throw notFound('Object');
     await this.prisma.$transaction(async (tx) => {
       const removed = await tx.objectLink.deleteMany({ where: { repoObjectId: id } });
-      await tx.repoObject.update({ where: { id }, data: { deletedAt: new Date(), updatedById: actor.id } });
+      await tx.repoObject.update({
+        where: { id },
+        data: { deletedAt: new Date(), updatedById: actor.id },
+      });
       await this.audit.log(
         {
           action: 'DELETE',
           entityType: 'RepoObject',
           entityId: id,
           userId: actor.id,
-          summary: { before: { type: o.type, code: o.code, nameEn: o.nameEn, nameAr: o.nameAr }, removedLinks: removed.count },
+          summary: {
+            before: { type: o.type, code: o.code, nameEn: o.nameEn, nameAr: o.nameAr },
+            removedLinks: removed.count,
+          },
           meta,
         },
         tx,

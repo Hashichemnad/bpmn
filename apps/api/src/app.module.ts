@@ -23,7 +23,11 @@ import { AllExceptionsFilter } from './common/http-exception.filter';
     ConfigModule,
     ThrottlerModule.forRootAsync({
       useFactory: () => [
-        { name: 'default', ttl: getConfig().RATE_LIMIT_TTL_SECONDS * 1000, limit: getConfig().RATE_LIMIT_MAX },
+        {
+          name: 'default',
+          ttl: getConfig().RATE_LIMIT_TTL_SECONDS * 1000,
+          limit: getConfig().RATE_LIMIT_MAX,
+        },
       ],
     }),
     PrismaModule,

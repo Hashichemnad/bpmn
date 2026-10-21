@@ -1,7 +1,13 @@
 import type { PublicSettingsDto } from '@processhub/shared';
 
 /** Organisation logo (if uploaded) or the default ProcessHub mark. */
-export function BrandMark({ settings, size = 32 }: { settings?: PublicSettingsDto; size?: number }) {
+export function BrandMark({
+  settings,
+  size = 32,
+}: {
+  settings?: PublicSettingsDto;
+  size?: number;
+}) {
   if (settings?.hasLogo) {
     return (
       <img

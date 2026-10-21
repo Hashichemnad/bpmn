@@ -23,7 +23,11 @@ export function createQueryClient() {
 function ThemedApp({ children }: { children: ReactNode }) {
   const { locale, dir } = useLocale();
   return (
-    <ConfigProvider direction={dir} locale={locale === 'ar' ? arEG : enUS} theme={buildTheme(locale)}>
+    <ConfigProvider
+      direction={dir}
+      locale={locale === 'ar' ? arEG : enUS}
+      theme={buildTheme(locale)}
+    >
       <AntApp>{children}</AntApp>
     </ConfigProvider>
   );

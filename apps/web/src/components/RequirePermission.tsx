@@ -5,14 +5,30 @@ import type { Permission } from '@processhub/shared';
 import { useAuth } from '@/auth/AuthProvider';
 
 /** Hides UI the user cannot use. The server enforces permissions regardless. */
-export function Can({ all, any, children }: { all?: Permission[]; any?: Permission[]; children: ReactNode }) {
+export function Can({
+  all,
+  any,
+  children,
+}: {
+  all?: Permission[];
+  any?: Permission[];
+  children: ReactNode;
+}) {
   const { can, canAny } = useAuth();
   if (all && !can(...all)) return null;
   if (any && !canAny(...any)) return null;
   return <>{children}</>;
 }
 
-export function RequirePermission({ all, any, children }: { all?: Permission[]; any?: Permission[]; children: ReactNode }) {
+export function RequirePermission({
+  all,
+  any,
+  children,
+}: {
+  all?: Permission[];
+  any?: Permission[];
+  children: ReactNode;
+}) {
   const { can, canAny } = useAuth();
   const { t } = useTranslation();
   if ((all && !can(...all)) || (any && !canAny(...any))) {

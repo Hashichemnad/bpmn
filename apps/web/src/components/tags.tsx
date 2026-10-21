@@ -3,7 +3,6 @@ import { useTranslation } from 'react-i18next';
 import type { ProcessCategory, ProcessStatus } from '@processhub/shared';
 import { CATEGORY_COLORS } from './colors';
 
-
 export function CategoryTag({ category }: { category: ProcessCategory }) {
   const { t } = useTranslation();
   return (

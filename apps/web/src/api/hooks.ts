@@ -65,7 +65,8 @@ export const useSettings = () =>
 export function useUpdateSettings() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (body: UpdateSettingsInput) => api<SettingsDto>('/settings', { method: 'PATCH', body }),
+    mutationFn: (body: UpdateSettingsInput) =>
+      api<SettingsDto>('/settings', { method: 'PATCH', body }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['settings'] }),
   });
 }
@@ -99,7 +100,8 @@ export const useUsers = (q: Query<UserListQuery>, enabled = true) =>
     enabled,
   });
 
-export const useRoles = () => useQuery({ queryKey: keys.roles, queryFn: () => api<RoleDto[]>('/roles') });
+export const useRoles = () =>
+  useQuery({ queryKey: keys.roles, queryFn: () => api<RoleDto[]>('/roles') });
 
 export function useSaveUser() {
   const qc = useQueryClient();
@@ -128,12 +130,22 @@ export function useUnlockUser() {
 
 // ---------- Departments ----------
 export const useDepartments = (enabled = true) =>
-  useQuery({ queryKey: keys.departments, queryFn: () => api<DepartmentDto[]>('/departments'), enabled });
+  useQuery({
+    queryKey: keys.departments,
+    queryFn: () => api<DepartmentDto[]>('/departments'),
+    enabled,
+  });
 
 export function useSaveDepartment() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, body }: { id?: string; body: CreateDepartmentInput | UpdateDepartmentInput }) =>
+    mutationFn: ({
+      id,
+      body,
+    }: {
+      id?: string;
+      body: CreateDepartmentInput | UpdateDepartmentInput;
+    }) =>
       id
         ? api<DepartmentDto>(`/departments/${id}`, { method: 'PATCH', body })
         : api<DepartmentDto>('/departments', { method: 'POST', body }),
@@ -186,7 +198,10 @@ export function useMoveProcess() {
       api<ProcessSummaryDto[]>(`/processes/${id}/move`, { method: 'POST', body }),
     onSuccess: (tree) => {
       qc.setQueryData(keys.tree, tree);
-      void qc.invalidateQueries({ queryKey: ['processes'], predicate: (q) => q.queryKey[1] !== 'tree' });
+      void qc.invalidateQueries({
+        queryKey: ['processes'],
+        predicate: (q) => q.queryKey[1] !== 'tree',
+      });
     },
   });
 }
@@ -201,7 +216,10 @@ export function useDeleteProcess() {
 
 // ---------- Models & versions ----------
 export const useProcessModel = (id: string) =>
-  useQuery({ queryKey: keys.model(id), queryFn: () => api<ProcessModelDto>(`/processes/${id}/model`) });
+  useQuery({
+    queryKey: keys.model(id),
+    queryFn: () => api<ProcessModelDto>(`/processes/${id}/model`),
+  });
 
 export function useSaveModel(id: string) {
   const qc = useQueryClient();
@@ -217,7 +235,10 @@ export function useSaveModel(id: string) {
 }
 
 export const useVersions = (id: string) =>
-  useQuery({ queryKey: keys.versions(id), queryFn: () => api<ProcessVersionDto[]>(`/processes/${id}/versions`) });
+  useQuery({
+    queryKey: keys.versions(id),
+    queryFn: () => api<ProcessVersionDto[]>(`/processes/${id}/versions`),
+  });
 
 export function useCreateVersion(id: string) {
   const qc = useQueryClient();
@@ -233,12 +254,16 @@ export const fetchVersion = (processId: string, versionId: string) =>
 
 // ---------- Links ----------
 export const useLinks = (id: string) =>
-  useQuery({ queryKey: keys.links(id), queryFn: () => api<ObjectLinkDto[]>(`/processes/${id}/links`) });
+  useQuery({
+    queryKey: keys.links(id),
+    queryFn: () => api<ObjectLinkDto[]>(`/processes/${id}/links`),
+  });
 
 export function useCreateLink(id: string) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (body: CreateLinkInput) => api<ObjectLinkDto[]>(`/processes/${id}/links`, { method: 'POST', body }),
+    mutationFn: (body: CreateLinkInput) =>
+      api<ObjectLinkDto[]>(`/processes/${id}/links`, { method: 'POST', body }),
     onSuccess: (links) => {
       qc.setQueryData(keys.links(id), links);
       void qc.invalidateQueries({ queryKey: ['objects'] });
@@ -268,7 +293,11 @@ export const useObjects = (q: Query<ObjectListQuery>, enabled = true) =>
   });
 
 export const useObject = (id: string | undefined) =>
-  useQuery({ queryKey: keys.object(id ?? ''), queryFn: () => api<RepoObjectDto>(`/objects/${id}`), enabled: !!id });
+  useQuery({
+    queryKey: keys.object(id ?? ''),
+    queryFn: () => api<RepoObjectDto>(`/objects/${id}`),
+    enabled: !!id,
+  });
 
 export const useObjectUsage = (id: string | undefined) =>
   useQuery({

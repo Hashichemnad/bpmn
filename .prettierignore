@@ -4,3 +4,5 @@ coverage
 pnpm-lock.yaml
 apps/api/prisma/migrations
 *.bpmn
+CLAUDE.md
+README.md

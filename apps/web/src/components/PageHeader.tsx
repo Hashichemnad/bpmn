@@ -33,7 +33,11 @@ export function PageHeader({
           </Typography.Title>
           {subtitle && <Typography.Text type="secondary">{subtitle}</Typography.Text>}
         </div>
-        {extra && <Flex gap={8} wrap="wrap">{extra}</Flex>}
+        {extra && (
+          <Flex gap={8} wrap="wrap">
+            {extra}
+          </Flex>
+        )}
       </Flex>
     </div>
   );

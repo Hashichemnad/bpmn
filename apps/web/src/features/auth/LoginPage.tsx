@@ -44,7 +44,8 @@ export function LoginPage() {
     }
   };
 
-  const orgName = loc({ nameEn: settings.data?.orgNameEn, nameAr: settings.data?.orgNameAr }) || 'ProcessHub';
+  const orgName =
+    loc({ nameEn: settings.data?.orgNameEn, nameAr: settings.data?.orgNameAr }) || 'ProcessHub';
 
   return (
     <div className="ph-login">
@@ -59,7 +60,9 @@ export function LoginPage() {
           </Typography.Title>
           <Typography.Text type="secondary">{t('auth.subtitle')}</Typography.Text>
         </Flex>
-        {error && <Alert type="error" showIcon message={error} style={{ marginBottom: 16 }} role="alert" />}
+        {error && (
+          <Alert type="error" showIcon message={error} style={{ marginBottom: 16 }} role="alert" />
+        )}
         <Form layout="vertical" onFinish={onFinish} requiredMark={false} autoComplete="on">
           <Form.Item
             name="email"
@@ -69,10 +72,24 @@ export function LoginPage() {
               { type: 'email', message: t('validation.email') },
             ]}
           >
-            <Input prefix={<MailOutlined />} dir="ltr" autoComplete="username" autoFocus size="large" />
+            <Input
+              prefix={<MailOutlined />}
+              dir="ltr"
+              autoComplete="username"
+              autoFocus
+              size="large"
+            />
           </Form.Item>
-          <Form.Item name="password" label={t('auth.password')} rules={[{ required: true, message: t('validation.required') }]}>
-            <Input.Password prefix={<LockOutlined />} autoComplete="current-password" size="large" />
+          <Form.Item
+            name="password"
+            label={t('auth.password')}
+            rules={[{ required: true, message: t('validation.required') }]}
+          >
+            <Input.Password
+              prefix={<LockOutlined />}
+              autoComplete="current-password"
+              size="large"
+            />
           </Form.Item>
           <Button type="primary" htmlType="submit" block size="large" loading={submitting}>
             {t('auth.signIn')}

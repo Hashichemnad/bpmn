@@ -54,7 +54,14 @@ export default tseslint.config(
         {
           allowConstantExport: true,
           // Context providers export their hook; the router module exports its route table.
-          allowExportNames: ['useAuth', 'useLocale', 'createQueryClient', 'routes', 'createRouter', 'ME_KEY'],
+          allowExportNames: [
+            'useAuth',
+            'useLocale',
+            'createQueryClient',
+            'routes',
+            'createRouter',
+            'ME_KEY',
+          ],
         },
       ],
     },

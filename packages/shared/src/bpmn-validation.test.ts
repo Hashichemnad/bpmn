@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { extractBpmnElementIds, extractBpmnLabels, validateBpmnGraph, type BpmnGraphElement } from './bpmn-validation';
+import {
+  extractBpmnElementIds,
+  extractBpmnLabels,
+  validateBpmnGraph,
+  type BpmnGraphElement,
+} from './bpmn-validation';
 
 const el = (p: Partial<BpmnGraphElement> & { id: string; type: string }): BpmnGraphElement => ({
   incoming: 1,
@@ -35,8 +40,16 @@ describe('validateBpmnGraph', () => {
       el({ id: 'dead', type: 'bpmn:Task', outgoing: 0 }),
       el({ id: 'e', type: 'bpmn:EndEvent', outgoing: 0 }),
     ]);
-    expect(issues).toContainEqual({ code: 'UNCONNECTED_ELEMENT', severity: 'warning', elementId: 'lonely' });
-    expect(issues).toContainEqual({ code: 'MISSING_OUTGOING', severity: 'warning', elementId: 'dead' });
+    expect(issues).toContainEqual({
+      code: 'UNCONNECTED_ELEMENT',
+      severity: 'warning',
+      elementId: 'lonely',
+    });
+    expect(issues).toContainEqual({
+      code: 'MISSING_OUTGOING',
+      severity: 'warning',
+      elementId: 'dead',
+    });
   });
 
   it('reports info-level hints', () => {

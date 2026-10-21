@@ -1,8 +1,23 @@
 import { useState } from 'react';
-import { Card, DatePicker, Flex, Input, Select, Table, Tag, Typography, type TableProps } from 'antd';
+import {
+  Card,
+  DatePicker,
+  Flex,
+  Input,
+  Select,
+  Table,
+  Tag,
+  Typography,
+  type TableProps,
+} from 'antd';
 import { useTranslation } from 'react-i18next';
 import type { Dayjs } from 'dayjs';
-import { AUDIT_ACTIONS, AUDIT_ENTITY_TYPES, type AuditAction, type AuditLogDto } from '@processhub/shared';
+import {
+  AUDIT_ACTIONS,
+  AUDIT_ENTITY_TYPES,
+  type AuditAction,
+  type AuditLogDto,
+} from '@processhub/shared';
 import { useAuditLogs } from '@/api/hooks';
 import { PageHeader } from '@/components/PageHeader';
 import { ErrorState } from '@/components/states';
@@ -38,7 +53,12 @@ export function AuditLogPage() {
   const logs = useAuditLogs(filters);
 
   const columns: TableProps<AuditLogDto>['columns'] = [
-    { title: t('admin:audit.time'), dataIndex: 'createdAt', width: 190, render: (v: string) => formatDate(v) },
+    {
+      title: t('admin:audit.time'),
+      dataIndex: 'createdAt',
+      width: 190,
+      render: (v: string) => formatDate(v),
+    },
     {
       title: t('admin:audit.user'),
       key: 'user',
@@ -58,7 +78,9 @@ export function AuditLogPage() {
       title: t('admin:audit.action'),
       dataIndex: 'action',
       width: 150,
-      render: (a: AuditAction) => <Tag color={ACTION_COLORS[a]}>{t(`admin:audit.actions.${a}`)}</Tag>,
+      render: (a: AuditAction) => (
+        <Tag color={ACTION_COLORS[a]}>{t(`admin:audit.actions.${a}`)}</Tag>
+      ),
     },
     {
       title: t('admin:audit.entity'),
@@ -69,9 +91,21 @@ export function AuditLogPage() {
       title: t('admin:audit.entityId'),
       dataIndex: 'entityId',
       ellipsis: true,
-      render: (v: string | null) => (v ? <Typography.Text code copyable={{ text: v }}>{v.slice(0, 8)}</Typography.Text> : '—'),
+      render: (v: string | null) =>
+        v ? (
+          <Typography.Text code copyable={{ text: v }}>
+            {v.slice(0, 8)}
+          </Typography.Text>
+        ) : (
+          '—'
+        ),
     },
-    { title: t('admin:audit.ip'), dataIndex: 'ip', width: 140, render: (v: string | null) => <span dir="ltr">{v ?? '—'}</span> },
+    {
+      title: t('admin:audit.ip'),
+      dataIndex: 'ip',
+      width: 140,
+      render: (v: string | null) => <span dir="ltr">{v ?? '—'}</span>,
+    },
   ];
 
   const onRange = (range: [Dayjs | null, Dayjs | null] | null) =>
@@ -104,10 +138,15 @@ export function AuditLogPage() {
             allowClear
             placeholder={t('admin:audit.entity')}
             style={{ width: 180 }}
-            options={AUDIT_ENTITY_TYPES.map((e) => ({ value: e, label: t(`admin:audit.entities.${e}`) }))}
+            options={AUDIT_ENTITY_TYPES.map((e) => ({
+              value: e,
+              label: t(`admin:audit.entities.${e}`),
+            }))}
             onChange={(entityType) => setFilters((f) => ({ ...f, entityType, page: 1 }))}
           />
-          <DatePicker.RangePicker onChange={(r) => onRange(r as [Dayjs | null, Dayjs | null] | null)} />
+          <DatePicker.RangePicker
+            onChange={(r) => onRange(r as [Dayjs | null, Dayjs | null] | null)}
+          />
         </Flex>
         {logs.isError ? (
           <ErrorState error={logs.error} onRetry={() => void logs.refetch()} />
@@ -135,7 +174,9 @@ export function AuditLogPage() {
               showSizeChanger: true,
               showTotal: (total) => t('totalItems', { count: total }),
             }}
-            onChange={(p) => setFilters((f) => ({ ...f, page: p.current ?? 1, pageSize: p.pageSize ?? 25 }))}
+            onChange={(p) =>
+              setFilters((f) => ({ ...f, page: p.current ?? 1, pageSize: p.pageSize ?? 25 }))
+            }
           />
         )}
       </Card>

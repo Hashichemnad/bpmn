@@ -29,7 +29,10 @@ export function ObjectFormModal({ open, type, object, onClose }: Props) {
     if (object) {
       form.setFieldsValue({
         ...object,
-        attributes: Object.entries(object.attributes).map(([key, value]) => ({ key, value: String(value) })),
+        attributes: Object.entries(object.attributes).map(([key, value]) => ({
+          key,
+          value: String(value),
+        })),
       });
     } else {
       form.setFieldsValue({ attributes: [] });
@@ -39,7 +42,9 @@ export function ObjectFormModal({ open, type, object, onClose }: Props) {
   const submit = async () => {
     const values = await form.validateFields();
     const attributes = Object.fromEntries(
-      ((values.attributes ?? []) as AttrRow[]).filter((a) => a?.key?.trim()).map((a) => [a.key.trim(), a.value ?? '']),
+      ((values.attributes ?? []) as AttrRow[])
+        .filter((a) => a?.key?.trim())
+        .map((a) => [a.key.trim(), a.value ?? '']),
     );
     const body = { ...values, attributes, code: values.code || null, ...(object ? {} : { type }) };
     try {
@@ -70,7 +75,9 @@ export function ObjectFormModal({ open, type, object, onClose }: Props) {
         <BilingualFields description />
         <Typography.Text strong>{t('objects:attributes')}</Typography.Text>
         <Typography.Paragraph type="secondary" style={{ fontSize: 12 }}>
-          {t(`objects:attributesHint.${type}`, { defaultValue: t('objects:attributesHint.default') })}
+          {t(`objects:attributesHint.${type}`, {
+            defaultValue: t('objects:attributesHint.default'),
+          })}
         </Typography.Paragraph>
         <Form.List name="attributes">
           {(fields, { add, remove }) => (
@@ -89,13 +96,23 @@ export function ObjectFormModal({ open, type, object, onClose }: Props) {
                   </Col>
                   <Col span={2}>
                     <Form.Item>
-                      <Button type="text" icon={<MinusCircleOutlined />} onClick={() => remove(field.name)} aria-label={t('delete')} />
+                      <Button
+                        type="text"
+                        icon={<MinusCircleOutlined />}
+                        onClick={() => remove(field.name)}
+                        aria-label={t('delete')}
+                      />
                     </Form.Item>
                   </Col>
                 </Row>
               ))}
               <Space>
-                <Button type="dashed" icon={<PlusOutlined />} onClick={() => add({ key: '', value: '' })} disabled={fields.length >= 50}>
+                <Button
+                  type="dashed"
+                  icon={<PlusOutlined />}
+                  onClick={() => add({ key: '', value: '' })}
+                  disabled={fields.length >= 50}
+                >
                   {t('objects:addAttribute')}
                 </Button>
               </Space>
