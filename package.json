@@ -18,7 +18,8 @@
     "typecheck": "pnpm --filter @processhub/shared build && pnpm -r typecheck",
     "test": "pnpm --filter @processhub/shared build && pnpm -r test",
     "db:migrate": "pnpm --filter @processhub/api prisma:migrate",
-    "db:seed": "pnpm --filter @processhub/api seed"
+    "db:seed": "pnpm --filter @processhub/api seed",
+    "e2e": "pnpm --filter @processhub/e2e e2e"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.0",
