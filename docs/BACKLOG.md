@@ -6,12 +6,6 @@ where they belong; move items into the plan when that phase starts.
 ## Needs a decision
 
 - **MinIO image for production** — keep `bitnamilegacy/minio` for now, revisit in Phase 6 (D-009).
-- **PDF export** — decided for now: browser print (D-024, D-035). Option for Phase 6: a Gotenberg (headless
-  Chromium) service for direct PDF downloads without the print dialog.
-- **Self-approval** — a submitter is never an approver of their own item; when they are the only candidate of
-  a step, the step counts as approved by submission (D-030). Confirm, or require a second person (then the
-  submission would be refused instead).
-- **Viewer role** — Viewers are now portal-only (D-028). Workspace read-only users should get REVIEWER.
 
 ## Phase 2 follow-ups (wiki, version control, Git)
 
@@ -46,7 +40,8 @@ where they belong; move items into the plan when that phase starts.
 
 ## Phase 6 (hardening)
 
-- Gotenberg service for server-generated PDFs (see "Needs a decision").
+- Gotenberg service for server-generated PDFs (decided at the start of the AI phase: browser print stays
+  until then, D-024/D-035).
 - Optional TOTP two-factor authentication (CLAUDE.md §7 allowed deferral from Phase 1).
 - SSO (Azure AD / OIDC).
 - Slim API runtime image (`pnpm deploy --prod` plus a separate migration step); unprivileged nginx image.

@@ -278,17 +278,40 @@ describe('Governance workflow (e2e)', () => {
     expect(actions).toEqual(expect.arrayContaining(['REJECT', 'WITHDRAW', 'ARCHIVE', 'UNARCHIVE']));
   });
 
-  it('the submitter never approves their own step unless they are its only approver', async () => {
+  it('blocks self-approval: a submitter who is the only approver of a step cannot submit', async () => {
     const id = await newProcess();
     await version(owner, id).expect(201);
+    // The owner step would only have the owner (the submitter) as approver.
+    const res = await owner.post(`/governance/processes/${id}/submit`).send({}).expect(400);
+    expect(res.body).toMatchObject({
+      code: 'SELF_APPROVAL_NOT_ALLOWED',
+      details: { step: 1, nameEn: 'Owner approval', nameAr: 'اعتماد المالك' },
+    });
+    expect((await info(owner, id)).status).toBe('DRAFT');
+    expect(await ctx.prisma.review.count()).toBe(0);
+
+    // Another approver on the owner step: the submitter is left out, the colleague decides.
+    await admin
+      .patch(`/governance/processes/${id}`)
+      .send({
+        customWorkflow: {
+          nameEn: 'Owner or deputy',
+          steps: [
+            {
+              nameEn: 'Approval',
+              assignees: [{ type: 'OWNER' }, { type: 'USER', userId: ids.reviewer2 }],
+            },
+          ],
+        },
+      })
+      .expect(200);
     await owner.post(`/governance/processes/${id}/submit`).send({}).expect(200);
-    const r = await myReview(reviewer);
-    await decide(reviewer, r.id, 'APPROVE').expect(200);
-    // Owner step: the owner submitted, so it counts as approved by submitting.
-    const g = await info(owner, id);
-    expect(g.status).toBe('APPROVED');
+    const r = await myReview(reviewer2);
     const detail = (await owner.get(`/reviews/${r.id}`).expect(200)).body;
-    expect(detail.steps[1]).toMatchObject({ approvedBySubmitter: true, state: 'APPROVED' });
+    expect(detail.steps[0].assignees.map((a: { id: string }) => a.id)).toEqual([ids.reviewer2]);
+    expect(await myReview(owner)).toBeUndefined();
+    await decide(reviewer2, r.id, 'APPROVE').expect(200);
+    expect((await info(owner, id)).status).toBe('APPROVED');
   });
 
   it('ALL steps, item workflows, auto-publish and missing assignees', async () => {

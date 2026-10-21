@@ -82,6 +82,7 @@ System roles (extensible, permission-based underneath):
 | Process Owner | Own processes: edit, submit for review, approve where assigned |
 | Modeler / Editor | Create and edit drafts |
 | Reviewer | Review and comment, approve where assigned |
+| Auditor | Read-only workspace: drafts, history, reviews, audit log — no edit, comment, approve or publish |
 | Viewer | Knowledge Portal only (published content, read-only) |
 
 Permissions are checked **on the server** for every request (NestJS guards). The UI hides what the user cannot do, but never relies on that for security.

@@ -63,7 +63,7 @@
   "NO_VERSION": "Save a version before submitting for review.",
   "UNVERSIONED_CHANGES": "The model has unsaved changes. Save them as a version first.",
   "NO_WORKFLOW": "No approval workflow is configured for this item.",
-  "WORKFLOW_NO_ASSIGNEES": "A step of the approval workflow has nobody who can review this item.",
+  "WORKFLOW_NO_ASSIGNEES": "The step “{{stepName}}” of the approval workflow has nobody who can review this item.",
   "REVIEW_CLOSED": "This review is already closed.",
   "NO_APPROVED_REVIEW": "There is no approved version to publish.",
   "NOT_PUBLISHED": "The item is not published.",
@@ -75,5 +75,6 @@
   "EMAIL_NOT_CONFIGURED": "Email is not configured or not enabled.",
   "ITEM_IN_REVIEW": "The item is in review and cannot be changed. Withdraw the review first.",
   "ITEM_ARCHIVED": "The item is archived. Restore it to draft to change it.",
-  "COMMENT_REQUIRED": "A comment is required."
+  "COMMENT_REQUIRED": "A comment is required.",
+  "SELF_APPROVAL_NOT_ALLOWED": "You are the only approver of the step “{{stepName}}”. Nobody may approve their own work — ask an administrator to add another approver to this step, then submit again."
 }

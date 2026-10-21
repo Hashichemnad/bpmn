@@ -79,13 +79,10 @@ describe('review steps', () => {
     expect(stepOutcome('ANY', two('PENDING', 'REJECTED'))).toBe('REJECTED');
   });
 
-  it('the submitter never reviews their own work unless they are the only approver', () => {
-    expect(stepAssignees([U1, U2, U2], U1)).toEqual({
-      assigneeIds: [U2],
-      approvedBySubmitter: false,
-    });
-    expect(stepAssignees([U1], U1)).toEqual({ assigneeIds: [], approvedBySubmitter: true });
-    expect(stepAssignees([], U1)).toEqual({ assigneeIds: [], approvedBySubmitter: false });
+  it('the submitter never reviews their own work (four-eyes principle)', () => {
+    expect(stepAssignees([U1, U2, U2], U1)).toEqual({ assigneeIds: [U2], onlySubmitter: false });
+    expect(stepAssignees([U1], U1)).toEqual({ assigneeIds: [], onlySubmitter: true });
+    expect(stepAssignees([], U1)).toEqual({ assigneeIds: [], onlySubmitter: false });
   });
 
   it('decisions other than approve need a comment', () => {

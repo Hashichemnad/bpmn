@@ -367,6 +367,8 @@ export class WorkflowsService {
         u.roles.flatMap((r) => r.role.permissions.map((p) => p.permission.key as Permission)),
       );
       if (!permissions.has(READ_PERMISSION[item.type])) return false;
+      // Read-only users (e.g. Auditors) are never approvers.
+      if (!permissions.has(PERMISSIONS.REVIEWS_DECIDE)) return false;
       if (!pageSpace) return true;
       return this.docsAccess.access(
         {

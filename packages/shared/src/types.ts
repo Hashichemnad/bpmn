@@ -524,7 +524,7 @@ export interface ReviewStepDto {
   nameAr: string;
   rule: ApprovalRule;
   state: 'WAITING' | 'ACTIVE' | 'APPROVED' | 'CHANGES_REQUESTED' | 'REJECTED' | 'CANCELLED';
-  /** The submitter was this step's only approver, so submitting counted as approval. */
+  /** Legacy (before the four-eyes rule): submitting counted as this step's approval. */
   approvedBySubmitter: boolean;
   /** Users who will be asked when the step starts. */
   assignees: UserRef[];

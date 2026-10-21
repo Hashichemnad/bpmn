@@ -5,6 +5,7 @@
     "PROCESS_OWNER": "Process Owner",
     "MODELER": "Modeler / Editor",
     "REVIEWER": "Reviewer",
+    "AUDITOR": "Auditor",
     "VIEWER": "Viewer"
   },
   "status": {

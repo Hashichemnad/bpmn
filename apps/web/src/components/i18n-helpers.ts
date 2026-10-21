@@ -17,16 +17,25 @@ export function useLocalized() {
 /** Translates an API error code into a user-facing message. */
 export function useErrorMessage() {
   const { t } = useTranslation();
+  const { locale } = useLocale();
   return useCallback(
     (err: unknown): string => {
       if (err instanceof ApiError) {
         const key = `errors:${err.code}`;
-        const translated = t(key);
+        // Details such as a workflow step's bilingual name are interpolated into the message.
+        const details =
+          err.details && typeof err.details === 'object'
+            ? (err.details as Record<string, unknown>)
+            : {};
+        const translated = t(key, {
+          ...details,
+          stepName: localized(details, 'name', locale) || '—',
+        });
         return translated === err.code || translated === key ? t('errors:GENERIC') : translated;
       }
       return t('errors:NETWORK');
     },
-    [t],
+    [t, locale],
   );
 }
 

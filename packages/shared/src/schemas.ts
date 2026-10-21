@@ -7,6 +7,7 @@ import {
   OBJECT_TYPES,
   PROCESS_CATEGORIES,
   PROCESS_STATUSES,
+  READ_ONLY_ROLE_KEYS,
   SYSTEM_ROLE_KEYS,
   USER_STATUSES,
   AUDIT_ACTIONS,
@@ -505,7 +506,9 @@ export const workflowAssigneeSchema = z.discriminatedUnion('type', [
   z.object({ type: z.literal('USER'), userId: uuidSchema }),
   z.object({
     type: z.literal('ROLE'),
-    roleKey: z.enum(SYSTEM_ROLE_KEYS),
+    roleKey: z
+      .enum(SYSTEM_ROLE_KEYS)
+      .refine((r) => !READ_ONLY_ROLE_KEYS.includes(r), 'Read-only roles cannot approve'),
     /** Only users of this department (null = any department). */
     departmentId: uuidSchema.nullable().optional(),
   }),

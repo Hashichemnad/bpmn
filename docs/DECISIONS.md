@@ -313,3 +313,21 @@ dashboard, notifications). They run against a seeded installation (`E2E_BASE_URL
 http://localhost:8080) and only read data or add feedback, so they can be re-run. They are not part of
 `pnpm test` because they need the whole stack; CI integration is in the backlog. `@playwright/test` is pinned
 to the version whose Chromium build is installed in the development containers.
+
+## D-038 — Four-eyes principle: self-approval is never allowed
+
+Decided by the product owner at the start of the AI phase, replacing the "approved by submitting" rule of
+D-030. The submitter is always removed from a step's assignees. When they are the **only** possible approver
+of a step, the submission is refused with `SELF_APPROVAL_NOT_ALLOWED` (HTTP 400, the step's bilingual name in
+the details) and the item stays in Draft, so the submitter asks for another approver to be added. Reviews
+submitted earlier keep their `approvedBySubmitter` steps (shown as such on the review page).
+
+## D-039 — Auditor system role and `reviews.decide`
+
+A new system role **Auditor** gets read-only access to the workspace: processes and their working drafts,
+version history, pages, reviews, comments (read), the governance dashboard, users (read) and the audit log,
+plus the portal. It has no edit, comment, approve or publish permissions. Viewers stay portal-only (D-028).
+A new permission `reviews.decide` (all roles except Auditor and Viewer) is required to be resolved as a
+workflow approver and to record a decision, so read-only users can never approve — even when named in a
+workflow. Read-only roles cannot be a workflow role assignee (schema check). Space view restrictions still
+apply to Auditors; administrators grant the Auditor role access to restricted spaces where needed.
