@@ -15,7 +15,10 @@ Steps (tick as they are committed; a new session continues at the first unticked
       (`test/authorization-matrix.e2e-spec.ts`): every mutating route called as Viewer / Auditor / Reviewer
       on the demo seed (items in every state, a view-restricted space) changes nothing; Viewers get 403/404 on
       every workspace GET. No gaps found.
-- [ ] 2. Headers / CSP, CORS, cookies, CSRF review (API + nginx)
+- [x] 2. Headers / CSP, CORS, cookies, CSRF: the CSRF guard also checks `Origin` (CORS_ORIGINS or the
+      request host; blocks sub-domain cookie tossing); nginx security headers moved into one snippet
+      included by every location (`/` and `/assets/` had lost `Permissions-Policy`), plus COOP.
+      Tests: `test/security.e2e-spec.ts`.
 - [ ] 3. XSS: rich text, BPMN labels, SVG uploads, AI output, email templates
 - [ ] 4. Uploads, path traversal, SSRF in Git / AI / SMTP (block internal addresses unless allowed)
 - [ ] 5. Secrets in logs / errors / responses; encrypted fields

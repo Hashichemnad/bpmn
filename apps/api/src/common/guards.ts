@@ -1,4 +1,10 @@
-import { type CanActivate, type ExecutionContext, HttpStatus, Injectable } from '@nestjs/common';
+import {
+  type CanActivate,
+  type ExecutionContext,
+  HttpStatus,
+  Inject,
+  Injectable,
+} from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { JwtService } from '@nestjs/jwt';
 import type { Request } from 'express';
@@ -13,6 +19,7 @@ import {
   PERMISSIONS_KEY,
 } from './decorators';
 import { AuthUserLoader } from '../auth/auth-user.loader';
+import { APP_CONFIG, type AppConfig } from '../config/config';
 
 type AuthRequest = Request & { user?: AuthUser };
 
@@ -95,18 +102,40 @@ export class PermissionsGuard implements CanActivate {
 
 const SAFE_METHODS = new Set(['GET', 'HEAD', 'OPTIONS']);
 
-/** Double-submit-cookie CSRF protection for every state-changing request. */
+const csrfInvalid = () =>
+  new AppException(HttpStatus.FORBIDDEN, 'CSRF_INVALID', 'Invalid CSRF token');
+
+/**
+ * CSRF protection for every state-changing request: double-submit cookie, plus an Origin check so
+ * a cookie planted from a sibling sub-domain ("cookie tossing") is not enough. Browsers send
+ * Origin on every cross-origin and same-origin POST/PUT/PATCH/DELETE; it must be one of
+ * CORS_ORIGINS or the host the request was sent to.
+ */
 @Injectable()
 export class CsrfGuard implements CanActivate {
+  constructor(@Inject(APP_CONFIG) private readonly config: AppConfig) {}
+
   canActivate(ctx: ExecutionContext): boolean {
     const req = ctx.switchToHttp().getRequest<Request>();
     if (SAFE_METHODS.has(req.method)) return true;
+    const origin = req.headers.origin;
+    if (origin !== undefined && !this.allowedOrigin(origin, req.hostname)) throw csrfInvalid();
+    if (req.headers['sec-fetch-site'] === 'cross-site' && origin === undefined) throw csrfInvalid();
     const cookie: unknown = req.cookies?.[CSRF_COOKIE];
     const header = req.headers[CSRF_HEADER];
     if (typeof cookie !== 'string' || typeof header !== 'string' || !safeEqual(cookie, header)) {
-      throw new AppException(HttpStatus.FORBIDDEN, 'CSRF_INVALID', 'Invalid CSRF token');
+      throw csrfInvalid();
     }
     return true;
+  }
+
+  private allowedOrigin(origin: string, hostname: string | undefined): boolean {
+    if (this.config.corsOrigins.includes(origin)) return true;
+    try {
+      return !!hostname && new URL(origin).hostname === hostname;
+    } catch {
+      return false; // e.g. "null" from sandboxed frames and file: pages
+    }
   }
 }
 
