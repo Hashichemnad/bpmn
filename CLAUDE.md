@@ -35,7 +35,7 @@ with no per-user licensing. Target: 50–500 users on a single server.
 
 | Phase | Scope | Status |
 |---|---|---|
-| 1 | Foundation: M1 (core), M2, M3, M4 (roles & systems) | ⬜ |
+| 1 | Foundation: M1 (core), M2, M3, M4 (roles & systems) | ✅ Done (branch `phase-1-foundation`, awaiting review) |
 | 2 | M5 Wiki, M6 Version control, M7 Git integration | ⬜ |
 | 3 | M8 Governance, M9 Knowledge Portal | ⬜ |
 | 4 | M10 GRC, M11 EA, M12 KPIs + Salesforce | ⬜ |
