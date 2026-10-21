@@ -71,6 +71,7 @@ receives no further updates. The image is configurable through `MINIO_IMAGE`, bu
 different start command and data path, so switching requires a compose change. **Needs a decision before
 production** (options: official `quay.io/minio/minio` image, a self-built image, or another S3-compatible store).
 _Update (Phase 2): decided to keep this image for now and revisit in Phase 6._
+_Update (Phase 6 part 2): replaced by Versity S3 Gateway, see D-051._
 
 ## D-010 — Docker images
 
@@ -471,3 +472,69 @@ only those flag props were removed), `vitest` 3 → 4 (dev server advisory), `js
 override (pulled in by `@nestjs/swagger`). MinIO's transitive `stream-json` 1.x / `decode-uri-component`
 0.2 are **not** overridden: the fixed versions are new majors (ESM-only / different module layout) that the
 MinIO client may not load, and the vulnerable code is not on any path ProcessHub uses (SECURITY.md SEC-09).
+
+## D-051 — File storage: Versity S3 Gateway replaces MinIO
+
+MinIO no longer ships community images or binaries and its community edition is in maintenance mode, so
+the `bitnamilegacy/minio` image (D-009) would never receive security fixes. Compared for a single server with
+50–500 users: **Versity S3 Gateway** (Apache-2.0, actively released, one small container), SeaweedFS
+(Apache-2.0, but its own volume format and more moving parts) and Garage (AGPL, needs a cluster layout and
+key import before first use). Chosen: **Versity S3 Gateway with the POSIX backend** (`versity/versitygw`,
+pinned to a release tag). Objects are stored as **plain files** (`/data/objects/<bucket>/<key>`) and metadata
+(content type, ETag) in a sidecar folder (`/data/meta`) instead of extended attributes, so a backup is a plain
+`tar` of the volume, files can be inspected or recovered without the gateway, and there is no lock-in.
+`--fsync` makes an acknowledged upload survive a power loss. The API keeps its S3 client (`minio` npm
+package, works with any S3 service) and the `MINIO_*` variable names, so existing `.env` files keep working;
+only `MINIO_ENDPOINT`/`MINIO_PORT` change (Compose sets `storage:7070`). Migration from an existing MinIO
+volume: `scripts/migrate-minio-storage.sh` starts the old image once on the old volume and copies every
+object with rclone, then checks size and checksum per file; the old volume is kept until an admin deletes it.
+Verified with the API's own client (bucket creation, upload with content type, download, delete) and a
+25-file migration. Moving to another S3 service later (cloud object storage, SeaweedFS, …) works the same
+way: rclone copy, then change the `MINIO_*` settings.
+
+## D-052 — Production stack: Caddy in front, internal network, secrets required
+
+`docker-compose.prod.yml` is a separate, complete file (not an override of the trial file), selected with
+`COMPOSE_FILE` in `.env`, so operators type plain `docker compose …`. **Caddy** terminates TLS: automatic
+Let's Encrypt certificates with renewal, http → https, HSTS (without `includeSubDomains`, which would affect
+other company hosts) and HTTP/3; it was preferred over nginx + certbot because certificate handling needs no
+extra container or cron job. `CADDY_TLS` selects ACME e-mail, `internal` or the company's certificate files
+(Caddy substitutes the variable before parsing, so two file paths work). Caddy forwards everything to the
+existing web nginx, which keeps the security headers and the `/api` proxy, so the trial and production paths
+behave the same; `TRUST_PROXY=2`. Networks: `edge` (Caddy ↔ web), `backend` **internal** (web, API, database,
+storage — no internet, nothing published), `egress` (API only, for the AI provider, Git and SMTP). Unlike the
+trial stack, the JWT secret, encryption key and all passwords are **required** (`${VAR:?}`), so they live in
+`.env` — one file to keep in a vault — instead of being generated inside a volume. Every service has a health
+check, `restart: unless-stopped`, CPU/memory limits sized for 4 vCPU / 8 GB (overridable in `.env`) and Docker
+log rotation (5 × 20 MB). Third-party images are pinned (`caddy:2.11-alpine`, `postgres:16-alpine`,
+`versity/versitygw:v1.9.0`). The application images are still built on the server (no registry yet, BACKLOG).
+nginx now accepts 11 MB request bodies: attachments may be 10 MB and the old 6 MB limit rejected larger ones
+before the API could answer with its translated error.
+
+## D-053 — Backups: pg_dump + storage tar, keys kept out of the backup
+
+`scripts/backup.sh` writes one folder per run: `pg_dump` custom format (checked with `pg_restore --list`
+right away), a `tar.gz` of the storage volume (possible because objects are plain files, D-051), a manifest
+and SHA-256 checksums. It runs against the live system; the database is dumped first, so a file deleted
+during the few seconds in between can be missing, while new uploads after the dump are simply extra files.
+The `.env` with the keys is **not** included by default — backups usually go to shared storage, and keys
+there would decrypt the stored integration secrets. The manifest holds a fingerprint of the encryption key
+so `restore.sh` can warn when `.env` has a different key. `restore.sh` verifies checksums, asks for a typed
+confirmation, makes a `pre-restore` backup, recreates the database and replaces the files, then waits for the
+API. Scheduling is a plain `/etc/cron.d` file; off-site copies use the cloud's own tools (AzCopy / AWS CLI)
+documented in `docs/DEPLOYMENT.md`. Tested as a disaster drill: volumes deleted, fresh stack, restore, content
+and an 8 MB attachment back byte for byte.
+
+## D-054 — Product owner decisions for Phase 6 part 2
+
+Decided by the product owner on 2026-10-21:
+
+1. **File storage:** Versity S3 Gateway is confirmed as the production file storage (D-051).
+2. **Backups never contain `.env`:** the default of `backup.sh` stays (no `--with-env`). The keys
+   (`JWT_ACCESS_SECRET`, `INTEGRATIONS_ENCRYPTION_KEY`) and passwords are kept in the company password
+   manager; a restore needs a backup folder plus that `.env` (DEPLOYMENT.md §7).
+3. **Off-site backups:** Azure Blob Storage in **UAE North** (same region as the server), private container,
+   soft delete + versioning, lifecycle rule deleting after **90 days**; daily `azcopy sync` with the VM's
+   managed identity, 14 days kept locally. Documented as the recommended setup in DEPLOYMENT.md §7.
+4. **`braces` (SEC-08):** accepted for now — high severity but dev-only (via Jest), not in the production
+   code paths and no upstream fix. Follow-up in BACKLOG: move the API tests from Jest to Vitest.

@@ -2,7 +2,76 @@
 
 Read this together with `CLAUDE.md` at the start of every session.
 
-## Current state — 2026-10-21 (Phase 6 — Hardening, branch `phase-6-part-1`)
+## Current state — 2026-10-21 (Phase 6 — Hardening, branch `phase-6-part-2`)
+
+Phase 6 is split into small parts, one branch each (`phase-6-part-<n>` from the latest `main`). Part 1
+(security review) is merged into `main`.
+
+### Part 2 — Production deployment, backups and storage (done, awaiting review)
+
+Steps (tick as they are committed; a new session continues at the first unticked one):
+
+- [x] 1. Replace the frozen MinIO image (D-009) with a maintained S3-compatible store in `docker-compose.yml`;
+      migration script for files in an existing MinIO volume; DECISIONS entry. **Done:** Versity S3 Gateway
+      (`versity/versitygw:v1.9.0`, objects as plain files + metadata sidecar, D-051), service `storage`, volume
+      `storage-data`; `scripts/migrate-minio-storage.sh` (tested: 25 files copied, checksums and content types
+      match); shared helpers in `scripts/lib.sh`.
+- [x] 2. `docker-compose.prod.yml` + `deploy/Caddyfile`: Caddy with automatic HTTPS (only 80/443 published),
+      internal network for database and storage, health checks, restart policies, resource limits, log rotation.
+      **Done** and tested in Docker (DOMAIN=localhost, `CADDY_TLS=internal`): all five services healthy, only
+      80/443 published, http → https (308), HSTS + CSP, postgres/storage have no internet and no host ports, the
+      API resolves external hosts; sign-in, Arabic page and an 8 MB attachment work over HTTPS; audit log shows
+      the client IP (`TRUST_PROXY=2`). **Fixed on the way:** nginx `client_max_body_size` 6m → 11m (attachments
+      may be 10 MB; 6–10 MB uploads used to fail with nginx's untranslated 413).
+- [x] 3. `.env.example.prod` with secure defaults + `scripts/generate-secrets.sh`. **Done:** secrets are
+      required in production (Compose refuses to start without them, so they live in `.env` and are backed up
+      with it); `COMPOSE_FILE` in `.env` makes plain `docker compose` use the production file; the script
+      only fills `__GENERATE__` values (safe to re-run), sets `chmod 600`, prints the first admin password once.
+- [x] 4. `scripts/backup.sh` / `scripts/restore.sh` (PostgreSQL dump + file storage + key fingerprint), daily
+      schedule example; restore tested end to end on the production stack. **Done:** `backup.sh` (dump checked
+      with `pg_restore --list`, storage volume as `tar.gz`, `MANIFEST.txt` with the encryption-key fingerprint,
+      `SHA256SUMS`, retention `BACKUP_KEEP_DAYS`, optional `--with-env`), `restore.sh` (checksums, key
+      fingerprint warning, typed confirmation, automatic `pre-restore` backup, drop/recreate database, replace
+      files, wait for the API), `deploy/processhub-backup.cron` (02:30 daily). **Disaster drill passed:**
+      `docker compose down -v` → fresh empty stack → restore (33 s) → the Arabic page and the 8 MB attachment
+      are back byte for byte. Damaged backup, different key and "no" at the prompt are refused/warned.
+      Migration script also verified on the production stack (internal network). `shellcheck` clean.
+- [x] 5. `docs/DEPLOYMENT.md` for a non-developer IT person. **Done:** architecture, sizing (≤250 / 250–500
+      users, Azure UAE North / AWS me-central-1 instance types), VM creation (portal / console), data disk,
+      firewall, Docker install, configure, DNS, start, first sign-in, HTTPS options (Let's Encrypt, company
+      certificate, internal — the latter two verified in Docker), backups incl. off-site copies, restore incl.
+      new server, updates (incl. MinIO migration and trial → production), monitoring, troubleshooting, reference.
+- [x] 6. Verification, docs (DECISIONS D-051 – D-053, BACKLOG, README, SECURITY §6/§7, CLAUDE.md phase table and
+      stack), CI (production compose file validated, `shellcheck` on `scripts/`), push.
+
+#### Verification (part 2)
+
+| Check                                              | Result                                                                                                                                  |
+| -------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
+| `pnpm format:check`, `pnpm lint`, `pnpm typecheck` | clean                                                                                                                                   |
+| `pnpm test`                                        | **332 tests pass** — shared 64, web 31, API 237 (no application code changed in this part)                                              |
+| `pnpm build`                                       | passes                                                                                                                                  |
+| `pnpm audit --prod`                                | no high/critical; the same 4 moderate as part 1 (`minio` client, SEC-09)                                                                |
+| Trial stack (`docker-compose.yml`, clean clone)    | five services healthy with the new `storage` service; 8 Playwright smoke tests pass on `http://localhost:8080`                          |
+| Production stack (`docker-compose.prod.yml`)       | see steps 2 and 4: HTTPS (internal CA and company certificate), isolation, 8 MB upload, backup, disaster-drill restore, MinIO migration |
+| `shellcheck -s sh scripts/*.sh`                    | clean                                                                                                                                   |
+
+Docker in the sandbox: as before, base images from `mirror.gcr.io` (re-tagged locally) and the app images built
+from the committed Dockerfiles with an uncommitted CA line and `docker build --network host`.
+Let's Encrypt itself could not be tested here (no public DNS); the Caddyfile path is the same as for
+`internal` and company certificates, which were both verified.
+
+### Next (continue here)
+
+1. Review and merge `phase-6-part-2`. Existing installations: after updating, run
+   `./scripts/migrate-minio-storage.sh` once (copies files from the old `minio-data` volume).
+2. Decisions taken by the product owner (D-054): Versity S3 Gateway confirmed; backups never include `.env`
+   (keys in the password manager); off-site backups to Azure Blob Storage, UAE North, 90 days (DEPLOYMENT.md
+   §7); `braces` accepted, Jest → Vitest added to BACKLOG.
+3. Next Phase 6 parts (suggested order): TOTP two-factor and SSO (Azure AD / OIDC); slim API runtime image and
+   images in a registry; performance; external penetration test with `docs/SECURITY.md` §8.
+
+## Phase 6 part 1 — 2026-10-21 (security review, merged into `main`)
 
 Phase 6 is split into small parts, one branch each (`phase-6-part-<n>` from the latest `main`). The AI phase
 is merged into `main`.
@@ -68,7 +137,7 @@ guard (`OUTBOUND_ALLOWED_HOSTS=mailpit`); a foreign `Origin` gets `CSRF_INVALID`
 web image no longer type-checked after the Vitest 4 upgrade (Node types were only pulled in transitively):
 `@types/node` is now a web dev dependency and listed in the web tsconfig.
 
-### Next (continue here)
+### Next (at the end of that part — superseded)
 
 1. Review and merge `phase-6-part-1` (new env var `OUTBOUND_ALLOWED_HOSTS`: add internal Git / SMTP servers
    to it on existing installations, otherwise they are blocked).
@@ -134,7 +203,7 @@ merged into `main`. The brief was built in three parts, committed separately (A,
   only — never drafts, restricted spaces without a grant, or the working copy of a process; grants; not-found
   without an AI call; AI roles and portal access), `toAnyTsQuery` unit test.
 
-### Next (continue here)
+### Next (at the end of that part — superseded)
 
 1. Review and merge `phase-ai-assistant`; run `docs/AI-DEMO.md` once with a real API key before the management
    demo (the suite only uses a fake provider).

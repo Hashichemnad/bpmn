@@ -23,18 +23,21 @@ services:
       timeout: 5s
       retries: 20
 
-  minio:
-    # See docs/DECISIONS.md (D-009): MinIO no longer publishes community images on Docker Hub.
-    image: ${MINIO_IMAGE:-bitnamilegacy/minio:2025.4.22}
+  # S3-compatible file storage: Versity S3 Gateway, objects kept as plain files in the volume
+  # (docs/DECISIONS.md D-051). Only reachable inside the Compose network.
+  storage:
+    image: ${STORAGE_IMAGE:-versity/versitygw:v1.9.0}
     restart: unless-stopped
+    entrypoint: ['sh', '-c']
+    command:
+      - mkdir -p /data/objects /data/meta && exec versitygw --port :7070 --health /health posix --fsync --sidecar /data/meta /data/objects
     environment:
-      MINIO_ROOT_USER: ${MINIO_ACCESS_KEY:-processhub}
-      MINIO_ROOT_PASSWORD: ${MINIO_SECRET_KEY:-processhub-local-secret}
-      MINIO_DEFAULT_BUCKETS: ${MINIO_BUCKET:-processhub}
+      ROOT_ACCESS_KEY_ID: ${MINIO_ACCESS_KEY:-processhub}
+      ROOT_SECRET_ACCESS_KEY: ${MINIO_SECRET_KEY:-processhub-local-secret}
     volumes:
-      - minio-data:/bitnami/minio/data
+      - storage-data:/data
     healthcheck:
-      test: ['CMD', 'curl', '-fsS', 'http://127.0.0.1:9000/minio/health/live']
+      test: ['CMD', 'wget', '-q', '-O', '/dev/null', 'http://127.0.0.1:7070/health']
       interval: 5s
       timeout: 5s
       retries: 20
@@ -67,8 +70,9 @@ services:
       COOKIE_SECURE: ${COOKIE_SECURE:-true}
       CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:8080}
       TRUST_PROXY: ${TRUST_PROXY:-1}
-      MINIO_ENDPOINT: minio
-      MINIO_PORT: 9000
+      # File storage (S3-compatible; the MINIO_* names are kept for existing installations).
+      MINIO_ENDPOINT: storage
+      MINIO_PORT: 7070
       MINIO_USE_SSL: 'false'
       MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY:-processhub}
       MINIO_SECRET_KEY: ${MINIO_SECRET_KEY:-processhub-local-secret}
@@ -91,7 +95,7 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
-      minio:
+      storage:
         condition: service_healthy
       mailpit:
         condition: service_started
@@ -109,5 +113,5 @@ services:
 
 volumes:
   postgres-data:
-  minio-data:
+  storage-data:
   api-data:

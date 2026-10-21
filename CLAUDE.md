@@ -42,7 +42,7 @@ with no per-user licensing. Target: 50–500 users on a single server.
 | AI | M16 AI Assistant (after Phase 3) | ✅ Done (merged into `main`) |
 | 4 | M10 GRC, M11 EA, M12 KPIs + Salesforce | ⬜ |
 | 5 | M13 Mining, M14 Execution, simulation | ⬜ |
-| 6 | Hardening: SSO, performance, security review fixes, deployment guide | 🟡 In progress — part 1 (security review, `docs/SECURITY.md`) done on branch `phase-6-part-1` |
+| 6 | Hardening: SSO, performance, security review fixes, deployment guide | 🟡 In progress — part 1 (security review, `docs/SECURITY.md`) merged; part 2 (production stack, backups, storage, `docs/DEPLOYMENT.md`) done on branch `phase-6-part-2` |
 | — | M15 Migration of existing documentation (after system is ready) | ⬜ |
 
 Update this table and `docs/PROGRESS.md` at the end of every session.
@@ -57,10 +57,10 @@ Update this table and `docs/PROGRESS.md` at the end of every session.
 - **Rich text (Phase 2):** TipTap.
 - **Backend:** Node.js 20 LTS + **NestJS**, **Prisma** ORM.
 - **Database:** PostgreSQL 16.
-- **File storage:** MinIO (S3-compatible).
+- **File storage:** S3-compatible — Versity S3 Gateway in Docker (replaced MinIO, DECISIONS D-051); the API uses the `minio` npm S3 client.
 - **Validation:** zod schemas in `packages/shared`, used by both web and api.
 - **Testing:** Vitest (web, shared), Jest (api), Playwright (end-to-end, from Phase 3).
-- **Runtime:** Docker + Docker Compose (`docker compose up` starts everything).
+- **Runtime:** Docker + Docker Compose (`docker compose up` starts everything; production: `docker-compose.prod.yml` with Caddy, see `docs/DEPLOYMENT.md`).
 
 ## 5. Bilingual Rules (Arabic + English)
 
@@ -94,7 +94,7 @@ Permissions are checked **on the server** for every request (NestJS guards). The
 - Optional TOTP two-factor authentication (Phase 1 if time allows, otherwise Phase 6). SSO (Azure AD / OIDC) in Phase 6.
 - `helmet`, strict CORS, rate limiting (`@nestjs/throttler`), request size limits.
 - All input validated with zod/class-validator; Prisma only (no raw SQL string concatenation).
-- Uploaded files: type and size checks, stored in MinIO, never executed; sanitized SVG.
+- Uploaded files: type and size checks, stored in the S3-compatible file storage, never executed; sanitized SVG.
 - Rich text and BPMN labels sanitized against XSS (DOMPurify on render).
 - Secrets only via environment variables; integration tokens (GitHub/GitLab) encrypted at rest (AES-256-GCM, key from env).
 - **Audit log** table: who, what, when, entity, before/after summary — for every create/update/delete/publish/login.

@@ -1,0 +1,187 @@
+# ProcessHub — production deployment on one server (docs/DEPLOYMENT.md).
+#
+#   cp .env.example.prod .env && ./scripts/generate-secrets.sh    # once; then edit DOMAIN, CADDY_TLS, admin
+#   docker compose up -d --build                                  # .env sets COMPOSE_FILE to this file
+#
+# Only Caddy is published (ports 80 and 443). The database and the file storage sit on an internal network
+# without internet access and without published ports; the API joins a second network for outbound calls
+# (AI provider, GitHub / GitLab, SMTP).
+#
+# Every value below can be changed in .env; values marked ":?" must be set there (Compose refuses to start
+# otherwise). Resource limits fit a 4 vCPU / 8 GB server (DEPLOYMENT.md "Server sizing").
+
+name: ${COMPOSE_PROJECT_NAME:-processhub}
+
+# Log rotation: Docker keeps at most 5 × 20 MB of logs per container.
+x-logging: &logging
+  driver: json-file
+  options:
+    max-size: ${LOG_MAX_SIZE:-20m}
+    max-file: '${LOG_MAX_FILES:-5}'
+
+services:
+  caddy:
+    image: ${CADDY_IMAGE:-caddy:2.11-alpine}
+    restart: unless-stopped
+    ports:
+      - '80:80'
+      - '443:443'
+      - '443:443/udp' # HTTP/3
+    environment:
+      DOMAIN: ${DOMAIN:?Set DOMAIN in .env (the host name users open, e.g. processhub.example.com)}
+      CADDY_TLS: ${CADDY_TLS:?Set CADDY_TLS in .env (your e-mail for Let's Encrypt, or internal)}
+    volumes:
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - ./deploy/certs:/certs:ro
+      - caddy-data:/data # certificates and the ACME account
+      - caddy-config:/config
+    networks: [edge]
+    depends_on:
+      web:
+        condition: service_healthy
+    healthcheck:
+      test: ['CMD', 'wget', '-q', '-O', '/dev/null', 'http://127.0.0.1:2019/config/']
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    deploy:
+      resources:
+        limits: { cpus: '${CADDY_CPUS:-1}', memory: '${CADDY_MEMORY:-256M}' }
+    logging: *logging
+
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+    image: processhub-web:${PROCESSHUB_VERSION:-latest}
+    restart: unless-stopped
+    networks: [edge, backend]
+    depends_on:
+      api:
+        condition: service_healthy
+    # Health check: see apps/web/Dockerfile (GET /healthz).
+    deploy:
+      resources:
+        limits: { cpus: '${WEB_CPUS:-1}', memory: '${WEB_MEMORY:-256M}' }
+    logging: *logging
+
+  api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    image: processhub-api:${PROCESSHUB_VERSION:-latest}
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      NODE_OPTIONS: --max-old-space-size=${API_NODE_HEAP_MB:-1536}
+      DATABASE_URL: postgresql://${POSTGRES_USER:-processhub}:${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}@postgres:5432/${POSTGRES_DB:-processhub}?schema=public
+      # Required in production (generate-secrets.sh), so they live in .env and are backed up with it.
+      JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET:?Set JWT_ACCESS_SECRET in .env (scripts/generate-secrets.sh)}
+      INTEGRATIONS_ENCRYPTION_KEY: ${INTEGRATIONS_ENCRYPTION_KEY:?Set INTEGRATIONS_ENCRYPTION_KEY in .env (scripts/generate-secrets.sh)}
+      COOKIE_SECURE: 'true'
+      APP_URL: https://${DOMAIN}
+      CORS_ORIGINS: ${CORS_ORIGINS:-https://${DOMAIN}}
+      # Caddy and nginx are in front of the API.
+      TRUST_PROXY: ${TRUST_PROXY:-2}
+      ENABLE_SWAGGER: ${ENABLE_SWAGGER:-false}
+      MINIO_ENDPOINT: storage
+      MINIO_PORT: 7070
+      MINIO_USE_SSL: 'false'
+      MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY:-processhub}
+      MINIO_SECRET_KEY: ${MINIO_SECRET_KEY:?Set MINIO_SECRET_KEY in .env}
+      MINIO_BUCKET: ${MINIO_BUCKET:-processhub}
+      SEED_ON_START: ${SEED_ON_START:-true}
+      SEED_DEMO_DATA: ${SEED_DEMO_DATA:-false}
+      SEED_ADMIN_EMAIL: ${SEED_ADMIN_EMAIL:?Set SEED_ADMIN_EMAIL in .env}
+      SEED_ADMIN_PASSWORD: ${SEED_ADMIN_PASSWORD:?Set SEED_ADMIN_PASSWORD in .env}
+      SEED_SMTP_HOST: ${SEED_SMTP_HOST:-}
+      OUTBOUND_ALLOWED_HOSTS: ${OUTBOUND_ALLOWED_HOSTS:-}
+    volumes:
+      - api-data:/app/data
+    networks: [backend, egress]
+    depends_on:
+      postgres:
+        condition: service_healthy
+      storage:
+        condition: service_healthy
+    # Health check: see apps/api/Dockerfile (GET /api/v1/health, checks the database).
+    deploy:
+      resources:
+        limits: { cpus: '${API_CPUS:-2}', memory: '${API_MEMORY:-2G}' }
+    logging: *logging
+
+  postgres:
+    image: ${POSTGRES_IMAGE:-postgres:16-alpine}
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-processhub}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
+      POSTGRES_DB: ${POSTGRES_DB:-processhub}
+    command:
+      - postgres
+      - -c
+      - shared_buffers=${PG_SHARED_BUFFERS:-512MB}
+      - -c
+      - effective_cache_size=${PG_EFFECTIVE_CACHE_SIZE:-1536MB}
+      - -c
+      - work_mem=${PG_WORK_MEM:-16MB}
+      - -c
+      - maintenance_work_mem=${PG_MAINTENANCE_WORK_MEM:-128MB}
+      - -c
+      - max_connections=${PG_MAX_CONNECTIONS:-100}
+      - -c
+      - log_min_duration_statement=${PG_LOG_SLOW_MS:-2000}
+    shm_size: 256mb
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    networks: [backend]
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U "$${POSTGRES_USER}" -d "$${POSTGRES_DB}"']
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    deploy:
+      resources:
+        limits: { cpus: '${POSTGRES_CPUS:-2}', memory: '${POSTGRES_MEMORY:-2G}' }
+    logging: *logging
+
+  # File storage: Versity S3 Gateway, objects kept as plain files in the volume (DECISIONS D-051).
+  storage:
+    image: ${STORAGE_IMAGE:-versity/versitygw:v1.9.0}
+    restart: unless-stopped
+    entrypoint: ['sh', '-c']
+    command:
+      - mkdir -p /data/objects /data/meta && exec versitygw --port :7070 --health /health posix --fsync --sidecar /data/meta /data/objects
+    environment:
+      ROOT_ACCESS_KEY_ID: ${MINIO_ACCESS_KEY:-processhub}
+      ROOT_SECRET_ACCESS_KEY: ${MINIO_SECRET_KEY:?Set MINIO_SECRET_KEY in .env}
+    volumes:
+      - storage-data:/data
+    networks: [backend]
+    healthcheck:
+      test: ['CMD', 'wget', '-q', '-O', '/dev/null', 'http://127.0.0.1:7070/health']
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    deploy:
+      resources:
+        limits: { cpus: '${STORAGE_CPUS:-1}', memory: '${STORAGE_MEMORY:-512M}' }
+    logging: *logging
+
+networks:
+  # Internet ↔ Caddy ↔ web.
+  edge: {}
+  # web, API, database and storage. No route to the internet and nothing published.
+  backend:
+    internal: true
+  # Outbound calls of the API (AI provider, Git, SMTP).
+  egress: {}
+
+volumes:
+  postgres-data:
+  storage-data:
+  api-data:
+  caddy-data:
+  caddy-config:

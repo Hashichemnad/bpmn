@@ -40,7 +40,7 @@ and then `pnpm format`.
 | SEC-05 | Crypto (A02)                | `SecretBox.decrypt` accepted truncated AES-GCM tags (Node accepts 4–16 bytes unless the length is fixed), weakening integrity of stored secrets.                                                                                 | Low      | **Fixed.** Full 16-byte tag required (`authTagLength`).                                                                                                                      |
 | SEC-06 | XSS / privacy (A03)         | Sanitised SVG logos kept external CSS references (`@import`, `url(https://…)`); the logo response had no `sandbox`.                                                                                                              | Low      | **Fixed.** External references removed; `sandbox` added to the logo CSP.                                                                                                     |
 | SEC-07 | Vulnerable components (A06) | `react-router` 6 (open redirect, constructor injection), `vitest` 3 (dev server path traversal), `js-yaml` 5.3 (CPU exhaustion, via Swagger).                                                                                    | Moderate | **Fixed.** `react-router-dom` 7.18, `vitest` 4.1, `js-yaml` ≥ 5.4.1 (override).                                                                                              |
-| SEC-08 | Vulnerable components (A06) | `braces` (high, ReDoS/stack exhaustion) via Jest; no fixed version exists. Dev-only, but the API runtime image currently contains dev dependencies.                                                                              | Low      | **Open — decision needed** (§6).                                                                                                                                             |
+| SEC-08 | Vulnerable components (A06) | `braces` (high, ReDoS/stack exhaustion) via Jest; no fixed version exists. Dev-only, but the API runtime image currently contains dev dependencies.                                                                              | Low      | **Accepted** (D-054); follow-up: Jest → Vitest (BACKLOG).                                                                                                                    |
 | SEC-09 | Vulnerable components (A06) | MinIO client pulls `stream-json` 1.x and `decode-uri-component` 0.2 (moderate). The vulnerable code (stream-json filters/JSONC/Assembler, decoding of crafted URIs) is not on any path ProcessHub uses.                          | Low      | Accepted, tracked in BACKLOG (replace when MinIO updates).                                                                                                                   |
 
 No authorisation gaps were found: the matrix test passes for every route without changes to the guards.
@@ -107,7 +107,7 @@ allow-list (`onlyBuiltDependencies`), GCM-authenticated secrets.
 login / lockout / settings change / AI call; logs contain no secrets (tested).
 
 **A10 SSRF** — see SEC-01. The AI provider address is not configurable in the UI (only `ANTHROPIC_BASE_URL`
-in the environment); MinIO and the database come from the environment.
+in the environment); the file storage and the database come from the environment.
 
 ## 4. Rate limits
 
@@ -300,29 +300,33 @@ zod / UUID pipe; file uploads are checked in the service (allow-list, content sn
 
 ## 6. Remaining risks
 
-| Risk                                                                                                                                             | Mitigation / plan                                                                                                                                                        |
-| ------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| **SEC-08** `braces` (high) via Jest, no upstream fix; dev dependencies are in the API runtime image.                                             | Not executed at runtime. **Decision needed:** accept until the slim runtime image (BACKLOG, Phase 6) removes dev dependencies, or migrate API tests from Jest to Vitest. |
-| **SEC-09** MinIO's `stream-json` / `decode-uri-component` (moderate).                                                                            | Code paths unused; update when MinIO releases a fix.                                                                                                                     |
-| No second factor and no SSO yet.                                                                                                                 | Planned Phase 6 parts (TOTP, Azure AD / OIDC).                                                                                                                           |
-| Rate limits and lockout counters are per API instance (in memory).                                                                               | Fine for one instance; Redis storage in BACKLOG before scaling out.                                                                                                      |
-| Account lockout can be triggered by anyone who knows an email address (denial of service), and `ACCOUNT_LOCKED` reveals that the account exists. | Short lock (15 min), per-IP login limit, audit entries `LOGIN_FAILED` / `LOCKOUT`. SSO will move most users off passwords.                                               |
-| CSP allows inline styles (`style-src 'unsafe-inline'`, required by Ant Design).                                                                  | Scripts stay `'self'` only; rich text strips `style` attributes. Revisit with Ant Design's CSS-variables mode.                                                           |
-| AI: published or draft content sent to the provider could contain prompt-injection text.                                                         | Answers are text only, only from content the user may read; generated BPMN / pages are validated, sanitised and only saved after a human accepts the preview.            |
-| Logs contain recipient email addresses of failed notification emails.                                                                            | Personal data, not secrets; keep log retention short.                                                                                                                    |
-| TLS and HSTS are not configured by the bundled nginx (plain HTTP on port 8080).                                                                  | Put a TLS-terminating reverse proxy in front with HSTS (deployment guide, later Phase 6 part).                                                                           |
+| Risk                                                                                                                                             | Mitigation / plan                                                                                                                                             |
+| ------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **SEC-08** `braces` (high) via Jest, no upstream fix; dev dependencies are in the API runtime image.                                             | Not executed at runtime. **Accepted** by the product owner (D-054); the slim runtime image and the Jest → Vitest move (BACKLOG) remove it.                    |
+| **SEC-09** The `minio` npm client's `stream-json` / `decode-uri-component` (moderate).                                                           | Code paths unused; replace the client with `@aws-sdk/client-s3` (BACKLOG) or update when it releases a fix.                                                   |
+| No second factor and no SSO yet.                                                                                                                 | Planned Phase 6 parts (TOTP, Azure AD / OIDC).                                                                                                                |
+| Rate limits and lockout counters are per API instance (in memory).                                                                               | Fine for one instance; Redis storage in BACKLOG before scaling out.                                                                                           |
+| Account lockout can be triggered by anyone who knows an email address (denial of service), and `ACCOUNT_LOCKED` reveals that the account exists. | Short lock (15 min), per-IP login limit, audit entries `LOGIN_FAILED` / `LOCKOUT`. SSO will move most users off passwords.                                    |
+| CSP allows inline styles (`style-src 'unsafe-inline'`, required by Ant Design).                                                                  | Scripts stay `'self'` only; rich text strips `style` attributes. Revisit with Ant Design's CSS-variables mode.                                                |
+| AI: published or draft content sent to the provider could contain prompt-injection text.                                                         | Answers are text only, only from content the user may read; generated BPMN / pages are validated, sanitised and only saved after a human accepts the preview. |
+| Logs contain recipient email addresses of failed notification emails.                                                                            | Personal data, not secrets; keep log retention short.                                                                                                         |
+| TLS and HSTS: the trial stack (`docker-compose.yml`) serves plain HTTP on port 8080.                                                             | **Resolved for production** (part 2): `docker-compose.prod.yml` puts Caddy in front (automatic certificates, http → https, HSTS); see `docs/DEPLOYMENT.md`.   |
 
 ## 7. Go-live configuration checklist
 
-- [ ] TLS on the public URL, HSTS on the TLS terminator; `APP_URL` and `CORS_ORIGINS` = the public URL.
-- [ ] `COOKIE_SECURE=true`; `TRUST_PROXY` = number of proxies in front of the API.
-- [ ] `JWT_ACCESS_SECRET` and `INTEGRATIONS_ENCRYPTION_KEY` set (or generated) and backed up with the database.
+With `docker-compose.prod.yml` and `.env.example.prod` (`docs/DEPLOYMENT.md`) the items marked _(prod stack)_ are
+already the default; check them anyway if you changed the setup.
+
+- [ ] TLS on the public URL, HSTS on the TLS terminator; `APP_URL` and `CORS_ORIGINS` = the public URL _(prod stack: Caddy, from `DOMAIN`)_.
+- [ ] `COOKIE_SECURE=true`; `TRUST_PROXY` = number of proxies in front of the API _(prod stack: `true`, `2`)_.
+- [ ] `JWT_ACCESS_SECRET` and `INTEGRATIONS_ENCRYPTION_KEY` set (or generated) and backed up with the database _(prod stack: required, `generate-secrets.sh`; keep `.env` in a vault)_.
 - [ ] Change `POSTGRES_PASSWORD`, `MINIO_SECRET_KEY`, `SEED_ADMIN_PASSWORD`; `SEED_DEMO_DATA=false`
       (demo users share one known password); remove the Mailpit service and configure real SMTP.
 - [ ] `ENABLE_SWAGGER=false`.
 - [ ] `OUTBOUND_ALLOWED_HOSTS` lists only the internal Git / SMTP servers that are really needed.
 - [ ] Review Settings → AI (enabled roles, limits, data notice) before enabling the assistant.
-- [ ] Database, MinIO and the API are not reachable from outside (only the web container is published).
+- [ ] Database, file storage and the API are not reachable from outside (only the web container is published) _(prod stack: only Caddy on 80/443; database and storage on an internal network)_.
+- [ ] Daily backups with an off-site copy, and one restore tested (`docs/DEPLOYMENT.md` §7–8).
 
 ## 8. External penetration test checklist
 
@@ -367,4 +371,4 @@ seed provides these).
 - [ ] CORS with arbitrary / `null` origins; HTTP methods; Swagger exposure.
 - [ ] Error messages and logs for secrets or stack traces; directory listing; source maps.
 - [ ] Denial of service: large JSON bodies, AI streaming connections, search with many terms.
-- [ ] Container and network exposure (database, MinIO, Mailpit ports), default credentials.
+- [ ] Container and network exposure (database, file storage, Mailpit ports), default credentials.
