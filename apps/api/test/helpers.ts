@@ -109,6 +109,14 @@ export async function createApp(): Promise<TestContext> {
 }
 
 const TABLES = [
+  'Feedback',
+  'Notification',
+  'Comment',
+  'PublishedLink',
+  'Publication',
+  'ReviewTask',
+  'Review',
+  'UserJobRole',
   'GitSyncItem',
   'Attachment',
   'PageLink',
@@ -118,6 +126,7 @@ const TABLES = [
   'PageTemplate',
   'SpaceGrant',
   'Space',
+  'Workflow',
   'AuditLog',
   'ObjectLink',
   'ProcessVersion',
