@@ -1,4 +1,16 @@
-import { App, Button, Card, Col, Descriptions, Form, Input, Radio, Row, Tag } from 'antd';
+import {
+  App,
+  Button,
+  Card,
+  Col,
+  Descriptions,
+  Form,
+  Input,
+  Radio,
+  Row,
+  Tag,
+  Typography,
+} from 'antd';
 import { useTranslation } from 'react-i18next';
 import type { CurrentUser, Locale } from '@processhub/shared';
 import { useAuth } from '@/auth/AuthProvider';
@@ -10,6 +22,7 @@ import { useErrorMessage } from '@/components/i18n-helpers';
 import { PasswordPolicyHint } from '@/features/admin/PasswordPolicyHint';
 import { passwordRules } from '@/features/admin/password';
 import { NotificationPrefsCard } from '@/features/notifications/NotificationPrefsCard';
+import { TwoFactorCard } from './TwoFactorCard';
 
 export function ProfilePage() {
   const { t } = useTranslation();
@@ -74,6 +87,11 @@ export function ProfilePage() {
               <Descriptions.Item label={t('fields.email')}>
                 <span dir="ltr">{user.email}</span>
               </Descriptions.Item>
+              {user.ssoLinked && (
+                <Descriptions.Item label={t('profile.signIn')}>
+                  <Tag color="blue">{t('profile.ssoLinked')}</Tag>
+                </Descriptions.Item>
+              )}
               <Descriptions.Item label={t('fields.roles')}>
                 {user.roles.map((r) => (
                   <Tag key={r}>{t(`admin:roles.${r}`)}</Tag>
@@ -83,44 +101,53 @@ export function ProfilePage() {
           </Card>
         </Col>
         <Col xs={24} lg={10}>
-          <Card title={t('profile.changePassword')}>
-            <Form form={passwordForm} layout="vertical" onFinish={changePassword}>
-              <Form.Item
-                name="currentPassword"
-                label={t('profile.currentPassword')}
-                rules={[{ required: true, message: t('validation.required') }]}
-              >
-                <Input.Password autoComplete="current-password" />
-              </Form.Item>
-              <Form.Item
-                name="newPassword"
-                label={t('profile.newPassword')}
-                rules={passwordRules(t)}
-                extra={<PasswordPolicyHint />}
-              >
-                <Input.Password autoComplete="new-password" />
-              </Form.Item>
-              <Form.Item
-                name="confirm"
-                label={t('profile.confirmPassword')}
-                dependencies={['newPassword']}
-                rules={[
-                  { required: true, message: t('validation.required') },
-                  ({ getFieldValue }) => ({
-                    validator: (_, v) =>
-                      !v || v === getFieldValue('newPassword')
-                        ? Promise.resolve()
-                        : Promise.reject(new Error(t('validation.passwordMismatch'))),
-                  }),
-                ]}
-              >
-                <Input.Password autoComplete="new-password" />
-              </Form.Item>
-              <Button type="primary" htmlType="submit">
-                {t('profile.updatePassword')}
-              </Button>
-            </Form>
-          </Card>
+          {!user.hasPassword ? (
+            <Card title={t('profile.changePassword')}>
+              <Typography.Text type="secondary">{t('profile.ssoAccount')}</Typography.Text>
+            </Card>
+          ) : (
+            <Card title={t('profile.changePassword')}>
+              <Form form={passwordForm} layout="vertical" onFinish={changePassword}>
+                <Form.Item
+                  name="currentPassword"
+                  label={t('profile.currentPassword')}
+                  rules={[{ required: true, message: t('validation.required') }]}
+                >
+                  <Input.Password autoComplete="current-password" />
+                </Form.Item>
+                <Form.Item
+                  name="newPassword"
+                  label={t('profile.newPassword')}
+                  rules={passwordRules(t)}
+                  extra={<PasswordPolicyHint />}
+                >
+                  <Input.Password autoComplete="new-password" />
+                </Form.Item>
+                <Form.Item
+                  name="confirm"
+                  label={t('profile.confirmPassword')}
+                  dependencies={['newPassword']}
+                  rules={[
+                    { required: true, message: t('validation.required') },
+                    ({ getFieldValue }) => ({
+                      validator: (_, v) =>
+                        !v || v === getFieldValue('newPassword')
+                          ? Promise.resolve()
+                          : Promise.reject(new Error(t('validation.passwordMismatch'))),
+                    }),
+                  ]}
+                >
+                  <Input.Password autoComplete="new-password" />
+                </Form.Item>
+                <Button type="primary" htmlType="submit">
+                  {t('profile.updatePassword')}
+                </Button>
+              </Form>
+            </Card>
+          )}
+          <div style={{ marginTop: 24 }}>
+            <TwoFactorCard />
+          </div>
         </Col>
         <Col xs={24}>
           <NotificationPrefsCard />

@@ -24,6 +24,7 @@ import {
   LockOutlined,
   MoreOutlined,
   PlusOutlined,
+  SafetyCertificateOutlined,
   StopOutlined,
   UnlockOutlined,
 } from '@ant-design/icons';
@@ -36,6 +37,7 @@ import {
 } from '@processhub/shared';
 import { useObjects, useResetPassword, useSaveUser, useUnlockUser, useUsers } from '@/api/hooks';
 import { useAuth } from '@/auth/AuthProvider';
+import { useResetUserMfa } from '@/api/auth';
 import { PageHeader } from '@/components/PageHeader';
 import { BilingualFields } from '@/components/BilingualFields';
 import { ErrorState } from '@/components/states';
@@ -71,6 +73,7 @@ export function UsersPage() {
   const saveUser = useSaveUser();
   const unlock = useUnlockUser();
   const resetPassword = useResetPassword();
+  const resetMfa = useResetUserMfa();
   const departmentTree = useDepartmentTreeData();
   const [editing, setEditing] = useState<UserDto | 'new' | null>(null);
   const [resetting, setResetting] = useState<UserDto | null>(null);
@@ -146,6 +149,20 @@ export function UsersPage() {
     }
   };
 
+  const confirmResetMfa = (u: UserDto) =>
+    modal.confirm({
+      title: t('admin:users.resetMfaTitle', { name: loc(u) || u.email }),
+      content: t('admin:users.resetMfaText'),
+      okText: t('admin:users.resetMfa'),
+      okButtonProps: { danger: true },
+      cancelText: t('cancel'),
+      onOk: () =>
+        resetMfa.mutateAsync(u.id).then(
+          () => message.success(t('admin:users.mfaReset')),
+          (e) => message.error(errorMessage(e)),
+        ),
+    });
+
   const columns: TableProps<UserDto>['columns'] = [
     {
       title: t('fields.name'),
@@ -157,6 +174,12 @@ export function UsersPage() {
           <Typography.Text type="secondary" dir="ltr" style={{ fontSize: 12 }}>
             {u.email}
           </Typography.Text>
+          {(u.mfaEnabled || u.ssoLinked) && (
+            <Space size={4}>
+              {u.ssoLinked && <Tag color="blue">{t('admin:users.sso')}</Tag>}
+              {u.mfaEnabled && <Tag color="green">{t('admin:users.mfa')}</Tag>}
+            </Space>
+          )}
         </Space>
       ),
     },
@@ -215,6 +238,16 @@ export function UsersPage() {
                   setResetting(u);
                 },
               },
+              ...(u.mfaEnabled
+                ? [
+                    {
+                      key: 'mfa',
+                      icon: <SafetyCertificateOutlined />,
+                      label: t('admin:users.resetMfa'),
+                      onClick: () => confirmResetMfa(u),
+                    },
+                  ]
+                : []),
               ...(u.lockedUntil
                 ? [
                     {

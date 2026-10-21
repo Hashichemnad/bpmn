@@ -25,6 +25,7 @@ import { BrandMark } from '@/layout/BrandMark';
 import { GitIntegrationCard } from './GitIntegrationCard';
 import { EmailSettingsCard } from './EmailSettingsCard';
 import { AiSettingsCard } from './AiSettingsCard';
+import { AuthSettingsCard } from './AuthSettingsCard';
 
 export function SettingsPage() {
   const { t } = useTranslation();
@@ -166,6 +167,9 @@ export function SettingsPage() {
               </Space>
             </Flex>
           </Card>
+        </Col>
+        <Col span={24}>
+          <AuthSettingsCard />
         </Col>
         <Col span={24}>
           <AiSettingsCard />

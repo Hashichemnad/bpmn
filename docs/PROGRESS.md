@@ -33,7 +33,7 @@ Steps (tick as they are committed; a new session continues at the first unticked
       (+ spec), `MfaService`, `AuthSettingsService` (settings key `auth`, `GET/PUT /settings/auth`, public
       `GET /auth/options`), login returns `{ mfa: 'VERIFY' | 'SETUP' }` + `ph_mfa` cookie; endpoints
       `POST /auth/login/mfa`, `/auth/login/mfa/setup[/confirm]`, `GET /auth/mfa`, `POST /auth/mfa/{setup,enable,
-      disable,recovery-codes}`, `POST /users/:id/mfa/reset`. A wrong code counts towards the password lockout
+disable,recovery-codes}`, `POST /users/:id/mfa/reset`. A wrong code counts towards the password lockout
       and a correct password no longer resets the counter while the code is pending. Accounts without a
       password (`passwordHash = ''`, SSO) cannot use password sign-in (same timing as a wrong password).
       `test/mfa.e2e-spec.ts` (10 tests); route-security lists and SECURITY.md route table updated.
@@ -47,8 +47,14 @@ Steps (tick as they are committed; a new session continues at the first unticked
       `test/fixtures/mock-idp.ts`; `test/sso.e2e-spec.ts` (26 tests); SSO client secret and TOTP secret added
       to the cross-cutting secret-leak test. Env `AUTH_FORCE_LOCAL_LOGIN`, `SSO_HTTP_TIMEOUT_MS` (both Compose
       files, `.env.example*`). API: 289 tests pass.
-- [ ] 4. Web: login page (SSO button, 2FA step, 2FA set-up step), Profile → two-factor, Settings →
-      Authentication, Users (2FA status, reset, SSO badge); EN/AR translations; Vitest.
+- [x] 4. Web: login page (SSO button, 2FA step, 2FA set-up step), Profile → two-factor, Settings →
+      Authentication, Users (2FA status, reset, SSO badge); EN/AR translations; Vitest. **Done:**
+      `features/auth/LoginPage.tsx` (SSO button → `/api/v1/auth/sso/start?returnTo=…`, `?ssoError=` alert,
+      password form hidden behind "Administrator sign-in" when password sign-in is off, verify / set-up /
+      recovery-codes steps), `MfaParts.tsx` (Ant Design `Input.OTP` + `QRCode`, recovery codes copy/download),
+      `features/profile/TwoFactorCard.tsx`, `features/settings/AuthSettingsCard.tsx` (on the Settings page),
+      Users page tags + "Reset 2FA", `api/auth.ts`; `LoginPage.test.tsx` (4 tests); i18n test covers the new
+      dynamic keys.
 - [ ] 5. Docs (DECISIONS, SECURITY, DEPLOYMENT/README Entra ID guide, BACKLOG, CLAUDE.md), full verification,
       push.
 
