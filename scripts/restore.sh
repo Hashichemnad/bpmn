@@ -40,7 +40,9 @@ info "Verifying checksums"
 (cd "$SRC" && sha256sum -c --quiet SHA256SUMS) || die "checksum mismatch: the backup is damaged."
 sed 's/^/    /' "$SRC/MANIFEST.txt"
 
-env_value() { [ -f .env ] && sed -n "s/^$1=//p" .env | tail -n 1 || true; }
+env_value() {
+  if [ -f .env ]; then sed -n "s/^$1=//p" .env | tail -n 1; fi
+}
 BACKUP_FP=$(sed -n 's/^encryption key fp: *//p' "$SRC/MANIFEST.txt")
 KEY=$(env_value INTEGRATIONS_ENCRYPTION_KEY)
 CURRENT_FP=unknown

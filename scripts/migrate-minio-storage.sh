@@ -36,7 +36,9 @@ NETWORK=$(container_network "$STORAGE")
 ACCESS=$(container_env "$STORAGE" ROOT_ACCESS_KEY_ID)
 SECRET=$(container_env "$STORAGE" ROOT_SECRET_ACCESS_KEY)
 API=$(service_container api)
-BUCKET=${BUCKET:-$( [ -n "$API" ] && container_env "$API" MINIO_BUCKET || true)}
+if [ -z "${BUCKET:-}" ] && [ -n "$API" ]; then
+  BUCKET=$(container_env "$API" MINIO_BUCKET || true)
+fi
 BUCKET=${BUCKET:-processhub}
 
 if [ -n "$API" ]; then

@@ -30,7 +30,9 @@ for arg in "$@"; do
   esac
 done
 
-env_value() { [ -f .env ] && sed -n "s/^$1=//p" .env | tail -n 1 || true; }
+env_value() {
+  if [ -f .env ]; then sed -n "s/^$1=//p" .env | tail -n 1; fi
+}
 BACKUP_DIR=${BACKUP_DIR:-$(env_value BACKUP_DIR)}
 BACKUP_DIR=${BACKUP_DIR:-/var/backups/processhub}
 BACKUP_KEEP_DAYS=${BACKUP_KEEP_DAYS:-$(env_value BACKUP_KEEP_DAYS)}
