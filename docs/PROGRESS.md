@@ -36,7 +36,11 @@ Steps (tick as they are committed; a new session continues at the first unticked
       `docker compose down -v` → fresh empty stack → restore (33 s) → the Arabic page and the 8 MB attachment
       are back byte for byte. Damaged backup, different key and "no" at the prompt are refused/warned.
       Migration script also verified on the production stack (internal network). `shellcheck` clean.
-- [ ] 5. `docs/DEPLOYMENT.md` for a non-developer IT person.
+- [x] 5. `docs/DEPLOYMENT.md` for a non-developer IT person. **Done:** architecture, sizing (≤250 / 250–500
+      users, Azure UAE North / AWS me-central-1 instance types), VM creation (portal / console), data disk,
+      firewall, Docker install, configure, DNS, start, first sign-in, HTTPS options (Let's Encrypt, company
+      certificate, internal — the latter two verified in Docker), backups incl. off-site copies, restore incl.
+      new server, updates (incl. MinIO migration and trial → production), monitoring, troubleshooting, reference.
 - [ ] 6. Verification (tests, lint, type-check, prod stack in Docker), docs (DECISIONS, BACKLOG, README,
       SECURITY, CLAUDE.md phase table), push.
 
