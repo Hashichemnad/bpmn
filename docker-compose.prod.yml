@@ -12,8 +12,8 @@
 
 name: ${COMPOSE_PROJECT_NAME:-processhub}
 
+# Log rotation: Docker keeps at most 5 × 20 MB of logs per container.
 x-logging: &logging
-  # Docker keeps at most 5 × 20 MB of logs per container (log rotation).
   driver: json-file
   options:
     max-size: ${LOG_MAX_SIZE:-20m}
