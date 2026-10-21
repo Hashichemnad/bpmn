@@ -538,3 +538,64 @@ Decided by the product owner on 2026-10-21:
    managed identity, 14 days kept locally. Documented as the recommended setup in DEPLOYMENT.md §7.
 4. **`braces` (SEC-08):** accepted for now — high severity but dev-only (via Jest), not in the production
    code paths and no upstream fix. Follow-up in BACKLOG: move the API tests from Jest to Vitest.
+
+## D-055 — Single sign-on with OpenID Connect via `openid-client`
+
+**Decision:** SSO uses the OIDC authorization-code flow with PKCE, `state` and `nonce`, implemented with
+`openid-client` 6 (OpenID-certified, by the author of `jose`) instead of hand-written token validation or
+Passport. Microsoft Entra ID is a preset (issuer derived from the tenant ID, single tenant only — the
+multi-tenant `common` endpoint is not supported because its issuer cannot be validated); any other provider
+is configured by issuer URL (discovery). ID-token signatures are always verified (`enableNonRepudiationChecks`,
+SEC-10). `openid-client` is ESM-only: the API (CommonJS) loads it through Node's `require(esm)` (Node ≥ 20.19)
+and Jest compiles it with `ts-jest` (`transformIgnorePatterns` in `jest.config.js`). Provider requests use
+`common/safe-fetch.ts`, so the SSRF policy (D-047) applies. Tests run against a local mock provider
+(`test/fixtures/mock-idp.ts`), never a real tenant.
+
+## D-056 — SSO flow state in an encrypted Lax cookie; sessions unchanged
+
+**Decision:** `state`, `nonce`, the PKCE verifier and `returnTo` are AES-256-GCM-encrypted into a 10-minute
+`ph_sso` cookie (`SameSite=Lax`, path `/api/v1/auth/sso`) instead of a database table — no cleanup job, and
+a callback from another browser is rejected (login CSRF). Lax is required because the provider redirects back
+cross-site; the cookie never holds a session. After a successful callback the normal session cookies
+(`SameSite=Strict`) are issued, so SSO and password sessions are identical. The callback answers with a
+redirect to the SPA (`/login?ssoError=<code>` on failure), never JSON.
+
+## D-057 — Account matching, just-in-time users and group mapping
+
+**Decision:** users are matched by `(ssoIssuer, ssoSubject)`; on the first SSO sign-in an existing account
+with the same e-mail is linked once (never when it is already linked to another subject of the same issuer).
+Entra ID often omits `email`, so `preferred_username` / `upn` is used for Entra only. Allowed e-mail domains
+are mandatory when SSO is on. Unknown users are created just in time (can be switched off) with
+`passwordHash = ''` (no local password; password sign-in for them always fails in constant time). Roles: the
+union of the roles of all matching group mappings, otherwise the default role; department from the first
+matching mapping with one, otherwise the default department. Optional "update roles at every sign-in" makes
+the directory the source of truth, but never removes Super Admin from the break-glass account or the last
+Super Admin; on Entra ID group overage roles are left unchanged.
+
+## D-058 — Password sign-in can be turned off, with one break-glass Super Admin
+
+**Decision:** when password sign-in is off, only the configured break-glass account (an active Super Admin
+with a password, validated on save; SSO must be on) may use it. The refusal (`LOCAL_LOGIN_DISABLED`) is only
+returned after a correct password, so it does not reveal which account is the break-glass one. The
+environment variable `AUTH_FORCE_LOCAL_LOGIN=true` re-enables password sign-in for everyone as a documented
+emergency switch (warning shown in Settings).
+
+## D-059 — TOTP two-factor for password sign-in
+
+**Decision:** TOTP (RFC 6238, SHA-1, 6 digits, 30 s — what every authenticator app supports) via `otpauth`;
+QR code rendered in the browser with Ant Design's `QRCode` from the `otpauth://` URI (no image generation on
+the server). Secret encrypted with `INTEGRATIONS_ENCRYPTION_KEY`; a time step is accepted once (stored
+`totpLastStep`, updated atomically). Ten recovery codes, 80 random bits each, stored as SHA-256 in
+`MfaRecoveryCode` (high entropy, so a slow hash is unnecessary). Password sign-in becomes two requests: the
+password step returns `{ mfa: 'VERIFY' | 'SETUP' }` and a 5-minute signed challenge cookie; `SETUP` lets a
+user whose role requires 2FA enrol before the first session. Wrong codes count towards the account lockout and
+the counter is only reset after the last factor (SEC-11). 2FA applies to password sign-in only — SSO users
+use the identity provider's MFA. Admins with `users.manage` can reset a user's 2FA (only a Super Admin for a
+Super Admin); sessions are revoked.
+
+## D-060 — Settings → Authentication is Super Admin only
+
+**Decision:** stored as setting `auth` (`GET/PUT /settings/auth`, `settings.manage` = Super Admin), like the
+AI and Git settings: the client secret is write-only and encrypted, changes are audited with before / after
+(without the secret). The login page reads only `GET /auth/options` (SSO on, button labels, whether password
+sign-in is offered).

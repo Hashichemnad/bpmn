@@ -8,7 +8,7 @@ import {
   type ReactNode,
 } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import type { CurrentUser, LoginInput, Permission } from '@processhub/shared';
+import type { CurrentUser, LoginInput, LoginResponseDto, Permission } from '@processhub/shared';
 import { ApiError, api, onSessionExpired } from '@/api/client';
 import { useLocale } from '@/app/LocaleProvider';
 
@@ -17,7 +17,10 @@ interface AuthContextValue {
   loading: boolean;
   /** True after an explicit sign-out (the next sign-in should not return to the previous page). */
   signedOut: boolean;
-  login: (input: LoginInput) => Promise<CurrentUser>;
+  /** Password step; resolves to the user, or to the second step 2FA needs. */
+  login: (input: LoginInput) => Promise<LoginResponseDto>;
+  /** Stores the user once every sign-in step succeeded. */
+  completeLogin: (user: CurrentUser) => void;
   logout: () => Promise<void>;
   can: (...permissions: Permission[]) => boolean;
   canAny: (...permissions: Permission[]) => boolean;
@@ -75,15 +78,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     [qc],
   );
 
-  const login = useCallback(
-    async (input: LoginInput) => {
-      const res = await api<{ user: CurrentUser }>('/auth/login', { method: 'POST', body: input });
-      qc.setQueryData(ME_KEY, res.user);
+  const completeLogin = useCallback(
+    (u: CurrentUser) => {
+      qc.setQueryData(ME_KEY, u);
       clearUserData();
       signedOutRef.current = false;
-      return res.user;
     },
     [qc, clearUserData],
+  );
+
+  const login = useCallback(
+    async (input: LoginInput) => {
+      const res = await api<LoginResponseDto>('/auth/login', { method: 'POST', body: input });
+      if ('user' in res) completeLogin(res.user);
+      return res;
+    },
+    [completeLogin],
   );
 
   const logout = useCallback(async () => {
@@ -104,12 +114,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       loading: me.isLoading,
       signedOut: signedOutRef.current,
       login,
+      completeLogin,
       logout,
       can: (...p) => p.every((x) => perms.has(x)),
       canAny: (...p) => p.some((x) => perms.has(x)),
       setUser: (u) => qc.setQueryData(ME_KEY, u),
     };
-  }, [user, me.isLoading, login, logout, qc]);
+  }, [user, me.isLoading, login, completeLogin, logout, qc]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

@@ -70,6 +70,13 @@ const envSchema = z.object({
    * internal is blocked (SSRF protection). Plain http:// Git URLs are only allowed for these hosts.
    */
   OUTBOUND_ALLOWED_HOSTS: z.string().default(''),
+  /**
+   * Emergency switch: allow password sign-in for every account even when Settings → Authentication
+   * turned it off (e.g. the identity provider is down and the break-glass password is lost).
+   */
+  AUTH_FORCE_LOCAL_LOGIN: bool(false),
+  /** Timeout for calls to the single sign-on identity provider, in milliseconds. */
+  SSO_HTTP_TIMEOUT_MS: z.coerce.number().int().min(1000).default(15000),
 });
 
 export type Env = z.infer<typeof envSchema>;

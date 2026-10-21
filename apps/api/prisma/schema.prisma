@@ -131,6 +131,14 @@ model User {
   passwordChangedAt DateTime?
   /// Per notification type: { inApp, email }. Missing types use the defaults (both on).
   notificationPrefs Json        @default("{}")
+  /// Single sign-on identity (OIDC issuer + subject); set on the first SSO sign-in.
+  ssoIssuer         String?
+  ssoSubject        String?
+  /// TOTP two-factor: secret (AES-256-GCM), pending secret during enrolment, last accepted time step.
+  totpSecretSealed  String?
+  totpPendingSealed String?
+  totpEnabledAt     DateTime?
+  totpLastStep      Int?
   createdAt         DateTime    @default(now())
   updatedAt         DateTime    @updatedAt
   createdById       String?     @db.Uuid
@@ -139,17 +147,31 @@ model User {
 
   roles          UserRole[]
   refreshTokens  RefreshToken[]
-  ownedProcesses Process[]      @relation("ProcessOwner")
-  ownedSpaces    Space[]        @relation("SpaceOwner")
+  ownedProcesses Process[]         @relation("ProcessOwner")
+  ownedSpaces    Space[]           @relation("SpaceOwner")
   auditLogs      AuditLog[]
   pageDrafts     PageDraft[]
-  ownedPages     Page[]         @relation("PageOwner")
+  ownedPages     Page[]            @relation("PageOwner")
   jobRoles       UserJobRole[]
   notifications  Notification[]
   aiUsage        AiUsage[]
+  recoveryCodes  MfaRecoveryCode[]
 
+  @@unique([ssoIssuer, ssoSubject])
   @@index([departmentId])
   @@index([status])
+}
+
+/// Single-use 2FA recovery codes (SHA-256 of the normalised code; the codes are random, 80 bits).
+model MfaRecoveryCode {
+  id        String    @id @default(uuid()) @db.Uuid
+  userId    String    @db.Uuid
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  codeHash  String
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([userId])
 }
 
 model Role {

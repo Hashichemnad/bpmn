@@ -54,7 +54,55 @@
     "password": "Password",
     "signIn": "Sign in",
     "logout": "Sign out",
-    "lockedUntil": "Your account is locked after too many failed attempts. Try again after {{time}} or contact an administrator."
+    "lockedUntil": "Your account is locked after too many failed attempts. Try again after {{time}} or contact an administrator.",
+    "sso": {
+      "button": "Sign in with your company account",
+      "or": "or",
+      "adminSignIn": "Administrator sign-in with a password"
+    },
+    "mfa": {
+      "title": {
+        "verify": "Two-step verification",
+        "setup": "Set up two-step verification",
+        "codes": "Save your recovery codes"
+      },
+      "code": "Authentication code",
+      "codeFormat": "Enter the 6-digit code",
+      "enterCode": "Code from your authenticator app",
+      "verifyHint": "Open your authenticator app (for example Microsoft Authenticator) and enter the 6-digit code shown for ProcessHub.",
+      "verify": "Verify",
+      "useRecovery": "Use a recovery code instead",
+      "useApp": "Use the authenticator app instead",
+      "recoveryCode": "Recovery code",
+      "backToSignIn": "Back to sign-in",
+      "requiredByRole": "Your role requires two-step verification. Set it up now to continue.",
+      "enabled": "Two-step verification is on.",
+      "continue": "Continue",
+      "scanHint": "Scan this QR code with an authenticator app (Microsoft Authenticator, Google Authenticator, 1Password, …).",
+      "manualKey": "Cannot scan? Enter this key in the app:",
+      "confirm": "Confirm and turn on",
+      "recoveryWarning": "Keep these recovery codes somewhere safe. Each one can be used once to sign in if you lose your phone. They are shown only now.",
+      "copyCodes": "Copy codes",
+      "copied": "Copied",
+      "downloadCodes": "Download",
+      "cardTitle": "Two-step verification",
+      "on": "On",
+      "off": "Off",
+      "notAvailable": "Your account signs in with single sign-on; two-step verification is handled by your organisation’s identity provider.",
+      "enabledSince": "On since {{date}}.",
+      "codesLeft_one": "{{count}} recovery code left.",
+      "codesLeft_other": "{{count}} recovery codes left.",
+      "requiredNote": "Two-step verification is required for your role.",
+      "newCodes": "New recovery codes",
+      "turnOff": "Turn off",
+      "turnOn": "Turn on",
+      "intro": "Protect your account with a second step: after your password, enter a code from an authenticator app on your phone.",
+      "next": "Next",
+      "passwordFirst": "Enter your password to continue.",
+      "recoveryTitle": "Recovery codes",
+      "savedCodes": "I have saved these codes",
+      "disabled": "Two-step verification turned off"
+    }
   },
   "fields": {
     "name": "Name",
@@ -99,7 +147,10 @@
     "newPassword": "New password",
     "confirmPassword": "Confirm new password",
     "updatePassword": "Update password",
-    "passwordChanged": "Password changed. Other sessions have been signed out."
+    "passwordChanged": "Password changed. Other sessions have been signed out.",
+    "ssoAccount": "Your account signs in with single sign-on; its password is managed by your organisation.",
+    "signIn": "Sign-in",
+    "ssoLinked": "Single sign-on"
   },
   "close": "Close",
   "confirm": "Confirm",

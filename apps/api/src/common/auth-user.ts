@@ -10,6 +10,10 @@ export interface AuthUser {
   departmentId: string | null;
   roles: SystemRoleKey[];
   permissions: Set<Permission>;
+  /** False for accounts created by single sign-on (no local password). */
+  hasPassword: boolean;
+  ssoLinked: boolean;
+  mfaEnabled: boolean;
 }
 
 export interface RequestMeta {

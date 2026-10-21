@@ -85,6 +85,7 @@ describe('Security hardening (e2e)', () => {
     const GIT_TOKEN = 'ghp_SecretGitToken1234567890';
     const SMTP_PASSWORD = 'Smtp-Secret-Password-42';
     const AI_KEY = 'sk-ant-secret-ai-key-0987654321';
+    const SSO_SECRET = 'Sso-Client-Secret-Value-777';
 
     it('never appear in API responses, audit entries, stored settings or logs', async () => {
       const logged: string[] = [];
@@ -170,8 +171,45 @@ describe('Security hardening (e2e)', () => {
           .send({ newPassword: 'Another-Password2' })
           .expect(204);
 
+        const sso = {
+          ssoEnabled: true,
+          provider: 'ENTRA',
+          tenantId: '72f988bf-86f1-41af-91ab-2d7cd011db47',
+          issuer: '',
+          clientId: 'client-id',
+          clientSecret: SSO_SECRET,
+          buttonLabelEn: '',
+          buttonLabelAr: '',
+          allowedDomains: ['sec.local'],
+          autoCreateUsers: true,
+          defaultRole: 'VIEWER',
+          defaultDepartmentId: null,
+          groupsClaim: 'groups',
+          groupMappings: [],
+          syncRolesOnLogin: false,
+          localLoginEnabled: true,
+          breakGlassUserId: null,
+          mfaRequiredRoles: [],
+        };
+        await admin.put('/settings/auth').send(sso).expect(200);
+        // Points at an address that is blocked (SSRF policy): the failure must not echo the secret.
+        const ssoTest = await admin
+          .post('/settings/auth/test')
+          .send({ ...sso, provider: 'OIDC', issuer: 'https://10.9.9.9/x', clientSecret: '' })
+          .expect(200);
+        expect(ssoTest.body.ok).toBe(false);
+        // TOTP secret: shown once in the set-up response, never stored or returned in clear afterwards.
+        const totp = await admin.post('/auth/mfa/setup').send({ password: PASSWORD }).expect(200);
+        const TOTP_SECRET: string = totp.body.secret;
+        await admin
+          .post('/auth/mfa/enable')
+          .send({ code: (await import('../src/auth/totp')).totpCode(TOTP_SECRET) })
+          .expect(200);
+
         const responses = await Promise.all(
           [
+            '/settings/auth',
+            '/auth/mfa',
             '/integrations/git',
             '/integrations/git/status',
             '/settings',
@@ -186,10 +224,13 @@ describe('Security hardening (e2e)', () => {
         const audit = await ctx.prisma.auditLog.findMany();
         const settingsRows = await ctx.prisma.setting.findMany();
         const syncItems = await ctx.prisma.gitSyncItem.findMany();
+        const users = await ctx.prisma.user.findMany();
         const forbidden = [
           GIT_TOKEN,
           SMTP_PASSWORD,
           AI_KEY,
+          SSO_SECRET,
+          TOTP_SECRET,
           'Initial-Password1',
           'Another-Password2',
           '$argon2',
@@ -199,6 +240,8 @@ describe('Security hardening (e2e)', () => {
           audit: JSON.stringify(audit),
           settings: JSON.stringify(settingsRows),
           gitSyncItems: JSON.stringify(syncItems),
+          users: JSON.stringify(users.map(({ passwordHash: _p, ...u }) => u)),
+          ssoTest: JSON.stringify(ssoTest.body),
           logs: logged.join('\n'),
         };
         for (const [where, text] of Object.entries(haystacks)) {
@@ -210,6 +253,11 @@ describe('Security hardening (e2e)', () => {
         expect(test.body.error).toContain('***');
       } finally {
         spies.forEach((s) => s.mockRestore());
+        // Later tests sign in as this admin with a password only.
+        await ctx.prisma.user.update({
+          where: { email: 'admin@sec.local' },
+          data: { totpEnabledAt: null, totpSecretSealed: null },
+        });
       }
     });
 

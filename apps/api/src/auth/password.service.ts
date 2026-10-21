@@ -15,7 +15,12 @@ export class PasswordService {
     return hashPassword(password);
   }
 
+  /** False for accounts without a password (single sign-on only), in the same time as a real check. */
   async verify(hash: string, password: string): Promise<boolean> {
+    if (!hash) {
+      await this.verifyDummy(password);
+      return false;
+    }
     try {
       return await argon2.verify(hash, password);
     } catch {

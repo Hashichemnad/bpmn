@@ -43,6 +43,9 @@ and then `pnpm format`.
 | SEC-08 | Vulnerable components (A06) | `braces` (high, ReDoS/stack exhaustion) via Jest; no fixed version exists. Dev-only, but the API runtime image currently contains dev dependencies.                                                                              | Low      | **Accepted** (D-054); follow-up: Jest → Vitest (BACKLOG).                                                                                                                    |
 | SEC-09 | Vulnerable components (A06) | MinIO client pulls `stream-json` 1.x and `decode-uri-component` 0.2 (moderate). The vulnerable code (stream-json filters/JSONC/Assembler, decoding of crafted URIs) is not on any path ProcessHub uses.                          | Low      | Accepted, tracked in BACKLOG (replace when MinIO updates).                                                                                                                   |
 
+| SEC-10 | Authentication (A07) | Part 3: `openid-client` does not check the signature of ID tokens received from the token endpoint by default (allowed by OIDC when TLS is used). A test with a token signed by a foreign key was accepted. | Low | **Fixed** before release: `enableNonRepudiationChecks` — the signature is always verified against the provider's JWKS. |
+| SEC-11 | Authentication (A07) | Part 3: with two-factor sign-in, a correct password reset the failed-login counter, so codes could be guessed without limit by re-entering the password. | Medium | **Fixed** before release: the counter is reset only after every factor; wrong codes count towards the same lockout (tested). |
+
 No authorisation gaps were found: the matrix test passes for every route without changes to the guards.
 
 ## 3. Controls in place (CLAUDE.md §7 and OWASP Top 10)
@@ -100,6 +103,25 @@ dummy hash for unknown accounts (same timing), stricter rate limit on login / re
 short-lived access tokens; the user is re-loaded on every request, so deactivation and role changes apply
 immediately and a password change invalidates older tokens.
 
+- **Single sign-on (Part 3, D-055 – D-058):** OpenID Connect authorization-code flow with PKCE (S256),
+  `state` and `nonce` (`openid-client`, OpenID-certified). The ID token's signature (provider JWKS), issuer,
+  audience, expiry and nonce are verified. The one-time checks travel in an AES-256-GCM-encrypted, 10-minute,
+  `HttpOnly`, `SameSite=Lax` cookie limited to `/api/v1/auth/sso` (Lax is needed for the redirect back from
+  the provider; it never holds a session). The callback URL is rebuilt from `APP_URL`; `returnTo` only
+  accepts in-app paths (no open redirect). Users are matched by (issuer, subject); an e-mail match links an
+  account only once and never takes over an account linked to another subject. Allowed e-mail domains are
+  required; unverified addresses (`email_verified: false`) are refused. The client secret is encrypted
+  and write-only; provider calls go through the SSRF policy. Group sync never removes Super Admin from the
+  break-glass account or the last Super Admin.
+- **Password sign-in can be switched off** except for one break-glass Super Admin; the "turned off" answer
+  is only given after a correct password (does not reveal the break-glass account). `AUTH_FORCE_LOCAL_LOGIN`
+  is the documented emergency switch.
+- **TOTP two-factor (D-059):** RFC 6238 (`otpauth`), secret AES-256-GCM-encrypted, ±1 time step, a used time
+  step is rejected (atomic, no replay); 10 single-use recovery codes (80 bits, SHA-256). The password step
+  returns only a 5-minute challenge cookie (`HttpOnly`, `SameSite=Strict`, path `/api/v1/auth/login`, not
+  usable as an access token). Enrolment, turning off and new recovery codes need the password (and a code);
+  admins can require 2FA per role and reset it (sessions revoked, audited as `MFA_RESET`).
+
 **A08 Software and data integrity** — lockfile with `--frozen-lockfile` in the images, pnpm build-script
 allow-list (`onlyBuiltDependencies`), GCM-authenticated secrets.
 
@@ -111,13 +133,13 @@ in the environment); the file storage and the database come from the environment
 
 ## 4. Rate limits
 
-| Scope                                                | Limit (default)                                     | Setting                                                |
-| ---------------------------------------------------- | --------------------------------------------------- | ------------------------------------------------------ |
-| Every endpoint, per client IP                        | 300 requests / 60 s                                 | `RATE_LIMIT_MAX`, `RATE_LIMIT_TTL_SECONDS`             |
-| Login, token refresh, change password, per client IP | 10 requests / 60 s                                  | `LOGIN_RATE_LIMIT_MAX`                                 |
-| Failed logins per account                            | lock for 15 min after 5 failures                    | `LOGIN_MAX_ATTEMPTS`, `LOGIN_LOCKOUT_MINUTES`          |
-| AI features                                          | per-user daily and organisation monthly requests    | Settings → AI                                          |
-| Request bodies                                       | JSON 6 MB, forms 100 KB, attachments / logo by type | `BODY_LIMIT`, `ATTACHMENT_MAX_BYTES`, `LOGO_MAX_BYTES` |
+| Scope                                                                                 | Limit (default)                                     | Setting                                                |
+| ------------------------------------------------------------------------------------- | --------------------------------------------------- | ------------------------------------------------------ |
+| Every endpoint, per client IP                                                         | 300 requests / 60 s                                 | `RATE_LIMIT_MAX`, `RATE_LIMIT_TTL_SECONDS`             |
+| Login, 2FA steps, SSO start / callback, token refresh, change password, per client IP | 10 requests / 60 s                                  | `LOGIN_RATE_LIMIT_MAX`                                 |
+| Failed logins per account (wrong password or 2FA code)                                | lock for 15 min after 5 failures                    | `LOGIN_MAX_ATTEMPTS`, `LOGIN_LOCKOUT_MINUTES`          |
+| AI features                                                                           | per-user daily and organisation monthly requests    | Settings → AI                                          |
+| Request bodies                                                                        | JSON 6 MB, forms 100 KB, attachments / logo by type | `BODY_LIMIT`, `ATTACHMENT_MAX_BYTES`, `LOGO_MAX_BYTES` |
 
 Client IPs come from `X-Forwarded-For` with `TRUST_PROXY` hops — set it to the number of proxies in front
 of the API, or clients can spoof their IP and evade per-IP limits.
@@ -153,10 +175,21 @@ zod / UUID pipe; file uploads are checked in the service (allow-list, content sn
 | POST   | `/auth/change-password`                      | authenticated                                             | body                                | login      |
 | GET    | `/auth/csrf`                                 | **public**                                                | —                                   | default    |
 | POST   | `/auth/login`                                | **public**                                                | body                                | login      |
+| POST   | `/auth/login/mfa`                            | **public**                                                | body                                | login      |
+| POST   | `/auth/login/mfa/setup`                      | **public**                                                | —                                   | login      |
+| POST   | `/auth/login/mfa/setup/confirm`              | **public**                                                | body                                | login      |
 | POST   | `/auth/logout`                               | **public**                                                | —                                   | default    |
 | GET    | `/auth/me`                                   | authenticated                                             | —                                   | default    |
 | PATCH  | `/auth/me`                                   | authenticated                                             | body                                | default    |
+| GET    | `/auth/mfa`                                  | authenticated                                             | —                                   | default    |
+| POST   | `/auth/mfa/disable`                          | authenticated                                             | body                                | login      |
+| POST   | `/auth/mfa/enable`                           | authenticated                                             | body                                | login      |
+| POST   | `/auth/mfa/recovery-codes`                   | authenticated                                             | body                                | login      |
+| POST   | `/auth/mfa/setup`                            | authenticated                                             | body                                | login      |
+| GET    | `/auth/options`                              | **public**                                                | —                                   | default    |
 | POST   | `/auth/refresh`                              | **public**                                                | —                                   | login      |
+| GET    | `/auth/sso/callback`                         | **public**                                                | query                               | login      |
+| GET    | `/auth/sso/start`                            | **public**                                                | query                               | login      |
 | DELETE | `/comments/:commentId`                       | `comments.write`                                          | param `commentId`                   | default    |
 | PATCH  | `/comments/:commentId`                       | `comments.write`                                          | body, param `commentId`             | default    |
 | POST   | `/comments/:commentId/reopen`                | `comments.write`                                          | param `commentId`                   | default    |
@@ -260,6 +293,9 @@ zod / UUID pipe; file uploads are checked in the service (allow-list, content sn
 | GET    | `/search`                                    | any of `docs.read`, `processes.read`                      | query                               | default    |
 | GET    | `/settings`                                  | `settings.manage`                                         | —                                   | default    |
 | PATCH  | `/settings`                                  | `settings.manage`                                         | body                                | default    |
+| GET    | `/settings/auth`                             | `settings.manage`                                         | —                                   | default    |
+| PUT    | `/settings/auth`                             | `settings.manage`                                         | body                                | default    |
+| POST   | `/settings/auth/test`                        | `settings.manage`                                         | body                                | default    |
 | GET    | `/settings/email`                            | `settings.manage`                                         | —                                   | default    |
 | PUT    | `/settings/email`                            | `settings.manage`                                         | body                                | default    |
 | POST   | `/settings/email/test`                       | `settings.manage`                                         | body                                | default    |
@@ -287,6 +323,7 @@ zod / UUID pipe; file uploads are checked in the service (allow-list, content sn
 | POST   | `/users`                                     | `users.manage`                                            | body                                | default    |
 | GET    | `/users/:id`                                 | `users.read`                                              | param `id`                          | default    |
 | PATCH  | `/users/:id`                                 | `users.manage`                                            | body, param `id`                    | default    |
+| POST   | `/users/:id/mfa/reset`                       | `users.manage`                                            | param `id`                          | default    |
 | POST   | `/users/:id/reset-password`                  | `users.manage`                                            | body, param `id`                    | default    |
 | POST   | `/users/:id/unlock`                          | `users.manage`                                            | param `id`                          | default    |
 | GET    | `/users/directory`                           | any of `comments.write`, `governance.manage`              | query                               | default    |
@@ -300,17 +337,20 @@ zod / UUID pipe; file uploads are checked in the service (allow-list, content sn
 
 ## 6. Remaining risks
 
-| Risk                                                                                                                                             | Mitigation / plan                                                                                                                                             |
-| ------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **SEC-08** `braces` (high) via Jest, no upstream fix; dev dependencies are in the API runtime image.                                             | Not executed at runtime. **Accepted** by the product owner (D-054); the slim runtime image and the Jest → Vitest move (BACKLOG) remove it.                    |
-| **SEC-09** The `minio` npm client's `stream-json` / `decode-uri-component` (moderate).                                                           | Code paths unused; replace the client with `@aws-sdk/client-s3` (BACKLOG) or update when it releases a fix.                                                   |
-| No second factor and no SSO yet.                                                                                                                 | Planned Phase 6 parts (TOTP, Azure AD / OIDC).                                                                                                                |
-| Rate limits and lockout counters are per API instance (in memory).                                                                               | Fine for one instance; Redis storage in BACKLOG before scaling out.                                                                                           |
-| Account lockout can be triggered by anyone who knows an email address (denial of service), and `ACCOUNT_LOCKED` reveals that the account exists. | Short lock (15 min), per-IP login limit, audit entries `LOGIN_FAILED` / `LOCKOUT`. SSO will move most users off passwords.                                    |
-| CSP allows inline styles (`style-src 'unsafe-inline'`, required by Ant Design).                                                                  | Scripts stay `'self'` only; rich text strips `style` attributes. Revisit with Ant Design's CSS-variables mode.                                                |
-| AI: published or draft content sent to the provider could contain prompt-injection text.                                                         | Answers are text only, only from content the user may read; generated BPMN / pages are validated, sanitised and only saved after a human accepts the preview. |
-| Logs contain recipient email addresses of failed notification emails.                                                                            | Personal data, not secrets; keep log retention short.                                                                                                         |
-| TLS and HSTS: the trial stack (`docker-compose.yml`) serves plain HTTP on port 8080.                                                             | **Resolved for production** (part 2): `docker-compose.prod.yml` puts Caddy in front (automatic certificates, http → https, HSTS); see `docs/DEPLOYMENT.md`.   |
+| Risk                                                                                                                                             | Mitigation / plan                                                                                                                                                                            |
+| ------------------------------------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **SEC-08** `braces` (high) via Jest, no upstream fix; dev dependencies are in the API runtime image.                                             | Not executed at runtime. **Accepted** by the product owner (D-054); the slim runtime image and the Jest → Vitest move (BACKLOG) remove it.                                                   |
+| **SEC-09** The `minio` npm client's `stream-json` / `decode-uri-component` (moderate).                                                           | Code paths unused; replace the client with `@aws-sdk/client-s3` (BACKLOG) or update when it releases a fix.                                                                                  |
+| No second factor and no SSO yet.                                                                                                                 | **Resolved** (part 3): OIDC / Entra ID single sign-on and TOTP two-factor.                                                                                                                   |
+| SSO: Entra ID "group overage" (users in more than 200 groups get no groups claim).                                                               | Roles are left unchanged and the sign-in is audited with `groupsOverage`; reading groups from Microsoft Graph is in BACKLOG.                                                                 |
+| SSO users skip ProcessHub's TOTP (the identity provider is responsible for MFA).                                                                 | Enforce MFA with Entra ID Conditional Access (DEPLOYMENT.md §6.2).                                                                                                                           |
+| Sessions are not ended when a user is disabled in Entra ID (no back-channel logout).                                                             | Access tokens live 15 minutes; refresh tokens up to `REFRESH_TOKEN_TTL_DAYS`. Deactivate the user in ProcessHub too, or shorten the refresh lifetime; SCIM / back-channel logout in BACKLOG. |
+| Rate limits and lockout counters are per API instance (in memory).                                                                               | Fine for one instance; Redis storage in BACKLOG before scaling out.                                                                                                                          |
+| Account lockout can be triggered by anyone who knows an email address (denial of service), and `ACCOUNT_LOCKED` reveals that the account exists. | Short lock (15 min), per-IP login limit, audit entries `LOGIN_FAILED` / `LOCKOUT`. SSO will move most users off passwords.                                                                   |
+| CSP allows inline styles (`style-src 'unsafe-inline'`, required by Ant Design).                                                                  | Scripts stay `'self'` only; rich text strips `style` attributes. Revisit with Ant Design's CSS-variables mode.                                                                               |
+| AI: published or draft content sent to the provider could contain prompt-injection text.                                                         | Answers are text only, only from content the user may read; generated BPMN / pages are validated, sanitised and only saved after a human accepts the preview.                                |
+| Logs contain recipient email addresses of failed notification emails.                                                                            | Personal data, not secrets; keep log retention short.                                                                                                                                        |
+| TLS and HSTS: the trial stack (`docker-compose.yml`) serves plain HTTP on port 8080.                                                             | **Resolved for production** (part 2): `docker-compose.prod.yml` puts Caddy in front (automatic certificates, http → https, HSTS); see `docs/DEPLOYMENT.md`.                                  |
 
 ## 7. Go-live configuration checklist
 
@@ -325,6 +365,9 @@ already the default; check them anyway if you changed the setup.
 - [ ] `ENABLE_SWAGGER=false`.
 - [ ] `OUTBOUND_ALLOWED_HOSTS` lists only the internal Git / SMTP servers that are really needed.
 - [ ] Review Settings → AI (enabled roles, limits, data notice) before enabling the assistant.
+- [ ] Settings → Authentication: require two-step verification at least for Super Admin and Admin; with
+      single sign-on, allowed domains limited to company domains, a break-glass Super Admin with 2FA whose
+      password is in the vault, `AUTH_FORCE_LOCAL_LOGIN` not set; Entra ID Conditional Access requires MFA.
 - [ ] Database, file storage and the API are not reachable from outside (only the web container is published) _(prod stack: only Caddy on 80/443; database and storage on an internal network)_.
 - [ ] Daily backups with an off-site copy, and one restore tested (`docs/DEPLOYMENT.md` §7–8).
 
@@ -342,6 +385,12 @@ seed provides these).
 - [ ] JWT tampering (algorithm confusion, `none`, expired tokens, token of a deactivated user).
 - [ ] Cookie flags over TLS; session fixation; CSRF on every state-changing route (missing / mismatched
       token, foreign `Origin`, cookie planted from a sub-domain).
+- [ ] Two-factor: code brute force (lockout), replay of a used code, reuse of the `ph_mfa` challenge as a
+      session, skipping the second step, recovery-code reuse, enrolment without the password.
+- [ ] Single sign-on: login CSRF (callback without / with another flow cookie), state / nonce / PKCE
+      tampering, ID tokens with a wrong audience, issuer or signature, `returnTo` open redirect, account
+      linking / takeover via e-mail claims of another subject or an unverified address, domain allow-list
+      bypass, password sign-in when it is turned off.
 
 **Authorisation**
 

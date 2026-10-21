@@ -2,7 +2,96 @@
 
 Read this together with `CLAUDE.md` at the start of every session.
 
-## Current state — 2026-10-21 (Phase 6 — Hardening, branch `phase-6-part-2`)
+## Current state — 2026-10-21 (Phase 6 — Hardening, branch `phase-6-part-3`)
+
+Parts 1 (security review) and 2 (production deployment) are merged into `main`.
+
+### Part 3 — Single sign-on (OIDC / Entra ID) and TOTP two-factor (done, awaiting review)
+
+Design (details in DECISIONS D-055 – D-060 once written):
+
+- OIDC authorization-code flow with PKCE, state and nonce via `openid-client` 6 (OpenID-certified);
+  Entra ID = issuer `https://login.microsoftonline.com/<tenant id>/v2.0`, any other provider = issuer URL
+  (discovery). Settings key `auth` (Super Admin, Settings → Authentication); client secret AES-256-GCM.
+  Callback `GET /api/v1/auth/sso/callback` (redirect URI `${APP_URL}/api/v1/auth/sso/callback`); flow state in
+  an encrypted, 10-minute, `SameSite=Lax` cookie limited to `/api/v1/auth/sso`. IdP calls go through the
+  SSRF policy (`OUTBOUND_ALLOWED_HOSTS`).
+- Users matched by (issuer, subject), then linked once by e-mail; just-in-time creation with a default role
+  and department; group → roles/department mapping (optional sync on every sign-in); allowed e-mail domains.
+- Local (password) sign-in can be switched off except for one break-glass Super Admin; env
+  `AUTH_FORCE_LOCAL_LOGIN=true` re-enables it in an emergency.
+- TOTP (`otpauth`, RFC 6238, 30 s, 6 digits, ±1 step, no code reuse) for local accounts; QR code shown with
+  Ant Design `QRCode`; 10 single-use recovery codes (stored as SHA-256); admin can require 2FA per role and
+  reset a user's 2FA. Password sign-in then needs a second step (`ph_mfa` challenge cookie, 5 minutes).
+
+Steps (tick as they are committed; a new session continues at the first unticked one):
+
+- [x] 1. Shared schemas/types/constants (auth settings, MFA, login response, audit actions); Prisma migration
+      (User SSO + TOTP fields, `MfaRecoveryCode`); Jest transform for ESM-only `openid-client`.
+- [x] 2. API: TOTP service, enrolment / disable / recovery-code endpoints, two-step password login,
+      "required for role" setup during login, admin reset; unit + e2e tests. **Done:** `src/auth/totp.ts`
+      (+ spec), `MfaService`, `AuthSettingsService` (settings key `auth`, `GET/PUT /settings/auth`, public
+      `GET /auth/options`), login returns `{ mfa: 'VERIFY' | 'SETUP' }` + `ph_mfa` cookie; endpoints
+      `POST /auth/login/mfa`, `/auth/login/mfa/setup[/confirm]`, `GET /auth/mfa`, `POST /auth/mfa/{setup,enable,
+disable,recovery-codes}`, `POST /users/:id/mfa/reset`. A wrong code counts towards the password lockout
+      and a correct password no longer resets the counter while the code is pending. Accounts without a
+      password (`passwordHash = ''`, SSO) cannot use password sign-in (same timing as a wrong password).
+      `test/mfa.e2e-spec.ts` (10 tests); route-security lists and SECURITY.md route table updated.
+- [x] 3. API: authentication settings (Super Admin, encrypted secret), OIDC start/callback, JIT users, group
+      mapping, allowed domains, local sign-in restriction + break-glass; e2e tests with a mocked identity
+      provider (local discovery / JWKS / token endpoint). **Done:** `src/auth/sso/` (`OidcClient` — the only
+      code talking to the provider, through `common/safe-fetch.ts` + SSRF policy; `SsoService`; pure
+      `sso-claims.ts` + spec; `SsoController`: `GET /auth/sso/start`, `GET /auth/sso/callback`,
+      `POST /settings/auth/test`). ID-token signatures are verified even from the token endpoint
+      (`enableNonRepudiationChecks` — found by the "foreign key" test). Mock provider
+      `test/fixtures/mock-idp.ts`; `test/sso.e2e-spec.ts` (26 tests); SSO client secret and TOTP secret added
+      to the cross-cutting secret-leak test. Env `AUTH_FORCE_LOCAL_LOGIN`, `SSO_HTTP_TIMEOUT_MS` (both Compose
+      files, `.env.example*`). API: 289 tests pass.
+- [x] 4. Web: login page (SSO button, 2FA step, 2FA set-up step), Profile → two-factor, Settings →
+      Authentication, Users (2FA status, reset, SSO badge); EN/AR translations; Vitest. **Done:**
+      `features/auth/LoginPage.tsx` (SSO button → `/api/v1/auth/sso/start?returnTo=…`, `?ssoError=` alert,
+      password form hidden behind "Administrator sign-in" when password sign-in is off, verify / set-up /
+      recovery-codes steps), `MfaParts.tsx` (Ant Design `Input.OTP` + `QRCode`, recovery codes copy/download),
+      `features/profile/TwoFactorCard.tsx`, `features/settings/AuthSettingsCard.tsx` (on the Settings page),
+      Users page tags + "Reset 2FA", `api/auth.ts`; `LoginPage.test.tsx` (4 tests); i18n test covers the new
+      dynamic keys.
+- [x] 5. Docs (DECISIONS, SECURITY, DEPLOYMENT/README Entra ID guide, BACKLOG, CLAUDE.md), full verification,
+      push. **Done:** DECISIONS D-055 – D-060; SECURITY.md SEC-10 / SEC-11 (both found and fixed in this part),
+      A07 controls, rate limits, risks, go-live and pen-test checklists, route table regenerated;
+      DEPLOYMENT.md §6.1 (Entra ID step by step, other providers, secret renewal, emergency switch), §6.2 (2FA),
+      troubleshooting rows; README (features, configuration, security highlights); BACKLOG; CLAUDE.md phase
+      table, §7, §9.
+
+#### Verification (part 3)
+
+| Check                                                 | Result                                                                                                                                                                                                                                    |
+| ----------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `pnpm format:check`, `pnpm lint`, `pnpm typecheck`    | clean                                                                                                                                                                                                                                     |
+| `pnpm test`                                           | **397 tests pass** — shared 73, web 35, API 289 (38 suites; new: `mfa.e2e` 10, `sso.e2e` 26, `totp` + `sso-claims` unit, `LoginPage.test.tsx` 4, schema tests 9; secret-leak test extended with the SSO secret and TOTP secret)           |
+| `pnpm build`                                          | passes; the built API loads the ESM-only `openid-client` through `require(esm)`                                                                                                                                                           |
+| `pnpm audit --prod`                                   | no high/critical; the same 4 moderate as before (`minio` client, SEC-09)                                                                                                                                                                  |
+| Browser walkthrough (built API + Vite + mock OIDC)    | Playwright script: Settings → Authentication filled via the UI, Test connection, save; 2FA enrolment with QR code and recovery codes; Arabic login page with SSO button; Arabic 2FA step; JIT SSO user with mapped role; Arabic SSO error |
+| Playwright smoke suite (`pnpm e2e`, Vite + built API) | 8 pass                                                                                                                                                                                                                                    |
+
+The walkthrough found and fixed three UI bugs before commit: the settings form dropped fields that were not
+shown (tenant ID vs issuer) and was refused by the API; the SSO error on the login page did not follow the
+language toggle; the six 2FA code boxes ran right-to-left in Arabic. Docker was **not** available in this
+session (no daemon), so `docker compose up` from a clean clone was not re-run; the only container-relevant
+changes are two new environment variables passed through in both Compose files (YAML validated) and the
+`openid-client` runtime requirement Node ≥ 20.19 (`node:20-alpine` currently resolves to 20.19+).
+
+### Next (continue here)
+
+1. Review and merge `phase-6-part-3` (new migration `20261021180000_sso_mfa` runs automatically at start).
+   Before relying on it in production: one real sign-in against your Entra ID tenant (DEPLOYMENT.md §6.1) —
+   the tests use a mock provider.
+2. Decisions for the product owner — see the session summary / D-055 – D-060: roles that must use 2FA at
+   go-live; whether password sign-in is switched off after SSO roll-out; whether the directory manages roles
+   ("update roles at every sign-in"); Entra ID Conditional Access MFA for SSO users.
+3. Next Phase 6 parts (suggested order): slim API runtime image and images in a registry (also Node 22 LTS —
+   Node 20 is end-of-life); performance; external penetration test with `docs/SECURITY.md` §8.
+
+## Phase 6 part 2 — 2026-10-21 (production deployment, merged into `main`)
 
 Phase 6 is split into small parts, one branch each (`phase-6-part-<n>` from the latest `main`). Part 1
 (security review) is merged into `main`.

@@ -32,6 +32,8 @@ import {
   AI_FEATURES,
   AI_FINDING_KINDS,
   AI_PROVIDERS,
+  SSO_ERROR_CODES,
+  SSO_PROVIDERS,
 } from '@processhub/shared';
 import { resources } from './i18n';
 
@@ -180,6 +182,12 @@ describe('translations', () => {
         `ai:translate.target.${l}`,
         `ai:translate.fieldsTo.${l}`,
       ]),
+      // Single sign-on and two-factor authentication
+      ...SSO_ERROR_CODES.map((c) => `errors:${c}`),
+      ...SSO_PROVIDERS.map((p) => `admin:auth.providers.${p}`),
+      ...['verify', 'setup', 'codes'].map((k) => `common:auth.mfa.title.${k}`),
+      'errors:SSO_HOST_BLOCKED',
+      'errors:SSO_INCOMPLETE',
     ];
     expect(expected.filter((k) => !en.has(k))).toEqual([]);
   });

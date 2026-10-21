@@ -283,7 +283,71 @@ Caddy handles HTTPS. Choose one option with `CADDY_TLS` in `.env`, then run `sud
    administrator can reset the other's password.
 7. Optional: **Settings → AI** (AI assistant, needs an API key from your AI provider) and
    **Settings → Integrations** (GitHub / GitLab). See `README.md`.
-8. Go through the go-live checklist in [`docs/SECURITY.md`](./SECURITY.md) §7.
+8. Optional but recommended: **Settings → Authentication** — single sign-on with your company accounts
+   (6.1) and two-step verification for administrators (6.2).
+9. Go through the go-live checklist in [`docs/SECURITY.md`](./SECURITY.md) §7.
+
+### 6.1 Single sign-on with Microsoft Entra ID (Azure AD)
+
+Staff then sign in with their Microsoft 365 account ("Sign in with your company account" on the sign-in
+page). You need an Entra ID role that may register applications (Application Administrator or Global
+Administrator) — about 15 minutes.
+
+1. **Register the application.** [entra.microsoft.com](https://entra.microsoft.com) → _Identity_ →
+   _Applications_ → _App registrations_ → **New registration**.
+   - Name: `ProcessHub`.
+   - Supported account types: **Accounts in this organizational directory only** (single tenant).
+   - Redirect URI: platform **Web**, value `https://processhub.yourcompany.com/api/v1/auth/sso/callback`
+     (exactly as shown under **Settings → Authentication → Redirect URI** in ProcessHub).
+   - **Register.**
+2. **Copy two IDs** from the _Overview_ page: _Application (client) ID_ and _Directory (tenant) ID_.
+3. **Create a client secret:** _Certificates & secrets_ → _Client secrets_ → **New client secret**,
+   description `ProcessHub`, expiry 24 months → copy the **Value** (not the Secret ID) right away; it is shown
+   only once. Put a reminder in your calendar a month before it expires (see "Renew the secret" below).
+4. **Optional — groups for roles:** _Token configuration_ → **Add groups claim** → _Security groups_ →
+   for ID tokens choose **Group ID** → Save. Note the _Object ID_ of each group you want to map (Entra ID →
+   _Groups_). Users in more than 200 groups get no group list in the token; ProcessHub then keeps their roles
+   unchanged — use dedicated groups and _Groups assigned to the application_ if that happens.
+5. **Optional — only some staff:** _Enterprise applications_ → ProcessHub → _Properties_ → **Assignment
+   required = Yes**, then add the users or groups under _Users and groups_.
+6. **In ProcessHub:** **Settings → Authentication** (Super Admin):
+   - Enable single sign-on, Identity provider **Microsoft Entra ID**, paste the tenant ID, client ID and
+     client secret.
+   - **Allowed e-mail domains:** your domains, e.g. `yourcompany.com` (press Enter after each).
+   - **Default role for new users:** usually _Viewer_ (Knowledge Portal only). Optionally a default
+     department.
+   - **Group mappings** (optional): group object ID → roles and department, e.g. the "BPM Modelers" group →
+     _Modeler / Editor_. Turn on **Update roles at every sign-in** if the directory should manage roles (then
+     role changes made in ProcessHub are replaced at the user's next sign-in).
+   - **Test connection** → "Connected to https://login.microsoftonline.com/…/v2.0" → **Save**.
+7. **Try it** in a private browser window: the sign-in page shows the company button; after signing in, the
+   user appears under **Administration → Users** with an _SSO_ tag. Existing ProcessHub users with the same
+   e-mail address are linked to their Microsoft account at their first single sign-on.
+8. **Optional — switch off passwords:** once everyone can sign in with single sign-on, turn off
+   **Allow sign-in with a ProcessHub password** and choose a **break-glass Super Admin**: a local
+   administrator account (not a person's daily account) with a long password and two-step verification,
+   stored in the company password manager. Only this account can still use a password (link
+   _Administrator sign-in with a password_ under the company button).
+
+**Other providers** (Google Workspace, Okta, Keycloak, ADFS, …): choose _Other OpenID Connect provider_ and
+enter the issuer URL (ProcessHub reads `<issuer>/.well-known/openid-configuration`), client ID and secret; the
+redirect URI is the same. The provider must send the `email` claim; for groups, set the claim name.
+
+**Renew the secret:** in Entra ID create a new client secret, paste it in **Settings → Authentication →
+Client secret**, Save, then delete the old secret in Entra ID. Sign-in keeps working during the change.
+
+**Emergency — identity provider down and break-glass password lost:** set `AUTH_FORCE_LOCAL_LOGIN=true` in
+`.env`, `sudo docker compose up -d`; every account with a password can sign in again (a warning is shown in
+Settings). Remove the line and run `sudo docker compose up -d` again afterwards.
+
+### 6.2 Two-step verification
+
+Every user with a ProcessHub password can turn it on under **Profile → Two-step verification** (QR code for
+Microsoft Authenticator, Google Authenticator, 1Password, …; ten one-time recovery codes). In
+**Settings → Authentication → Require two-step verification for**, select at least **Super Admin** and
+**Admin**: members of those roles must set it up at their next password sign-in. Single sign-on users verify
+with Microsoft (configure MFA / Conditional Access in Entra ID). A user who lost their phone and recovery codes:
+**Administration → Users → ⋮ → Reset 2FA** (only a Super Admin can do this for a Super Admin).
 
 ## 7. Backups
 
@@ -486,6 +550,10 @@ backup, a new empty database volume and a restore — ask your ProcessHub develo
 | Browser shows a certificate warning; `docker compose logs caddy` mentions "challenge failed" | DNS does not point to the server, or ports 80/443 are closed in the cloud firewall, or the name is not reachable from the internet | Check `nslookup`, the NSG / security group (4.1). For intranet names use your own certificate or `internal` (section 5).                                                                                  |
 | "502 Bad Gateway"                                                                            | The API is still starting (first start applies database updates) or crashed                                                        | Wait 2 minutes, `sudo docker compose ps`, `sudo docker compose logs --tail 100 api`.                                                                                                                      |
 | Sign-in fails with "Your session token is out of date"                                       | Users open a different address than `DOMAIN` (e.g. the IP address)                                                                 | Always use `https://DOMAIN`, or add the other address to `CORS_ORIGINS`.                                                                                                                                  |
+| Sign-in page shows "Sign-in with your organisation's account failed"                         | Wrong client secret or expired secret, wrong tenant ID, or the redirect URI is not registered                                      | **Settings → Authentication → Test connection**; check the redirect URI in Entra ID; **Administration → Audit log** (Login failed, reason and provider message); renew the secret (6.1).                  |
+| "Your e-mail domain is not allowed" / "You do not have a ProcessHub account yet"             | The domain is missing in _Allowed e-mail domains_, or _Create users on first sign-in_ is off                                       | Add the domain or create the user under **Administration → Users** (same e-mail address).                                                                                                                 |
+| Nobody can sign in: identity provider down and break-glass password unknown                  | Password sign-in is turned off                                                                                                     | `AUTH_FORCE_LOCAL_LOGIN=true` in `.env`, `sudo docker compose up -d`; remove it afterwards (6.1).                                                                                                         |
+| A user lost the phone with the authenticator app                                             | Two-step verification                                                                                                              | The user signs in with a recovery code, or an administrator uses **Users → ⋮ → Reset 2FA** (6.2).                                                                                                         |
 | "Your account is temporarily locked"                                                         | Too many wrong passwords                                                                                                           | Wait `LOGIN_LOCKOUT_MINUTES` (15), or another Super Admin resets the password under **Administration → Users**.                                                                                           |
 | Test e-mail fails with "blocked"                                                             | The SMTP server is in a private network (SSRF protection)                                                                          | Add its name or IP to `OUTBOUND_ALLOWED_HOSTS` in `.env`, `sudo docker compose up -d`.                                                                                                                    |
 | Test e-mail times out on Azure                                                               | Azure blocks outgoing port 25                                                                                                      | Use port 587 with authentication (e.g. Microsoft 365 `smtp.office365.com:587`, STARTTLS).                                                                                                                 |

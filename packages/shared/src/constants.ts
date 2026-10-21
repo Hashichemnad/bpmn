@@ -215,6 +215,10 @@ export const AUDIT_ACTIONS = [
   'REOPEN',
   'EMAIL_TEST',
   'AI_REQUEST',
+  'MFA_ENABLE',
+  'MFA_DISABLE',
+  'MFA_RESET',
+  'MFA_RECOVERY_CODES',
 ] as const;
 export type AuditAction = (typeof AUDIT_ACTIONS)[number];
 
@@ -253,6 +257,7 @@ export const SETTING_KEYS = {
   PORTAL: 'portal',
   EMAIL: 'email',
   AI: 'ai',
+  AUTH: 'auth',
 } as const;
 
 /** Logo upload limits. */

@@ -36,10 +36,16 @@ describe('Route security declarations', () => {
       .sort();
     expect(publicRoutes).toEqual([
       'GET /auth/csrf',
+      'GET /auth/options',
+      'GET /auth/sso/callback',
+      'GET /auth/sso/start',
       'GET /health',
       'GET /settings/logo',
       'GET /settings/public',
       'POST /auth/login',
+      'POST /auth/login/mfa',
+      'POST /auth/login/mfa/setup',
+      'POST /auth/login/mfa/setup/confirm',
       'POST /auth/logout',
       'POST /auth/refresh',
     ]);
@@ -62,8 +68,17 @@ describe('Route security declarations', () => {
       .map((r) => `${r.method} ${r.path}`)
       .sort();
     expect(strict).toEqual([
+      'GET /auth/sso/callback',
+      'GET /auth/sso/start',
       'POST /auth/change-password',
       'POST /auth/login',
+      'POST /auth/login/mfa',
+      'POST /auth/login/mfa/setup',
+      'POST /auth/login/mfa/setup/confirm',
+      'POST /auth/mfa/disable',
+      'POST /auth/mfa/enable',
+      'POST /auth/mfa/recovery-codes',
+      'POST /auth/mfa/setup',
       'POST /auth/refresh',
     ]);
     expect(routes.filter((r) => r.rateLimit === 'skip').map((r) => r.path)).toEqual(['/health']);

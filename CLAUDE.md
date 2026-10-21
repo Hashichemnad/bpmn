@@ -42,7 +42,7 @@ with no per-user licensing. Target: 50–500 users on a single server.
 | AI | M16 AI Assistant (after Phase 3) | ✅ Done (merged into `main`) |
 | 4 | M10 GRC, M11 EA, M12 KPIs + Salesforce | ⬜ |
 | 5 | M13 Mining, M14 Execution, simulation | ⬜ |
-| 6 | Hardening: SSO, performance, security review fixes, deployment guide | 🟡 In progress — part 1 (security review, `docs/SECURITY.md`) merged; part 2 (production stack, backups, storage, `docs/DEPLOYMENT.md`) done on branch `phase-6-part-2` |
+| 6 | Hardening: SSO, performance, security review fixes, deployment guide | 🟡 In progress — part 1 (security review, `docs/SECURITY.md`) and part 2 (production stack, backups, `docs/DEPLOYMENT.md`) merged; part 3 (SSO with Entra ID / OIDC, TOTP two-factor) done on branch `phase-6-part-3` |
 | — | M15 Migration of existing documentation (after system is ready) | ⬜ |
 
 Update this table and `docs/PROGRESS.md` at the end of every session.
@@ -91,7 +91,7 @@ Permissions are checked **on the server** for every request (NestJS guards). The
 
 - Passwords hashed with **argon2id**; password policy configurable; account lockout after repeated failures.
 - Auth via short-lived JWT access token + refresh token in **httpOnly, Secure, SameSite=strict cookies**. CSRF protection on state-changing requests.
-- Optional TOTP two-factor authentication (Phase 1 if time allows, otherwise Phase 6). SSO (Azure AD / OIDC) in Phase 6.
+- Optional TOTP two-factor authentication and SSO (Entra ID / OIDC) — done in Phase 6 part 3 (DECISIONS D-055 – D-060).
 - `helmet`, strict CORS, rate limiting (`@nestjs/throttler`), request size limits.
 - All input validated with zod/class-validator; Prisma only (no raw SQL string concatenation).
 - Uploaded files: type and size checks, stored in the S3-compatible file storage, never executed; sanitized SVG.
@@ -149,6 +149,12 @@ AI phase additions (DECISIONS D-038 – D-046):
 - System role `AUDITOR` (read-only workspace), permissions `reviews.decide`, `ai.usage.read`
 - `AiUsage` (user, feature, provider, model, input/output tokens, status, error code, duration, item); Setting `ai`
 - `Process.aiGenerated`, `Page.aiGenerated` (unedited AI output, cleared by a human save or an approval)
+
+Phase 6 part 3 additions (DECISIONS D-055 – D-060):
+
+- `User.ssoIssuer` + `ssoSubject` (unique pair), `passwordHash = ''` for SSO-only accounts
+- `User.totpSecretSealed`, `totpPendingSealed`, `totpEnabledAt`, `totpLastStep`; `MfaRecoveryCode` (SHA-256)
+- Setting `auth` (SSO, group mappings, password sign-in / break-glass, roles requiring 2FA)
 
 ## 10. Definition of Done (every phase)
 

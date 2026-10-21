@@ -39,6 +39,9 @@ export class AuthUserLoader {
       departmentId: user.departmentId,
       roles: user.roles.map((r) => r.role.key as SystemRoleKey),
       permissions,
+      hasPassword: user.passwordHash !== '',
+      ssoLinked: !!user.ssoSubject,
+      mfaEnabled: !!user.totpEnabledAt,
     };
   }
 }

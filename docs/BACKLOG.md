@@ -56,9 +56,16 @@ _(none open — `braces` was accepted, D-054)_
 
 - Gotenberg service for server-generated PDFs (decided at the start of the AI phase: browser print stays
   until then, D-024/D-035).
-- Optional TOTP two-factor authentication (CLAUDE.md §7 allowed deferral from Phase 1).
-- SSO (Azure AD / OIDC).
+- SSO / 2FA follow-ups (part 3, D-055 – D-059): read groups from Microsoft Graph when Entra ID sends a
+  "group overage" (users in > 200 groups); SCIM provisioning / de-provisioning and OIDC back-channel logout so
+  disabling a user in Entra ID ends ProcessHub sessions at once; RP-initiated logout (sign out at the provider
+  too); several identity providers at once; SAML 2.0 (only if a provider cannot do OIDC); private-key JWT /
+  certificate client authentication instead of a client secret; WebAuthn / passkeys as a second factor;
+  "remember this device" for 2FA; e-mail notice when 2FA is turned off or reset; a reminder before the Entra
+  client secret expires (store the expiry date in Settings); automated browser test with the mock provider in
+  the Playwright suite (needs the mock running next to the stack).
 - Slim API runtime image (`pnpm deploy --prod` plus a separate migration step); unprivileged nginx image.
+  Move the images to Node 22 LTS (Node 20 is end-of-life; `openid-client` needs `require(esm)`, Node ≥ 20.19).
 - Production follow-ups from part 2 (D-051 – D-053): publish versioned images to a registry (GHCR / ACR /
   ECR) so servers pull instead of build; rename the `MINIO_*` variables to `STORAGE_*` (keep the old names as
   aliases); replace the `minio` npm client with `@aws-sdk/client-s3` (also clears SEC-09); run the storage

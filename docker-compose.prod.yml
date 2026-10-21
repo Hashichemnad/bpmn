@@ -98,6 +98,9 @@ services:
       SEED_ADMIN_PASSWORD: ${SEED_ADMIN_PASSWORD:?Set SEED_ADMIN_PASSWORD in .env}
       SEED_SMTP_HOST: ${SEED_SMTP_HOST:-}
       OUTBOUND_ALLOWED_HOSTS: ${OUTBOUND_ALLOWED_HOSTS:-}
+      # Emergency switch: password sign-in for everyone (see Settings → Authentication).
+      AUTH_FORCE_LOCAL_LOGIN: ${AUTH_FORCE_LOCAL_LOGIN:-false}
+      SSO_HTTP_TIMEOUT_MS: ${SSO_HTTP_TIMEOUT_MS:-15000}
     volumes:
       - api-data:/app/data
     networks: [backend, egress]
