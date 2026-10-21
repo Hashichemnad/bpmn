@@ -37,7 +37,15 @@
     "profile": "My profile",
     "documentation": "Documentation",
     "docs": "Spaces",
-    "search": "Search"
+    "search": "Search",
+    "tasks": "My tasks",
+    "governance": "Governance dashboard",
+    "governanceGroup": "Governance",
+    "documents": "Documents",
+    "workflows": "Workflows",
+    "portalSettings": "Knowledge Portal",
+    "portal": "Portal",
+    "portalHint": "Open the Knowledge Portal (published content)"
   },
   "auth": {
     "subtitle": "Sign in to continue",
@@ -91,5 +99,8 @@
     "confirmPassword": "Confirm new password",
     "updatePassword": "Update password",
     "passwordChanged": "Password changed. Other sessions have been signed out."
-  }
+  },
+  "close": "Close",
+  "confirm": "Confirm",
+  "noResults": "No results"
 }

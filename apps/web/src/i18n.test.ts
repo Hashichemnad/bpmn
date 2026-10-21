@@ -16,6 +16,18 @@ import {
   PROCESS_CATEGORIES,
   PROCESS_STATUSES,
   SYSTEM_ROLE_KEYS,
+  APPROVAL_RULES,
+  ASSIGNEE_TYPES,
+  CONTENT_TYPES,
+  FEEDBACK_KINDS,
+  FEEDBACK_STATUSES,
+  INVOLVEMENT_REASONS,
+  NOTIFICATION_TYPES,
+  REVIEW_DATE_STATES,
+  REVIEW_DECISIONS,
+  REVIEW_STATUSES,
+  REVIEW_TASK_STATUSES,
+  WORKFLOW_SOURCES,
 } from '@processhub/shared';
 import { resources } from './i18n';
 
@@ -82,7 +94,7 @@ describe('translations', () => {
         `objects:edit.${o}`,
       ]),
       ...LINK_RELATIONS.map((r) => `objects:relations.${r}`),
-      ...['ROLE', 'SYSTEM'].flatMap((o) => [
+      ...['ROLE', 'SYSTEM', 'DOCUMENT'].flatMap((o) => [
         `objects:library.${o}.title`,
         `objects:library.${o}.subtitle`,
         `objects:library.${o}.empty`,
@@ -114,6 +126,41 @@ describe('translations', () => {
       ...['added', 'removed', 'changed', 'layout'].map((k) => `docs:compare.kind.${k}`),
       ...['p', 'h1', 'h2', 'h3', 'h4'].map((b) => `docs:editor.blocks.${b}`),
       ...SEARCH_TYPES.map((s) => `search:types.${s}`),
+      // Governance and Knowledge Portal
+      ...APPROVAL_RULES.map((r) => `governance:rule.${r}`),
+      ...ASSIGNEE_TYPES.map((a) => `governance:assignee.${a}`),
+      ...CONTENT_TYPES.flatMap((c) => [`governance:type.${c}`, `governance:dashboard.counts.${c}`]),
+      ...FEEDBACK_KINDS.map((k) => `governance:feedback.kind.${k}`),
+      ...FEEDBACK_STATUSES.map((s) => `governance:feedback.status.${s}`),
+      ...INVOLVEMENT_REASONS.map((r) => `portal:my.reason.${r}`),
+      ...NOTIFICATION_TYPES.filter((n) => n !== 'REVIEW_OVERDUE').map(
+        (n) => `governance:notifications.title.${n}`,
+      ),
+      'governance:notifications.title.REVIEW_OVERDUE_task',
+      'governance:notifications.title.REVIEW_OVERDUE_periodic',
+      ...NOTIFICATION_TYPES.map((n) => `governance:prefs.types.${n}`),
+      ...REVIEW_DATE_STATES.map((s) => `governance:reviewState.${s}`),
+      ...REVIEW_DECISIONS.flatMap((d) => [
+        `governance:decision.${d}`,
+        `governance:decisionHint.${d}`,
+      ]),
+      ...REVIEW_STATUSES.map((s) => `governance:reviewStatus.${s}`),
+      ...REVIEW_TASK_STATUSES.map((s) => `governance:taskStatus.${s}`),
+      ...WORKFLOW_SOURCES.map((s) => `governance:workflowSource.${s}`),
+      ...['WAITING', 'ACTIVE', 'APPROVED', 'CHANGES_REQUESTED', 'REJECTED', 'CANCELLED'].map(
+        (s) => `governance:stepState.${s}`,
+      ),
+      ...['reviews', 'toPublish', 'returned', 'dueReviews', 'mentions', 'feedback'].flatMap((k) => [
+        `governance:tasks.tabs.${k}`,
+        `governance:tasks.empty.${k}`,
+      ]),
+      ...['ROLE', 'SYSTEM', 'DOCUMENT', 'RISK', 'CONTROL', 'KPI'].map(
+        (o) => `portal:process.linked.${o}`,
+      ),
+      'governance:status.changesRequested',
+      'governance:status.rejected',
+      'errors:ITEM_IN_REVIEW',
+      'errors:ITEM_ARCHIVED',
     ];
     expect(expected.filter((k) => !en.has(k))).toEqual([]);
   });
