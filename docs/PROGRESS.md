@@ -26,7 +26,7 @@ Design (details in DECISIONS D-055 – D-060 once written):
 
 Steps (tick as they are committed; a new session continues at the first unticked one):
 
-- [ ] 1. Shared schemas/types/constants (auth settings, MFA, login response, audit actions); Prisma migration
+- [x] 1. Shared schemas/types/constants (auth settings, MFA, login response, audit actions); Prisma migration
       (User SSO + TOTP fields, `MfaRecoveryCode`); Jest transform for ESM-only `openid-client`.
 - [ ] 2. API: TOTP service, enrolment / disable / recovery-code endpoints, two-step password login,
       "required for role" setup during login, admin reset; unit + e2e tests.

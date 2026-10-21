@@ -39,6 +39,9 @@ export function toCurrentUser(u: AuthUser): CurrentUser {
     departmentId: u.departmentId,
     roles: u.roles,
     permissions: [...u.permissions].sort(),
+    hasPassword: u.hasPassword,
+    ssoLinked: u.ssoLinked,
+    mfaEnabled: u.mfaEnabled,
   };
 }
 

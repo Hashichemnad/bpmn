@@ -54,6 +54,11 @@ export interface CurrentUser extends UserRef {
   roles: SystemRoleKey[];
   permissions: Permission[];
   departmentId: string | null;
+  /** The account has a local password (SSO-only accounts do not). */
+  hasPassword: boolean;
+  /** The account is linked to the single sign-on identity provider. */
+  ssoLinked: boolean;
+  mfaEnabled: boolean;
 }
 
 export interface JobRoleRef {
@@ -72,6 +77,8 @@ export interface UserDto extends UserRef {
   jobRoles: JobRoleRef[];
   lastLoginAt: string | null;
   lockedUntil: string | null;
+  mfaEnabled: boolean;
+  ssoLinked: boolean;
   createdAt: string;
   updatedAt: string;
 }

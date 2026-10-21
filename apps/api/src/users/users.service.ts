@@ -42,6 +42,8 @@ function toDto(u: UserRow): UserDto {
     jobRoles: u.jobRoles.map((j) => j.repoObject),
     lastLoginAt: u.lastLoginAt?.toISOString() ?? null,
     lockedUntil: u.lockedUntil && u.lockedUntil > new Date() ? u.lockedUntil.toISOString() : null,
+    mfaEnabled: !!u.totpEnabledAt,
+    ssoLinked: !!u.ssoSubject,
     createdAt: u.createdAt.toISOString(),
     updatedAt: u.updatedAt.toISOString(),
   };
