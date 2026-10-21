@@ -201,6 +201,8 @@ backlog if downloads without a dialog are needed. Markdown export is generated o
   next version or "Sync now".
 - Jobs run one at a time in an in-process queue (single API instance; Redis/BullMQ in the backlog for scaling).
   When the integration is disabled the event handler returns immediately, so behaviour is unchanged.
+- Outbound calls go only to the configured provider URL (set by a Super Admin), with a timeout
+  (`GIT_HTTP_TIMEOUT_MS`) and redirects refused.
 - One-way only; two-way sync is in the backlog. Tests replace the HTTP layer and the providers; the suite
   never calls GitHub or GitLab.
 
