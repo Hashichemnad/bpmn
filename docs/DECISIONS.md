@@ -524,3 +524,17 @@ confirmation, makes a `pre-restore` backup, recreates the database and replaces 
 API. Scheduling is a plain `/etc/cron.d` file; off-site copies use the cloud's own tools (AzCopy / AWS CLI)
 documented in `docs/DEPLOYMENT.md`. Tested as a disaster drill: volumes deleted, fresh stack, restore, content
 and an 8 MB attachment back byte for byte.
+
+## D-054 — Product owner decisions for Phase 6 part 2
+
+Decided by the product owner on 2026-10-21:
+
+1. **File storage:** Versity S3 Gateway is confirmed as the production file storage (D-051).
+2. **Backups never contain `.env`:** the default of `backup.sh` stays (no `--with-env`). The keys
+   (`JWT_ACCESS_SECRET`, `INTEGRATIONS_ENCRYPTION_KEY`) and passwords are kept in the company password
+   manager; a restore needs a backup folder plus that `.env` (DEPLOYMENT.md §7).
+3. **Off-site backups:** Azure Blob Storage in **UAE North** (same region as the server), private container,
+   soft delete + versioning, lifecycle rule deleting after **90 days**; daily `azcopy sync` with the VM's
+   managed identity, 14 days kept locally. Documented as the recommended setup in DEPLOYMENT.md §7.
+4. **`braces` (SEC-08):** accepted for now — high severity but dev-only (via Jest), not in the production
+   code paths and no upstream fix. Follow-up in BACKLOG: move the API tests from Jest to Vitest.

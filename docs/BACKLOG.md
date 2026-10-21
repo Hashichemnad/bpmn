@@ -5,8 +5,7 @@ where they belong; move items into the plan when that phase starts.
 
 ## Needs a decision
 
-- **`braces` (high, dev-only, via Jest; no fixed version)** — accept until the slim API runtime image drops
-  dev dependencies, or migrate the API tests from Jest to Vitest (SECURITY.md SEC-08).
+_(none open — `braces` was accepted, D-054)_
 
 ## Phase 2 follow-ups (wiki, version control, Git)
 
@@ -72,7 +71,8 @@ where they belong; move items into the plan when that phase starts.
 - "My sessions" list with remote sign-out in the profile.
 - Request/response schemas in Swagger (generate OpenAPI from the zod schemas).
 - Code-split Ant Design to reduce the initial bundle (~370 KB gzipped).
-- Track the dev-only `braces` advisory (via Jest), which has no upstream fix yet (see "Needs a decision").
+- **Move the API tests from Jest to Vitest** (same runner as web and shared; removes the dev-only `braces`
+  advisory, SECURITY.md SEC-08, accepted for now in D-054). Until then, track `braces` for an upstream fix.
 - Moderate production advisories left after part 1: `minio` → `stream-json` / `decode-uri-component` (code
   paths unused, SECURITY.md SEC-09) — update when the MinIO client moves to fixed versions or replace the client.
 - External penetration test before go-live, using the checklist in `docs/SECURITY.md` §8.

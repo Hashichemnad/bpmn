@@ -301,10 +301,17 @@ Caddy handles HTTPS. Choose one option with `CADDY_TLS` in `.env`, then run `sud
 The application keeps running during the backup. Backups older than `BACKUP_KEEP_DAYS` (default 14) are
 deleted automatically.
 
-**Not included: `.env`** with the keys. Keep it in your vault (section 4.6) and update the copy whenever you
-change `.env`. Without the same `INTEGRATIONS_ENCRYPTION_KEY`, a restored system works but the stored Git
-token, SMTP password and AI key must be entered again. (`backup.sh --with-env` copies `.env` into the backup
-folder — only use it if the backup storage is encrypted and access-controlled.)
+**Not included: `.env` with the keys — by policy.** Backups never contain `.env`. The keys
+(`JWT_ACCESS_SECRET`, `INTEGRATIONS_ENCRYPTION_KEY`) and passwords are kept **only in the company password
+manager** (section 4.6):
+
+- Save the complete `.env` in the password manager right after installation, and update that entry every
+  time you change `.env`.
+- A restore needs **both** a backup folder **and** the `.env` from the password manager. Without the same
+  `INTEGRATIONS_ENCRYPTION_KEY`, a restored system works but the stored Git token, SMTP password and AI key
+  must be entered again.
+- Do not use `backup.sh --with-env`; it exists for exceptional cases only and is not part of the agreed setup
+  (DECISIONS D-054).
 
 ### Daily schedule
 
@@ -323,27 +330,45 @@ printf '/var/log/processhub-backup.log {\n  monthly\n  rotate 6\n  compress\n  m
   sudo tee /etc/logrotate.d/processhub-backup
 ```
 
-### Off-site copy (required)
+### Off-site copy (required) — recommended setup: Azure Blob Storage, UAE North, 90 days
 
-Backups on the same server do not help if the server or its disk is lost. Copy them daily to storage in
-another place, in the same country/region. Add a second line to `/etc/cron.d/processhub-backup` that runs
-after the backup, for example:
+Backups on the same server do not help if the server or its disk is lost. The agreed setup (DECISIONS D-054)
+copies them every day to **Azure Blob Storage in UAE North** (same region as the server, data stays in the
+UAE) and keeps them **90 days**. Locally, the server keeps the last 14 days (`BACKUP_KEEP_DAYS`).
 
-- **Azure Blob Storage** (install [AzCopy](https://learn.microsoft.com/azure/storage/common/storage-use-azcopy-v10);
-  give the VM a managed identity with _Storage Blob Data Contributor_ on the container):
+**1. Create the storage (Azure portal, once):**
 
-  ```
-  15 3 * * * root azcopy login --identity && azcopy sync /data/backups "https://<account>.blob.core.windows.net/processhub-backups" --delete-destination=false >> /var/log/processhub-backup.log 2>&1
-  ```
+1. _Storage accounts → Create_: region **UAE North**, performance _Standard_, redundancy **ZRS** (or LRS),
+   name e.g. `processhubbackups`.
+2. _Advanced_: _Require secure transfer_ on, _Allow Blob anonymous access_ **off**, minimum TLS 1.2.
+3. _Data protection_: enable **soft delete for blobs** (e.g. 14 days) and **versioning**.
+4. _Containers → + Container_: `processhub-backups`, access level **Private**.
+5. _Data management → Lifecycle management → Add a rule_: "Delete blobs" when **last modified more than
+   90 days ago** (also tick previous versions). Optionally move to the _Cool_ tier after 30 days.
+6. On the VM: _Identity → System assigned → On_. On the storage account: _Access control (IAM) → Add role
+   assignment_ → **Storage Blob Data Contributor** → the VM's managed identity.
+7. Optional, stricter: _Networking_ → allow access only from the VM's virtual network / public IP.
 
-- **Amazon S3** (install the AWS CLI; give the instance an IAM role allowed to write to the bucket):
+**2. Install AzCopy on the server and add the daily copy:**
 
-  ```
-  15 3 * * * root aws s3 sync /data/backups s3://<bucket>/processhub/ --sse AES256 >> /var/log/processhub-backup.log 2>&1
-  ```
+```bash
+curl -fsSL https://aka.ms/downloadazcopy-v10-linux -o /tmp/azcopy.tgz
+sudo tar -xzf /tmp/azcopy.tgz -C /tmp && sudo cp /tmp/azcopy_linux_amd64_*/azcopy /usr/local/bin/
+echo '15 3 * * * root azcopy login --identity && azcopy sync /data/backups "https://processhubbackups.blob.core.windows.net/processhub-backups" --delete-destination=false >> /var/log/processhub-backup.log 2>&1' |
+  sudo tee -a /etc/cron.d/processhub-backup
+```
 
-Use a storage account / bucket with **soft delete or versioning** and a lifecycle rule (e.g. keep 90 days).
-In addition, VM-level backups (Azure Backup, AWS Backup) of the data disk are a good second layer.
+Replace `processhubbackups` with your storage account name. `--delete-destination=false` means backups
+deleted on the server after 14 days stay in Azure until the 90-day lifecycle rule removes them.
+
+**3. Check it the next day:** _Storage account → Containers → processhub-backups_ shows a
+`processhub-<date>` folder per day, and the end of `/var/log/processhub-backup.log` shows the AzCopy
+summary with `Final Job Status: Completed`.
+
+_Other clouds:_ on AWS the equivalent is an S3 bucket in me-central-1 with versioning and a 90-day lifecycle
+rule, copied with `aws s3 sync /data/backups s3://<bucket>/processhub/ --sse AES256`.
+
+VM-level backups (Azure Backup) of the data disk are a good second layer, but do not replace the copies above.
 
 ### Test the backup
 
@@ -374,7 +399,8 @@ Afterwards sign in and check a few processes, pages and attachments. Users have 
 
 **Restore on a new server** (disaster recovery): follow 4.1 – 4.5, then put your saved **`.env` from the
 vault** into `/opt/processhub/.env` (instead of running `generate-secrets.sh`), copy the backup folder to
-the new server (e.g. `azcopy copy` / `aws s3 cp --recursive` from your off-site storage), point DNS to the
+the new server from Azure (e.g. `azcopy login --identity` then
+`azcopy copy "https://processhubbackups.blob.core.windows.net/processhub-backups/processhub-2026-10-21_023000" /data/backups --recursive`), point DNS to the
 new server, and run:
 
 ```bash

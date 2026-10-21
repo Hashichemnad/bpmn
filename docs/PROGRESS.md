@@ -65,9 +65,9 @@ Let's Encrypt itself could not be tested here (no public DNS); the Caddyfile pat
 
 1. Review and merge `phase-6-part-2`. Existing installations: after updating, run
    `./scripts/migrate-minio-storage.sh` once (copies files from the old `minio-data` volume).
-2. Decisions for you (also in the summary of this session): the storage choice (D-051); whether `.env` may be
-   included in backups (`--with-env`, default no); off-site backup target (Azure Blob / S3) and retention;
-   `braces` (BACKLOG "Needs a decision").
+2. Decisions taken by the product owner (D-054): Versity S3 Gateway confirmed; backups never include `.env`
+   (keys in the password manager); off-site backups to Azure Blob Storage, UAE North, 90 days (DEPLOYMENT.md
+   §7); `braces` accepted, Jest → Vitest added to BACKLOG.
 3. Next Phase 6 parts (suggested order): TOTP two-factor and SSO (Azure AD / OIDC); slim API runtime image and
    images in a registry; performance; external penetration test with `docs/SECURITY.md` §8.
 
