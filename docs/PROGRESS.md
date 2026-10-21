@@ -2,9 +2,34 @@
 
 Read this together with `CLAUDE.md` at the start of every session.
 
-## Current state — 2026-10-21 (Phase 6 — Hardening, branch `phase-6-part-3`)
+## Current state — 2026-10-21 (Phase 6 — Hardening, branch `phase-6-part-4`)
 
-Parts 1 (security review) and 2 (production deployment) are merged into `main`.
+Parts 1 (security review), 2 (production deployment) and 3 (SSO + two-factor) are merged into `main`.
+
+### Part 4 — Performance, reliability and polish (in progress)
+
+First block: the product owner's decisions on the part 3 questions (DECISIONS D-061 – D-066):
+
+1. 2FA required at go-live for Super Admin and Admin; optional for all other roles.
+2. After the SSO roll-out password sign-in is off except for one break-glass Super Admin with 2FA
+   (procedure in DEPLOYMENT.md).
+3. Roles are managed in ProcessHub: "update roles at every sign-in" off by default; directory groups only set
+   the initial role on first sign-in.
+4. MFA for SSO users is enforced by Entra ID Conditional Access (request to IT in DEPLOYMENT.md).
+5. Default refresh-token lifetime 24 hours (configurable); automatic de-provisioning stays in BACKLOG.
+6. Node 20 → Node 22 LTS in Docker images, CI and docs.
+
+Steps (tick as they are committed; a new session continues at the first unticked one):
+
+- [ ] 1. API/shared defaults: `mfaRequiredRoles` = Super Admin + Admin, refresh token lifetime
+      `REFRESH_TOKEN_TTL_HOURS` (default 24), roles from the directory only on first sign-in; tests.
+- [ ] 2. Web: Settings → Authentication hints for the new defaults; EN/AR.
+- [ ] 3. Node 22 LTS: Dockerfiles, CI, `.nvmrc`, `engines`, `@types/node`, README, CLAUDE.md §4.
+- [ ] 4. Docs: DECISIONS D-061 – D-066, DEPLOYMENT.md (break-glass procedure, Conditional Access request),
+      SECURITY.md, BACKLOG, CLAUDE.md phase table.
+- [ ] 5. Verification (format, lint, typecheck, tests, build, audit), push.
+- [ ] 6. Performance / reliability / polish items — scope to be confirmed by the product owner (the part 4
+      brief lists only the decisions above).
 
 ### Part 3 — Single sign-on (OIDC / Entra ID) and TOTP two-factor (done, awaiting review)
 
