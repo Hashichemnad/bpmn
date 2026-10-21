@@ -22,7 +22,7 @@ const open: SpaceAccessInfo = {
 
 describe('spaceAccess', () => {
   it('open spaces: readers view, editors edit, admins manage', () => {
-    expect(spaceAccess(user('VIEWER'), open)).toEqual({
+    expect(spaceAccess(user('REVIEWER'), open)).toEqual({
       canView: true,
       canEdit: false,
       canManage: false,
@@ -40,7 +40,7 @@ describe('spaceAccess', () => {
   });
 
   it('the owner manages the space', () => {
-    expect(spaceAccess(user('VIEWER'), { ...open, ownerId: 'u1' }).canManage).toBe(true);
+    expect(spaceAccess(user('REVIEWER'), { ...open, ownerId: 'u1' }).canManage).toBe(true);
   });
 
   it('view-restricted spaces need a matching grant', () => {
@@ -70,7 +70,7 @@ describe('spaceAccess', () => {
     expect(spaceAccess(user('MODELER', { id: 'x' }), s).canEdit).toBe(true);
     expect(spaceAccess(user('PROCESS_OWNER', { id: 'x' }), s).canEdit).toBe(false);
     // A grant does not replace the global permission: viewers cannot edit.
-    expect(spaceAccess(user('VIEWER'), s).canEdit).toBe(false);
+    expect(spaceAccess(user('REVIEWER'), s).canEdit).toBe(false);
   });
 
   it('users without docs.read see nothing', () => {

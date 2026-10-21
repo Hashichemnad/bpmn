@@ -6,3 +6,4 @@ export * from './types';
 export * from './space-access';
 export * from './richtext';
 export * from './git-export';
+export * from './governance';

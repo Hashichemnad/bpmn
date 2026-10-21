@@ -120,6 +120,9 @@ export interface BpmnElementLabel {
   name: string;
   nameEn: string;
   nameAr: string;
+  /** Step description (ph:descriptionEn / ph:descriptionAr). */
+  descriptionEn: string;
+  descriptionAr: string;
 }
 
 const decodeXml = (s: string) =>
@@ -132,7 +135,7 @@ const decodeXml = (s: string) =>
     .replace(/&#x([0-9a-f]+);/gi, (_, h: string) => String.fromCodePoint(parseInt(h, 16)))
     .replace(/&amp;/g, '&');
 
-/** Extracts element labels (name, ph:nameEn, ph:nameAr) by element id from BPMN XML. */
+/** Extracts element labels (name, ph:nameEn/Ar) and step descriptions by element id from BPMN XML. */
 export function extractBpmnLabels(xml: string): Map<string, BpmnElementLabel> {
   const labels = new Map<string, BpmnElementLabel>();
   const tagRe = /<[\w:-]+\s([^>]*?)\/?>/g;
@@ -142,11 +145,14 @@ export function extractBpmnLabels(xml: string): Map<string, BpmnElementLabel> {
     const attrs: Record<string, string> = {};
     let a: RegExpExecArray | null;
     while ((a = attrRe.exec(tag[1]))) attrs[a[1]] = decodeXml(a[2]);
-    if (!attrs.id || !(attrs.name || attrs['ph:nameEn'] || attrs['ph:nameAr'])) continue;
+    const texts = ['name', 'ph:nameEn', 'ph:nameAr', 'ph:descriptionEn', 'ph:descriptionAr'];
+    if (!attrs.id || !texts.some((k) => attrs[k])) continue;
     labels.set(attrs.id, {
       name: attrs.name ?? '',
       nameEn: attrs['ph:nameEn'] ?? '',
       nameAr: attrs['ph:nameAr'] ?? '',
+      descriptionEn: attrs['ph:descriptionEn'] ?? '',
+      descriptionAr: attrs['ph:descriptionAr'] ?? '',
     });
   }
   return labels;

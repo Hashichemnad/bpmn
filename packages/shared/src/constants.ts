@@ -33,6 +33,16 @@ export const PERMISSIONS = {
   DOCS_EDIT: 'docs.edit',
   /** Create and manage spaces, space permissions, templates and the trash. */
   DOCS_MANAGE: 'docs.manage',
+  /** Comment on processes and pages (and @mention colleagues). */
+  COMMENTS_WRITE: 'comments.write',
+  /** Configure approval workflows and act on any item's lifecycle (publish, archive, withdraw). */
+  GOVERNANCE_MANAGE: 'governance.manage',
+  /** See the governance dashboard (status counts, reviews in progress, overdue reviews). */
+  GOVERNANCE_DASHBOARD: 'governance.dashboard',
+  /** Read published content in the Knowledge Portal. */
+  PORTAL_READ: 'portal.read',
+  /** Portal name, branding, quick links, featured items and access. */
+  PORTAL_MANAGE: 'portal.manage',
 } as const;
 export type Permission = (typeof PERMISSIONS)[keyof typeof PERMISSIONS];
 export const ALL_PERMISSIONS: Permission[] = Object.values(PERMISSIONS);
@@ -53,6 +63,8 @@ const READ_REPOSITORY: Permission[] = [
   P.OBJECTS_READ,
   P.DEPARTMENTS_READ,
   P.DOCS_READ,
+  P.COMMENTS_WRITE,
+  P.PORTAL_READ,
 ];
 
 /** Default permission bundle of each system role (see CLAUDE.md §6). */
@@ -79,6 +91,7 @@ export const SYSTEM_ROLES: Record<
       P.PROCESSES_EDIT_OWN,
       P.MODELS_EDIT_OWN,
       P.DOCS_EDIT,
+      P.GOVERNANCE_DASHBOARD,
     ],
   },
   MODELER: {
@@ -102,8 +115,8 @@ export const SYSTEM_ROLES: Record<
   VIEWER: {
     nameEn: 'Viewer',
     nameAr: 'مشاهد',
-    // Phase 1: read-only repository access. Restricted to published content in Phase 3 (Portal).
-    permissions: READ_REPOSITORY,
+    // Knowledge Portal only: published content, read-only (D-028).
+    permissions: [P.PORTAL_READ],
   },
 };
 
@@ -164,6 +177,17 @@ export const AUDIT_ACTIONS = [
   'LABEL',
   'PURGE',
   'SYNC',
+  'SUBMIT',
+  'WITHDRAW',
+  'APPROVE',
+  'REQUEST_CHANGES',
+  'REJECT',
+  'ARCHIVE',
+  'UNARCHIVE',
+  'REVIEW_CONFIRMED',
+  'RESOLVE',
+  'REOPEN',
+  'EMAIL_TEST',
 ] as const;
 export type AuditAction = (typeof AUDIT_ACTIONS)[number];
 
@@ -184,6 +208,10 @@ export const AUDIT_ENTITY_TYPES = [
   'PageLink',
   'Attachment',
   'Integration',
+  'Workflow',
+  'Review',
+  'Comment',
+  'Feedback',
 ] as const;
 export type AuditEntityType = (typeof AUDIT_ENTITY_TYPES)[number];
 
@@ -193,6 +221,9 @@ export const SETTING_KEYS = {
   DEFAULT_LOCALE: 'org.defaultLocale',
   LOGO: 'branding.logo',
   GIT_INTEGRATION: 'integrations.git',
+  GOVERNANCE: 'governance',
+  PORTAL: 'portal',
+  EMAIL: 'email',
 } as const;
 
 /** Logo upload limits. */
@@ -313,3 +344,105 @@ export const GIT_ERROR_CODES = [
   'GIT_UNKNOWN',
 ] as const;
 export type GitErrorCode = (typeof GIT_ERROR_CODES)[number];
+
+// ---------- Governance (M8) ----------
+
+/** Items that go through the review workflow. */
+export const CONTENT_TYPES = ['PROCESS', 'PAGE'] as const;
+export type ContentType = (typeof CONTENT_TYPES)[number];
+
+/** Lifecycle of processes and pages (same values as PROCESS_STATUSES). */
+export const CONTENT_STATUSES = PROCESS_STATUSES;
+export type ContentStatus = ProcessStatus;
+
+/** Lifecycle actions; valid transitions are in governance.ts. */
+export const GOVERNANCE_ACTIONS = [
+  'SUBMIT',
+  'WITHDRAW',
+  'APPROVE',
+  'REQUEST_CHANGES',
+  'REJECT',
+  'PUBLISH',
+  'ARCHIVE',
+  'RESTORE',
+  'EDIT',
+] as const;
+export type GovernanceAction = (typeof GOVERNANCE_ACTIONS)[number];
+
+export const REVIEW_STATUSES = [
+  'IN_PROGRESS',
+  'APPROVED',
+  'CHANGES_REQUESTED',
+  'REJECTED',
+  'WITHDRAWN',
+] as const;
+export type ReviewStatus = (typeof REVIEW_STATUSES)[number];
+
+export const REVIEW_TASK_STATUSES = [
+  'PENDING',
+  'APPROVED',
+  'CHANGES_REQUESTED',
+  'REJECTED',
+  'SKIPPED',
+] as const;
+export type ReviewTaskStatus = (typeof REVIEW_TASK_STATUSES)[number];
+
+export const REVIEW_DECISIONS = ['APPROVE', 'REQUEST_CHANGES', 'REJECT'] as const;
+export type ReviewDecision = (typeof REVIEW_DECISIONS)[number];
+
+/** ANY: one approval completes the step; ALL: every assignee must approve. */
+export const APPROVAL_RULES = ['ANY', 'ALL'] as const;
+export type ApprovalRule = (typeof APPROVAL_RULES)[number];
+
+/** USER: a named user; ROLE: users with a system role (optionally in one department); OWNER: the item owner. */
+export const ASSIGNEE_TYPES = ['USER', 'ROLE', 'OWNER'] as const;
+export type AssigneeType = (typeof ASSIGNEE_TYPES)[number];
+
+/** Where an item's approval workflow comes from. */
+export const WORKFLOW_SOURCES = ['ITEM', 'CATEGORY', 'SPACE', 'DEFAULT', 'NONE'] as const;
+export type WorkflowSource = (typeof WORKFLOW_SOURCES)[number];
+
+export const REVIEW_DATE_STATES = ['NONE', 'OK', 'DUE', 'OVERDUE'] as const;
+export type ReviewDateState = (typeof REVIEW_DATE_STATES)[number];
+
+export const MAX_WORKFLOW_STEPS = 10;
+export const COMMENT_MAX_CHARS = 5000;
+
+// ---------- Notifications ----------
+export const NOTIFICATION_TYPES = [
+  'REVIEW_REQUESTED',
+  'CHANGES_REQUESTED',
+  'REJECTED',
+  'APPROVED',
+  'PUBLISHED',
+  'MENTIONED',
+  'COMMENT_REPLY',
+  'REVIEW_OVERDUE',
+  'REVIEW_DUE',
+  'FEEDBACK_RECEIVED',
+  'FEEDBACK_UPDATED',
+] as const;
+export type NotificationType = (typeof NOTIFICATION_TYPES)[number];
+
+export const EMAIL_STATUSES = ['PENDING', 'SENT', 'FAILED', 'SKIPPED'] as const;
+export type EmailStatus = (typeof EMAIL_STATUSES)[number];
+
+// ---------- Knowledge Portal (M9) ----------
+export const PORTAL_ACCESS_MODES = ['ALL', 'RESTRICTED'] as const;
+export type PortalAccessMode = (typeof PORTAL_ACCESS_MODES)[number];
+
+export const FEEDBACK_KINDS = ['IMPROVEMENT', 'OUTDATED'] as const;
+export type FeedbackKind = (typeof FEEDBACK_KINDS)[number];
+
+export const FEEDBACK_STATUSES = ['OPEN', 'IN_PROGRESS', 'DONE'] as const;
+export type FeedbackStatus = (typeof FEEDBACK_STATUSES)[number];
+
+/** Why an item appears under "My processes". */
+export const INVOLVEMENT_REASONS = ['OWNER', 'DEPARTMENT', 'ROLE'] as const;
+export type InvolvementReason = (typeof INVOLVEMENT_REASONS)[number];
+
+export const PORTAL_SEARCH_TYPES = ['all', 'processes', 'pages'] as const;
+export type PortalSearchType = (typeof PORTAL_SEARCH_TYPES)[number];
+
+export const PORTAL_MAX_QUICK_LINKS = 12;
+export const PORTAL_MAX_FEATURED = 12;
