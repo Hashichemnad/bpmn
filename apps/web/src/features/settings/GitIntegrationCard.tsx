@@ -127,6 +127,13 @@ export function GitIntegrationCard() {
           message={t('admin:git.noEncryptionKey')}
         />
       )}
+      <Alert
+        type="warning"
+        showIcon
+        style={{ marginBottom: 16 }}
+        message={t('admin:git.keyBackupTitle')}
+        description={t('admin:git.keyBackup')}
+      />
       <Typography.Paragraph type="secondary">{t('admin:git.intro')}</Typography.Paragraph>
       <Form form={form} layout="vertical" requiredMark="optional">
         <Form.Item name="enabled" valuePropName="checked" label={t('admin:git.enable')}>
@@ -235,6 +242,14 @@ export function GitIntegrationCard() {
             <Checkbox>{t('admin:git.syncPages')}</Checkbox>
           </Form.Item>
         </Flex>
+        <Form.Item
+          name="publishedOnly"
+          valuePropName="checked"
+          label={t('admin:git.publishedOnly')}
+          extra={t('admin:git.publishedOnlyHint')}
+        >
+          <Switch />
+        </Form.Item>
         <Form.Item name="trigger" label={t('admin:git.when')}>
           <Radio.Group>
             <Space direction="vertical">

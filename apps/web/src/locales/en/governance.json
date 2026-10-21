@@ -1,0 +1,346 @@
+{
+  "official": "Official version",
+  "versionN": "v{{number}}",
+  "pickUser": "Search a user…",
+  "unknownUser": "Unknown user",
+  "status": {
+    "changesRequested": "Changes requested",
+    "rejected": "Rejected"
+  },
+  "type": {
+    "PROCESS": "Process",
+    "PAGE": "Page"
+  },
+  "reviewState": {
+    "NONE": "—",
+    "OK": "Review on schedule",
+    "DUE": "Review due soon",
+    "OVERDUE": "Review overdue"
+  },
+  "reviewStatus": {
+    "IN_PROGRESS": "In review",
+    "APPROVED": "Approved",
+    "CHANGES_REQUESTED": "Changes requested",
+    "REJECTED": "Rejected",
+    "WITHDRAWN": "Withdrawn"
+  },
+  "stepState": {
+    "WAITING": "Waiting",
+    "ACTIVE": "In progress",
+    "APPROVED": "Approved",
+    "CHANGES_REQUESTED": "Changes requested",
+    "REJECTED": "Rejected",
+    "CANCELLED": "Not reached"
+  },
+  "taskStatus": {
+    "PENDING": "Waiting for decision",
+    "APPROVED": "Approved",
+    "CHANGES_REQUESTED": "Requested changes",
+    "REJECTED": "Rejected",
+    "SKIPPED": "Not needed"
+  },
+  "rule": {
+    "ANY": "Any one of",
+    "ALL": "All of"
+  },
+  "assignee": {
+    "OWNER": "Item owner",
+    "ROLE": "Users with a role",
+    "USER": "A specific user"
+  },
+  "workflowSource": {
+    "ITEM": "set for this item",
+    "CATEGORY": "default of the category",
+    "SPACE": "default of the space",
+    "DEFAULT": "organisation default",
+    "NONE": "not configured"
+  },
+  "decision": {
+    "APPROVE": "Approve",
+    "REQUEST_CHANGES": "Request changes",
+    "REJECT": "Reject"
+  },
+  "decisionHint": {
+    "APPROVE": "You approve this version for your step. An optional comment is kept with the review.",
+    "REQUEST_CHANGES": "The item goes back to draft so the author can update it. Explain what needs to change.",
+    "REJECT": "The review ends and the item goes back to draft. Explain why it is rejected."
+  },
+  "actions": {
+    "submit": "Submit for review",
+    "withdraw": "Withdraw review",
+    "publish": "Publish",
+    "archive": "Archive",
+    "restore": "Restore to draft",
+    "confirmReview": "Confirm still valid",
+    "configure": "Governance settings",
+    "approve": "Approve",
+    "requestChanges": "Request changes",
+    "reject": "Reject"
+  },
+  "panel": {
+    "title": "Governance",
+    "history": "History",
+    "published": "Published version (Knowledge Portal)",
+    "publishedOn": "Published {{date}} by {{name}}",
+    "approvedBy": "approved by {{names}}",
+    "endedOn": "replaced {{date}}",
+    "liveWhileDraft": "Version {{version}} stays the official version in the portal until a newer version is published.",
+    "notPublished": "Not published — not visible in the Knowledge Portal.",
+    "workingVersion": "Working version",
+    "noVersion": "No version saved yet",
+    "nextReview": "Next review",
+    "workflow": "Approval workflow",
+    "noWorkflow": "No approval workflow applies. An administrator can configure one in Settings → Workflows.",
+    "unversioned": "The model has changes that are not saved as a version yet. Save a version before submitting it for review.",
+    "inReview": "In review since {{date}} — step {{step}} of {{count}}: {{name}}",
+    "openReview": "Open the review",
+    "wasReturned": "The last review requested changes.",
+    "wasRejected": "The last review rejected this version.",
+    "seeDecision": "See the decision and comments",
+    "publications": "Publications",
+    "reviews": "Reviews",
+    "current": "Current",
+    "noReviews": "No reviews yet."
+  },
+  "submit": {
+    "title": "Submit for review",
+    "text": "Version {{version}} will go through these approval steps:",
+    "note": "Note for the reviewers",
+    "dueAt": "Review due by",
+    "dueHint": "Optional. By default reviewers have the number of days set in the governance settings.",
+    "done": "Submitted for review"
+  },
+  "withdraw": {
+    "confirm": "Withdraw the review? The item returns to draft and open review tasks are cancelled.",
+    "done": "Review withdrawn"
+  },
+  "publish": {
+    "title": "Publish version {{version}}",
+    "text": "The approved version becomes the official version in the Knowledge Portal and replaces the current one. Owners, the submitter and the approvers are notified.",
+    "label": "Version label",
+    "labelHint": "Optional, for example “v2.0” or “Issue 4”.",
+    "done": "Published — now the official version in the portal"
+  },
+  "archive": {
+    "title": "Archive",
+    "text": "Archived items are removed from the Knowledge Portal. You can restore them to draft later.",
+    "reason": "Reason (optional)",
+    "done": "Archived"
+  },
+  "restore": {
+    "confirm": "Restore this item to draft? It must be reviewed and published again to appear in the portal.",
+    "done": "Restored to draft"
+  },
+  "confirmReview": {
+    "confirm": "Confirm that the published content is still correct? The next review date moves forward by the review interval.",
+    "done": "Review confirmed — next review date updated"
+  },
+  "configure": {
+    "title": "Governance settings",
+    "workflow": "Approval workflow",
+    "inherit": "Default",
+    "template": "Template",
+    "custom": "Custom steps",
+    "inheritHint": "Uses the default workflow of the category, space or organisation.",
+    "nextReviewHint": "Set automatically when the item is published; you can change it here."
+  },
+  "review": {
+    "title": "Review",
+    "of": "Review: {{title}}",
+    "submittedBy": "submitted by {{name}} on {{date}}",
+    "due": "Due {{date}}",
+    "overdueSince": "Overdue since {{date}}",
+    "openItem": "Open item",
+    "yourTurn": "Your decision is requested ({{step}}).",
+    "changes": "What changed",
+    "comparedTo": "Compared with the published version v{{version}}",
+    "firstPublication": "First publication — nothing published to compare with",
+    "changeNote": "Change note",
+    "publishedVersion": "Published version v{{version}}",
+    "versionUnderReview": "Version under review v{{version}}",
+    "steps": "Approval steps",
+    "note": "Note from the submitter",
+    "approvedBySubmitter": "Approved by submitting — the submitter is this step's only approver.",
+    "comment": "Comment",
+    "commentRequired": "A comment is required when requesting changes or rejecting.",
+    "decided": "Decision recorded"
+  },
+  "tasks": {
+    "title": "My tasks",
+    "subtitle": "Reviews, approvals, publications, review dates, mentions and feedback waiting for you.",
+    "tabs": {
+      "reviews": "Reviews",
+      "toPublish": "Ready to publish",
+      "returned": "Returned to me",
+      "dueReviews": "Review dates",
+      "mentions": "Mentions",
+      "feedback": "Feedback"
+    },
+    "empty": {
+      "reviews": "No reviews are waiting for you.",
+      "toPublish": "Nothing is waiting to be published.",
+      "returned": "None of your submissions came back.",
+      "dueReviews": "None of your items is due for review.",
+      "mentions": "No unread mentions.",
+      "feedback": "No open feedback."
+    },
+    "item": "Item",
+    "version": "Version",
+    "step": "Step",
+    "stepOf": "step {{step}} of {{count}}",
+    "submitted": "Submitted",
+    "decidedAt": "Decided",
+    "due": "Due",
+    "review": "Review",
+    "seeDecision": "See decision",
+    "open": "Open"
+  },
+  "dashboard": {
+    "title": "Governance dashboard",
+    "subtitle": "Lifecycle status, reviews in progress and review dates across the repository.",
+    "counts": {
+      "PROCESS": "Processes by status",
+      "PAGE": "Pages by status"
+    },
+    "inReview": "In review",
+    "overdue": "Overdue periodic reviews",
+    "openFeedback": "Open feedback",
+    "inReviewTitle": "Items in review",
+    "noneInReview": "Nothing is in review.",
+    "days": "In review for",
+    "daysN_one": "{{count}} day",
+    "daysN_other": "{{count}} days",
+    "overdueTitle": "Overdue periodic reviews",
+    "dueSoonTitle": "Periodic reviews due soon",
+    "noneOverdue": "No overdue reviews.",
+    "noneDue": "Nothing due soon.",
+    "recentTitle": "Recently published",
+    "noneRecent": "Nothing published yet.",
+    "publishedAt": "Published",
+    "viewInPortal": "View in portal"
+  },
+  "workflows": {
+    "title": "Approval workflows",
+    "subtitle": "Who reviews and approves processes and pages before they are published.",
+    "templates": "Workflows",
+    "new": "New workflow",
+    "edit": "Edit workflow",
+    "steps": "Steps",
+    "stepsHint": "Steps run one after another. A step needs “any one of” or “all of” its assignees. The person who submits never approves their own work unless they are a step's only approver.",
+    "stepN": "Step {{number}}",
+    "stepNamePlaceholder": "e.g. Quality review",
+    "rule": "Approval rule",
+    "assignees": "Assignees",
+    "addAssignee": "Add assignee",
+    "addStep": "Add step",
+    "role": "Role",
+    "anyDepartment": "Any department",
+    "ownerHint": "The owner of the process or page",
+    "moveUp": "Move up",
+    "moveDown": "Move down",
+    "autoPublish": "Publish automatically after the last approval",
+    "autoPublishHint": "Otherwise an editor or the owner publishes the approved version.",
+    "manualPublish": "Publish manually",
+    "usage": "Used by",
+    "deleteConfirm": "Delete this workflow?",
+    "noneOption": "None"
+  },
+  "settings": {
+    "title": "Defaults and review dates",
+    "defaultWorkflow": "Default workflow",
+    "defaultWorkflowHint": "Used when no workflow is set for the item, its category or its space.",
+    "categoryWorkflow": "Workflow for {{category}} processes",
+    "useDefault": "Use the default",
+    "interval": "Review interval",
+    "months": "months",
+    "reminder": "Reminder before due",
+    "days": "days",
+    "dueDays": "Time to review",
+    "spaces": "Documentation spaces",
+    "spacesHint": "Default workflow for the pages of each space.",
+    "space": "Space"
+  },
+  "comments": {
+    "title": "Discussion",
+    "placeholder": "Write a comment… type @ to mention someone",
+    "placeholderElement": "Comment on this step… type @ to mention someone",
+    "post": "Comment",
+    "reply": "Reply",
+    "resolve": "Resolve",
+    "reopen": "Reopen",
+    "resolvedBy": "Resolved by {{name}}",
+    "edited": "edited",
+    "delete": "Delete this comment?",
+    "deleteThread": "Delete this comment and its replies?",
+    "empty": "No comments.",
+    "openCount_one": "{{count}} open thread",
+    "openCount_other": "{{count}} open threads",
+    "filter": {
+      "open": "Open",
+      "resolved": "Resolved",
+      "all": "All"
+    }
+  },
+  "notifications": {
+    "heading": "Notifications",
+    "subtitle": "Everything you were notified about, newest first.",
+    "markAllRead": "Mark all as read",
+    "showAll": "Show all notifications",
+    "empty": "No notifications.",
+    "unread_one": "{{count}} unread notification",
+    "unread_other": "{{count}} unread notifications",
+    "all": "All",
+    "unreadOnly": "Unread",
+    "title": {
+      "REVIEW_REQUESTED": "{{actor}} asked you to review {{title}} ({{step}})",
+      "CHANGES_REQUESTED": "{{actor}} requested changes to {{title}}",
+      "REJECTED": "{{actor}} rejected {{title}}",
+      "APPROVED": "{{title}} v{{version}} was approved and can be published",
+      "PUBLISHED": "{{actor}} published {{title}} v{{version}}",
+      "MENTIONED": "{{actor}} mentioned you on {{title}}",
+      "COMMENT_REPLY": "{{actor}} replied in a discussion on {{title}}",
+      "REVIEW_OVERDUE_task": "Your review of {{title}} is overdue (due {{due}})",
+      "REVIEW_OVERDUE_periodic": "The periodic review of {{title}} is overdue (due {{due}})",
+      "REVIEW_DUE": "{{title}} is due for its periodic review on {{due}}",
+      "FEEDBACK_RECEIVED": "{{actor}} sent feedback ({{kind}}) on {{title}}",
+      "FEEDBACK_UPDATED": "Your feedback on {{title}} is now: {{status}}"
+    }
+  },
+  "prefs": {
+    "title": "Notifications",
+    "type": "Notification",
+    "inApp": "In app",
+    "email": "Email",
+    "emailOff": "Email is not configured yet, so only in-app notifications are delivered.",
+    "types": {
+      "REVIEW_REQUESTED": "A review is requested from me",
+      "CHANGES_REQUESTED": "Changes are requested on my submission",
+      "REJECTED": "My submission is rejected",
+      "APPROVED": "An item I submitted or own is approved",
+      "PUBLISHED": "An item I worked on is published",
+      "MENTIONED": "Someone mentions me",
+      "COMMENT_REPLY": "Replies in discussions I take part in",
+      "REVIEW_OVERDUE": "A review is overdue",
+      "REVIEW_DUE": "A periodic review is due soon",
+      "FEEDBACK_RECEIVED": "Portal feedback on my items",
+      "FEEDBACK_UPDATED": "Updates on feedback I sent"
+    }
+  },
+  "feedback": {
+    "kind": {
+      "IMPROVEMENT": "Suggestion",
+      "OUTDATED": "Outdated content"
+    },
+    "status": {
+      "OPEN": "Open",
+      "IN_PROGRESS": "In progress",
+      "DONE": "Done"
+    },
+    "message": "Message",
+    "from": "From",
+    "answer": "Answer",
+    "manageTitle": "Feedback from the portal",
+    "reply": "Reply to the sender",
+    "replyHint": "The sender sees your reply and the status in the portal."
+  }
+}
