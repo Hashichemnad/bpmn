@@ -64,12 +64,19 @@ const envSchema = z.object({
   SMTP_TIMEOUT_MS: z.coerce.number().int().min(1000).default(15000),
   /** Timeout for one call to the AI provider, in milliseconds (generation can take a while). */
   AI_HTTP_TIMEOUT_MS: z.coerce.number().int().min(1000).default(180000),
+  /**
+   * Hosts the Git and SMTP integrations may reach although they are internal (private network,
+   * loopback, ...): comma-separated host names, IP addresses or CIDR ranges. Everything else
+   * internal is blocked (SSRF protection). Plain http:// Git URLs are only allowed for these hosts.
+   */
+  OUTBOUND_ALLOWED_HOSTS: z.string().default(''),
 });
 
 export type Env = z.infer<typeof envSchema>;
 
 export interface AppConfig extends Env {
   corsOrigins: string[];
+  outboundAllowedHosts: string[];
   passwordPolicy: PasswordPolicy;
   isProduction: boolean;
 }
@@ -87,6 +94,9 @@ export function loadConfig(source: NodeJS.ProcessEnv = process.env): AppConfig {
     ...env,
     corsOrigins: env.CORS_ORIGINS.split(',')
       .map((o) => o.trim())
+      .filter(Boolean),
+    outboundAllowedHosts: env.OUTBOUND_ALLOWED_HOSTS.split(',')
+      .map((h) => h.trim())
       .filter(Boolean),
     isProduction: env.NODE_ENV === 'production',
     passwordPolicy: {

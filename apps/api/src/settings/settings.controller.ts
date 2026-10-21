@@ -43,7 +43,7 @@ export class SettingsController {
     res.set({
       'Content-Type': contentType,
       'Cache-Control': 'public, max-age=300',
-      'Content-Security-Policy': "default-src 'none'; style-src 'unsafe-inline'",
+      'Content-Security-Policy': "default-src 'none'; style-src 'unsafe-inline'; sandbox",
       'X-Content-Type-Options': 'nosniff',
     });
     return new StreamableFile(stream);

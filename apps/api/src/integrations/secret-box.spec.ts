@@ -26,6 +26,13 @@ describe('SecretBox', () => {
     expect(() => box.decrypt('garbage')).toThrow();
   });
 
+  it('rejects truncated authentication tags', () => {
+    const box = new SecretBox(key);
+    const parts = box.encrypt('token').split('.');
+    parts[2] = Buffer.from(parts[2], 'base64url').subarray(0, 4).toString('base64url');
+    expect(() => box.decrypt(parts.join('.'))).toThrow('Invalid secret format');
+  });
+
   it('rejects keys of the wrong size', () => {
     expect(() => new SecretBox(randomBytes(16).toString('base64'))).toThrow();
   });

@@ -1,18 +1,6 @@
-import {
-  Navigate,
-  Outlet,
-  createBrowserRouter,
-  useLocation,
-  type RouteObject,
-} from 'react-router-dom';
-import { Result, Button } from 'antd';
-import { useTranslation } from 'react-i18next';
-import { useEffect } from 'react';
+import { createBrowserRouter, type RouteObject } from 'react-router-dom';
 import { PERMISSIONS } from '@processhub/shared';
-import { useAuth } from '@/auth/AuthProvider';
-import { useLocale } from '@/app/LocaleProvider';
-import { usePublicSettings } from '@/api/hooks';
-import { LoadingState } from '@/components/states';
+import { DefaultLocale, Home, NotFound, RequireAuth, WorkspaceOnly } from '@/app/RouteGuards';
 import { RequirePermission } from '@/components/RequirePermission';
 import { AppLayout } from '@/layout/AppLayout';
 import { LoginPage } from '@/features/auth/LoginPage';
@@ -21,7 +9,6 @@ import { UsersPage } from '@/features/admin/UsersPage';
 import { DepartmentsPage } from '@/features/admin/DepartmentsPage';
 import { AuditLogPage } from '@/features/admin/AuditLogPage';
 import { SettingsPage } from '@/features/settings/SettingsPage';
-import { ProcessHousePage } from '@/features/processes/ProcessHousePage';
 import { RepositoryLayout } from '@/features/processes/RepositoryLayout';
 import { ProcessListPage } from '@/features/processes/ProcessListPage';
 import { ProcessDetailPage } from '@/features/processes/ProcessDetailPage';
@@ -57,74 +44,6 @@ import { MyFeedbackPage } from '@/features/portal/MyFeedbackPage';
 import { PortalSettingsPage } from '@/features/portal/PortalSettingsPage';
 import { PortalPrintProcess } from '@/features/portal/PortalPrintProcess';
 import { PortalPrintPage } from '@/features/portal/PortalPrintPage';
-
-/** Applies the organisation's default language for visitors who have not chosen one. */
-function DefaultLocale() {
-  const settings = usePublicSettings();
-  const { explicit, locale, setLocale } = useLocale();
-  useEffect(() => {
-    if (!explicit && settings.data && settings.data.defaultLocale !== locale)
-      setLocale(settings.data.defaultLocale);
-  }, [explicit, settings.data, locale, setLocale]);
-  return <Outlet />;
-}
-
-function RequireAuth() {
-  const { user, loading, signedOut } = useAuth();
-  const location = useLocation();
-  if (loading) return <LoadingState />;
-  if (!user) {
-    // After an explicit sign-out the next user starts on the home page.
-    const state = signedOut ? undefined : { from: location.pathname + location.search };
-    return <Navigate to="/login" replace state={state} />;
-  }
-  return <Outlet />;
-}
-
-/** Workspace home; Viewers (portal only) land in the Knowledge Portal. */
-function Home() {
-  const { can } = useAuth();
-  if (!can(PERMISSIONS.PROCESSES_READ) && can(PERMISSIONS.PORTAL_READ)) {
-    return <Navigate to="/portal" replace />;
-  }
-  return (
-    <RequirePermission all={[PERMISSIONS.PROCESSES_READ]}>
-      <ProcessHousePage />
-    </RequirePermission>
-  );
-}
-
-/** Pages only for users with workspace access; Viewers are sent to the portal. */
-function WorkspaceOnly() {
-  const { canAny } = useAuth();
-  if (
-    !canAny(
-      PERMISSIONS.PROCESSES_READ,
-      PERMISSIONS.DOCS_READ,
-      PERMISSIONS.USERS_MANAGE,
-      PERMISSIONS.SETTINGS_MANAGE,
-    )
-  ) {
-    return <Navigate to="/portal" replace />;
-  }
-  return <Outlet />;
-}
-
-function NotFound() {
-  const { t } = useTranslation();
-  return (
-    <Result
-      status="404"
-      title={t('notFoundTitle')}
-      subTitle={t('notFoundText')}
-      extra={
-        <Button type="primary" href="/">
-          {t('nav.processHouse')}
-        </Button>
-      }
-    />
-  );
-}
 
 const P = PERMISSIONS;
 
@@ -366,12 +285,4 @@ export const routes: RouteObject[] = [
   },
 ];
 
-export const ROUTER_FUTURE = {
-  v7_relativeSplatPath: true,
-  v7_fetcherPersist: true,
-  v7_normalizeFormMethod: true,
-  v7_partialHydration: true,
-  v7_skipActionErrorRevalidation: true,
-} as const;
-
-export const createRouter = () => createBrowserRouter(routes, { future: ROUTER_FUTURE });
+export const createRouter = () => createBrowserRouter(routes);

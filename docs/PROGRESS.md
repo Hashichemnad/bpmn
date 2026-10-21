@@ -2,7 +2,83 @@
 
 Read this together with `CLAUDE.md` at the start of every session.
 
-## Current state — 2026-10-21 (AI phase, branch `phase-ai-assistant`)
+## Current state — 2026-10-21 (Phase 6 — Hardening, branch `phase-6-part-1`)
+
+Phase 6 is split into small parts, one branch each (`phase-6-part-<n>` from the latest `main`). The AI phase
+is merged into `main`.
+
+### Part 1 — Security review and fixes (done, awaiting review)
+
+Steps (tick as they are committed; a new session continues at the first unticked one):
+
+- [x] 1. Route inventory (`apps/api/test/route-inventory.ts`) and authorisation matrix
+      (`test/authorization-matrix.e2e-spec.ts`): every mutating route called as Viewer / Auditor / Reviewer
+      on the demo seed (items in every state, a view-restricted space) changes nothing; Viewers get 403/404 on
+      every workspace GET. No gaps found.
+- [x] 2. Headers / CSP, CORS, cookies, CSRF: the CSRF guard also checks `Origin` (CORS_ORIGINS or the
+      request host; blocks sub-domain cookie tossing); nginx security headers moved into one snippet
+      included by every location (`/` and `/assets/` had lost `Permissions-Policy`), plus COOP.
+      Tests: `test/security.e2e-spec.ts`.
+- [x] 3. XSS: rich text (DOMPurify server + client, same allow-list), BPMN (DTD/entities rejected,
+      labels rendered as SVG text), comments / search snippets / AI answers (React text only, no
+      `dangerouslySetInnerHTML` anywhere), emails (escaped, links from `APP_URL`), downloads
+      (`attachment`, `nosniff`, `sandbox` CSP). Fixed: SVG logos lose external CSS references
+      (`@import`, `url(https://…)`), logo response gets `sandbox`; more SVG vectors in the unit test.
+- [x] 4. Uploads (allow-list + magic bytes + size limits — fine), path traversal (process codes / space
+      keys are regex-checked, Git paths drop `..`, storage keys are UUIDs — fine). **SSRF fixed**:
+      `src/common/outbound.ts` blocks internal addresses for Git (GitLab / GitHub Enterprise URL) and SMTP
+      unless listed in the new `OUTBOUND_ALLOWED_HOSTS` (Compose default `mailpit`); the checked address is
+      the one connected to (no DNS rebinding); plain `http://` Git URLs only for allowed hosts; redirects are
+      never followed; new error code `GIT_HOST_BLOCKED` (EN/AR). The AI provider URL is not configurable in
+      the UI (only `ANTHROPIC_BASE_URL` in the environment).
+- [x] 5. Secrets: Git token, SMTP password and AI key are write-only, encrypted (AES-256-GCM) and
+      scrubbed from error messages; a new cross-cutting test configures all three plus user passwords,
+      triggers failing Git / email calls and checks API responses, audit entries, stored settings, sync
+      items and log output for any plaintext secret or password hash; refresh tokens stored hashed.
+      **Fixed:** `SecretBox.decrypt` now requires a full 16-byte GCM tag (Node accepted truncated tags).
+- [x] 6. Dependencies: `react-router-dom` 6 → 7.18 (two advisories; the app already used every v7 future
+      flag, so only the flag props were removed), `vitest` 3 → 4.1 (path traversal in the dev server),
+      `js-yaml` ≥ 5.4.1 via an override (from `@nestjs/swagger`). `pnpm audit --prod`: no high/critical,
+      4 moderate in MinIO's `stream-json` / `decode-uri-component` (code paths not used — SECURITY.md).
+      Full audit: 1 high, `braces` via Jest (dev-only, no fixed version exists) — decision needed.
+- [x] 7. `docs/SECURITY.md`: scope and method, findings SEC-01 – SEC-09 with status, controls per OWASP
+      category, rate limits, the endpoint table (generated; `route-security.e2e-spec.ts` fails when it is out
+      of date, when an input is unvalidated or a route lacks an access declaration), remaining risks, go-live
+      configuration checklist and an external penetration-test checklist. DECISIONS D-047 – D-050, BACKLOG,
+      README (security highlights, `OUTBOUND_ALLOWED_HOSTS`), CLAUDE.md phase table updated.
+
+#### Verification (part 1)
+
+| Check                                              | Result                                                                                                                                                                         |
+| -------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `pnpm format:check`, `pnpm lint`, `pnpm typecheck` | clean (lint found `react-refresh` warnings hidden by the removed `ROUTER_FUTURE` export; fixed by moving the route guard components to `apps/web/src/app/RouteGuards.tsx`)     |
+| `pnpm test`                                        | **332 tests pass** — shared 64, web 31, API 237 (34 suites; new: `authorization-matrix`, `security` e2e, `outbound` unit, route-security extended, SVG and GCM-tag unit tests) |
+| `pnpm build`                                       | passes                                                                                                                                                                         |
+| `pnpm e2e` (Playwright, Vite dev + built API)      | 8 smoke tests pass on React Router 7 (also exercises the CSRF origin check through the Vite proxy)                                                                             |
+| nginx                                              | `nginx -t` passes in `nginx:1.27-alpine`; `/`, `/assets/…` and SPA routes all return CSP, Permissions-Policy, COOP, X-Frame-Options                                            |
+| SMTP through the SSRF guard                        | real delivery to Mailpit when allowed (connects to the checked IP with `servername`); refused when not listed                                                                  |
+| `pnpm audit --prod`                                | no high/critical; 4 moderate (MinIO transitive, unused paths — SEC-09). Full audit: 1 high `braces` (dev-only via Jest, no fix — SEC-08)                                       |
+
+Docker: as in earlier phases the sandbox reaches the internet only through a TLS-intercepting proxy, so base
+images came from `mirror.gcr.io` and the two app images were built from the committed Dockerfiles in a clean
+clone with an uncommitted CA line and `docker build --network host`, then started with `docker compose up`.
+Result: five services healthy, demo seeded; nginx sends the full header set on SPA routes; the 8 Playwright
+smoke tests pass against `http://localhost:8080`; Settings → Email test mail reaches Mailpit through the SSRF
+guard (`OUTBOUND_ALLOWED_HOSTS=mailpit`); a foreign `Origin` gets `CSRF_INVALID`. This check found that the
+web image no longer type-checked after the Vitest 4 upgrade (Node types were only pulled in transitively):
+`@types/node` is now a web dev dependency and listed in the web tsconfig.
+
+### Next (continue here)
+
+1. Review and merge `phase-6-part-1` (new env var `OUTBOUND_ALLOWED_HOSTS`: add internal Git / SMTP servers
+   to it on existing installations, otherwise they are blocked).
+2. Decisions for you: `braces` (BACKLOG "Needs a decision"); whether TLS/HSTS will be handled by your own
+   reverse proxy (the deployment guide part will document it either way).
+3. Next Phase 6 parts (suggested order): TOTP two-factor and SSO (Azure AD / OIDC); slim API runtime image
+   (removes dev dependencies, SEC-08); performance; deployment guide; external penetration test with
+   `docs/SECURITY.md` §8.
+
+## AI phase — 2026-10-21 (merged into `main`)
 
 **Phase "AI" (M16 AI Assistant) is complete on branch `phase-ai-assistant`, awaiting review.** Phases 1–3 are
 merged into `main`. The brief was built in three parts, committed separately (A, B, C) — all done, documented in

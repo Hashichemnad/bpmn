@@ -1,59 +1,38 @@
-import { RequestMethod } from '@nestjs/common';
-import { DiscoveryModule, DiscoveryService, MetadataScanner, Reflector } from '@nestjs/core';
-import { Test } from '@nestjs/testing';
-import { METHOD_METADATA, PATH_METADATA } from '@nestjs/common/constants';
-import { AppModule } from '../src/app.module';
-import {
-  ANY_PERMISSION_KEY,
-  AUTHENTICATED_KEY,
-  IS_PUBLIC_KEY,
-  PERMISSIONS_KEY,
-} from '../src/common/decorators';
-import { MemoryStorage } from './helpers';
-import { StorageService } from '../src/storage/storage.service';
+import { readFileSync, writeFileSync } from 'node:fs';
+import { join } from 'node:path';
+import { collectRoutes, routeTable, type RouteInfo } from './route-inventory';
+
+const SECURITY_DOC = join(__dirname, '../../../docs/SECURITY.md');
+const START = '<!-- route-table:start -->';
+const END = '<!-- route-table:end -->';
+
+/** Table rows without the column padding Prettier adds. */
+const normalise = (table: string) =>
+  table
+    .trim()
+    .split('\n')
+    .map((line) =>
+      line
+        .split('|')
+        .map((cell) => (/^\s*:?-+:?\s*$/.test(cell) ? '---' : cell.trim()))
+        .join('|'),
+    )
+    .join('\n');
 
 /** Every route must explicitly declare who may call it (deny-by-default guard). */
 describe('Route security declarations', () => {
-  it('every controller method declares Public, permissions or Authenticated', async () => {
-    const moduleRef = await Test.createTestingModule({ imports: [AppModule, DiscoveryModule] })
-      .overrideProvider(StorageService)
-      .useValue(new MemoryStorage())
-      .compile();
-    const discovery = moduleRef.get(DiscoveryService);
-    const scanner = moduleRef.get(MetadataScanner);
-    const reflector = moduleRef.get(Reflector);
-    const routes: { route: string; access: string }[] = [];
+  let routes: RouteInfo[];
 
-    for (const wrapper of discovery.getControllers()) {
-      const instance = wrapper.instance as object;
-      const proto = Object.getPrototypeOf(instance);
-      const base = Reflect.getMetadata(PATH_METADATA, wrapper.metatype as object) as string;
-      for (const name of scanner.getAllMethodNames(proto)) {
-        const handler = proto[name];
-        const path = Reflect.getMetadata(PATH_METADATA, handler);
-        if (path === undefined) continue;
-        const method = RequestMethod[Reflect.getMetadata(METHOD_METADATA, handler) as number];
-        const targets = [handler, wrapper.metatype as object];
-        const access = reflector.getAllAndOverride(IS_PUBLIC_KEY, targets)
-          ? 'public'
-          : reflector.getAllAndOverride(PERMISSIONS_KEY, targets)
-            ? 'permissions'
-            : reflector.getAllAndOverride(ANY_PERMISSION_KEY, targets)
-              ? 'any-permission'
-              : reflector.getAllAndOverride(AUTHENTICATED_KEY, targets)
-                ? 'authenticated'
-                : 'NONE';
-        routes.push({
-          route: `${method} /${[base, path].filter((x) => x && x !== '/').join('/')}`,
-          access,
-        });
-      }
-    }
+  beforeAll(async () => {
+    routes = await collectRoutes();
+  });
+
+  it('every controller method declares Public, permissions or Authenticated', () => {
     expect(routes.length).toBeGreaterThan(40);
     expect(routes.filter((r) => r.access === 'NONE')).toEqual([]);
     const publicRoutes = routes
       .filter((r) => r.access === 'public')
-      .map((r) => r.route)
+      .map((r) => `${r.method} ${r.path}`)
       .sort();
     expect(publicRoutes).toEqual([
       'GET /auth/csrf',
@@ -64,6 +43,46 @@ describe('Route security declarations', () => {
       'POST /auth/logout',
       'POST /auth/refresh',
     ]);
-    await moduleRef.close();
+  });
+
+  it('every body, query and path parameter passes through a validation pipe', () => {
+    const unvalidated = routes.flatMap((r) =>
+      r.inputs.filter((i) => !i.validated).map((i) => `${r.method} ${r.path} ${i.kind}`),
+    );
+    // Uploads are checked in the service (allow-list, magic bytes, size) and by multer limits.
+    expect(unvalidated.sort()).toEqual([
+      'POST /pages/:id/attachments file',
+      'POST /settings/logo file',
+    ]);
+  });
+
+  it('password and session routes have the stricter login rate limit', () => {
+    const strict = routes
+      .filter((r) => r.rateLimit === 'login')
+      .map((r) => `${r.method} ${r.path}`)
+      .sort();
+    expect(strict).toEqual([
+      'POST /auth/change-password',
+      'POST /auth/login',
+      'POST /auth/refresh',
+    ]);
+    expect(routes.filter((r) => r.rateLimit === 'skip').map((r) => r.path)).toEqual(['/health']);
+  });
+
+  it('docs/SECURITY.md lists every endpoint with its guards (UPDATE_SECURITY_DOC=1 rewrites it)', () => {
+    const doc = readFileSync(SECURITY_DOC, 'utf8');
+    const start = doc.indexOf(START);
+    const end = doc.indexOf(END);
+    expect(start).toBeGreaterThan(-1);
+    expect(end).toBeGreaterThan(start);
+    const table = routeTable(routes);
+    if (process.env.UPDATE_SECURITY_DOC === '1') {
+      writeFileSync(
+        SECURITY_DOC,
+        `${doc.slice(0, start + START.length)}\n\n${table}\n\n${doc.slice(end)}`,
+      );
+      return;
+    }
+    expect(normalise(doc.slice(start + START.length, end))).toEqual(normalise(table));
   });
 });

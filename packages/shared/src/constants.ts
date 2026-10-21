@@ -368,6 +368,8 @@ export const GIT_ERROR_CODES = [
   'GIT_RATE_LIMITED',
   'GIT_CONFLICT',
   'GIT_NETWORK',
+  /** The Git server is on an internal address that is not in OUTBOUND_ALLOWED_HOSTS. */
+  'GIT_HOST_BLOCKED',
   'GIT_NOT_CONFIGURED',
   'GIT_SOURCE_MISSING',
   'GIT_UNKNOWN',

@@ -81,6 +81,9 @@ services:
       # Demo installations send email to Mailpit; real SMTP is configured in Settings → Email.
       SEED_SMTP_HOST: ${SEED_SMTP_HOST-mailpit}
       SEED_SMTP_PORT: ${SEED_SMTP_PORT:-1025}
+      # Internal hosts the Git / SMTP integrations may reach (SSRF protection blocks all others).
+      # Mailpit is internal; add your own GitLab / SMTP server here if it runs in a private network.
+      OUTBOUND_ALLOWED_HOSTS: ${OUTBOUND_ALLOWED_HOSTS-mailpit}
       APP_URL: ${APP_URL:-http://localhost:8080}
       SCHEDULER_INTERVAL_MINUTES: ${SCHEDULER_INTERVAL_MINUTES:-60}
     volumes:

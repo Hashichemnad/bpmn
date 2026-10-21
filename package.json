@@ -2,7 +2,7 @@
   "name": "processhub",
   "private": true,
   "version": "0.1.0",
-  "description": "ProcessHub \u2014 bilingual (Arabic/English) business process management platform",
+  "description": "ProcessHub — bilingual (Arabic/English) business process management platform",
   "packageManager": "pnpm@10.28.0",
   "engines": {
     "node": ">=20.11"
@@ -43,7 +43,8 @@
     ],
     "overrides": {
       "deepmerge-ts@<8.0.0": "^8.0.0",
-      "tinypool@<2.1.2": "^2.1.2"
+      "tinypool@<2.1.2": "^2.1.2",
+      "js-yaml@>=5.0.0 <5.4.1": "^5.4.1"
     },
     "ignoredBuiltDependencies": [
       "@scarf/scarf"
