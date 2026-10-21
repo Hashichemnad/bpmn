@@ -4,6 +4,10 @@ import {
   createUserSchema,
   moveProcessSchema,
   paginationQuerySchema,
+  createSpaceSchema,
+  gitSettingsSchema,
+  savePageSchema,
+  spaceGrantSchema,
 } from './schemas';
 import { SYSTEM_ROLES, PERMISSIONS } from './constants';
 
@@ -82,5 +86,50 @@ describe('system roles', () => {
   });
   it('viewer is read-only', () => {
     expect(SYSTEM_ROLES.VIEWER.permissions.every((p) => p.endsWith('.read'))).toBe(true);
+  });
+});
+
+describe('phase 2 schemas', () => {
+  it('space keys are short upper-case identifiers', () => {
+    expect(createSpaceSchema.parse({ key: 'qm', nameEn: 'Quality' }).key).toBe('QM');
+    expect(createSpaceSchema.safeParse({ key: '1QM', nameEn: 'x' }).success).toBe(false);
+    expect(createSpaceSchema.safeParse({ key: 'QM', nameEn: '', nameAr: '' }).success).toBe(false);
+  });
+
+  it('space grants validate the principal id by type', () => {
+    expect(
+      spaceGrantSchema.safeParse({ principalType: 'ROLE', principalId: 'MODELER', access: 'EDIT' })
+        .success,
+    ).toBe(true);
+    expect(
+      spaceGrantSchema.safeParse({ principalType: 'ROLE', principalId: 'GOD', access: 'EDIT' })
+        .success,
+    ).toBe(false);
+    expect(
+      spaceGrantSchema.safeParse({ principalType: 'USER', principalId: 'abc', access: 'VIEW' })
+        .success,
+    ).toBe(false);
+  });
+
+  it('page saves need a title and a change note', () => {
+    const ok = savePageSchema.parse({ titleAr: 'عنوان', changeNote: 'First' });
+    expect(ok).toMatchObject({ contentEn: '', dirEn: 'ltr', dirAr: 'rtl' });
+    expect(savePageSchema.safeParse({ titleEn: 'x', changeNote: ' ' }).success).toBe(false);
+    expect(savePageSchema.safeParse({ changeNote: 'x' }).success).toBe(false);
+  });
+
+  it('git settings validate repository, branch, folder and URL', () => {
+    const base = { enabled: true, provider: 'gitlab', repository: 'group/sub/project' };
+    expect(gitSettingsSchema.parse({ ...base, folder: '/bpm/export/' }).folder).toBe('bpm/export');
+    expect(gitSettingsSchema.safeParse({ ...base, folder: '../etc' }).success).toBe(false);
+    expect(gitSettingsSchema.safeParse({ ...base, branch: 'feature/x' }).success).toBe(true);
+    expect(gitSettingsSchema.safeParse({ ...base, branch: 'a..b' }).success).toBe(false);
+    expect(gitSettingsSchema.safeParse({ ...base, repository: 'nope' }).success).toBe(false);
+    expect(gitSettingsSchema.safeParse({ ...base, baseUrl: 'ftp://x' }).success).toBe(false);
+    expect(
+      gitSettingsSchema.parse({ ...base, baseUrl: 'https://gitlab.example.com/' }).baseUrl,
+    ).toBe('https://gitlab.example.com');
+    expect(gitSettingsSchema.safeParse({ enabled: true, provider: 'github' }).success).toBe(false);
+    expect(gitSettingsSchema.safeParse({ enabled: false, provider: 'github' }).success).toBe(true);
   });
 });

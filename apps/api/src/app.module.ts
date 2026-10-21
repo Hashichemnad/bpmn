@@ -14,6 +14,10 @@ import { SettingsModule } from './settings/settings.module';
 import { ProcessesModule } from './processes/processes.module';
 import { ModelsModule } from './models/models.module';
 import { ObjectsModule } from './objects/objects.module';
+import { EventsModule } from './events/domain-events';
+import { DocsModule } from './docs/docs.module';
+import { SearchModule } from './search/search.module';
+import { IntegrationsModule } from './integrations/integrations.module';
 import { HealthController } from './health/health.controller';
 import { CsrfGuard, JwtAuthGuard, PermissionsGuard } from './common/guards';
 import { AllExceptionsFilter } from './common/http-exception.filter';
@@ -31,6 +35,7 @@ import { AllExceptionsFilter } from './common/http-exception.filter';
       ],
     }),
     PrismaModule,
+    EventsModule,
     AuditModule,
     AuthModule,
     StorageModule,
@@ -41,6 +46,9 @@ import { AllExceptionsFilter } from './common/http-exception.filter';
     ProcessesModule,
     ModelsModule,
     ObjectsModule,
+    DocsModule,
+    SearchModule,
+    IntegrationsModule,
   ],
   controllers: [HealthController],
   providers: [

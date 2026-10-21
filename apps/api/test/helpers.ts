@@ -12,6 +12,15 @@ import { StorageService } from '../src/storage/storage.service';
 import { hashPassword } from '../src/auth/argon';
 import { syncRolesAndPermissions } from '../prisma/seed';
 import { Readable } from 'node:stream';
+import { GitProviders } from '../src/integrations/git-providers';
+import { GitHttp } from '../src/integrations/providers/git-http';
+import {
+  GitError,
+  gitBlobSha,
+  type GitCommitRequest,
+  type GitConnection,
+  type GitProviderClient,
+} from '../src/integrations/providers/types';
 
 export const PASSWORD = 'Test-Password1';
 
@@ -35,13 +44,60 @@ export interface TestContext {
   app: INestApplication;
   prisma: PrismaService;
   storage: MemoryStorage;
+  git: FakeGitRepo;
+}
+
+/** In-memory Git repository standing in for GitHub/GitLab: tests never call real services. */
+export class FakeGitRepo implements GitProviderClient {
+  files = new Map<string, string>();
+  commits: (GitCommitRequest & { sha: string })[] = [];
+  failNext: GitError | null = null;
+  validToken = 'good-token';
+
+  async test(conn: GitConnection) {
+    if (conn.token !== this.validToken) {
+      throw new GitError('GIT_AUTH_FAILED', `HTTP 401: Bad credentials (${conn.token})`);
+    }
+    if (conn.branch !== 'main') throw new GitError('GIT_BRANCH_NOT_FOUND', 'HTTP 404');
+    return { defaultBranch: 'main' };
+  }
+
+  async listFiles(_conn: GitConnection, folder: string) {
+    const files = new Map<string, string>();
+    for (const [path, content] of this.files) {
+      if (!folder || path.startsWith(`${folder}/`)) files.set(path, gitBlobSha(content));
+    }
+    return { files, complete: true };
+  }
+
+  async commit(_conn: GitConnection, req: GitCommitRequest) {
+    if (this.failNext) {
+      const err = this.failNext;
+      this.failNext = null;
+      throw err;
+    }
+    for (const u of req.upserts) this.files.set(u.path, u.content);
+    for (const d of req.deletes) this.files.delete(d);
+    const sha = `sha${this.commits.length + 1}`;
+    this.commits.push({ ...req, sha });
+    return { sha, url: `https://git.example/commit/${sha}` };
+  }
 }
 
 export async function createApp(): Promise<TestContext> {
   const storage = new MemoryStorage();
+  const git = new FakeGitRepo();
   const moduleRef = await Test.createTestingModule({ imports: [AppModule] })
     .overrideProvider(StorageService)
     .useValue(storage)
+    .overrideProvider(GitProviders)
+    .useValue({ client: () => git })
+    .overrideProvider(GitHttp)
+    .useValue({
+      request: () => {
+        throw new Error('Tests must not call real Git services');
+      },
+    })
     .compile();
   const app = moduleRef.createNestApplication<NestExpressApplication>({
     bodyParser: false,
@@ -49,10 +105,19 @@ export async function createApp(): Promise<TestContext> {
   });
   configureApp(app);
   await app.init();
-  return { app, prisma: app.get(PrismaService), storage };
+  return { app, prisma: app.get(PrismaService), storage, git };
 }
 
 const TABLES = [
+  'GitSyncItem',
+  'Attachment',
+  'PageLink',
+  'PageDraft',
+  'PageVersion',
+  'Page',
+  'PageTemplate',
+  'SpaceGrant',
+  'Space',
   'AuditLog',
   'ObjectLink',
   'ProcessVersion',
@@ -81,7 +146,7 @@ export async function createUser(
   prisma: PrismaService,
   email: string,
   roles: SystemRoleKey[],
-  extra: { status?: 'ACTIVE' | 'INACTIVE'; nameEn?: string } = {},
+  extra: { status?: 'ACTIVE' | 'INACTIVE'; nameEn?: string; departmentId?: string } = {},
 ) {
   passwordHash ??= await hashPassword(PASSWORD);
   const roleRows = await prisma.role.findMany({ where: { key: { in: roles } } });
@@ -92,6 +157,7 @@ export async function createUser(
       nameAr: 'مستخدم',
       passwordHash,
       status: extra.status ?? 'ACTIVE',
+      departmentId: extra.departmentId,
       roles: { create: roleRows.map((r) => ({ roleId: r.id })) },
     },
   });
@@ -156,3 +222,5 @@ export function sampleBpmn(ids: string[] = ['Task_1']): string {
   return `<?xml version="1.0" encoding="UTF-8"?>
 <bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" id="Defs_1"><bpmn:process id="Process_1">${tasks}</bpmn:process></bpmn:definitions>`;
 }
+
+export const PNG_BYTES = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0, 0, 0, 0]);

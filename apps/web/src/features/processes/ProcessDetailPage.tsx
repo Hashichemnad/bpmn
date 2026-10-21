@@ -33,8 +33,10 @@ import { EmptyState, ErrorState, LoadingState } from '@/components/states';
 import { useErrorMessage, useFormatDate, useLocalized } from '@/components/i18n-helpers';
 import { ProcessFormModal } from './ProcessFormModal';
 import { BpmnEditor } from '@/features/modeler/BpmnEditor';
+import { RelatedDocsCard } from '@/features/docs/RelatedDocsCard';
+import { useRelatedPages } from '@/api/docs';
 
-type Tab = 'overview' | 'subprocesses' | 'objects' | 'model';
+type Tab = 'overview' | 'subprocesses' | 'objects' | 'docs' | 'model';
 
 export function ProcessDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -49,6 +51,7 @@ export function ProcessDetailPage() {
   const process = useProcess(id);
   const links = useLinks(id!);
   const remove = useDeleteProcess();
+  const related = useRelatedPages('processes', id, can(PERMISSIONS.DOCS_READ));
   const [modalState, setModalState] = useState<'edit' | 'sub' | null>(null);
   const tab = (params.get('tab') as Tab) || 'overview';
 
@@ -301,6 +304,15 @@ export function ProcessDetailPage() {
             label: `${t('processes:tabs.objects')} (${linksByObject.length})`,
             children: objects,
           },
+          ...(can(PERMISSIONS.DOCS_READ)
+            ? [
+                {
+                  key: 'docs',
+                  label: `${t('processes:tabs.docs')} (${related.data?.length ?? 0})`,
+                  children: <RelatedDocsCard kind="processes" id={p.id} />,
+                },
+              ]
+            : []),
           {
             key: 'model',
             label: t('processes:tabs.model'),

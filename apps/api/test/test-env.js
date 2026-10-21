@@ -14,6 +14,8 @@ Object.assign(process.env, {
   LOGIN_MAX_ATTEMPTS: '3',
   LOGIN_LOCKOUT_MINUTES: '15',
   ENABLE_SWAGGER: 'false',
+  // Fixed test-only key (32 bytes, base64).
+  INTEGRATIONS_ENCRYPTION_KEY: Buffer.alloc(32, 7).toString('base64'),
 });
 
 module.exports = { url };

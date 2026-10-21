@@ -4,7 +4,7 @@
 
 **منصة ثنائية اللغة (العربية / الإنجليزية) لإدارة العمليات المؤسسية** — تجمع بين جوهر ARIS و GBTEC (BIC) مع ويكي للتوثيق على غرار Confluence، والتحكم في الإصدارات، وتكامل اختياري مع GitHub / GitLab.
 
-> **Status:** ✅ Phase 1 (Foundation) complete — see [`docs/PROGRESS.md`](./docs/PROGRESS.md). Phase 2 is next.
+> **Status:** ✅ Phase 1 (Foundation) and ✅ Phase 2 (Documentation wiki, version control, Git integration) complete — see [`docs/PROGRESS.md`](./docs/PROGRESS.md). Phase 3 (governance, knowledge portal) is next.
 
 ---
 
@@ -16,9 +16,9 @@
 | **Process House & Repository** | Management / Core / Support process house, drag-and-drop process tree, owners, departments | ✅ 1 |
 | **Process Modeler** | BPMN 2.0 editor with bilingual labels, validation, versions, drill-down, import/export (BPMN XML, SVG, PNG) | ✅ 1 |
 | **Object Repository** | Reusable roles and IT systems linked to process steps, "where used" report (documents, risks, controls, KPIs later) | ✅ 1 |
-| **Documentation Wiki** | Confluence-style pages and spaces, SOP / policy templates, linked to processes | 2 |
-| **Version Control** | Visual compare, restore, change notes | 2 |
-| **Git Integration** *(optional)* | Sync models and documents with GitHub or GitLab — enabled from Settings | 2 |
+| **Documentation Wiki** | Spaces with access rules, page tree, rich-text editor (tables, checklists, callouts, images, attachments, embedded BPMN diagrams, RTL/LTR), English + Arabic versions, templates, trash, full-text search, PDF / Markdown export | ✅ 2 |
+| **Version Control** | Versions with change notes for processes and pages, visual BPMN diff, side-by-side / inline text diff, restore, labels | ✅ 2 |
+| **Git Integration** *(optional)* | One-way sync of BPMN models (.bpmn + .json) and pages (Markdown) to GitHub or GitLab, on every version or on demand, with a status page | ✅ 2 |
 | **Governance** | Draft → Review → Approved → Published workflow, comments, notifications | 3 |
 | **Knowledge Portal** | Read-only portal for all staff: browse, search, "my processes", feedback, PDF | 3 |
 | **GRC, EA & KPIs** | Risks and controls, IT landscape, KPI dashboards, Salesforce link | 4 |
@@ -40,8 +40,26 @@ Open **http://localhost:8080** and sign in with the default Super Admin:
 | `admin@processhub.local` | `ChangeMe-Admin1` |
 
 **Change this password straight away** (top-right menu → My profile). The first start applies database
-migrations and loads demo data: departments, 11 processes in Arabic and English, roles, IT systems and two
-BPMN models.
+migrations and loads demo data: departments, 11 processes in Arabic and English, roles, IT systems, two
+BPMN models (one with two versions), six page templates and two documentation spaces with eight bilingual
+pages.
+
+### A short tour of Phase 2
+
+1. **Documentation → Spaces → Quality Management → Purchase Requisition Procedure.** The page embeds the
+   process diagram, lists related processes, roles and systems, and is available in both languages (use
+   the EN / عربي switch above the page, or the header language toggle).
+2. **History** on that page: three versions, one labelled *v1.0 – approved by committee*. Compare any two
+   (side by side or inline), preview, restore (creates a new version) or edit labels.
+3. **Edit**: English and Arabic tabs, page and paragraph direction, tables, checklists, info panels,
+   images, attachments and diagrams. Changes are autosaved as your private draft; **Save** asks for a change
+   note and creates a version.
+4. **Processes → S.01.01 Purchase Requisition → Model → Versions**: compare v1 and v2 visually (added,
+   removed and changed elements are coloured) and see the list of changes. The **Documentation** tab lists
+   the pages about this process.
+5. **Search** (header box or the Search page): English or Arabic words, partial words, filters for space
+   and author.
+6. **Settings → Integrations**: connect a GitHub or GitLab repository; **Sync status** shows what was synced.
 
 ### Configuration
 
@@ -57,9 +75,32 @@ Every variable is documented in [`.env.example`](./.env.example). The ones that 
 - `POSTGRES_PASSWORD`, `MINIO_SECRET_KEY`: database and object-storage passwords.
 - `SEED_ADMIN_EMAIL`, `SEED_ADMIN_PASSWORD`: the first Super Admin. These are read only when that user does not exist yet.
 - `JWT_ACCESS_SECRET`: leave it empty and the API generates a random secret on first start, kept in the `api-data` volume.
+- `INTEGRATIONS_ENCRYPTION_KEY`: encrypts GitHub/GitLab tokens (AES-256-GCM). Leave it empty with Docker and a key is generated and kept in the `api-data` volume — **back it up**: without it stored tokens cannot be decrypted and must be entered again.
 - `WEB_PORT`, `CORS_ORIGINS`: the port and URL users open.
 - `COOKIE_SECURE`: keep `true`. It needs HTTPS (or `localhost`). Put a TLS reverse proxy in front for real use.
 - `SEED_DEMO_DATA=false`: start with an empty repository.
+
+### Git integration (optional)
+
+Settings → Integrations (Super Admin only):
+
+1. Create a token. **GitHub**: a fine-grained personal access token with *Contents: read and write* on the
+   repository. **GitLab**: a project or personal access token with the `api` scope (Developer role or higher).
+   For self-hosted GitLab enter its URL; for GitHub Enterprise `https://<host>/api/v3`.
+2. Enter repository (`owner/repo` or `group/project`), an existing branch, an optional folder and the token,
+   then **Test connection** and **Save**. The token is stored encrypted and never shown again.
+3. Choose what to sync (processes, pages or both) and when (every new version, or only **Sync now**).
+
+Every sync is one commit, authored as the ProcessHub user who made the change, e.g.
+`Update C.02.03 Order Handling — v5: Added approval`. Layout in the repository:
+
+```
+<folder>/processes/core/C.02-order-to-cash/C.02.03-order-handling/C.02.03.bpmn   (+ C.02.03.json metadata)
+<folder>/docs/QM/quality-manual-1a2b3c4d/document-control-5e6f7a8b/index.en.md   (+ index.ar.md, front-matter)
+```
+
+The sync is one-way (ProcessHub → Git). Pages of view-restricted spaces are never exported. Renames and
+moves are applied with the next version or with **Sync now**, which reconciles everything in a single commit.
 
 Data lives in the Docker volumes `postgres-data`, `minio-data` and `api-data`. `docker compose down` keeps them; `docker compose down -v` deletes them.
 
@@ -105,14 +146,20 @@ apps/
       common/             guards (JWT, CSRF, permissions), zod pipe, error filter
       users/ roles/ departments/ audit/ settings/ storage/
       processes/          process tree, move planning
-      models/             BPMN models, versions, object links
+      models/             BPMN models, versions (restore, labels), object links
       objects/            object library, where-used
+      docs/               wiki: spaces, pages, versions, drafts, templates, attachments, links,
+                          sanitising, Markdown export
+      search/             PostgreSQL full-text search (English + Arabic)
+      integrations/       Git sync: encrypted settings, GitHub/GitLab clients, export, sync queue
+      events/             in-process domain events (e.g. "new version" → Git sync)
     test/                 end-to-end tests (supertest + PostgreSQL)
   web/                    React + Vite + Ant Design client
     src/
       api/                fetch client (CSRF, token refresh) and React Query hooks
       app/ auth/ layout/  providers, theme, locale/RTL, shell
-      features/           admin, settings, profile, processes, modeler, objects
+      features/           admin, settings, profile, processes, modeler, objects,
+                          docs (wiki, TipTap editor, history), versions (BPMN compare), search
       locales/{en,ar}/    translations
 packages/
   shared/                 zod schemas, types, permissions & roles, bilingual helpers, BPMN validation
@@ -127,6 +174,10 @@ docker-compose.yml        postgres, minio, api, web
 - Permissions are checked on the server for every request, and routes are denied by default. The UI only hides what a user cannot do.
 - Rate limiting, request size limits, helmet, strict CORS, and a CSP on the web app.
 - Uploaded logos are type-checked by content and SVGs are sanitised. BPMN imports reject DTDs and entities.
+- Wiki content is sanitised with DOMPurify on the server (on save) and again in the browser (on render); images may only point at ProcessHub attachments.
+- Attachments: extension allow-list plus a content check, 10 MB limit, stored in MinIO and delivered with a sandboxing CSP, `nosniff` and download disposition for non-images.
+- Per-space view/edit restrictions apply everywhere, including search and "related documentation".
+- GitHub/GitLab tokens are encrypted at rest (AES-256-GCM), write-only in the API and scrubbed from errors and the audit log.
 - An audit log records every change and every sign-in, with secrets scrubbed.
 
 More detail in [`docs/DECISIONS.md`](./docs/DECISIONS.md).

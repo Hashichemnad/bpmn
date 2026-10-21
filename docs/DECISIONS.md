@@ -70,6 +70,7 @@ build environment. Docker Compose therefore defaults to `bitnamilegacy/minio:202
 receives no further updates. The image is configurable through `MINIO_IMAGE`, but the official image uses a
 different start command and data path, so switching requires a compose change. **Needs a decision before
 production** (options: official `quay.io/minio/minio` image, a self-built image, or another S3-compatible store).
+_Update (Phase 2): decided to keep this image for now and revisit in Phase 6._
 
 ## D-010 — Docker images
 
@@ -116,3 +117,102 @@ references removed) and served with `Content-Security-Policy: default-src 'none'
 
 The bpmn-js canvas is always rendered LTR, also in the Arabic UI; Arabic labels render correctly inside the
 SVG, and the surrounding panels follow the page direction.
+
+## D-018 — Wiki content: sanitised TipTap HTML, current version on the page row
+
+Pages store the editor's HTML per language (`contentEn` / `contentAr`) plus a page-level direction
+(`dirEn` / `dirAr`). The `Page` row always holds the latest explicitly saved version; `PageVersion` rows are
+immutable snapshots. HTML is sanitised with DOMPurify on the server on every write (tags, attributes and
+`data-*` values from a shared allow-list, links limited to http(s)/mailto/in-app paths, images limited to
+ProcessHub attachments) and again in the browser before rendering. Plain text (`textEn` / `textAr`) is
+derived on save for search and snippets. Rendering uses TipTap in read-only mode with the same schema, so
+embedded diagrams and callouts look identical in the editor and the reader.
+
+## D-019 — Explicit saves are versions; autosave is a draft
+
+Pages: every Save requires a change note and creates a version; the editor autosaves every few seconds into
+a _per-user_ `PageDraft` that is never visible to others and is offered for restore when the editor opens.
+A save sends the version it started from and fails with `PAGE_CHANGED` if someone saved in between
+(optimistic concurrency). Processes: the existing working model (`ProcessModel`) became the autosaved draft
+(shared, as in Phase 1), and the modeler's **Save** now always creates a version with a change note. The
+Phase 1 "Save" + "Save as version" pair was merged into this single action.
+
+## D-020 — Space permissions
+
+Global permissions `docs.read`, `docs.edit` and `docs.manage` (all roles read; Modeler and Process Owner edit;
+Admin/Super Admin manage). On top, a space can restrict viewing and/or editing to listed users, system roles
+or departments (`SpaceGrant`, VIEW or EDIT). A grant never replaces the global permission (a Viewer with an
+EDIT grant still cannot edit). Space owners and `docs.manage` holders always have full access. Users without
+view access get 404 (the space's existence is not revealed). The rule is a pure function in
+`packages/shared` (`spaceAccess`). Department grants match the user's own department only (no inheritance
+down the tree yet — see BACKLOG). Moving pages, trash and restore need edit rights; permanent deletion needs
+`docs.manage`.
+
+## D-021 — Full-text search in PostgreSQL
+
+`Page.searchVector` (tsvector, GIN index) is maintained by a database trigger: titles weight A, content
+weight B, English and Arabic stemming (`english` / `arabic` configurations). Queries are built from letters
+and digits only (no tsquery operators can be injected) as prefix terms (`word:*`), run against both
+configurations; prefix matching also evens out Arabic stemming differences between word forms. Processes are
+searched with vectors computed on the fly (the table is small) plus a code-prefix match. Raw SQL uses
+Prisma's tagged templates (parameterised). Highlights use private-use marker characters that the client
+turns into `<mark>` elements, so snippets never carry HTML.
+
+## D-022 — Attachments
+
+Stored in MinIO under `attachments/<pageId>/<id>`. Allowed types: images (PNG, JPEG, GIF, WebP), PDF,
+DOCX/XLSX/PPTX, TXT/CSV/MD/BPMN, up to 10 MB; the extension must be on the allow-list _and_ the content must
+match it (magic bytes, or valid UTF-8 for text). SVG is not accepted. Files are served with
+`Content-Security-Policy: default-src 'none'; sandbox`, `nosniff` and `attachment` disposition (images
+inline). Removing an attachment hides it from the list but keeps the file, because older page versions may
+still show it; purging the page deletes the files.
+
+## D-023 — Version compare
+
+BPMN: `bpmn-js-differ` (semantic diff of two bpmn-moddle trees, including the `ph:` label attributes),
+rendered in two synchronised read-only viewers with markers (added green, removed red, changed amber, moved
+blue) and a change list. bpmn-js-differ 3.x reports attribute `oldValue`/`newValue` swapped; the wrapper
+corrects this (covered by a test). Pages: HTML is flattened into text blocks (headings, paragraphs, list and
+task items, table rows, embeds), diffed with `jsdiff` at block level, and changed blocks get a word-level
+diff that tokenises on whitespace so Arabic is compared by words, not characters.
+
+## D-024 — PDF export through the browser
+
+A print-optimised page (`/print/pages/:id?lang=`) opens the browser's print dialog ("Save as PDF").
+Browsers shape Arabic, lay out RTL and render the embedded BPMN SVGs exactly as on screen, which server-side
+PDF libraries without a headless browser do not. A server-generated PDF (e.g. Gotenberg/Chromium) is in the
+backlog if downloads without a dialog are needed. Markdown export is generated on the server (Turndown + GFM).
+
+## D-025 — Git integration
+
+- Settings live in `Setting['integrations.git']`; the token only as AES-256-GCM ciphertext (`v1.<iv>.<tag>.<data>`)
+  with `INTEGRATIONS_ENCRYPTION_KEY` (generated and persisted by the Docker entrypoint when empty, like the
+  JWT secret). The API never returns the token; it is scrubbed from error messages and audit summaries.
+- GitHub uses the Git Data API (tree + commit + ref update), GitLab the Commits API with actions, so a sync is
+  always exactly one commit with several files, authored as the ProcessHub user (GitHub keeps the token
+  owner as committer). Files whose content is unchanged (git blob SHA) are skipped, so no empty commits.
+- Paths mirror the process house (`processes/<category>/<code-name>/…/<code>.bpmn` + `.json`) and the space/
+  page tree (`docs/<KEY>/<slug-id8>/…/index.<lang>.md`). Page segments end with 8 characters of the page id
+  because titles are not unique. Previously written paths are tracked per item (`GitSyncItem.paths`) and
+  removed in the same commit after renames, moves or deletions.
+- Pages of view-restricted spaces are never exported (the repository may be readable by more people).
+- Triggers: on every version (processes, pages; also page move/delete/restore) or manual. "Sync now"
+  reconciles all items in one commit. Process metadata changes without a new version are picked up by the
+  next version or "Sync now".
+- Jobs run one at a time in an in-process queue (single API instance; Redis/BullMQ in the backlog for scaling).
+  When the integration is disabled the event handler returns immediately, so behaviour is unchanged.
+- Outbound calls go only to the configured provider URL (set by a Super Admin), with a timeout
+  (`GIT_HTTP_TIMEOUT_MS`) and redirects refused.
+- One-way only; two-way sync is in the backlog. Tests replace the HTTP layer and the providers; the suite
+  never calls GitHub or GitLab.
+
+## D-026 — In-process domain events
+
+Modules publish small events (`process.versioned`, `page.versioned`, `page.removed`, …) through a global
+`DomainEvents` service; listeners run after the request and never fail it. This keeps the wiki and models
+modules independent of the Git integration.
+
+## D-027 — Viewer role in Phase 2
+
+As decided for Phase 2, Viewers keep full read access (repository and documentation, `docs.read`). Restricting
+them to published content remains a Phase 3 task (D-006).

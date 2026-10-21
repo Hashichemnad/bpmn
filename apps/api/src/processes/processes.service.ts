@@ -16,6 +16,7 @@ import { AuditService, diffFields } from '../audit/audit.service';
 import { badRequest, conflict, forbidden, notFound } from '../common/app-exception';
 import type { AuthUser, RequestMeta } from '../common/auth-user';
 import { orderBy, pageArgs, paginated } from '../common/pagination';
+import { DomainEvents } from '../events/domain-events';
 import { MoveError, nextSortOrder, planMove } from './process-tree';
 
 const summarySelect = {
@@ -70,6 +71,7 @@ export class ProcessesService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly audit: AuditService,
+    private readonly events: DomainEvents,
   ) {}
 
   async list(q: ProcessListQuery) {
@@ -366,6 +368,7 @@ export class ProcessesService {
         tx,
       );
     });
+    this.events.emit({ type: 'process.removed', processId: id, actorId: actor.id });
   }
 
   private async assertCodeFree(code: string, exceptId?: string) {

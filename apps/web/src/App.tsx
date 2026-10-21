@@ -27,6 +27,17 @@ import { ProcessListPage } from '@/features/processes/ProcessListPage';
 import { ProcessDetailPage } from '@/features/processes/ProcessDetailPage';
 import { ObjectLibraryPage } from '@/features/objects/ObjectLibraryPage';
 import { ObjectDetailPage } from '@/features/objects/ObjectDetailPage';
+import { SpacesPage } from '@/features/docs/SpacesPage';
+import { SpaceLayout } from '@/features/docs/SpaceLayout';
+import { SpaceHomePage } from '@/features/docs/SpaceHomePage';
+import { PageViewPage } from '@/features/docs/PageViewPage';
+import { PageEditorPage } from '@/features/docs/PageEditorPage';
+import { PageHistoryPage } from '@/features/docs/PageHistoryPage';
+import { TrashPage } from '@/features/docs/TrashPage';
+import { TemplatesPage } from '@/features/docs/TemplatesPage';
+import { PrintPage } from '@/features/docs/PrintPage';
+import { SearchPage } from '@/features/search/SearchPage';
+import { SyncStatusPage } from '@/features/settings/SyncStatusPage';
 
 /** Applies the organisation's default language for visitors who have not chosen one. */
 function DefaultLocale() {
@@ -78,6 +89,14 @@ export const routes: RouteObject[] = [
         element: <RequireAuth />,
         children: [
           {
+            path: 'print/pages/:pageId',
+            element: (
+              <RequirePermission all={[P.DOCS_READ]}>
+                <PrintPage />
+              </RequirePermission>
+            ),
+          },
+          {
             element: <AppLayout />,
             children: [
               {
@@ -125,6 +144,45 @@ export const routes: RouteObject[] = [
                 ),
               },
               {
+                path: 'docs',
+                element: (
+                  <RequirePermission all={[P.DOCS_READ]}>
+                    <SpacesPage />
+                  </RequirePermission>
+                ),
+              },
+              {
+                path: 'docs/templates',
+                element: (
+                  <RequirePermission all={[P.DOCS_MANAGE]}>
+                    <TemplatesPage />
+                  </RequirePermission>
+                ),
+              },
+              {
+                path: 'docs/:spaceId',
+                element: (
+                  <RequirePermission all={[P.DOCS_READ]}>
+                    <SpaceLayout />
+                  </RequirePermission>
+                ),
+                children: [
+                  { index: true, element: <SpaceHomePage /> },
+                  { path: 'trash', element: <TrashPage /> },
+                  { path: 'pages/:pageId', element: <PageViewPage /> },
+                  { path: 'pages/:pageId/edit', element: <PageEditorPage /> },
+                  { path: 'pages/:pageId/history', element: <PageHistoryPage /> },
+                ],
+              },
+              {
+                path: 'search',
+                element: (
+                  <RequirePermission any={[P.DOCS_READ, P.PROCESSES_READ]}>
+                    <SearchPage />
+                  </RequirePermission>
+                ),
+              },
+              {
                 path: 'admin/users',
                 element: (
                   <RequirePermission all={[P.USERS_MANAGE]}>
@@ -153,6 +211,14 @@ export const routes: RouteObject[] = [
                 element: (
                   <RequirePermission all={[P.SETTINGS_MANAGE]}>
                     <SettingsPage />
+                  </RequirePermission>
+                ),
+              },
+              {
+                path: 'settings/integrations/sync',
+                element: (
+                  <RequirePermission all={[P.SETTINGS_MANAGE]}>
+                    <SyncStatusPage />
                   </RequirePermission>
                 ),
               },

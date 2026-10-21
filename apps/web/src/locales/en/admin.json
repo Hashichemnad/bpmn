@@ -69,7 +69,11 @@
       "PASSWORD_RESET": "Password reset",
       "MOVE": "Moved",
       "VERSION": "Version saved",
-      "PUBLISH": "Published"
+      "PUBLISH": "Published",
+      "RESTORE": "Restored",
+      "LABEL": "Version labelled",
+      "PURGE": "Deleted permanently",
+      "SYNC": "Synchronised"
     },
     "entities": {
       "User": "User",
@@ -80,7 +84,14 @@
       "RepoObject": "Library object",
       "ObjectLink": "Object link",
       "Setting": "Setting",
-      "Auth": "Authentication"
+      "Auth": "Authentication",
+      "Space": "Documentation space",
+      "Page": "Page",
+      "PageVersion": "Page version",
+      "PageTemplate": "Page template",
+      "PageLink": "Page link",
+      "Attachment": "Attachment",
+      "Integration": "Integration"
     }
   },
   "settings": {
@@ -98,9 +109,66 @@
     "logoHint": "PNG, JPEG, WebP or SVG, up to 1 MB. Square images work best.",
     "logoUpdated": "Logo updated",
     "integrations": "Integrations",
-    "comingPhase2": "Coming in Phase 2",
-    "integrationsInfo": "Synchronising process models and documentation with GitHub or GitLab will be available in Phase 2.",
-    "integrationDescription": "Sync BPMN models and documents with a repository",
     "disabled": "Disabled"
+  },
+  "git": {
+    "intro": "Publish BPMN models (.bpmn + .json) and documentation pages (Markdown) to a GitHub or GitLab repository. ProcessHub keeps working exactly the same when this is switched off.",
+    "enable": "Enable synchronisation",
+    "enabled": "Enabled",
+    "provider": "Provider",
+    "baseUrl": "Server URL",
+    "baseUrlGithub": "Leave empty for github.com. GitHub Enterprise: https://your-host/api/v3",
+    "baseUrlGitlab": "Leave empty for gitlab.com. Self-hosted: https://gitlab.your-company.com",
+    "invalidUrl": "Enter an http(s) address",
+    "repository": "Repository",
+    "repositoryGithub": "owner/repository",
+    "repositoryGitlab": "group/project (sub-groups allowed)",
+    "invalidRepository": "Use the form owner/repository",
+    "branch": "Branch",
+    "folder": "Folder",
+    "folderHint": "Folder inside the repository; empty = repository root.",
+    "token": "Access token",
+    "tokenHintGithub": "Fine-grained token with “Contents: read and write” on this repository.",
+    "tokenHintGitlab": "Project or personal access token with the “api” scope (Developer role or higher).",
+    "tokenStored": "A token is stored (encrypted). Leave empty to keep it, or type a new one to replace it.",
+    "removeToken": "Remove stored token",
+    "removeTokenTitle": "Remove the stored token?",
+    "removeTokenText": "Synchronisation is switched off until a new token is entered.",
+    "noEncryptionKey": "INTEGRATIONS_ENCRYPTION_KEY is not configured on the server, so tokens cannot be stored. See the README.",
+    "what": "What to synchronise",
+    "syncProcesses": "Processes (BPMN models)",
+    "syncPages": "Documentation pages",
+    "when": "When",
+    "onVersion": "On every new version",
+    "manual": "Only when I click “Sync now”",
+    "oneWay": "One-way: ProcessHub → Git. Changes made in the repository are not imported.",
+    "test": "Test connection",
+    "testOk": "Connection works (default branch: {{branch}})",
+    "statusLink": "Sync status",
+    "statusTitle": "Git sync status",
+    "statusSubtitle": "What was synchronised to the repository, and what failed.",
+    "syncNow": "Sync now",
+    "syncOnlyProcesses": "Sync processes only",
+    "syncOnlyPages": "Sync pages only",
+    "queued_one": "{{count}} item queued for synchronisation",
+    "queued_other": "{{count}} items queued for synchronisation",
+    "disabledInfo": "Git synchronisation is switched off. Enable it in Settings → Integrations.",
+    "lastSync": "Last sync",
+    "lastAttempt": "Last attempt",
+    "lastSuccess": "Last success {{time}}",
+    "items": "Items",
+    "item": "Item",
+    "noItems": "Nothing synchronised yet",
+    "running": "Synchronising…",
+    "deletedItem": "Deleted item",
+    "status": {
+      "SUCCESS": "Synchronised",
+      "FAILED": "Failed",
+      "PENDING": "Pending"
+    },
+    "entity": {
+      "PROCESS": "Process",
+      "PAGE": "Page"
+    }
   }
 }

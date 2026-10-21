@@ -42,10 +42,7 @@ describe('Settings (e2e)', () => {
       .send({ orgNameEn: 'Acme', orgNameAr: 'أكمي', defaultLocale: 'ar' })
       .expect(200);
     expect(res.body).toMatchObject({ orgNameEn: 'Acme', orgNameAr: 'أكمي', defaultLocale: 'ar' });
-    expect(res.body.integrations).toEqual({
-      github: { enabled: false },
-      gitlab: { enabled: false },
-    });
+    expect(res.body.integrations).toEqual({ git: { enabled: false, provider: 'github' } });
     const pub = await new Client(ctx.app).get('/settings/public');
     expect(pub.body.defaultLocale).toBe('ar');
     await root.patch('/settings').send({ defaultLocale: 'de' }).expect(400);

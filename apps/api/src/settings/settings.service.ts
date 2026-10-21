@@ -50,9 +50,17 @@ export class SettingsService {
   }
 
   async getAll(): Promise<SettingsDto> {
+    const git = (
+      await this.prisma.setting.findUnique({ where: { key: SETTING_KEYS.GIT_INTEGRATION } })
+    )?.value as { enabled?: boolean; provider?: string } | undefined;
     return {
       ...(await this.getPublic()),
-      integrations: { github: { enabled: false }, gitlab: { enabled: false } },
+      integrations: {
+        git: {
+          enabled: !!git?.enabled,
+          provider: git?.provider === 'gitlab' ? 'gitlab' : 'github',
+        },
+      },
     };
   }
 

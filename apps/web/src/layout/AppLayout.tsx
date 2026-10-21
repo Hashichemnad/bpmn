@@ -18,6 +18,8 @@ import {
   AuditOutlined,
   ClusterOutlined,
   DesktopOutlined,
+  ReadOutlined,
+  SearchOutlined,
   LogoutOutlined,
   MenuFoldOutlined,
   MenuUnfoldOutlined,
@@ -33,6 +35,7 @@ import { api } from '@/api/client';
 import { usePublicSettings } from '@/api/hooks';
 import { useLocalized } from '@/components/i18n-helpers';
 import { BrandMark } from './BrandMark';
+import { GlobalSearch } from '@/features/search/GlobalSearch';
 
 const { Header, Sider, Content } = Layout;
 
@@ -64,7 +67,7 @@ export function LanguageToggle() {
 
 export function AppLayout() {
   const { t } = useTranslation();
-  const { user, can, logout } = useAuth();
+  const { user, can, canAny, logout } = useAuth();
   const { dir } = useLocale();
   const loc = useLocalized();
   const navigate = useNavigate();
@@ -88,6 +91,24 @@ export function AppLayout() {
             key: '/processes',
             icon: <ApartmentOutlined />,
             label: <Link to="/processes">{t('nav.processes')}</Link>,
+          },
+        ],
+      });
+    }
+    if (can(PERMISSIONS.DOCS_READ)) {
+      list.push({
+        type: 'group',
+        label: t('nav.documentation'),
+        children: [
+          {
+            key: '/docs',
+            icon: <ReadOutlined />,
+            label: <Link to="/docs">{t('nav.docs')}</Link>,
+          },
+          {
+            key: '/search',
+            icon: <SearchOutlined />,
+            label: <Link to="/search">{t('nav.search')}</Link>,
           },
         ],
       });
@@ -147,6 +168,8 @@ export function AppLayout() {
     const p = location.pathname;
     if (p === '/') return ['/'];
     if (p.startsWith('/processes')) return ['/processes'];
+    if (p.startsWith('/docs')) return ['/docs'];
+    if (p.startsWith('/search')) return ['/search'];
     if (p.startsWith('/library/objects')) return [];
     const match = [
       '/library/roles',
@@ -214,6 +237,7 @@ export function AppLayout() {
             </Typography.Text>
           </Flex>
           <Flex align="center" gap={16}>
+            {canAny(PERMISSIONS.DOCS_READ, PERMISSIONS.PROCESSES_READ) && <GlobalSearch />}
             <Tooltip title={t('language')}>
               <span>
                 <LanguageToggle />

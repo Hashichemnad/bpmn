@@ -1,13 +1,17 @@
-import { Body, Controller, Delete, Get, HttpCode, Param, Post, Put } from '@nestjs/common';
+import { Body, Controller, Delete, Get, HttpCode, Param, Patch, Post, Put } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import {
   PERMISSIONS,
   createLinkSchema,
   createVersionSchema,
+  restoreVersionSchema,
   saveModelSchema,
+  versionLabelSchema,
   type CreateLinkInput,
   type CreateVersionInput,
+  type RestoreVersionInput,
   type SaveModelInput,
+  type VersionLabelInput,
 } from '@processhub/shared';
 import {
   CurrentUser,
@@ -67,6 +71,31 @@ export class ModelsController {
     @ReqMeta() meta: RequestMeta,
   ) {
     return this.models.createVersion(id, body, user, meta);
+  }
+
+  @Post('versions/:versionId/restore')
+  @RequireAnyPermission(...EDIT)
+  @HttpCode(200)
+  restoreVersion(
+    @Param('id', UuidPipe()) id: string,
+    @Param('versionId', UuidPipe()) versionId: string,
+    @Body(new ZodPipe(restoreVersionSchema)) body: RestoreVersionInput,
+    @CurrentUser() user: AuthUser,
+    @ReqMeta() meta: RequestMeta,
+  ) {
+    return this.models.restoreVersion(id, versionId, body, user, meta);
+  }
+
+  @Patch('versions/:versionId')
+  @RequireAnyPermission(...EDIT)
+  labelVersion(
+    @Param('id', UuidPipe()) id: string,
+    @Param('versionId', UuidPipe()) versionId: string,
+    @Body(new ZodPipe(versionLabelSchema)) body: VersionLabelInput,
+    @CurrentUser() user: AuthUser,
+    @ReqMeta() meta: RequestMeta,
+  ) {
+    return this.models.labelVersion(id, versionId, body, user, meta);
   }
 
   @Get('links')

@@ -14,6 +14,18 @@ if [ -z "$JWT_ACCESS_SECRET" ]; then
   export JWT_ACCESS_SECRET
 fi
 
+# Same for the key that encrypts integration tokens (GitHub/GitLab) at rest.
+if [ -z "$INTEGRATIONS_ENCRYPTION_KEY" ]; then
+  KEY_FILE=/app/data/integrations_encryption_key
+  if [ ! -s "$KEY_FILE" ]; then
+    node -e "process.stdout.write(require('crypto').randomBytes(32).toString('base64'))" > "$KEY_FILE"
+    chmod 600 "$KEY_FILE"
+    echo "Generated a new INTEGRATIONS_ENCRYPTION_KEY in $KEY_FILE"
+  fi
+  INTEGRATIONS_ENCRYPTION_KEY="$(cat "$KEY_FILE")"
+  export INTEGRATIONS_ENCRYPTION_KEY
+fi
+
 echo "Applying database migrations…"
 ./node_modules/.bin/prisma migrate deploy
 
