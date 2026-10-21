@@ -21,6 +21,7 @@ import { IntegrationsModule } from './integrations/integrations.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { GovernanceModule } from './governance/governance.module';
 import { CommentsModule } from './comments/comments.module';
+import { PortalModule } from './portal/portal.module';
 import { HealthController } from './health/health.controller';
 import { CsrfGuard, JwtAuthGuard, PermissionsGuard } from './common/guards';
 import { AllExceptionsFilter } from './common/http-exception.filter';
@@ -55,6 +56,7 @@ import { AllExceptionsFilter } from './common/http-exception.filter';
     IntegrationsModule,
     GovernanceModule,
     CommentsModule,
+    PortalModule,
   ],
   controllers: [HealthController],
   providers: [

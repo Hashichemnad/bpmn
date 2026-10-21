@@ -311,6 +311,7 @@ model RepoObject {
   links     ObjectLink[]
   pageLinks PageLink[]
   users     UserJobRole[]
+  published PublishedLink[]
 
   @@index([type])
 }
@@ -678,6 +679,7 @@ model PublishedLink {
   publication   Publication  @relation(fields: [publicationId], references: [id], onDelete: Cascade)
   bpmnElementId String
   repoObjectId  String       @db.Uuid
+  repoObject    RepoObject   @relation(fields: [repoObjectId], references: [id], onDelete: Cascade)
   relation      LinkRelation
 
   @@index([publicationId])

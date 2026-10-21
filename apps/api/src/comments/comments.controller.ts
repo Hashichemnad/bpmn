@@ -35,6 +35,29 @@ export class CommentsController {
     return this.comments.list(type, id, user);
   }
 
+  // Declared before `comments/:type/:id` so Express matches them first.
+  @Post('comments/:commentId/resolve')
+  @RequirePermissions(PERMISSIONS.COMMENTS_WRITE)
+  @HttpCode(200)
+  resolve(
+    @Param('commentId', UuidPipe()) commentId: string,
+    @CurrentUser() user: AuthUser,
+    @ReqMeta() meta: RequestMeta,
+  ) {
+    return this.comments.setResolved(commentId, true, user, meta);
+  }
+
+  @Post('comments/:commentId/reopen')
+  @RequirePermissions(PERMISSIONS.COMMENTS_WRITE)
+  @HttpCode(200)
+  reopen(
+    @Param('commentId', UuidPipe()) commentId: string,
+    @CurrentUser() user: AuthUser,
+    @ReqMeta() meta: RequestMeta,
+  ) {
+    return this.comments.setResolved(commentId, false, user, meta);
+  }
+
   @Post('comments/:type/:id')
   @RequirePermissions(PERMISSIONS.COMMENTS_WRITE)
   create(
@@ -67,27 +90,5 @@ export class CommentsController {
     @ReqMeta() meta: RequestMeta,
   ) {
     return this.comments.remove(commentId, user, meta);
-  }
-
-  @Post('comments/:commentId/resolve')
-  @RequirePermissions(PERMISSIONS.COMMENTS_WRITE)
-  @HttpCode(200)
-  resolve(
-    @Param('commentId', UuidPipe()) commentId: string,
-    @CurrentUser() user: AuthUser,
-    @ReqMeta() meta: RequestMeta,
-  ) {
-    return this.comments.setResolved(commentId, true, user, meta);
-  }
-
-  @Post('comments/:commentId/reopen')
-  @RequirePermissions(PERMISSIONS.COMMENTS_WRITE)
-  @HttpCode(200)
-  reopen(
-    @Param('commentId', UuidPipe()) commentId: string,
-    @CurrentUser() user: AuthUser,
-    @ReqMeta() meta: RequestMeta,
-  ) {
-    return this.comments.setResolved(commentId, false, user, meta);
   }
 }
