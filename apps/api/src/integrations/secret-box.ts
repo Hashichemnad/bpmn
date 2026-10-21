@@ -1,5 +1,7 @@
 import { createCipheriv, createDecipheriv, randomBytes } from 'node:crypto';
 
+const TAG_BYTES = 16;
+
 /**
  * AES-256-GCM encryption for secrets stored in the database (integration tokens).
  * Format: `v1.<iv>.<auth tag>.<ciphertext>` (base64url parts). The key comes from the environment.
@@ -27,8 +29,13 @@ export class SecretBox {
     const [version, iv, tag, data] = boxed.split('.');
     if (version !== 'v1' || !iv || !tag || data === undefined)
       throw new Error('Invalid secret format');
-    const decipher = createDecipheriv('aes-256-gcm', this.key, Buffer.from(iv, 'base64url'));
-    decipher.setAuthTag(Buffer.from(tag, 'base64url'));
+    const authTag = Buffer.from(tag, 'base64url');
+    // A full-length tag only: Node otherwise accepts truncated GCM tags (easier forgery).
+    if (authTag.length !== TAG_BYTES) throw new Error('Invalid secret format');
+    const decipher = createDecipheriv('aes-256-gcm', this.key, Buffer.from(iv, 'base64url'), {
+      authTagLength: TAG_BYTES,
+    });
+    decipher.setAuthTag(authTag);
     return Buffer.concat([
       decipher.update(Buffer.from(data, 'base64url')),
       decipher.final(),

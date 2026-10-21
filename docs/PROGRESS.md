@@ -31,7 +31,11 @@ Steps (tick as they are committed; a new session continues at the first unticked
       the one connected to (no DNS rebinding); plain `http://` Git URLs only for allowed hosts; redirects are
       never followed; new error code `GIT_HOST_BLOCKED` (EN/AR). The AI provider URL is not configurable in
       the UI (only `ANTHROPIC_BASE_URL` in the environment).
-- [ ] 5. Secrets in logs / errors / responses; encrypted fields
+- [x] 5. Secrets: Git token, SMTP password and AI key are write-only, encrypted (AES-256-GCM) and
+      scrubbed from error messages; a new cross-cutting test configures all three plus user passwords,
+      triggers failing Git / email calls and checks API responses, audit entries, stored settings, sync
+      items and log output for any plaintext secret or password hash; refresh tokens stored hashed.
+      **Fixed:** `SecretBox.decrypt` now requires a full 16-byte GCM tag (Node accepted truncated tags).
 - [ ] 6. Dependencies (`pnpm audit`)
 - [ ] 7. `docs/SECURITY.md` (endpoint table generated from the inventory and kept in sync by a test), docs,
       final checks
