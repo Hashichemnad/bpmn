@@ -36,7 +36,11 @@ Steps (tick as they are committed; a new session continues at the first unticked
       triggers failing Git / email calls and checks API responses, audit entries, stored settings, sync
       items and log output for any plaintext secret or password hash; refresh tokens stored hashed.
       **Fixed:** `SecretBox.decrypt` now requires a full 16-byte GCM tag (Node accepted truncated tags).
-- [ ] 6. Dependencies (`pnpm audit`)
+- [x] 6. Dependencies: `react-router-dom` 6 → 7.18 (two advisories; the app already used every v7 future
+      flag, so only the flag props were removed), `vitest` 3 → 4.1 (path traversal in the dev server),
+      `js-yaml` ≥ 5.4.1 via an override (from `@nestjs/swagger`). `pnpm audit --prod`: no high/critical,
+      4 moderate in MinIO's `stream-json` / `decode-uri-component` (code paths not used — SECURITY.md).
+      Full audit: 1 high, `braces` via Jest (dev-only, no fixed version exists) — decision needed.
 - [ ] 7. `docs/SECURITY.md` (endpoint table generated from the inventory and kept in sync by a test), docs,
       final checks
 
