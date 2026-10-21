@@ -117,6 +117,7 @@ Every variable is documented in [`.env.example`](./.env.example). The ones that 
 - `SEED_DEMO_PASSWORD`: password of the four demo users. `SEED_SMTP_HOST`: SMTP host the demo installation is configured with (Mailpit by default; set it empty to leave email unconfigured).
 - `SCHEDULER_INTERVAL_MINUTES`: how often review reminders are checked (default 60; `0` turns them off).
 - `WEB_PORT`, `CORS_ORIGINS`: the port and URL users open.
+- `OUTBOUND_ALLOWED_HOSTS`: internal hosts (names, IPs or CIDR ranges) the Git and SMTP integrations may reach. All other internal addresses are blocked to prevent SSRF. Docker Compose defaults to `mailpit`; add your own GitLab or SMTP server if it runs in a private network.
 - `COOKIE_SECURE`: keep `true`. It needs HTTPS (or `localhost`). Put a TLS reverse proxy in front for real use.
 - `SEED_DEMO_DATA=false`: start with an empty repository.
 
@@ -249,7 +250,7 @@ docker-compose.yml        postgres, minio, mailpit (demo email), api, web
 ## Security highlights
 
 - argon2id password hashing, a configurable password policy, and account lockout after repeated failures.
-- Short-lived JWT access tokens and rotating refresh tokens in `httpOnly; Secure; SameSite=Strict` cookies, with reuse detection. Double-submit CSRF protection.
+- Short-lived JWT access tokens and rotating refresh tokens in `httpOnly; Secure; SameSite=Strict` cookies, with reuse detection. Double-submit CSRF protection bound to the request origin.
 - Permissions are checked on the server for every request, and routes are denied by default. The UI only hides what a user cannot do.
 - Rate limiting, request size limits, helmet, strict CORS, and a CSP on the web app.
 - Uploaded logos are type-checked by content and SVGs are sanitised. BPMN imports reject DTDs and entities.
@@ -262,8 +263,10 @@ docker-compose.yml        postgres, minio, mailpit (demo email), api, web
 - AI assistant: off by default; API key encrypted and write-only; every call goes through the server with role checks and limits, is logged without the prompt text, and structured output is validated (BPMN parsed and checked, rich text sanitised) before anything is shown. The portal assistant only reads current publications the user may see. Tests use a fake provider.
 - The SMTP password is encrypted like the Git tokens; email content is HTML-escaped; tests never send email.
 - An audit log records every change and every sign-in, with secrets scrubbed.
+- The Git and SMTP integrations cannot reach internal addresses (loopback, private networks, cloud metadata) unless allowed with `OUTBOUND_ALLOWED_HOSTS`.
 
-More detail in [`docs/DECISIONS.md`](./docs/DECISIONS.md).
+The security review, the table of every endpoint with its guards, remaining risks and a penetration-test
+checklist are in [`docs/SECURITY.md`](./docs/SECURITY.md). More detail in [`docs/DECISIONS.md`](./docs/DECISIONS.md).
 
 ## For developers
 

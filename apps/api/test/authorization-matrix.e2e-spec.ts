@@ -132,8 +132,11 @@ describe('Authorisation matrix (e2e)', () => {
       workflow: await anyId(p.workflow.findFirst()),
       review: await anyId(p.review.findFirst({ where: { status: 'IN_PROGRESS' } })),
       feedback: await anyId(p.feedback.findFirst()),
+      // Somebody else's notification (never the viewer's).
       notification: await anyId(
-        p.notification.findFirst({ where: { user: { email: 'matrix-admin@test.local' } } }),
+        p.notification.findFirst({
+          where: { user: { email: { not: 'viewer@processhub.local' } }, readAt: null },
+        }),
       ),
       gitItem: '00000000-0000-4000-8000-000000000000',
     });
@@ -264,6 +267,20 @@ describe('Authorisation matrix (e2e)', () => {
       }
     }
     expect(leaked).toEqual([]);
+  });
+
+  it("self-service routes only touch the caller's own records", async () => {
+    const viewer = await loggedIn(ctx.app, 'viewer@processhub.local', DEMO_PASSWORD);
+    expect(ids.notification).not.toBe('');
+    await viewer.post(`/notifications/${ids.notification}/read`).expect(404);
+    const n = await ctx.prisma.notification.findUniqueOrThrow({ where: { id: ids.notification } });
+    expect(n.readAt).toBeNull();
+    await viewer
+      .patch('/auth/me')
+      .send({ roles: ['SUPER_ADMIN'], email: 'x@y.z' })
+      .expect(200);
+    const me = await viewer.get('/auth/me').expect(200);
+    expect(me.body).toMatchObject({ email: 'viewer@processhub.local', roles: ['VIEWER'] });
   });
 
   it('Viewers cannot reach restricted or unpublished content through the portal', async () => {

@@ -433,3 +433,41 @@ modeler's validation warnings go to the main model with a structured-output sche
 title, explanation, suggestion, element ids) and one plain-language explanation per warning. Element ids the
 diagram does not contain are dropped before the result reaches the browser. Read-only users who may read
 processes (e.g. Auditors) may analyse; nothing is saved.
+
+## D-047 — SSRF protection for administrator-configured integrations
+
+The Git (GitLab / GitHub Enterprise URL) and SMTP integrations refuse internal addresses — loopback,
+private networks, link-local (incl. the cloud metadata service), CGNAT, multicast and reserved ranges, IPv4
+and IPv6 (incl. IPv4-mapped) — unless the host, address or CIDR range is listed in `OUTBOUND_ALLOWED_HOSTS`
+(Docker Compose default: `mailpit`). The check uses Node's built-in `net.BlockList`, no extra dependency.
+The host is resolved and checked, and the connection goes to the checked address (Git: a `lookup` on
+`node:https`; SMTP: nodemailer connects to the IP with `servername` set, so TLS still verifies the host
+name), so DNS rebinding cannot bypass it. `GitHttp` therefore uses `node:http(s)` instead of `fetch`.
+Plain `http://` Git URLs are only accepted for allowed hosts (the token would travel unencrypted);
+redirects are never followed. A blocked Git server reports `GIT_HOST_BLOCKED`. The AI provider address is
+not configurable in the UI, so it is not covered.
+
+## D-048 — CSRF: double-submit cookie plus an origin check
+
+The double-submit token alone does not stop an attacker who controls a sibling sub-domain and can set a
+cookie for the parent domain. State-changing requests whose `Origin` header is present must therefore come
+from `CORS_ORIGINS` or the request's own host name (so a deployment opened under another name than
+`CORS_ORIGINS` keeps working through the same-origin nginx proxy); `Origin: null` and
+`Sec-Fetch-Site: cross-site` without `Origin` are rejected. Non-browser clients that send no `Origin` still
+need the token.
+
+## D-049 — Security documentation generated from the code
+
+`docs/SECURITY.md` holds the endpoint table (method, path, router guard, validated inputs, rate limit). It
+is generated from Nest's route metadata (`apps/api/test/route-inventory.ts`) and a test fails when it is out
+of date, when a route lacks an access declaration or when an input has no validation pipe. The same
+inventory drives the authorisation matrix test, so new routes are swept as Viewer / Auditor / Reviewer
+without writing a test for them.
+
+## D-050 — Dependency updates for the security review
+
+`react-router-dom` 6 → 7 (security fixes exist only in 7.x; the app already used all v7 future flags, so
+only those flag props were removed), `vitest` 3 → 4 (dev server advisory), `js-yaml` ≥ 5.4.1 through a pnpm
+override (pulled in by `@nestjs/swagger`). MinIO's transitive `stream-json` 1.x / `decode-uri-component`
+0.2 are **not** overridden: the fixed versions are new majors (ESM-only / different module layout) that the
+MinIO client may not load, and the vulnerable code is not on any path ProcessHub uses (SECURITY.md SEC-09).

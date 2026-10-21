@@ -39,10 +39,10 @@ with no per-user licensing. Target: 50–500 users on a single server.
 | 1 | Foundation: M1 (core), M2, M3, M4 (roles & systems) | ✅ Done (merged into `main`) |
 | 2 | M5 Wiki, M6 Version control, M7 Git integration | ✅ Done (merged into `main`) |
 | 3 | M8 Governance, M9 Knowledge Portal | ✅ Done (merged into `main`) |
-| AI | M16 AI Assistant (after Phase 3) | ✅ Done (branch `phase-ai-assistant`, awaiting review) |
+| AI | M16 AI Assistant (after Phase 3) | ✅ Done (merged into `main`) |
 | 4 | M10 GRC, M11 EA, M12 KPIs + Salesforce | ⬜ |
 | 5 | M13 Mining, M14 Execution, simulation | ⬜ |
-| 6 | Hardening: SSO, performance, security review fixes, deployment guide | ⬜ |
+| 6 | Hardening: SSO, performance, security review fixes, deployment guide | 🟡 In progress — part 1 (security review, `docs/SECURITY.md`) done on branch `phase-6-part-1` |
 | — | M15 Migration of existing documentation (after system is ready) | ⬜ |
 
 Update this table and `docs/PROGRESS.md` at the end of every session.

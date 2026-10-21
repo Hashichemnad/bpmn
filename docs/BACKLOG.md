@@ -6,6 +6,8 @@ where they belong; move items into the plan when that phase starts.
 ## Needs a decision
 
 - **MinIO image for production** — keep `bitnamilegacy/minio` for now, revisit in Phase 6 (D-009).
+- **`braces` (high, dev-only, via Jest; no fixed version)** — accept until the slim API runtime image drops
+  dev dependencies, or migrate the API tests from Jest to Vitest (SECURITY.md SEC-08).
 
 ## Phase 2 follow-ups (wiki, version control, Git)
 
@@ -64,9 +66,14 @@ where they belong; move items into the plan when that phase starts.
 - "My sessions" list with remote sign-out in the profile.
 - Request/response schemas in Swagger (generate OpenAPI from the zod schemas).
 - Code-split Ant Design to reduce the initial bundle (~370 KB gzipped).
-- Track the dev-only `braces` advisory (via Jest), which has no upstream fix yet.
-- Moderate production advisories (no high/critical): `react-router` 6 (fixed only in 7.x — plan the upgrade),
-  `minio` → `stream-json` / `decode-uri-component`, `@nestjs/swagger` → `js-yaml`.
+- Track the dev-only `braces` advisory (via Jest), which has no upstream fix yet (see "Needs a decision").
+- Moderate production advisories left after part 1: `minio` → `stream-json` / `decode-uri-component` (code
+  paths unused, SECURITY.md SEC-09) — update when the MinIO client moves to fixed versions.
+- External penetration test before go-live, using the checklist in `docs/SECURITY.md` §8.
+- CSP without `style-src 'unsafe-inline'` (Ant Design CSS-variables mode / nonces).
+- Optionally mark `ph_csrf` as a `__Host-` cookie when `COOKIE_SECURE=true` (the origin check, D-048,
+  already covers cookie tossing).
+- Shorter retention or masking of email addresses in API logs (failed notification emails).
 - Code-split the wiki editor (TipTap) and the BPMN compare into lazy chunks.
 
 ## Nice to have
