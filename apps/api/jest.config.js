@@ -4,7 +4,7 @@ const base = {
   transform: {
     '^.+\\.ts$': ['ts-jest', { tsconfig: '<rootDir>/tsconfig.json', diagnostics: false }],
     // ESM-only dependencies (openid-client and its helpers) are compiled to CommonJS for Jest;
-    // at runtime Node loads them natively (require of ES modules, Node >= 20.19).
+    // at runtime Node loads them natively (require of ES modules, Node >= 22.12).
     '^.+\\.js$': [
       'ts-jest',
       { tsconfig: { allowJs: true, module: 'CommonJS', target: 'ES2022' }, diagnostics: false },

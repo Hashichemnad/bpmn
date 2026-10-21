@@ -2,9 +2,77 @@
 
 Read this together with `CLAUDE.md` at the start of every session.
 
-## Current state — 2026-10-21 (Phase 6 — Hardening, branch `phase-6-part-3`)
+## Current state — 2026-10-21 (Phase 6 — Hardening, branch `phase-6-part-4`)
 
-Parts 1 (security review) and 2 (production deployment) are merged into `main`.
+Parts 1 (security review), 2 (production deployment) and 3 (SSO + two-factor) are merged into `main`.
+
+### Part 4 — Performance, reliability and polish (decisions block done, awaiting review)
+
+First block: the product owner's decisions on the part 3 questions (DECISIONS D-061 – D-066):
+
+1. 2FA required at go-live for Super Admin and Admin; optional for all other roles.
+2. After the SSO roll-out password sign-in is off except for one break-glass Super Admin with 2FA
+   (procedure in DEPLOYMENT.md).
+3. Roles are managed in ProcessHub: "update roles at every sign-in" off by default; directory groups only set
+   the initial role on first sign-in.
+4. MFA for SSO users is enforced by Entra ID Conditional Access (request to IT in DEPLOYMENT.md).
+5. Default refresh-token lifetime 24 hours (configurable); automatic de-provisioning stays in BACKLOG.
+6. Node 20 → Node 22 LTS in Docker images, CI and docs.
+
+Steps (tick as they are committed; a new session continues at the first unticked one):
+
+- [x] 1. API/shared defaults: `mfaRequiredRoles` = Super Admin + Admin, refresh token lifetime
+      `REFRESH_TOKEN_TTL_HOURS` (default 24), roles from the directory only on first sign-in; tests.
+- [x] 2. Web: Settings → Authentication hints for the new defaults; EN/AR.
+- [x] 3. Node 22 LTS: Dockerfiles, CI, `.nvmrc`, `engines`, `@types/node`, README, CLAUDE.md §4.
+- [x] 4. Docs: DECISIONS D-061 – D-066, DEPLOYMENT.md (break-glass procedure, Conditional Access request),
+      SECURITY.md, BACKLOG, CLAUDE.md phase table.
+- [x] 5. Verification (format, lint, typecheck, tests, build, audit), push.
+- [ ] 6. Performance / reliability / polish items — scope to be confirmed by the product owner (the part 4
+      brief lists only the decisions above). Candidates from BACKLOG: slim API runtime image and images in a
+      registry; database indexes / query review for the large lists (process tree, search, audit log) with a
+      500-user data set; API response compression and web bundle splitting (bpmn-js, TipTap); a job queue for
+      Git sync, e-mail and reminders; Playwright smoke tests in CI.
+
+What changed (steps 1–5):
+
+- `DEFAULT_MFA_REQUIRED_ROLES` (Super Admin, Admin) is the shipped Settings → Authentication value; a fresh
+  installation asks the first administrator to enrol at the first password sign-in (README, DEPLOYMENT §6).
+  The break-glass account always needs 2FA (`MfaService.isRequired(user)`). Settings page warns when either
+  admin role is removed from the list; hints describe the policy (EN/AR).
+- `REFRESH_TOKEN_TTL_HOURS` (default 24, max 2160) replaces `REFRESH_TOKEN_TTL_DAYS`; the API logs a warning
+  when the old variable is still set (it is ignored). The lifetime is an idle timeout (rotation on every use).
+- "Update roles at every sign-in" was already off by default; a test now shows a role changed in ProcessHub
+  survives the next SSO sign-in.
+- Node 22 LTS: `node:22-alpine`, CI `node-version: 22`, `.nvmrc` 22, `engines >=22.12`, `@types/node` 22.
+- Docs: DECISIONS D-061 – D-066; DEPLOYMENT §6 (2FA at first sign-in), §6.1 (roles in ProcessHub, step 8
+  passwords off, step 9 Conditional Access request text for IT), §6.2 (policy, sessions, leavers), new §6.3
+  (break-glass account procedure); SECURITY controls / risks / go-live checklist; BACKLOG; README; CLAUDE.md.
+- Test helpers: `resetDb` stores the `auth` setting with an empty 2FA list so suites not about 2FA can sign in
+  with a password; `withDefaultAuthSettings` restores the shipped defaults (`mfa.e2e` "shipped defaults").
+
+#### Verification (part 4)
+
+| Check                                              | Result                                                                                                                                                                                                   |
+| -------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `pnpm format:check`, `pnpm lint`, `pnpm typecheck` | clean                                                                                                                                                                                                    |
+| `pnpm test`                                        | **401 tests pass** — shared 74, web 35, API 292 (new: shipped 2FA defaults ×3, break-glass always 2FA, 24-hour refresh cookie / token, role kept after SSO sign-in, default role list unit test)         |
+| `pnpm build`                                       | passes                                                                                                                                                                                                   |
+| `pnpm audit --prod`                                | no high/critical; the same 4 moderate as before (`minio` client, SEC-09)                                                                                                                                 |
+| Docker images on Node 22                           | both images build from the committed Dockerfiles (sandbox-only CA line added in a scratch copy); API container: Node 22.23, migrations + seed, `openid-client` loads, fresh admin sign-in → `mfa: SETUP` |
+
+Not re-run in this session: the full `docker compose up` stack and the Playwright smoke suite (they sign in
+as viewer / reviewer / owner, which the new default does not affect).
+
+### Next (continue here)
+
+1. Review and merge `phase-6-part-4`. After deploying: an existing `auth` setting saved before this change
+   keeps its stored 2FA list — check Settings → Authentication (go-live checklist); replace
+   `REFRESH_TOKEN_TTL_DAYS` with `REFRESH_TOKEN_TTL_HOURS=24` in `.env`.
+2. Product owner: confirm the scope of part 4 step 6 (performance / reliability / polish) and whether the
+   24-hour lifetime should also be an absolute limit (today: idle timeout; see D-065, BACKLOG).
+3. Send the Conditional Access request (DEPLOYMENT.md §6.1 step 9) to IT; create the break-glass account
+   (§6.3) when SSO is rolled out.
 
 ### Part 3 — Single sign-on (OIDC / Entra ID) and TOTP two-factor (done, awaiting review)
 
@@ -80,7 +148,7 @@ session (no daemon), so `docker compose up` from a clean clone was not re-run; t
 changes are two new environment variables passed through in both Compose files (YAML validated) and the
 `openid-client` runtime requirement Node ≥ 20.19 (`node:20-alpine` currently resolves to 20.19+).
 
-### Next (continue here)
+### Next after part 3 (historical)
 
 1. Review and merge `phase-6-part-3` (new migration `20261021180000_sso_mfa` runs automatically at start).
    Before relying on it in production: one real sign-in against your Entra ID tenant (DEPLOYMENT.md §6.1) —
@@ -150,7 +218,7 @@ from the committed Dockerfiles with an uncommitted CA line and `docker build --n
 Let's Encrypt itself could not be tested here (no public DNS); the Caddyfile path is the same as for
 `internal` and company certificates, which were both verified.
 
-### Next (continue here)
+### Next after part 2 (historical)
 
 1. Review and merge `phase-6-part-2`. Existing installations: after updating, run
    `./scripts/migrate-minio-storage.sh` once (copies files from the old `minio-data` volume).

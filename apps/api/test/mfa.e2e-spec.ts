@@ -6,6 +6,7 @@ import {
   createUser,
   loggedIn,
   resetDb,
+  withDefaultAuthSettings,
   type TestContext,
 } from './helpers';
 import { totpCode } from '../src/auth/totp';
@@ -207,13 +208,53 @@ describe('Two-factor authentication (e2e)', () => {
     expect((await again.login('user@test.local')).body.user.email).toBe('user@test.local');
   });
 
+  describe('shipped defaults (D-061)', () => {
+    beforeEach(async () => {
+      await withDefaultAuthSettings(ctx.prisma);
+      await createUser(ctx.prisma, 'admin2@test.local', ['ADMIN']);
+      await createUser(ctx.prisma, 'owner@test.local', ['PROCESS_OWNER', 'REVIEWER']);
+    });
+
+    it('Super Admin and Admin must set up 2FA at their first password sign-in', async () => {
+      for (const email of ['admin@test.local', 'admin2@test.local']) {
+        const c = await new Client(ctx.app).init();
+        expect((await c.login(email)).body).toEqual({ mfa: 'SETUP' });
+        await c.get('/auth/me').expect(401);
+      }
+    });
+
+    it('other roles sign in with a password only; 2FA stays optional', async () => {
+      for (const email of ['user@test.local', 'owner@test.local']) {
+        const c = await loggedIn(ctx.app, email);
+        expect((await c.get('/auth/mfa').expect(200)).body).toMatchObject({
+          enabled: false,
+          required: false,
+        });
+      }
+    });
+
+    it('Settings → Authentication shows the defaults: admin roles need 2FA, roles not synced', async () => {
+      const c = await new Client(ctx.app).init();
+      await c.login('admin@test.local');
+      const setup = await c.post('/auth/login/mfa/setup').expect(200);
+      const done = await c
+        .post('/auth/login/mfa/setup/confirm')
+        .send({ code: totpCode(setup.body.secret) })
+        .expect(200);
+      c.syncCsrf(done);
+      expect((await c.get('/settings/auth').expect(200)).body).toMatchObject({
+        mfaRequiredRoles: ['SUPER_ADMIN', 'ADMIN'],
+        syncRolesOnLogin: false,
+        localLoginEnabled: true,
+      });
+    });
+  });
+
   describe('required for a role', () => {
     beforeEach(async () => {
-      await ctx.prisma.setting.create({
-        data: {
-          key: SETTING_KEYS.AUTH,
-          value: { ...AUTH_DEFAULTS, mfaRequiredRoles: ['MODELER'] },
-        },
+      await ctx.prisma.setting.update({
+        where: { key: SETTING_KEYS.AUTH },
+        data: { value: { ...AUTH_DEFAULTS, mfaRequiredRoles: ['MODELER'] } },
       });
     });
 

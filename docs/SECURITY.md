@@ -67,7 +67,8 @@ No authorisation gaps were found: the matrix test passes for every route without
 
 **A02 Cryptographic failures**
 
-- Passwords: argon2id; refresh tokens stored as hashes, rotated on every use, reuse revokes the family.
+- Passwords: argon2id; refresh tokens stored as hashes, rotated on every use, reuse revokes the family,
+  24-hour idle lifetime by default.
 - Integration secrets (Git token, SMTP password, AI key): AES-256-GCM (`INTEGRATIONS_ENCRYPTION_KEY`),
   write-only in the API, scrubbed from error messages and logs.
 - Cookies: `HttpOnly`, `Secure` (unless `COOKIE_SECURE=false`), `SameSite=Strict`; the access cookie is
@@ -121,6 +122,11 @@ immediately and a password change invalidates older tokens.
   returns only a 5-minute challenge cookie (`HttpOnly`, `SameSite=Strict`, path `/api/v1/auth/login`, not
   usable as an access token). Enrolment, turning off and new recovery codes need the password (and a code);
   admins can require 2FA per role and reset it (sessions revoked, audited as `MFA_RESET`).
+- **Go-live policy (part 4, D-061 – D-065):** 2FA required by default for Super Admin and Admin (optional for
+  the other roles; the settings page warns if either is removed); the break-glass account always needs 2FA;
+  roles are managed in ProcessHub (directory groups set only the first role); MFA for SSO users is enforced
+  by Entra ID Conditional Access; sessions (refresh tokens) end after **24 hours without activity**
+  (`REFRESH_TOKEN_TTL_HOURS`, was 7 days); access tokens 15 minutes; deactivating a user ends access at once.
 
 **A08 Software and data integrity** — lockfile with `--frozen-lockfile` in the images, pnpm build-script
 allow-list (`onlyBuiltDependencies`), GCM-authenticated secrets.
@@ -337,20 +343,20 @@ zod / UUID pipe; file uploads are checked in the service (allow-list, content sn
 
 ## 6. Remaining risks
 
-| Risk                                                                                                                                             | Mitigation / plan                                                                                                                                                                            |
-| ------------------------------------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **SEC-08** `braces` (high) via Jest, no upstream fix; dev dependencies are in the API runtime image.                                             | Not executed at runtime. **Accepted** by the product owner (D-054); the slim runtime image and the Jest → Vitest move (BACKLOG) remove it.                                                   |
-| **SEC-09** The `minio` npm client's `stream-json` / `decode-uri-component` (moderate).                                                           | Code paths unused; replace the client with `@aws-sdk/client-s3` (BACKLOG) or update when it releases a fix.                                                                                  |
-| No second factor and no SSO yet.                                                                                                                 | **Resolved** (part 3): OIDC / Entra ID single sign-on and TOTP two-factor.                                                                                                                   |
-| SSO: Entra ID "group overage" (users in more than 200 groups get no groups claim).                                                               | Roles are left unchanged and the sign-in is audited with `groupsOverage`; reading groups from Microsoft Graph is in BACKLOG.                                                                 |
-| SSO users skip ProcessHub's TOTP (the identity provider is responsible for MFA).                                                                 | Enforce MFA with Entra ID Conditional Access (DEPLOYMENT.md §6.2).                                                                                                                           |
-| Sessions are not ended when a user is disabled in Entra ID (no back-channel logout).                                                             | Access tokens live 15 minutes; refresh tokens up to `REFRESH_TOKEN_TTL_DAYS`. Deactivate the user in ProcessHub too, or shorten the refresh lifetime; SCIM / back-channel logout in BACKLOG. |
-| Rate limits and lockout counters are per API instance (in memory).                                                                               | Fine for one instance; Redis storage in BACKLOG before scaling out.                                                                                                                          |
-| Account lockout can be triggered by anyone who knows an email address (denial of service), and `ACCOUNT_LOCKED` reveals that the account exists. | Short lock (15 min), per-IP login limit, audit entries `LOGIN_FAILED` / `LOCKOUT`. SSO will move most users off passwords.                                                                   |
-| CSP allows inline styles (`style-src 'unsafe-inline'`, required by Ant Design).                                                                  | Scripts stay `'self'` only; rich text strips `style` attributes. Revisit with Ant Design's CSS-variables mode.                                                                               |
-| AI: published or draft content sent to the provider could contain prompt-injection text.                                                         | Answers are text only, only from content the user may read; generated BPMN / pages are validated, sanitised and only saved after a human accepts the preview.                                |
-| Logs contain recipient email addresses of failed notification emails.                                                                            | Personal data, not secrets; keep log retention short.                                                                                                                                        |
-| TLS and HSTS: the trial stack (`docker-compose.yml`) serves plain HTTP on port 8080.                                                             | **Resolved for production** (part 2): `docker-compose.prod.yml` puts Caddy in front (automatic certificates, http → https, HSTS); see `docs/DEPLOYMENT.md`.                                  |
+| Risk                                                                                                                                             | Mitigation / plan                                                                                                                                                                                                                                               |
+| ------------------------------------------------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **SEC-08** `braces` (high) via Jest, no upstream fix; dev dependencies are in the API runtime image.                                             | Not executed at runtime. **Accepted** by the product owner (D-054); the slim runtime image and the Jest → Vitest move (BACKLOG) remove it.                                                                                                                      |
+| **SEC-09** The `minio` npm client's `stream-json` / `decode-uri-component` (moderate).                                                           | Code paths unused; replace the client with `@aws-sdk/client-s3` (BACKLOG) or update when it releases a fix.                                                                                                                                                     |
+| No second factor and no SSO yet.                                                                                                                 | **Resolved** (part 3): OIDC / Entra ID single sign-on and TOTP two-factor.                                                                                                                                                                                      |
+| SSO: Entra ID "group overage" (users in more than 200 groups get no groups claim).                                                               | Roles are left unchanged and the sign-in is audited with `groupsOverage`; reading groups from Microsoft Graph is in BACKLOG.                                                                                                                                    |
+| SSO users skip ProcessHub's TOTP (the identity provider is responsible for MFA).                                                                 | **Policy** (D-064): Entra ID Conditional Access requires MFA for the ProcessHub application (request in DEPLOYMENT.md §6.1 step 9; go-live checklist). ProcessHub does not check the `amr` claim (BACKLOG).                                                     |
+| Sessions are not ended when a user is disabled in Entra ID (no back-channel logout / SCIM).                                                      | Access tokens live 15 minutes; refresh tokens end after 24 hours without activity (`REFRESH_TOKEN_TTL_HOURS`, D-065), but an active session keeps working. Leaver process: deactivate the user in ProcessHub (immediate). Automatic de-provisioning in BACKLOG. |
+| Rate limits and lockout counters are per API instance (in memory).                                                                               | Fine for one instance; Redis storage in BACKLOG before scaling out.                                                                                                                                                                                             |
+| Account lockout can be triggered by anyone who knows an email address (denial of service), and `ACCOUNT_LOCKED` reveals that the account exists. | Short lock (15 min), per-IP login limit, audit entries `LOGIN_FAILED` / `LOCKOUT`. SSO will move most users off passwords.                                                                                                                                      |
+| CSP allows inline styles (`style-src 'unsafe-inline'`, required by Ant Design).                                                                  | Scripts stay `'self'` only; rich text strips `style` attributes. Revisit with Ant Design's CSS-variables mode.                                                                                                                                                  |
+| AI: published or draft content sent to the provider could contain prompt-injection text.                                                         | Answers are text only, only from content the user may read; generated BPMN / pages are validated, sanitised and only saved after a human accepts the preview.                                                                                                   |
+| Logs contain recipient email addresses of failed notification emails.                                                                            | Personal data, not secrets; keep log retention short.                                                                                                                                                                                                           |
+| TLS and HSTS: the trial stack (`docker-compose.yml`) serves plain HTTP on port 8080.                                                             | **Resolved for production** (part 2): `docker-compose.prod.yml` puts Caddy in front (automatic certificates, http → https, HSTS); see `docs/DEPLOYMENT.md`.                                                                                                     |
 
 ## 7. Go-live configuration checklist
 
@@ -365,9 +371,15 @@ already the default; check them anyway if you changed the setup.
 - [ ] `ENABLE_SWAGGER=false`.
 - [ ] `OUTBOUND_ALLOWED_HOSTS` lists only the internal Git / SMTP servers that are really needed.
 - [ ] Review Settings → AI (enabled roles, limits, data notice) before enabling the assistant.
-- [ ] Settings → Authentication: require two-step verification at least for Super Admin and Admin; with
-      single sign-on, allowed domains limited to company domains, a break-glass Super Admin with 2FA whose
-      password is in the vault, `AUTH_FORCE_LOCAL_LOGIN` not set; Entra ID Conditional Access requires MFA.
+- [ ] Settings → Authentication: two-step verification required for **Super Admin and Admin** (the default —
+      check it if the settings were saved before part 4); allowed domains limited to company domains; **Update
+      roles at every sign-in off** (roles managed in ProcessHub); after the SSO roll-out password sign-in
+      **off** with a dedicated break-glass Super Admin created as in DEPLOYMENT.md §6.3 (2FA, password and
+      recovery codes in the password manager, tested); `AUTH_FORCE_LOCAL_LOGIN` not set.
+- [ ] Entra ID Conditional Access policy "Require MFA – ProcessHub" is **On** (not report-only) and a test
+      sign-in asks for the second factor (DEPLOYMENT.md §6.1 step 9).
+- [ ] `REFRESH_TOKEN_TTL_HOURS=24` (or the agreed value); no `REFRESH_TOKEN_TTL_DAYS` left in `.env`.
+- [ ] Leaver process includes "deactivate in ProcessHub" until automatic de-provisioning exists.
 - [ ] Database, file storage and the API are not reachable from outside (only the web container is published) _(prod stack: only Caddy on 80/443; database and storage on an internal network)_.
 - [ ] Daily backups with an off-site copy, and one restore tested (`docs/DEPLOYMENT.md` §7–8).
 

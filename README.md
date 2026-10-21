@@ -45,7 +45,9 @@ Open **http://localhost:8080** and sign in with the default Super Admin:
 |---|---|
 | `admin@processhub.local` | `ChangeMe-Admin1` |
 
-**Change this password straight away** (top-right menu → My profile). The first start applies database
+Two-step verification is required for Super Admin and Admin, so the first sign-in asks you to scan a QR
+code with an authenticator app (Microsoft Authenticator, Google Authenticator, 1Password, …) and to keep the
+recovery codes. **Change this password straight away** (top-right menu → My profile). The first start applies database
 migrations and loads demo data: departments, 11 processes in Arabic and English, roles, IT systems, BPMN
 models, six page templates, two documentation spaces with eight bilingual pages, two approval workflows,
 content in every lifecycle state, comments, notifications and portal feedback.
@@ -169,18 +171,21 @@ and marked "AI-generated — review before publishing" until a person edits or a
 server to the provider (never from the browser), are limited and logged (**Administration → AI usage**, audit
 log). A guided demo with sample prompts: [`docs/AI-DEMO.md`](./docs/AI-DEMO.md).
 
-### Single sign-on and two-step verification (optional)
+### Single sign-on and two-step verification
 
 Settings → Authentication (Super Admin): Microsoft Entra ID (tenant ID, client ID, client secret — stored
 encrypted) or any OpenID Connect provider (issuer URL), allowed e-mail domains, default role and department
-for users created at their first sign-in, group mappings (Entra group object ID → roles / department,
-optionally updated at every sign-in), and whether password sign-in stays available (otherwise only a
+for users created at their first sign-in, group mappings (Entra group object ID → roles / department for new
+users; roles are then managed in ProcessHub — "update roles at every sign-in" is off by default), and whether password sign-in stays available (otherwise only a
 break-glass Super Admin). Register `APP_URL/api/v1/auth/sso/callback` as redirect URI at the provider;
 step-by-step guide for Entra ID: [`docs/DEPLOYMENT.md`](./docs/DEPLOYMENT.md) §6.1.
 
 Users with a password can turn on two-step verification under **My profile** (QR code for an authenticator
-app, ten recovery codes). Settings → Authentication can require it per role; administrators can reset it
-(**Administration → Users → ⋮ → Reset 2FA**).
+app, ten recovery codes). It is required for Super Admin and Admin by default (Settings → Authentication can
+change the roles) and always for the break-glass account; administrators can reset it
+(**Administration → Users → ⋮ → Reset 2FA**). MFA for single sign-on users is enforced by Entra ID
+Conditional Access (DEPLOYMENT.md §6.1). Sessions end after 24 hours without activity
+(`REFRESH_TOKEN_TTL_HOURS`).
 
 ### Email
 
@@ -197,7 +202,7 @@ Backups: `./scripts/backup.sh` / `./scripts/restore.sh` (see [`docs/DEPLOYMENT.m
 
 ## Local development (without Docker for the apps)
 
-Requirements: Node.js 20+, pnpm 10 (`corepack enable`), PostgreSQL 16, and optionally an S3-compatible storage for uploads (e.g. `docker compose up -d storage` with a published port, or any S3 service).
+Requirements: Node.js 22 LTS (22.12 or later), pnpm 10 (`corepack enable`), PostgreSQL 16, and optionally an S3-compatible storage for uploads (e.g. `docker compose up -d storage` with a published port, or any S3 service).
 
 ```bash
 pnpm install
@@ -277,8 +282,8 @@ scripts/                  generate-secrets, backup, restore, migrate-minio-stora
 
 - argon2id password hashing, a configurable password policy, and account lockout after repeated failures (wrong passwords and wrong 2FA codes).
 - Single sign-on: OpenID Connect code flow with PKCE, state and nonce (`openid-client`), ID-token signature, issuer, audience and expiry verified; allowed domains; no account takeover by e-mail; tests use a mock identity provider.
-- Optional TOTP two-step verification: secret encrypted, codes cannot be replayed, single-use hashed recovery codes; required per role.
-- Short-lived JWT access tokens and rotating refresh tokens in `httpOnly; Secure; SameSite=Strict` cookies, with reuse detection. Double-submit CSRF protection bound to the request origin.
+- TOTP two-step verification: secret encrypted, codes cannot be replayed, single-use hashed recovery codes; required for Super Admin and Admin by default, configurable per role.
+- Short-lived JWT access tokens (15 minutes) and rotating refresh tokens (24-hour idle lifetime) in `httpOnly; Secure; SameSite=Strict` cookies, with reuse detection. Double-submit CSRF protection bound to the request origin.
 - Permissions are checked on the server for every request, and routes are denied by default. The UI only hides what a user cannot do.
 - Rate limiting, request size limits, helmet, strict CORS, and a CSP on the web app.
 - Production stack: HTTPS with automatic certificates and HSTS (Caddy), only ports 80/443 published, database and file storage on an internal network without internet access, secrets required in `.env` (no defaults), checksummed backups.

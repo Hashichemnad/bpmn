@@ -21,6 +21,7 @@ import {
 import { DeleteOutlined, PlusOutlined, SafetyCertificateOutlined } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
 import {
+  DEFAULT_MFA_REQUIRED_ROLES,
   MAX_GROUP_MAPPINGS,
   SSO_PROVIDERS,
   SYSTEM_ROLE_KEYS,
@@ -57,6 +58,9 @@ export function AuthSettingsCard() {
   const provider = Form.useWatch('provider', form);
   const ssoEnabled = Form.useWatch('ssoEnabled', form);
   const localLoginEnabled = Form.useWatch('localLoginEnabled', form);
+  const mfaRequiredRoles = Form.useWatch('mfaRequiredRoles', form) as string[] | undefined;
+  const adminsWithoutMfa =
+    !!mfaRequiredRoles && DEFAULT_MFA_REQUIRED_ROLES.some((r) => !mfaRequiredRoles.includes(r));
 
   useEffect(() => {
     if (!settings.data) return;
@@ -398,6 +402,14 @@ export function AuthSettingsCard() {
         >
           <Select mode="multiple" options={roleOptions} allowClear />
         </Form.Item>
+        {adminsWithoutMfa && (
+          <Alert
+            type="warning"
+            showIcon
+            style={{ marginBottom: 16 }}
+            message={t('admin:auth.mfaAdminsWarning')}
+          />
+        )}
 
         <Space wrap>
           <Button type="primary" onClick={() => void submit()} loading={save.isPending}>

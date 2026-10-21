@@ -13,6 +13,12 @@ async function main() {
   });
   configureApp(app);
   app.enableShutdownHooks();
+  if (process.env.REFRESH_TOKEN_TTL_DAYS) {
+    console.warn(
+      'REFRESH_TOKEN_TTL_DAYS is no longer used; set REFRESH_TOKEN_TTL_HOURS instead ' +
+        `(now ${config.REFRESH_TOKEN_TTL_HOURS} hours).`,
+    );
+  }
   await app.listen(config.PORT, '0.0.0.0');
   console.log(`ProcessHub API listening on port ${config.PORT}`);
 }

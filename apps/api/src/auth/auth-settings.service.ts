@@ -1,6 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
 import type { Prisma } from '@prisma/client';
 import {
+  DEFAULT_MFA_REQUIRED_ROLES,
   SETTING_KEYS,
   SSO_CALLBACK_PATH,
   type AuthSettingsDto,
@@ -37,7 +38,7 @@ export const AUTH_DEFAULTS: StoredAuthSettings = {
   syncRolesOnLogin: false,
   localLoginEnabled: true,
   breakGlassUserId: null,
-  mfaRequiredRoles: [],
+  mfaRequiredRoles: [...DEFAULT_MFA_REQUIRED_ROLES],
 };
 
 /** Issuer URL of the configured provider (Entra ID: derived from the tenant ID). */

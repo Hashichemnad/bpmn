@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  DEFAULT_MFA_REQUIRED_ROLES,
   authSettingsSchema,
   mfaRequiredFor,
   mfaVerifySchema,
@@ -80,5 +81,12 @@ describe('two-factor helpers', () => {
   it('knows when a role requires 2FA', () => {
     expect(mfaRequiredFor(['ADMIN', 'VIEWER'], ['ADMIN'])).toBe(true);
     expect(mfaRequiredFor(['VIEWER'], ['ADMIN'])).toBe(false);
+  });
+  it('requires 2FA for Super Admin and Admin by default, optional for the other roles', () => {
+    expect(mfaRequiredFor(['SUPER_ADMIN'], DEFAULT_MFA_REQUIRED_ROLES)).toBe(true);
+    expect(mfaRequiredFor(['ADMIN'], DEFAULT_MFA_REQUIRED_ROLES)).toBe(true);
+    for (const role of ['PROCESS_OWNER', 'MODELER', 'REVIEWER', 'AUDITOR', 'VIEWER'] as const) {
+      expect(mfaRequiredFor([role], DEFAULT_MFA_REQUIRED_ROLES)).toBe(false);
+    }
   });
 });

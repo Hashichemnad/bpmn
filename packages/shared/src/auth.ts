@@ -30,6 +30,11 @@ export const MAX_GROUP_MAPPINGS = 100;
 export const MAX_ALLOWED_DOMAINS = 50;
 
 /** Number of recovery codes generated at enrolment (each can be used once). */
+/** Roles that must use 2FA for password sign-in unless Settings → Authentication changes it (D-061). */
+export const DEFAULT_MFA_REQUIRED_ROLES = [
+  'SUPER_ADMIN',
+  'ADMIN',
+] as const satisfies readonly SystemRoleKey[];
 export const MFA_RECOVERY_CODE_COUNT = 10;
 
 const GUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;

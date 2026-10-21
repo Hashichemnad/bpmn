@@ -74,6 +74,12 @@ describe('Auth (e2e)', () => {
     expect(access).toMatch(/HttpOnly/i);
     expect(access).toMatch(/SameSite=Strict/i);
     expect(refresh).toMatch(/Path=\/api\/v1\/auth/);
+    // Default session lifetime: 24 hours (REFRESH_TOKEN_TTL_HOURS, D-065).
+    const token = await ctx.prisma.refreshToken.findFirstOrThrow();
+    const hours = (token.expiresAt.getTime() - token.createdAt.getTime()) / 3600_000;
+    expect(hours).toBeCloseTo(24, 1);
+    const expires = new Date(/Expires=([^;]+)/.exec(refresh)![1]).getTime();
+    expect(Math.abs(expires - token.expiresAt.getTime())).toBeLessThan(2000);
     const log = await ctx.prisma.auditLog.findFirst({ where: { action: 'LOGIN' } });
     expect(log).not.toBeNull();
   });

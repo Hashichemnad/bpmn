@@ -599,3 +599,50 @@ Super Admin); sessions are revoked.
 AI and Git settings: the client secret is write-only and encrypted, changes are audited with before / after
 (without the secret). The login page reads only `GET /auth/options` (SSO on, button labels, whether password
 sign-in is offered).
+
+## D-061 — 2FA required for Super Admin and Admin at go-live (product owner, Phase 6 part 4)
+
+**Decision:** two-step verification is required for **Super Admin** and **Admin** and optional for all other
+roles. `DEFAULT_MFA_REQUIRED_ROLES` (`packages/shared`) is the shipped value of Settings → Authentication →
+"Require two-step verification for", so a fresh installation asks the first administrator to enrol at the
+first password sign-in. The list stays editable (a Super Admin decision, audited), but the settings page warns
+when either role is removed. Existing `auth` settings saved before this change keep their stored list — check
+it in the go-live checklist. The API e2e helpers store an empty list so suites not about 2FA can sign in with a
+password; `mfa.e2e` covers the shipped defaults.
+
+## D-062 — Password sign-in off after SSO roll-out; one break-glass Super Admin, always with 2FA
+
+**Decision:** once SSO is rolled out, password sign-in is switched off except for one **dedicated**
+break-glass Super Admin account (D-058). That account now **always** needs 2FA (`MfaService.isRequired`:
+break-glass or a required role), independent of the role list, so removing Super Admin from the list cannot
+leave the only password account with one factor. The creation and storage procedure (password manager vault
+with two holders, TOTP in the vault, recovery codes, quarterly test, audit review) is in DEPLOYMENT.md §6.3.
+
+## D-063 — Roles are managed in ProcessHub, not by the directory
+
+**Decision:** "Update roles at every sign-in" stays **off** by default; directory group mappings only set the
+initial roles (and department) of a user created at the first SSO sign-in. Role changes are made under
+Administration → Users and survive later sign-ins (test in `sso.e2e`). The sync option remains for
+organisations that want the directory to own roles.
+
+## D-064 — MFA for SSO users is enforced by Entra ID Conditional Access
+
+**Decision:** ProcessHub does not add its own second factor to SSO sign-ins (D-059); the company's Entra ID
+enforces MFA through a Conditional Access policy targeting the ProcessHub application (sign-in frequency
+24 hours). The request text for IT is in DEPLOYMENT.md §6.1 step 9; the policy is a go-live checklist item.
+ProcessHub cannot verify it technically (the `amr` claim is not checked) — see BACKLOG.
+
+## D-065 — Refresh-token lifetime 24 hours (configurable)
+
+**Decision:** `REFRESH_TOKEN_TTL_HOURS` (default **24**, 1 – 2160) replaces `REFRESH_TOKEN_TTL_DAYS` (default
+7). Hours, so short values are possible; the API logs a warning when the old variable is still set (it is
+ignored). Refresh tokens still rotate on every use, so the lifetime is an **idle** timeout: a session ends after
+24 hours without activity, not 24 hours after sign-in. Deactivating a user ends access immediately (every
+request reloads the user). Automatic de-provisioning (SCIM / back-channel logout) stays in BACKLOG.
+
+## D-066 — Node 22 LTS
+
+**Decision:** Docker images (`node:22-alpine`), CI (`node-version: 22`), `.nvmrc`, `engines` (`>=22.12`, the
+first 22.x with `require(esm)` unflagged, needed for `openid-client`) and `@types/node` 22 move from Node 20,
+which reached end-of-life in April 2026. No code changes were needed; Prisma's musl engine targets are the same.
+CLAUDE.md §4 updated.
