@@ -1,7 +1,5 @@
-import { Typography } from 'antd';
 import type { TFunction } from 'i18next';
 import type { Rule } from 'antd/es/form';
-import { useTranslation } from 'react-i18next';
 import { DEFAULT_PASSWORD_POLICY, checkPasswordPolicy } from '@processhub/shared';
 
 /**
@@ -21,13 +19,4 @@ export function passwordRules(t: TFunction): Rule[] {
       },
     },
   ];
-}
-
-export function PasswordPolicyHint() {
-  const { t } = useTranslation();
-  return (
-    <Typography.Text type="secondary" style={{ fontSize: 12 }}>
-      {t('validation.passwordHint', { min: DEFAULT_PASSWORD_POLICY.minLength })}
-    </Typography.Text>
-  );
 }

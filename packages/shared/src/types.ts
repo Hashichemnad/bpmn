@@ -142,10 +142,17 @@ export interface RepoObjectDto {
   updatedAt: string;
 }
 
+/** Label of the BPMN element a link points to (from the current working model). */
+export interface ElementLabelDto {
+  nameEn: string;
+  nameAr: string;
+}
+
 export interface ObjectLinkDto {
   id: string;
   processId: string;
   bpmnElementId: string;
+  element: ElementLabelDto | null;
   relation: LinkRelation;
   repoObject: Pick<RepoObjectDto, 'id' | 'type' | 'code' | 'nameEn' | 'nameAr'>;
 }
@@ -153,6 +160,7 @@ export interface ObjectLinkDto {
 export interface ObjectUsageDto {
   linkId: string;
   bpmnElementId: string;
+  element: ElementLabelDto | null;
   relation: LinkRelation;
   process: Pick<ProcessSummaryDto, 'id' | 'code' | 'nameEn' | 'nameAr' | 'category'>;
 }

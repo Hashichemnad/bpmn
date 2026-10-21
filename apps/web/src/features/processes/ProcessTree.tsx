@@ -13,7 +13,7 @@ import {
 import { useMoveProcess, useProcessTree } from '@/api/hooks';
 import { useAuth } from '@/auth/AuthProvider';
 import { useErrorMessage, useLocalized } from '@/components/i18n-helpers';
-import { CATEGORY_COLORS } from '@/components/tags';
+import { CATEGORY_COLORS } from '@/components/colors';
 import { LoadingState, ErrorState } from '@/components/states';
 import { categoryNodeKey, computeDrop, parseCategoryKey } from './tree-dnd';
 

@@ -48,6 +48,7 @@ export interface CommandStack {
 export interface Canvas {
   zoom(level?: 'fit-viewport' | number, center?: 'auto'): number;
   scrollToElement(element: DiagramElement): void;
+  resized(): void;
   addMarker(element: DiagramElement | string, marker: string): void;
   removeMarker(element: DiagramElement | string, marker: string): void;
 }

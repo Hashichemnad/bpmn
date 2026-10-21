@@ -49,8 +49,20 @@ export default tseslint.config(
     plugins: { 'react-hooks': reactHooks, 'react-refresh': reactRefresh },
     rules: {
       ...reactHooks.configs.recommended.rules,
-      'react-refresh/only-export-components': ['warn', { allowConstantExport: true }],
+      'react-refresh/only-export-components': [
+        'warn',
+        {
+          allowConstantExport: true,
+          // Context providers export their hook; the router module exports its route table.
+          allowExportNames: ['useAuth', 'useLocale', 'createQueryClient', 'routes', 'createRouter', 'ME_KEY'],
+        },
+      ],
     },
+  },
+  {
+    files: ['apps/api/test/**/*.js'],
+    languageOptions: { sourceType: 'commonjs', globals: globals.node },
+    rules: { '@typescript-eslint/no-require-imports': 'off' },
   },
   {
     files: ['packages/shared/**/*.ts'],

@@ -11,7 +11,7 @@ import { CategoryTag } from '@/components/tags';
 import { EmptyState, ErrorState, LoadingState } from '@/components/states';
 import { useFormatDate, useLocalized } from '@/components/i18n-helpers';
 import { ObjectFormModal } from './ObjectFormModal';
-import { useConfirmDeleteObject } from './ObjectLibraryPage';
+import { useConfirmDeleteObject } from './useConfirmDeleteObject';
 
 const LIBRARY_PATH: Record<string, string> = { ROLE: '/library/roles', SYSTEM: '/library/systems' };
 
@@ -123,8 +123,8 @@ export function ObjectDetailPage() {
                     title: t('objects:step'),
                     key: 'step',
                     render: (_, u) => (
-                      <Link to={`/processes/${u.process.id}?tab=model&element=${encodeURIComponent(u.bpmnElementId)}`} dir="ltr">
-                        {u.bpmnElementId}
+                      <Link to={`/processes/${u.process.id}?tab=model&element=${encodeURIComponent(u.bpmnElementId)}`}>
+                        {loc(u.element) || <span dir="ltr">{u.bpmnElementId}</span>}
                       </Link>
                     ),
                   },

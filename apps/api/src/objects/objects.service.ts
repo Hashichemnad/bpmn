@@ -1,15 +1,18 @@
 import { Injectable } from '@nestjs/common';
 import { Prisma, type RepoObject } from '@prisma/client';
-import type {
-  CreateObjectInput,
-  LinkRelation,
-  ObjectListQuery,
-  ObjectType,
-  ObjectUsageDto,
-  ProcessCategory,
-  RepoObjectDto,
-  UpdateObjectInput,
+import {
+  extractBpmnLabels,
+  type BpmnElementLabel,
+  type CreateObjectInput,
+  type LinkRelation,
+  type ObjectListQuery,
+  type ObjectType,
+  type ObjectUsageDto,
+  type ProcessCategory,
+  type RepoObjectDto,
+  type UpdateObjectInput,
 } from '@processhub/shared';
+import { elementLabel } from '../models/bpmn-xml';
 import { PrismaService } from '../prisma/prisma.service';
 import { AuditService, diffFields } from '../audit/audit.service';
 import { badRequest, notFound } from '../common/app-exception';
@@ -85,9 +88,17 @@ export class ObjectsService {
       include: { process: { select: { id: true, code: true, nameEn: true, nameAr: true, category: true } } },
       orderBy: [{ process: { code: 'asc' } }, { bpmnElementId: 'asc' }],
     });
+    const models = await this.prisma.processModel.findMany({
+      where: { processId: { in: [...new Set(links.map((l) => l.processId))] } },
+      select: { processId: true, bpmnXml: true },
+    });
+    const labels = new Map<string, Map<string, BpmnElementLabel>>(
+      models.map((m) => [m.processId, extractBpmnLabels(m.bpmnXml)]),
+    );
     return links.map((l) => ({
       linkId: l.id,
       bpmnElementId: l.bpmnElementId,
+      element: elementLabel(labels.get(l.processId) ?? new Map(), l.bpmnElementId),
       relation: l.relation as LinkRelation,
       process: { ...l.process, category: l.process.category as ProcessCategory },
     }));

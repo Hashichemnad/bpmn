@@ -172,8 +172,13 @@ html[lang='ar'] body {
 
 .ph-band-management {
   /* The "roof" of the house. */
-  clip-path: polygon(2% 0, 98% 0, 100% 100%, 0 100%);
-  padding-inline: 32px;
+  border-start-start-radius: 24px;
+  border-start-end-radius: 24px;
+  background: linear-gradient(180deg, rgb(124 58 237 / 5%), var(--ph-surface) 60%);
+}
+
+.ph-band-support {
+  background: linear-gradient(0deg, rgb(15 118 110 / 5%), var(--ph-surface) 60%);
 }
 
 .ph-band-header {
@@ -275,8 +280,26 @@ html[lang='ar'] body {
   background: #f8fafc;
 }
 
-.ph-modeler-saved {
+.ph-modeler-status {
+  padding: 6px 12px;
+  border-block-start: 1px solid var(--ph-border);
+  background: #f8fafc;
   font-size: 12px;
+}
+
+.ph-modeler-canvas-wrap {
+  flex: 1;
+  position: relative;
+  min-inline-size: 0;
+  display: flex;
+}
+
+.ph-modeler-loading {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: rgb(255 255 255 / 80%);
 }
 
 .ph-modeler-body {
@@ -309,8 +332,9 @@ html[lang='ar'] body {
     flex-direction: column;
     block-size: auto;
   }
-  .ph-modeler-canvas {
+  .ph-modeler-canvas-wrap {
     block-size: 520px;
+    flex: none;
   }
   .ph-modeler-panel {
     inline-size: 100%;

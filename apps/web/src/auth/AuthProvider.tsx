@@ -54,24 +54,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id, user?.locale]);
 
+  // Drop cached data of the previous session, but keep the observed "me" query.
+  const clearUserData = useCallback(
+    () => qc.removeQueries({ predicate: (q) => q.queryKey[0] !== 'auth' && q.queryKey.join('/') !== 'settings/public' }),
+    [qc],
+  );
+
   const login = useCallback(
     async (input: LoginInput) => {
       const res = await api<{ user: CurrentUser }>('/auth/login', { method: 'POST', body: input });
-      qc.clear();
       qc.setQueryData(ME_KEY, res.user);
+      clearUserData();
       return res.user;
     },
-    [qc],
+    [qc, clearUserData],
   );
 
   const logout = useCallback(async () => {
     try {
       await api('/auth/logout', { method: 'POST' });
     } finally {
-      qc.clear();
       qc.setQueryData(ME_KEY, null);
+      clearUserData();
     }
-  }, [qc]);
+  }, [qc, clearUserData]);
 
   const value = useMemo<AuthContextValue>(() => {
     const perms = new Set(user?.permissions ?? []);

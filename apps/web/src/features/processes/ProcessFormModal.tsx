@@ -12,7 +12,7 @@ import { useSaveProcess, useUsers } from '@/api/hooks';
 import { useAuth } from '@/auth/AuthProvider';
 import { BilingualFields } from '@/components/BilingualFields';
 import { useErrorMessage, useLocalized } from '@/components/i18n-helpers';
-import { useDepartmentTreeData } from '@/features/admin/UsersPage';
+import { useDepartmentTreeData } from '@/features/admin/useDepartmentTreeData';
 
 interface Props {
   open: boolean;

@@ -183,7 +183,7 @@ export function ProcessDetailPage() {
               <Space wrap size={4}>
                 {r.elements.map((l) => (
                   <Tag key={l.id} className="ph-clickable" onClick={() => openModelAt(l.bpmnElementId)} color="blue">
-                    <span dir="ltr">{l.bpmnElementId}</span> · {t(`objects:relations.${l.relation}`)}
+                    {loc(l.element) || <span dir="ltr">{l.bpmnElementId}</span>} · {t(`objects:relations.${l.relation}`)}
                   </Tag>
                 ))}
               </Space>

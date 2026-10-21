@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { extractBpmnElementIds, validateBpmnGraph, type BpmnGraphElement } from './bpmn-validation';
+import { extractBpmnElementIds, extractBpmnLabels, validateBpmnGraph, type BpmnGraphElement } from './bpmn-validation';
 
 const el = (p: Partial<BpmnGraphElement> & { id: string; type: string }): BpmnGraphElement => ({
   incoming: 1,
@@ -65,5 +65,15 @@ describe('extractBpmnElementIds', () => {
   it('collects id attributes', () => {
     const ids = extractBpmnElementIds('<a id="A"><b id="Task_1" name="x"/><c xid="no"/></a>');
     expect([...ids]).toEqual(['A', 'Task_1']);
+  });
+});
+
+describe('extractBpmnLabels', () => {
+  it('reads bilingual labels and decodes entities', () => {
+    const xml = `<bpmn:definitions><bpmn:task id="T1" name="R&amp;D" ph:nameEn="R&amp;D review" ph:nameAr="مراجعة" /><bpmn:task id="T2" name="Plain" /><bpmn:process id="P1"></bpmn:process></bpmn:definitions>`;
+    const labels = extractBpmnLabels(xml);
+    expect(labels.get('T1')).toEqual({ name: 'R&D', nameEn: 'R&D review', nameAr: 'مراجعة' });
+    expect(labels.get('T2')).toEqual({ name: 'Plain', nameEn: '', nameAr: '' });
+    expect(labels.has('P1')).toBe(false);
   });
 });

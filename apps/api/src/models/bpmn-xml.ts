@@ -1,4 +1,8 @@
-import { extractBpmnElementIds } from '@processhub/shared';
+import {
+  extractBpmnElementIds,
+  type BpmnElementLabel,
+  type ElementLabelDto,
+} from '@processhub/shared';
 import { badRequest } from '../common/app-exception';
 
 const BPMN_MODEL_NS = 'http://www.omg.org/spec/BPMN/20100524/MODEL';
@@ -12,7 +16,7 @@ export function assertSafeBpmnXml(xml: string): void {
   if (/<!DOCTYPE|<!ENTITY/i.test(xml)) {
     throw badRequest('INVALID_BPMN', 'DTD and entity declarations are not allowed');
   }
-  const withoutProlog = xml.replace(/^﻿?\s*(<\?xml[^>]*\?>)?\s*(<!--[\s\S]*?-->\s*)*/, '');
+  const withoutProlog = xml.replace(/^\uFEFF?\s*(<\?xml[^>]*\?>)?\s*(<!--[\s\S]*?-->\s*)*/, '');
   if (!/^<([\w-]+:)?definitions[\s>]/.test(withoutProlog) || !xml.includes(BPMN_MODEL_NS)) {
     throw badRequest('INVALID_BPMN', 'Not a BPMN 2.0 document');
   }
@@ -20,4 +24,14 @@ export function assertSafeBpmnXml(xml: string): void {
 
 export function countFlowElements(xml: string): number {
   return extractBpmnElementIds(xml).size;
+}
+
+/** Bilingual label of a BPMN element; a plain `name` (foreign BPMN) is treated as English. */
+export function elementLabel(
+  labels: Map<string, BpmnElementLabel>,
+  elementId: string,
+): ElementLabelDto | null {
+  const l = labels.get(elementId);
+  if (!l) return null;
+  return { nameEn: l.nameEn || (l.nameAr ? '' : l.name), nameAr: l.nameAr };
 }

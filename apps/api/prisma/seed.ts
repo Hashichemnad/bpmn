@@ -1,4 +1,3 @@
-/* eslint-disable no-console */
 /**
  * Idempotent seed script.
  *  - Always: syncs system roles and permissions, ensures the Super Admin from .env exists.

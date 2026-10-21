@@ -1,12 +1,8 @@
 import { Tag } from 'antd';
 import { useTranslation } from 'react-i18next';
 import type { ProcessCategory, ProcessStatus } from '@processhub/shared';
+import { CATEGORY_COLORS } from './colors';
 
-export const CATEGORY_COLORS: Record<ProcessCategory, string> = {
-  MANAGEMENT: '#7c3aed',
-  CORE: '#1d4ed8',
-  SUPPORT: '#0f766e',
-};
 
 export function CategoryTag({ category }: { category: ProcessCategory }) {
   const { t } = useTranslation();

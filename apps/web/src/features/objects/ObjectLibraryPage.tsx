@@ -1,40 +1,16 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { App, Button, Card, Flex, Input, Space, Table, Tag, Typography, type TableProps } from 'antd';
+import { Button, Card, Flex, Input, Space, Table, Tag, Typography, type TableProps } from 'antd';
 import { DeleteOutlined, EditOutlined, PlusOutlined } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
 import { PERMISSIONS, type ObjectType, type RepoObjectDto } from '@processhub/shared';
-import { useDeleteObject, useObjects } from '@/api/hooks';
+import { useObjects } from '@/api/hooks';
 import { useAuth } from '@/auth/AuthProvider';
 import { PageHeader } from '@/components/PageHeader';
 import { EmptyState, ErrorState } from '@/components/states';
-import { useErrorMessage, useLocalized } from '@/components/i18n-helpers';
+import { useLocalized } from '@/components/i18n-helpers';
 import { ObjectFormModal } from './ObjectFormModal';
-
-export function useConfirmDeleteObject() {
-  const { t } = useTranslation();
-  const loc = useLocalized();
-  const errorMessage = useErrorMessage();
-  const { modal, message } = App.useApp();
-  const remove = useDeleteObject();
-  return (o: RepoObjectDto, onDone?: () => void) =>
-    modal.confirm({
-      title: t('objects:deleteTitle', { name: loc(o) }),
-      content: o.usageCount > 0 ? t('objects:deleteInUse', { count: o.usageCount }) : t('objects:deleteText'),
-      okText: t('delete'),
-      okButtonProps: { danger: true },
-      cancelText: t('cancel'),
-      onOk: async () => {
-        try {
-          await remove.mutateAsync(o.id);
-          message.success(t('deleted'));
-          onDone?.();
-        } catch (err) {
-          message.error(errorMessage(err));
-        }
-      },
-    });
-}
+import { useConfirmDeleteObject } from './useConfirmDeleteObject';
 
 export function ObjectLibraryPage({ type }: { type: ObjectType }) {
   const { t } = useTranslation();

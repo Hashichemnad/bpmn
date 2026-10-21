@@ -7,7 +7,8 @@ import { api } from '@/api/client';
 import { PageHeader } from '@/components/PageHeader';
 import { BilingualFields } from '@/components/BilingualFields';
 import { useErrorMessage } from '@/components/i18n-helpers';
-import { PasswordPolicyHint, passwordRules } from '@/features/admin/password';
+import { PasswordPolicyHint } from '@/features/admin/PasswordPolicyHint';
+import { passwordRules } from '@/features/admin/password';
 
 export function ProfilePage() {
   const { t } = useTranslation();

@@ -8,7 +8,7 @@ import { useProcessTree } from '@/api/hooks';
 import { useAuth } from '@/auth/AuthProvider';
 import { PageHeader } from '@/components/PageHeader';
 import { ErrorState, LoadingState } from '@/components/states';
-import { CATEGORY_COLORS } from '@/components/tags';
+import { CATEGORY_COLORS } from '@/components/colors';
 import { useLocalized } from '@/components/i18n-helpers';
 import { ProcessFormModal } from './ProcessFormModal';
 

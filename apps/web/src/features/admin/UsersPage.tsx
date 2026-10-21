@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import {
   App,
   Badge,
@@ -22,31 +22,19 @@ import { EditOutlined, KeyOutlined, LockOutlined, MoreOutlined, PlusOutlined, St
 import { useTranslation } from 'react-i18next';
 import {
   SYSTEM_ROLE_KEYS,
-  buildTree,
-  type DepartmentDto,
   type SystemRoleKey,
-  type TreeNode,
   type UserDto,
   type UserStatus,
 } from '@processhub/shared';
-import { useDepartments, useResetPassword, useSaveUser, useUnlockUser, useUsers } from '@/api/hooks';
+import { useResetPassword, useSaveUser, useUnlockUser, useUsers } from '@/api/hooks';
 import { useAuth } from '@/auth/AuthProvider';
 import { PageHeader } from '@/components/PageHeader';
 import { BilingualFields } from '@/components/BilingualFields';
 import { ErrorState } from '@/components/states';
 import { useErrorMessage, useFormatDate, useLocalized } from '@/components/i18n-helpers';
-import { PasswordPolicyHint, passwordRules } from './password';
-
-export function useDepartmentTreeData() {
-  const departments = useDepartments();
-  const loc = useLocalized();
-  return useMemo(() => {
-    type Node = { title: string; value: string; children: Node[] };
-    const map = (nodes: TreeNode<DepartmentDto>[]): Node[] =>
-      nodes.map((d) => ({ title: loc(d), value: d.id, children: map(d.children) }));
-    return map(buildTree(departments.data ?? []));
-  }, [departments.data, loc]);
-}
+import { PasswordPolicyHint } from './PasswordPolicyHint';
+import { passwordRules } from './password';
+import { useDepartmentTreeData } from './useDepartmentTreeData';
 
 interface Filters {
   q?: string;

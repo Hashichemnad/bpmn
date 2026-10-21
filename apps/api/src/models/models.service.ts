@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import {
   DEFAULT_RELATION_FOR_TYPE,
   extractBpmnElementIds,
+  extractBpmnLabels,
   type CreateLinkInput,
   type CreateVersionInput,
   type LinkRelation,
@@ -15,7 +16,7 @@ import { AuditService } from '../audit/audit.service';
 import { ProcessesService, canEditModel } from '../processes/processes.service';
 import { badRequest, forbidden, notFound } from '../common/app-exception';
 import type { AuthUser, RequestMeta } from '../common/auth-user';
-import { assertSafeBpmnXml, countFlowElements } from './bpmn-xml';
+import { assertSafeBpmnXml, countFlowElements, elementLabel } from './bpmn-xml';
 
 const userRef = { select: { id: true, email: true, nameEn: true, nameAr: true } } as const;
 
@@ -143,15 +144,20 @@ export class ModelsService {
 
   async listLinks(processId: string): Promise<ObjectLinkDto[]> {
     await this.processes.findActive(processId);
-    const rows = await this.prisma.objectLink.findMany({
-      where: { processId, repoObject: { deletedAt: null } },
-      include: { repoObject: { select: { id: true, type: true, code: true, nameEn: true, nameAr: true } } },
-      orderBy: { createdAt: 'asc' },
-    });
+    const [rows, model] = await Promise.all([
+      this.prisma.objectLink.findMany({
+        where: { processId, repoObject: { deletedAt: null } },
+        include: { repoObject: { select: { id: true, type: true, code: true, nameEn: true, nameAr: true } } },
+        orderBy: { createdAt: 'asc' },
+      }),
+      this.prisma.processModel.findUnique({ where: { processId }, select: { bpmnXml: true } }),
+    ]);
+    const labels = extractBpmnLabels(model?.bpmnXml ?? '');
     return rows.map((r) => ({
       id: r.id,
       processId: r.processId,
       bpmnElementId: r.bpmnElementId,
+      element: elementLabel(labels, r.bpmnElementId),
       relation: r.relation as LinkRelation,
       repoObject: { ...r.repoObject, type: r.repoObject.type as ObjectType },
     }));

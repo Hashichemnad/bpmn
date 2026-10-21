@@ -115,3 +115,39 @@ export function extractBpmnElementIds(xml: string): Set<string> {
   while ((m = re.exec(xml))) ids.add(m[1]);
   return ids;
 }
+
+export interface BpmnElementLabel {
+  name: string;
+  nameEn: string;
+  nameAr: string;
+}
+
+const decodeXml = (s: string) =>
+  s
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&apos;/g, "'")
+    .replace(/&#(\d+);/g, (_, d: string) => String.fromCodePoint(Number(d)))
+    .replace(/&#x([0-9a-f]+);/gi, (_, h: string) => String.fromCodePoint(parseInt(h, 16)))
+    .replace(/&amp;/g, '&');
+
+/** Extracts element labels (name, ph:nameEn, ph:nameAr) by element id from BPMN XML. */
+export function extractBpmnLabels(xml: string): Map<string, BpmnElementLabel> {
+  const labels = new Map<string, BpmnElementLabel>();
+  const tagRe = /<[\w:-]+\s([^>]*?)\/?>/g;
+  const attrRe = /([\w:-]+)="([^"]*)"/g;
+  let tag: RegExpExecArray | null;
+  while ((tag = tagRe.exec(xml))) {
+    const attrs: Record<string, string> = {};
+    let a: RegExpExecArray | null;
+    while ((a = attrRe.exec(tag[1]))) attrs[a[1]] = decodeXml(a[2]);
+    if (!attrs.id || !(attrs.name || attrs['ph:nameEn'] || attrs['ph:nameAr'])) continue;
+    labels.set(attrs.id, {
+      name: attrs.name ?? '',
+      nameEn: attrs['ph:nameEn'] ?? '',
+      nameAr: attrs['ph:nameAr'] ?? '',
+    });
+  }
+  return labels;
+}

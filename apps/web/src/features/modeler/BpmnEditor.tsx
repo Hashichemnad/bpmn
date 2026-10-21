@@ -42,6 +42,17 @@ import { downloadBlob, exportFileName, svgToPng } from './export';
 import { ElementPanel } from './ElementPanel';
 import { VersionsDrawer } from './VersionsDrawer';
 
+/** Fits the diagram once the browser has laid out the canvas. */
+function fitViewport(instance: BpmnInstance) {
+  requestAnimationFrame(() => {
+    const canvas = instance.get<Canvas>('canvas');
+    canvas.resized();
+    const fit = canvas.zoom('fit-viewport', 'auto');
+    // Leave room for the palette and never enlarge small diagrams beyond 100%.
+    canvas.zoom(Math.min(fit * 0.85, 1), 'auto');
+  });
+}
+
 interface Props {
   process: ProcessDto;
   focusElementId?: string;
@@ -145,8 +156,11 @@ export function BpmnEditor({ process, focusElementId }: Props) {
         setSelected(el.type === 'bpmn:Process' || el.type === 'label' ? (el.labelTarget ?? null) : el);
       });
     }
+    const observer = new ResizeObserver(() => instance.get<Canvas>('canvas').resized());
+    observer.observe(containerRef.current);
     setReady(true);
     return () => {
+      observer.disconnect();
       instance.destroy();
       instanceRef.current = null;
       loadedRef.current = false;
@@ -162,7 +176,7 @@ export function BpmnEditor({ process, focusElementId }: Props) {
         await instance.importXML(xml);
         normaliseDiagram(instance);
         applyLanguage(instance, stateRef.current.locale);
-        instance.get<Canvas>('canvas').zoom('fit-viewport', 'auto');
+        fitViewport(instance);
         setImportError(null);
         setDirty(markDirty);
         setSelected(null);
@@ -302,7 +316,7 @@ export function BpmnEditor({ process, focusElementId }: Props) {
   const zoom = (delta: number | 'fit') => {
     const canvas = instanceRef.current?.get<Canvas>('canvas');
     if (!canvas) return;
-    if (delta === 'fit') canvas.zoom('fit-viewport', 'auto');
+    if (delta === 'fit') fitViewport(instanceRef.current!);
     else canvas.zoom(Math.min(4, Math.max(0.2, canvas.zoom() + delta)));
   };
 
@@ -357,10 +371,6 @@ export function BpmnEditor({ process, focusElementId }: Props) {
           </Tooltip>
         </Space>
         <Space wrap size={6}>
-          {dirty && <Tag color="orange">{t('modeler:unsaved')}</Tag>}
-          <Typography.Text type="secondary" className="ph-modeler-saved">
-            {lastSaved}
-          </Typography.Text>
           <Badge count={warnings} size="small" offset={[-4, 4]}>
             <Button icon={<WarningOutlined />} onClick={() => setPanelTab('issues')}>
               {t('modeler:validation')}
@@ -391,8 +401,13 @@ export function BpmnEditor({ process, focusElementId }: Props) {
       {importError && <Alert type="error" showIcon banner message={t('modeler:importFailed')} description={importError} closable onClose={() => setImportError(null)} />}
       <div className="ph-modeler-body">
         {/* bpmn-js renders its own UI; keep it LTR so palette and canvas behave consistently. */}
-        <div className="ph-modeler-canvas" dir="ltr" ref={containerRef} aria-label={t('modeler:canvas')}>
-          {model.isLoading && <LoadingState />}
+        <div className="ph-modeler-canvas-wrap">
+          <div className="ph-modeler-canvas" dir="ltr" ref={containerRef} aria-label={t('modeler:canvas')} />
+          {model.isLoading && (
+            <div className="ph-modeler-loading">
+              <LoadingState />
+            </div>
+          )}
         </div>
         <aside className="ph-modeler-panel">
           <Tabs
@@ -446,6 +461,11 @@ export function BpmnEditor({ process, focusElementId }: Props) {
           />
         </aside>
       </div>
+
+      <Flex className="ph-modeler-status" justify="space-between" align="center" gap={8}>
+        <Typography.Text type="secondary">{lastSaved}</Typography.Text>
+        {dirty ? <Tag color="orange">{t('modeler:unsaved')}</Tag> : <span />}
+      </Flex>
 
       <Modal
         title={t('modeler:saveAsVersion')}

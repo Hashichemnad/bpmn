@@ -94,7 +94,8 @@ describe('Models, versions, objects and links (e2e)', () => {
     await modeler.post(`/processes/${processId}/links`).send({ bpmnElementId: '"><script>', repoObjectId: clerk.id }).expect(400);
 
     const usage = (await modeler.get(`/objects/${clerk.id}/usage`).expect(200)).body;
-    expect(usage).toEqual([expect.objectContaining({ bpmnElementId: 'Task_1', relation: 'PERFORMS', process: expect.objectContaining({ code: 'C.01' }) })]);
+    expect(usage).toEqual([expect.objectContaining({ bpmnElementId: 'Task_1', relation: 'PERFORMS', element: { nameEn: 'Task_1', nameAr: '' }, process: expect.objectContaining({ code: 'C.01' }) })]);
+    expect(links.find((l: { bpmnElementId: string }) => l.bpmnElementId === 'Task_2').element).toEqual({ nameEn: 'Task_2', nameAr: '' });
     expect((await modeler.get(`/objects/${clerk.id}`)).body.usageCount).toBe(1);
 
     // Removing Task_2 from the model prunes its link
