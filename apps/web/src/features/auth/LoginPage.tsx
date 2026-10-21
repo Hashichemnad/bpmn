@@ -38,9 +38,9 @@ export function LoginPage() {
   const location = useLocation();
   const [params] = useSearchParams();
   const ssoError = params.get('ssoError');
-  const [error, setError] = useState<string | null>(
-    ssoError ? t(`errors:${ssoError}`, { defaultValue: t('errors:SSO_PROVIDER_ERROR') }) : null,
-  );
+  const [error, setError] = useState<string | null>(null);
+  // Translated at render time, so it follows the language toggle.
+  const [showSsoError, setShowSsoError] = useState(!!ssoError);
   const [submitting, setSubmitting] = useState(false);
   const [step, setStep] = useState<Step>({ kind: 'password' });
   const [useRecovery, setUseRecovery] = useState(false);
@@ -64,6 +64,7 @@ export function LoginPage() {
 
   const run = async (fn: () => Promise<void>) => {
     setError(null);
+    setShowSsoError(false);
     setSubmitting(true);
     try {
       await fn();
@@ -143,8 +144,16 @@ export function LoginPage() {
             {step.kind === 'password' ? t('auth.subtitle') : t(`auth.mfa.title.${step.kind}`)}
           </Typography.Text>
         </Flex>
-        {error && (
-          <Alert type="error" showIcon message={error} style={{ marginBottom: 16 }} role="alert" />
+        {(error || (showSsoError && ssoError)) && (
+          <Alert
+            type="error"
+            showIcon
+            message={
+              error ?? t(`errors:${ssoError}`, { defaultValue: t('errors:SSO_PROVIDER_ERROR') })
+            }
+            style={{ marginBottom: 16 }}
+            role="alert"
+          />
         )}
 
         {step.kind === 'password' && (

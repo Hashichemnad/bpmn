@@ -32,13 +32,13 @@ export class MockIdp {
   private jwk!: JWK;
   private codes = new Map<string, PendingCode>();
 
-  async start() {
+  async start(port = 0) {
     const pair = await generateKeyPair('RS256', { extractable: true });
     this.key = pair.privateKey;
     this.foreignKey = (await generateKeyPair('RS256')).privateKey;
     this.jwk = { ...(await exportJWK(pair.publicKey)), kid: 'k1', alg: 'RS256', use: 'sig' };
     this.server = createServer((req, res) => void this.handle(req, res));
-    await new Promise<void>((resolve) => this.server.listen(0, '127.0.0.1', resolve));
+    await new Promise<void>((resolve) => this.server.listen(port, '127.0.0.1', resolve));
     this.issuer = `http://127.0.0.1:${(this.server.address() as AddressInfo).port}`;
     return this;
   }
@@ -102,6 +102,11 @@ export class MockIdp {
       });
     }
     if (url.pathname === '/jwks') return json(200, { keys: [this.jwk] });
+    if (url.pathname === '/authorize') {
+      // A real browser reached the provider (manual / Playwright checks): sign in at once.
+      res.writeHead(302, { location: this.authorize(url.toString()).toString() });
+      return res.end();
+    }
     if (url.pathname === '/token' && req.method === 'POST') {
       const chunks: Buffer[] = [];
       for await (const c of req) chunks.push(c as Buffer);

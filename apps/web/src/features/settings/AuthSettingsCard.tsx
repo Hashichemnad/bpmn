@@ -76,7 +76,9 @@ export function AuthSettingsCard() {
   const s = settings.data;
 
   const values = async (): Promise<AuthSettingsInput> => {
-    const v = await form.validateFields();
+    await form.validateFields();
+    // All values, also those of fields not shown (tenant ID vs issuer, break-glass account).
+    const v = form.getFieldsValue(true) as Values;
     return {
       ...v,
       clientSecret: v.clientSecret?.trim() || undefined,

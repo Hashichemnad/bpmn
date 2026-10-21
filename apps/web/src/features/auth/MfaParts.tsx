@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Alert, Button, Flex, Form, Input, QRCode, Space, Typography } from 'antd';
+import { Alert, Button, ConfigProvider, Flex, Form, Input, QRCode, Space, Typography } from 'antd';
 import { CopyOutlined, DownloadOutlined } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
 import type { MfaSetupDto } from '@processhub/shared';
@@ -9,16 +9,19 @@ import { codeRules } from './mfa-rules';
 export function CodeInput(props: { value?: string; onChange?: (v: string) => void }) {
   const { t } = useTranslation();
   return (
-    <div dir="ltr" style={{ display: 'flex', justifyContent: 'center' }}>
-      <Input.OTP
-        length={6}
-        size="large"
-        formatter={(v) => v.replace(/\D/g, '')}
-        aria-label={t('auth.mfa.code')}
-        autoFocus
-        {...props}
-      />
-    </div>
+    // Ant Design takes the direction from ConfigProvider, not from the `dir` attribute.
+    <ConfigProvider direction="ltr">
+      <div dir="ltr" style={{ display: 'flex', justifyContent: 'center' }}>
+        <Input.OTP
+          length={6}
+          size="large"
+          formatter={(v) => v.replace(/\D/g, '')}
+          aria-label={t('auth.mfa.code')}
+          autoFocus
+          {...props}
+        />
+      </div>
+    </ConfigProvider>
   );
 }
 
