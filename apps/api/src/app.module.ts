@@ -17,6 +17,7 @@ import { ObjectsModule } from './objects/objects.module';
 import { EventsModule } from './events/domain-events';
 import { DocsModule } from './docs/docs.module';
 import { SearchModule } from './search/search.module';
+import { IntegrationsModule } from './integrations/integrations.module';
 import { HealthController } from './health/health.controller';
 import { CsrfGuard, JwtAuthGuard, PermissionsGuard } from './common/guards';
 import { AllExceptionsFilter } from './common/http-exception.filter';
@@ -47,6 +48,7 @@ import { AllExceptionsFilter } from './common/http-exception.filter';
     ObjectsModule,
     DocsModule,
     SearchModule,
+    IntegrationsModule,
   ],
   controllers: [HealthController],
   providers: [

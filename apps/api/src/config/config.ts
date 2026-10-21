@@ -40,6 +40,17 @@ const envSchema = z.object({
   MINIO_BUCKET: z.string().default('processhub'),
 
   ENABLE_SWAGGER: bool(false),
+
+  /** base64-encoded 32-byte key for AES-256-GCM encryption of integration tokens. */
+  INTEGRATIONS_ENCRYPTION_KEY: z
+    .string()
+    .default('')
+    .refine(
+      (v) => v === '' || Buffer.from(v, 'base64').length === 32,
+      'INTEGRATIONS_ENCRYPTION_KEY must be 32 bytes, base64-encoded (openssl rand -base64 32)',
+    ),
+  /** Timeout for calls to GitHub / GitLab, in milliseconds. */
+  GIT_HTTP_TIMEOUT_MS: z.coerce.number().int().min(1000).default(20000),
 });
 
 export type Env = z.infer<typeof envSchema>;
