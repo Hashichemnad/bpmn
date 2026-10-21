@@ -3,7 +3,7 @@
 
 generator client {
   provider      = "prisma-client-js"
-  // native for local development; musl targets for the node:20-alpine Docker image (amd64 / arm64)
+  // native for local development; musl targets for the node:22-alpine Docker image (amd64 / arm64)
   binaryTargets = ["native", "linux-musl-openssl-3.0.x", "linux-musl-arm64-openssl-3.0.x"]
 }
 

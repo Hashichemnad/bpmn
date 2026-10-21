@@ -197,7 +197,7 @@ Backups: `./scripts/backup.sh` / `./scripts/restore.sh` (see [`docs/DEPLOYMENT.m
 
 ## Local development (without Docker for the apps)
 
-Requirements: Node.js 20+, pnpm 10 (`corepack enable`), PostgreSQL 16, and optionally an S3-compatible storage for uploads (e.g. `docker compose up -d storage` with a published port, or any S3 service).
+Requirements: Node.js 22 LTS (22.12 or later), pnpm 10 (`corepack enable`), PostgreSQL 16, and optionally an S3-compatible storage for uploads (e.g. `docker compose up -d storage` with a published port, or any S3 service).
 
 ```bash
 pnpm install
