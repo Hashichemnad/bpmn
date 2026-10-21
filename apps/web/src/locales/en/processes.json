@@ -1,0 +1,65 @@
+{
+  "category": {
+    "MANAGEMENT": "Management",
+    "CORE": "Core",
+    "SUPPORT": "Support"
+  },
+  "status": {
+    "DRAFT": "Draft",
+    "IN_REVIEW": "In review",
+    "APPROVED": "Approved",
+    "PUBLISHED": "Published",
+    "ARCHIVED": "Archived"
+  },
+  "house": {
+    "title": "Process house",
+    "subtitle_one": "{{count}} process in the repository",
+    "subtitle_other": "{{count}} processes in the repository",
+    "bandHint": {
+      "MANAGEMENT": "Steer the organisation: strategy, performance, risk",
+      "CORE": "Create value for customers",
+      "SUPPORT": "Enable the core: finance, people, IT, procurement"
+    },
+    "addTo": "Add a process to {{band}}",
+    "emptyBand": "No processes in this band yet.",
+    "emptyTitle": "The repository is empty",
+    "emptyText": "Create the first process to start building your process house."
+  },
+  "list": {
+    "title": "All processes",
+    "subtitle": "Browse the repository or pick a process in the tree.",
+    "empty": "No processes found"
+  },
+  "tree": {
+    "search": "Search code or name",
+    "noMatches": "No matching processes",
+    "dragHint": "Drag to reorder or move under another process."
+  },
+  "tabs": {
+    "overview": "Overview",
+    "subprocesses": "Sub-processes",
+    "objects": "Linked objects",
+    "model": "Model"
+  },
+  "new": "New process",
+  "edit": "Edit process",
+  "newSubProcessOf": "New sub-process of {{name}}",
+  "addSubProcess": "Add sub-process",
+  "codeHint": "Unique identifier, e.g. C.02.03 (category, process, sub-process).",
+  "categoryInherited": "Sub-processes inherit the category of their parent.",
+  "subProcessCount_one": "{{count}} sub-process",
+  "subProcessCount_other": "{{count}} sub-processes",
+  "level": "Level",
+  "description": "Description",
+  "noDescription": "No description yet.",
+  "details": "Details",
+  "subProcesses": "Sub-processes",
+  "noSubProcesses": "This process has no sub-processes.",
+  "linkedObjects": "Roles and systems used in this process",
+  "noLinkedObjects": "No roles or systems are linked to steps of this process yet.",
+  "usedIn": "Used in steps",
+  "moved": "Process moved",
+  "deleteTitle": "Delete {{name}}?",
+  "deleteText": "The process and its model will be removed from the repository. This is recorded in the audit log.",
+  "deleteHasChildren": "Delete or move its sub-processes first."
+}

@@ -1,0 +1,91 @@
+# ProcessHub — local / single-server deployment.
+#   cp .env.example .env   (optional for a local trial, required for real use)
+#   docker compose up --build
+# Then open http://localhost:8080 (or the WEB_PORT you configured).
+
+name: processhub
+
+x-db-env: &db-env
+  POSTGRES_USER: ${POSTGRES_USER:-processhub}
+  POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-processhub-local}
+  POSTGRES_DB: ${POSTGRES_DB:-processhub}
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment: *db-env
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U "$${POSTGRES_USER}" -d "$${POSTGRES_DB}"']
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  minio:
+    # See docs/DECISIONS.md (D-009): MinIO no longer publishes community images on Docker Hub.
+    image: ${MINIO_IMAGE:-bitnamilegacy/minio:2025.4.22}
+    restart: unless-stopped
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ACCESS_KEY:-processhub}
+      MINIO_ROOT_PASSWORD: ${MINIO_SECRET_KEY:-processhub-local-secret}
+      MINIO_DEFAULT_BUCKETS: ${MINIO_BUCKET:-processhub}
+    volumes:
+      - minio-data:/bitnami/minio/data
+    healthcheck:
+      test: ['CMD', 'curl', '-fsS', 'http://127.0.0.1:9000/minio/health/live']
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    restart: unless-stopped
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      NODE_ENV: ${NODE_ENV:-production}
+      PORT: 3000
+      DATABASE_URL: postgresql://${POSTGRES_USER:-processhub}:${POSTGRES_PASSWORD:-processhub-local}@postgres:5432/${POSTGRES_DB:-processhub}?schema=public
+      # Empty = generate a random secret on first start (stored in the api-data volume).
+      JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET:-}
+      COOKIE_SECURE: ${COOKIE_SECURE:-true}
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:8080}
+      TRUST_PROXY: ${TRUST_PROXY:-1}
+      MINIO_ENDPOINT: minio
+      MINIO_PORT: 9000
+      MINIO_USE_SSL: 'false'
+      MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY:-processhub}
+      MINIO_SECRET_KEY: ${MINIO_SECRET_KEY:-processhub-local-secret}
+      MINIO_BUCKET: ${MINIO_BUCKET:-processhub}
+      SEED_ON_START: ${SEED_ON_START:-true}
+      SEED_DEMO_DATA: ${SEED_DEMO_DATA:-true}
+      SEED_ADMIN_EMAIL: ${SEED_ADMIN_EMAIL:-admin@processhub.local}
+      SEED_ADMIN_PASSWORD: ${SEED_ADMIN_PASSWORD:-ChangeMe-Admin1}
+    volumes:
+      - api-data:/app/data
+    depends_on:
+      postgres:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+    restart: unless-stopped
+    ports:
+      - '${WEB_PORT:-8080}:80'
+    depends_on:
+      api:
+        condition: service_healthy
+
+volumes:
+  postgres-data:
+  minio-data:
+  api-data:

@@ -1,0 +1,70 @@
+{
+  "types": {
+    "ROLE": "Role",
+    "SYSTEM": "IT system",
+    "DOCUMENT": "Document",
+    "RISK": "Risk",
+    "CONTROL": "Control",
+    "KPI": "KPI"
+  },
+  "relations": {
+    "PERFORMS": "Performs",
+    "SUPPORTS": "Supports",
+    "INPUT": "Input",
+    "OUTPUT": "Output",
+    "MITIGATES": "Mitigates",
+    "MEASURES": "Measures"
+  },
+  "library": {
+    "ROLE": {
+      "title": "Roles",
+      "subtitle": "Reusable organisational roles that perform process steps.",
+      "empty": "No roles in the library yet"
+    },
+    "SYSTEM": {
+      "title": "IT systems",
+      "subtitle": "Applications and platforms that support process steps.",
+      "empty": "No IT systems in the library yet"
+    }
+  },
+  "new": {
+    "ROLE": "New role",
+    "SYSTEM": "New IT system",
+    "DOCUMENT": "New document",
+    "RISK": "New risk",
+    "CONTROL": "New control",
+    "KPI": "New KPI"
+  },
+  "edit": {
+    "ROLE": "Edit role",
+    "SYSTEM": "Edit IT system",
+    "DOCUMENT": "Edit document",
+    "RISK": "Edit risk",
+    "CONTROL": "Edit control",
+    "KPI": "Edit KPI"
+  },
+  "search": "Search by name or code",
+  "usage": "Usage",
+  "usedInSteps_one": "Used in {{count}} step",
+  "usedInSteps_other": "Used in {{count}} steps",
+  "unused": "Not used",
+  "attributes": "Attributes",
+  "attributesHint": {
+    "default": "Additional properties as name/value pairs.",
+    "ROLE": "For example: grade, reports to, required skills.",
+    "SYSTEM": "For example: vendor, hosting, business owner, criticality."
+  },
+  "attributeName": "Name",
+  "attributeValue": "Value",
+  "addAttribute": "Add attribute",
+  "noAttributes": "No attributes",
+  "whereUsed": "Where used",
+  "notUsed": "This object is not linked to any process step yet.",
+  "process": "Process",
+  "step": "Step",
+  "relation": "Relation",
+  "deleteTitle": "Delete {{name}}?",
+  "deleteText": "The object will be removed from the library.",
+  "deleteInUse_one": "It is linked to {{count}} process step. The link will be removed.",
+  "deleteInUse_other": "It is linked to {{count}} process steps. These links will be removed."
+}
