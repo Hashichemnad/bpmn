@@ -61,7 +61,11 @@ describe('Route security declarations', () => {
       .filter((r) => r.rateLimit === 'login')
       .map((r) => `${r.method} ${r.path}`)
       .sort();
-    expect(strict).toEqual(['POST /auth/change-password', 'POST /auth/login', 'POST /auth/refresh']);
+    expect(strict).toEqual([
+      'POST /auth/change-password',
+      'POST /auth/login',
+      'POST /auth/refresh',
+    ]);
     expect(routes.filter((r) => r.rateLimit === 'skip').map((r) => r.path)).toEqual(['/health']);
   });
 
