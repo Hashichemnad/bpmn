@@ -2,7 +2,43 @@
 
 Read this together with `CLAUDE.md` at the start of every session.
 
-## Current state — 2026-10-21 (Phase 6 — Hardening, branch `phase-6-part-2`)
+## Current state — 2026-10-21 (Phase 6 — Hardening, branch `phase-6-part-3`)
+
+Parts 1 (security review) and 2 (production deployment) are merged into `main`.
+
+### Part 3 — Single sign-on (OIDC / Entra ID) and TOTP two-factor (in progress)
+
+Design (details in DECISIONS D-055 – D-060 once written):
+
+- OIDC authorization-code flow with PKCE, state and nonce via `openid-client` 6 (OpenID-certified);
+  Entra ID = issuer `https://login.microsoftonline.com/<tenant id>/v2.0`, any other provider = issuer URL
+  (discovery). Settings key `auth` (Super Admin, Settings → Authentication); client secret AES-256-GCM.
+  Callback `GET /api/v1/auth/sso/callback` (redirect URI `${APP_URL}/api/v1/auth/sso/callback`); flow state in
+  an encrypted, 10-minute, `SameSite=Lax` cookie limited to `/api/v1/auth/sso`. IdP calls go through the
+  SSRF policy (`OUTBOUND_ALLOWED_HOSTS`).
+- Users matched by (issuer, subject), then linked once by e-mail; just-in-time creation with a default role
+  and department; group → roles/department mapping (optional sync on every sign-in); allowed e-mail domains.
+- Local (password) sign-in can be switched off except for one break-glass Super Admin; env
+  `AUTH_FORCE_LOCAL_LOGIN=true` re-enables it in an emergency.
+- TOTP (`otpauth`, RFC 6238, 30 s, 6 digits, ±1 step, no code reuse) for local accounts; QR code shown with
+  Ant Design `QRCode`; 10 single-use recovery codes (stored as SHA-256); admin can require 2FA per role and
+  reset a user's 2FA. Password sign-in then needs a second step (`ph_mfa` challenge cookie, 5 minutes).
+
+Steps (tick as they are committed; a new session continues at the first unticked one):
+
+- [ ] 1. Shared schemas/types/constants (auth settings, MFA, login response, audit actions); Prisma migration
+      (User SSO + TOTP fields, `MfaRecoveryCode`); Jest transform for ESM-only `openid-client`.
+- [ ] 2. API: TOTP service, enrolment / disable / recovery-code endpoints, two-step password login,
+      "required for role" setup during login, admin reset; unit + e2e tests.
+- [ ] 3. API: authentication settings (Super Admin, encrypted secret), OIDC start/callback, JIT users, group
+      mapping, allowed domains, local sign-in restriction + break-glass; e2e tests with a mocked identity
+      provider (local discovery / JWKS / token endpoint).
+- [ ] 4. Web: login page (SSO button, 2FA step, 2FA set-up step), Profile → two-factor, Settings →
+      Authentication, Users (2FA status, reset, SSO badge); EN/AR translations; Vitest.
+- [ ] 5. Docs (DECISIONS, SECURITY, DEPLOYMENT/README Entra ID guide, BACKLOG, CLAUDE.md), full verification,
+      push.
+
+## Phase 6 part 2 — 2026-10-21 (production deployment, merged into `main`)
 
 Phase 6 is split into small parts, one branch each (`phase-6-part-<n>` from the latest `main`). Part 1
 (security review) is merged into `main`.
