@@ -273,6 +273,10 @@ Caddy handles HTTPS. Choose one option with `CADDY_TLS` in `.env`, then run `sud
 1. Open `https://processhub.yourcompany.com`. The sign-in page appears in English or Arabic.
 2. Sign in with `SEED_ADMIN_EMAIL` and the password printed by `generate-secrets.sh` (it is also
    `SEED_ADMIN_PASSWORD` in `.env`).
+   **Two-step verification is required for Super Admin and Admin** (company policy, see 6.2): at this first
+   sign-in ProcessHub asks you to scan a QR code with an authenticator app (Microsoft Authenticator, Google
+   Authenticator, 1Password, …), enter the six-digit code and save the ten recovery codes. Have your phone
+   ready.
 3. **Change the password** (user menu, top corner → _Change password_). The value in `.env` is only used
    when the administrator is created the very first time; afterwards it no longer matters.
 4. **Settings → Organisation:** name in English and Arabic, logo, default language.
@@ -283,8 +287,9 @@ Caddy handles HTTPS. Choose one option with `CADDY_TLS` in `.env`, then run `sud
    administrator can reset the other's password.
 7. Optional: **Settings → AI** (AI assistant, needs an API key from your AI provider) and
    **Settings → Integrations** (GitHub / GitLab). See `README.md`.
-8. Optional but recommended: **Settings → Authentication** — single sign-on with your company accounts
-   (6.1) and two-step verification for administrators (6.2).
+8. **Settings → Authentication** — single sign-on with your company accounts (6.1), the MFA request to IT
+   (6.1, step 9), the break-glass account (6.3) and two-step verification (6.2; Super Admin and Admin are
+   already required).
 9. Go through the go-live checklist in [`docs/SECURITY.md`](./SECURITY.md) §7.
 
 ### 6.1 Single sign-on with Microsoft Entra ID (Azure AD)
@@ -317,17 +322,42 @@ Administrator) — about 15 minutes.
    - **Default role for new users:** usually _Viewer_ (Knowledge Portal only). Optionally a default
      department.
    - **Group mappings** (optional): group object ID → roles and department, e.g. the "BPM Modelers" group →
-     _Modeler / Editor_. Turn on **Update roles at every sign-in** if the directory should manage roles (then
-     role changes made in ProcessHub are replaced at the user's next sign-in).
+     _Modeler / Editor_. **Roles are managed in ProcessHub** (company decision): the mappings only set the
+     role of a user who signs in for the first time; afterwards an administrator changes roles under
+     **Administration → Users**. Leave **Update roles at every sign-in** off (the default) — when it is on,
+     the directory manages roles and changes made in ProcessHub are replaced at the next sign-in.
    - **Test connection** → "Connected to https://login.microsoftonline.com/…/v2.0" → **Save**.
 7. **Try it** in a private browser window: the sign-in page shows the company button; after signing in, the
    user appears under **Administration → Users** with an _SSO_ tag. Existing ProcessHub users with the same
    e-mail address are linked to their Microsoft account at their first single sign-on.
-8. **Optional — switch off passwords:** once everyone can sign in with single sign-on, turn off
-   **Allow sign-in with a ProcessHub password** and choose a **break-glass Super Admin**: a local
-   administrator account (not a person's daily account) with a long password and two-step verification,
-   stored in the company password manager. Only this account can still use a password (link
-   _Administrator sign-in with a password_ under the company button).
+8. **Switch off passwords** (company decision): once everyone can sign in with single sign-on, create the
+   break-glass account (6.3), then turn off **Allow sign-in with a ProcessHub password** and choose it as
+   **Break-glass Super Admin**. Only this account can still use a password (link _Administrator sign-in with
+   a password_ under the company button); everybody else — administrators included — uses single sign-on.
+9. **Ask IT to enforce MFA for ProcessHub in Entra ID.** ProcessHub's own two-step verification only
+   protects password sign-in; single sign-on users verify at Microsoft. Send this request to the Entra ID
+   administrators (needs Microsoft Entra ID P1, included in Microsoft 365 E3/E5 and Business Premium):
+
+   > **Subject:** Conditional Access policy for the ProcessHub application
+   >
+   > Please create a Conditional Access policy (Entra admin center → _Protection_ → _Conditional Access_ →
+   > **New policy**):
+   >
+   > - **Name:** `Require MFA – ProcessHub`
+   > - **Users:** include _All users_ (or the groups assigned to ProcessHub); exclude only the
+   >   organisation's emergency-access (break-glass) Entra accounts.
+   > - **Target resources:** _Select resources_ → **ProcessHub** (application ID `<client ID>`).
+   > - **Conditions:** none (all platforms and locations). Optional: block legacy authentication.
+   > - **Grant:** _Grant access_ → **Require multifactor authentication** (or **Require authentication
+   >   strength → Phishing-resistant MFA** for administrators).
+   > - **Session:** _Sign-in frequency_ **24 hours** (matches ProcessHub's session lifetime).
+   > - Start in **Report-only**, check the sign-in logs for a week, then switch to **On**.
+   >
+   > Please confirm when the policy is on, and tell us if Security Defaults are used instead of
+   > Conditional Access (then MFA is already required for all users).
+
+   Then sign in once in a private window: Microsoft must ask for the second factor. Note the policy name in
+   the go-live checklist (SECURITY.md §7).
 
 **Other providers** (Google Workspace, Okta, Keycloak, ADFS, …): choose _Other OpenID Connect provider_ and
 enter the issuer URL (ProcessHub reads `<issuer>/.well-known/openid-configuration`), client ID and secret; the
@@ -336,18 +366,64 @@ redirect URI is the same. The provider must send the `email` claim; for groups, 
 **Renew the secret:** in Entra ID create a new client secret, paste it in **Settings → Authentication →
 Client secret**, Save, then delete the old secret in Entra ID. Sign-in keeps working during the change.
 
-**Emergency — identity provider down and break-glass password lost:** set `AUTH_FORCE_LOCAL_LOGIN=true` in
+**Emergency — identity provider down and break-glass account unusable:** set `AUTH_FORCE_LOCAL_LOGIN=true` in
 `.env`, `sudo docker compose up -d`; every account with a password can sign in again (a warning is shown in
 Settings). Remove the line and run `sudo docker compose up -d` again afterwards.
 
 ### 6.2 Two-step verification
 
-Every user with a ProcessHub password can turn it on under **Profile → Two-step verification** (QR code for
-Microsoft Authenticator, Google Authenticator, 1Password, …; ten one-time recovery codes). In
-**Settings → Authentication → Require two-step verification for**, select at least **Super Admin** and
-**Admin**: members of those roles must set it up at their next password sign-in. Single sign-on users verify
-with Microsoft (configure MFA / Conditional Access in Entra ID). A user who lost their phone and recovery codes:
-**Administration → Users → ⋮ → Reset 2FA** (only a Super Admin can do this for a Super Admin).
+**Company policy:** two-step verification is **required for Super Admin and Admin** and optional for all other
+roles. This is the default in **Settings → Authentication → Require two-step verification for** (Super Admin
+and Admin are pre-selected; a warning appears if one of them is removed — do not remove them). Members of the
+selected roles must set it up at their next password sign-in. Everybody else with a ProcessHub password can
+turn it on under **Profile → Two-step verification** (QR code for Microsoft Authenticator, Google
+Authenticator, 1Password, …; ten one-time recovery codes). The break-glass account (6.3) always needs it.
+Single sign-on users verify with Microsoft (Conditional Access, 6.1 step 9). A user who lost their phone and
+recovery codes: **Administration → Users → ⋮ → Reset 2FA** (only a Super Admin can do this for a Super
+Admin).
+
+**Sessions** end after **24 hours without activity** (`REFRESH_TOKEN_TTL_HOURS` in `.env`, default 24):
+whoever has not used ProcessHub for a day signs in again (with single sign-on usually without typing
+anything). A session also ends at sign-out, a password change, a 2FA reset or when the user is deactivated.
+To change the lifetime, set the value in hours in `.env` and run `sudo docker compose up -d`. (Older `.env`
+files contain `REFRESH_TOKEN_TTL_DAYS`; it is no longer used — replace it with `REFRESH_TOKEN_TTL_HOURS=24`.)
+
+**Leavers:** ProcessHub does not yet notice when an account is disabled in Entra ID (automatic
+de-provisioning is planned). Single sign-on is refused as soon as Entra ID disables the account, but a
+ProcessHub session that is already open keeps working while it is used. So, as part of the leaver process,
+**deactivate the user under Administration → Users** — this ends their access immediately.
+
+### 6.3 Break-glass Super Admin (emergency access)
+
+When password sign-in is switched off (6.1 step 8), **one dedicated Super Admin account** keeps a password,
+for the day single sign-on does not work (Entra ID outage, expired client secret, wrong settings). It is not
+anybody's daily account. Two people do this together (the "four-eyes" rule), about 15 minutes:
+
+1. **Prepare a vault entry.** In the company password manager (e.g. 1Password, Bitwarden, Keeper, KeePass on
+   a shared drive with restricted access) create an entry **ProcessHub – break-glass Super Admin** in a vault
+   that only the IT managers / ProcessHub owners can open (at least two people, so access does not depend on
+   one person). Generate the password there: **at least 24 random characters**.
+2. **Create the account.** Signed in as a Super Admin: **Administration → Users → New user**:
+   - E-mail: a shared mailbox or distribution list that is not a person, e.g.
+     `processhub-breakglass@yourcompany.com` (**not** in an allowed SSO domain account that someone uses
+     with Microsoft, so single sign-on can never link to it);
+   - Name: `Break-glass Super Admin` / `حساب الطوارئ`; role **Super Admin** only; the password from the vault.
+3. **Set up two-step verification.** In a private browser window sign in as the new account: ProcessHub asks
+   for the authenticator set-up (always required for this account). Add it to the **password manager's own
+   TOTP field** of the vault entry (or a dedicated company phone kept in the safe), not a personal phone.
+   **Download the ten recovery codes** and store them in the same vault entry (or printed, in a sealed
+   envelope in the safe). Sign out.
+4. **Select it** in **Settings → Authentication → Break-glass Super Admin**, turn off **Allow sign-in with a
+   ProcessHub password**, Save.
+5. **Test it** at once: private window → _Administrator sign-in with a password_ → the break-glass account
+   with password and code works; a normal user's password is refused ("use single sign-on").
+6. **Record it** in the go-live checklist: who has vault access, where the recovery codes are.
+
+**Using it:** only in an emergency. Every sign-in is in the audit log (**Administration → Audit log**, action
+_Sign-in_); review each use and say why in the IT ticket. Afterwards **change its password** in the vault and in
+ProcessHub (Profile → Change password). **Test it every quarter** (sign in, sign out) and whenever someone with
+vault access leaves (then also change the password). If both the password and the recovery codes are lost: the
+emergency switch below.
 
 ## 7. Backups
 

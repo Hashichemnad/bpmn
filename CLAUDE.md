@@ -42,7 +42,7 @@ with no per-user licensing. Target: 50–500 users on a single server.
 | AI | M16 AI Assistant (after Phase 3) | ✅ Done (merged into `main`) |
 | 4 | M10 GRC, M11 EA, M12 KPIs + Salesforce | ⬜ |
 | 5 | M13 Mining, M14 Execution, simulation | ⬜ |
-| 6 | Hardening: SSO, performance, security review fixes, deployment guide | 🟡 In progress — part 1 (security review, `docs/SECURITY.md`) and part 2 (production stack, backups, `docs/DEPLOYMENT.md`) merged; part 3 (SSO with Entra ID / OIDC, TOTP two-factor) done on branch `phase-6-part-3` |
+| 6 | Hardening: SSO, performance, security review fixes, deployment guide | 🟡 In progress — part 1 (security review, `docs/SECURITY.md`) and part 2 (production stack, backups, `docs/DEPLOYMENT.md`) merged; part 3 (SSO with Entra ID / OIDC, TOTP two-factor) merged; part 4 (product owner decisions: 2FA for admins, break-glass, roles in ProcessHub, 24 h sessions, Node 22) done on branch `phase-6-part-4` |
 | — | M15 Migration of existing documentation (after system is ready) | ⬜ |
 
 Update this table and `docs/PROGRESS.md` at the end of every session.
@@ -55,7 +55,7 @@ Update this table and `docs/PROGRESS.md` at the end of every session.
 - **Fonts:** IBM Plex Sans Arabic (AR) and Inter (EN), self-hosted.
 - **Modeler:** bpmn-js (+ bpmn-js-properties-panel where useful).
 - **Rich text (Phase 2):** TipTap.
-- **Backend:** Node.js 20 LTS + **NestJS**, **Prisma** ORM.
+- **Backend:** Node.js 22 LTS + **NestJS**, **Prisma** ORM (moved from Node 20, which is end-of-life — DECISIONS D-066).
 - **Database:** PostgreSQL 16.
 - **File storage:** S3-compatible — Versity S3 Gateway in Docker (replaced MinIO, DECISIONS D-051); the API uses the `minio` npm S3 client.
 - **Validation:** zod schemas in `packages/shared`, used by both web and api.
@@ -91,7 +91,7 @@ Permissions are checked **on the server** for every request (NestJS guards). The
 
 - Passwords hashed with **argon2id**; password policy configurable; account lockout after repeated failures.
 - Auth via short-lived JWT access token + refresh token in **httpOnly, Secure, SameSite=strict cookies**. CSRF protection on state-changing requests.
-- Optional TOTP two-factor authentication and SSO (Entra ID / OIDC) — done in Phase 6 part 3 (DECISIONS D-055 – D-060).
+- TOTP two-factor authentication and SSO (Entra ID / OIDC) — done in Phase 6 part 3 (DECISIONS D-055 – D-060). Go-live policy (D-061 – D-065): 2FA required for Super Admin and Admin, password sign-in off after SSO roll-out except one break-glass Super Admin (always 2FA), roles managed in ProcessHub, MFA for SSO users via Entra ID Conditional Access, 24-hour refresh-token lifetime.
 - `helmet`, strict CORS, rate limiting (`@nestjs/throttler`), request size limits.
 - All input validated with zod/class-validator; Prisma only (no raw SQL string concatenation).
 - Uploaded files: type and size checks, stored in the S3-compatible file storage, never executed; sanitized SVG.
