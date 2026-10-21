@@ -51,6 +51,17 @@ const envSchema = z.object({
     ),
   /** Timeout for calls to GitHub / GitLab, in milliseconds. */
   GIT_HTTP_TIMEOUT_MS: z.coerce.number().int().min(1000).default(20000),
+
+  /** Public URL users open (links in notification emails). */
+  APP_URL: z
+    .string()
+    .url()
+    .default('http://localhost:8080')
+    .transform((v) => v.replace(/\/+$/, '')),
+  /** How often reminders (review dates, overdue reviews) are checked; 0 turns the scheduler off. */
+  SCHEDULER_INTERVAL_MINUTES: z.coerce.number().int().min(0).default(60),
+  /** Timeout for one SMTP delivery, in milliseconds. */
+  SMTP_TIMEOUT_MS: z.coerce.number().int().min(1000).default(15000),
 });
 
 export type Env = z.infer<typeof envSchema>;

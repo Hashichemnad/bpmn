@@ -255,6 +255,7 @@ export interface PageSummaryDto {
   /** Languages with content. */
   hasEn: boolean;
   hasAr: boolean;
+  status: ContentStatus;
   updatedAt: string;
 }
 

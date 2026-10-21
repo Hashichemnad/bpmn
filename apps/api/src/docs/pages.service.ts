@@ -5,6 +5,7 @@ import {
   descendantIds,
   embeddedProcessIds,
   frontMatter,
+  type ContentStatus,
   type CreatePageInput,
   type CreatePageLinkInput,
   type Locale,
@@ -39,6 +40,7 @@ import { DocsAccessService } from './docs-access.service';
 import { htmlToText, sanitizeRichText } from './rich-text';
 import { htmlToMarkdown } from './markdown';
 import { PageMoveError, nextPageSortOrder, planPageMove } from './page-tree';
+import { assertEditable, markEdited, withdrawReviewsOf } from '../governance/edit-guard';
 
 type Tx = Prisma.TransactionClient;
 type PageRow = Prisma.PageGetPayload<object>;
@@ -93,6 +95,7 @@ export function toPageSummary(
     | 'textEn'
     | 'textAr'
     | 'updatedAt'
+    | 'status'
   >,
 ): PageSummaryDto {
   return {
@@ -104,6 +107,7 @@ export function toPageSummary(
     titleAr: p.titleAr,
     hasEn: !!(p.titleEn.trim() || p.textEn.trim()),
     hasAr: !!(p.titleAr.trim() || p.textAr.trim()),
+    status: p.status as ContentStatus,
     updatedAt: p.updatedAt.toISOString(),
   };
 }
@@ -117,6 +121,7 @@ const summarySelect = {
   titleAr: true,
   textEn: true,
   textAr: true,
+  status: true,
   updatedAt: true,
 } satisfies Prisma.PageSelect;
 
@@ -235,6 +240,7 @@ export class PagesService {
           spaceId,
           parentId: input.parentId ?? null,
           sortOrder: nextPageSortOrder(siblings, input.parentId ?? null),
+          ownerId: actor.id,
           createdById: actor.id,
           updatedById: actor.id,
         },
@@ -345,8 +351,10 @@ export class PagesService {
     if (input.baseVersion !== undefined && input.baseVersion !== page.version) {
       throw conflict('PAGE_CHANGED', 'The page was saved by someone else in the meantime');
     }
+    await assertEditable(this.prisma, 'PAGE', id);
     const content = preparePageContent(input);
     const version = await this.prisma.$transaction(async (tx) => {
+      await markEdited(tx, 'PAGE', id, actor.id);
       const v = await this.writeVersion(tx, page, content, input.changeNote, actor);
       await this.audit.log(
         {
@@ -482,6 +490,7 @@ export class PagesService {
         where: { id: { in: ids } },
         data: { deletedAt: new Date(), deletedById: actor.id, deleteBatchId: batch },
       });
+      await withdrawReviewsOf(tx, 'PAGE', ids);
       await this.audit.log(
         {
           action: 'DELETE',
@@ -681,9 +690,11 @@ export class PagesService {
     const { page } = await this.access.page(id, actor, 'edit');
     const old = await this.prisma.pageVersion.findFirst({ where: { id: versionId, pageId: id } });
     if (!old) throw notFound('Version');
+    await assertEditable(this.prisma, 'PAGE', id);
     const content = preparePageContent({ ...old, dirEn: dir(old.dirEn), dirAr: dir(old.dirAr) });
     const note = input.changeNote || `Restored version ${old.versionNumber}`;
     const v = await this.prisma.$transaction(async (tx) => {
+      await markEdited(tx, 'PAGE', id, actor.id);
       const created = await this.writeVersion(tx, page, content, note, actor, old.versionNumber);
       await this.audit.log(
         {

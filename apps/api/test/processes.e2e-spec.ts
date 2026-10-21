@@ -16,7 +16,7 @@ describe('Processes (e2e)', () => {
     await createUser(ctx.prisma, 'admin@test.local', ['ADMIN']);
     await createUser(ctx.prisma, 'modeler@test.local', ['MODELER']);
     ownerId = (await createUser(ctx.prisma, 'owner@test.local', ['PROCESS_OWNER'])).id;
-    await createUser(ctx.prisma, 'viewer@test.local', ['VIEWER']);
+    await createUser(ctx.prisma, 'viewer@test.local', ['REVIEWER']);
     modeler = await loggedIn(ctx.app, 'modeler@test.local');
   });
 
@@ -163,7 +163,11 @@ describe('Processes (e2e)', () => {
     await create(modeler, { code: 'C.01.01', nameEn: 'Again', parentId: top.id }).expect(201);
   });
 
-  it('viewers have read-only access', async () => {
+  it('reviewers have read-only access; viewers see the portal only', async () => {
+    await createUser(ctx.prisma, 'portal@test.local', ['VIEWER']);
+    const portalOnly = await loggedIn(ctx.app, 'portal@test.local');
+    await portalOnly.get('/processes/tree').expect(403);
+    await portalOnly.get('/processes').expect(403);
     const p = (await create(modeler, { code: 'C.01', nameEn: 'Top', category: 'CORE' })).body;
     const viewer = await loggedIn(ctx.app, 'viewer@test.local');
     const detail = (await viewer.get(`/processes/${p.id}`).expect(200)).body;

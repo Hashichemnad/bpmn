@@ -5,13 +5,20 @@ import {
   createUserSchema,
   resetPasswordSchema,
   updateUserSchema,
+  userDirectoryQuerySchema,
   userListQuerySchema,
   type CreateUserInput,
+  type UserDirectoryQuery,
   type ResetPasswordInput,
   type UpdateUserInput,
   type UserListQuery,
 } from '@processhub/shared';
-import { CurrentUser, ReqMeta, RequirePermissions } from '../common/decorators';
+import {
+  CurrentUser,
+  ReqMeta,
+  RequireAnyPermission,
+  RequirePermissions,
+} from '../common/decorators';
 import type { AuthUser, RequestMeta } from '../common/auth-user';
 import { UuidPipe, ZodPipe } from '../common/zod.pipe';
 import { UsersService } from './users.service';
@@ -25,6 +32,13 @@ export class UsersController {
   @RequirePermissions(PERMISSIONS.USERS_READ)
   list(@Query(new ZodPipe(userListQuerySchema)) q: UserListQuery) {
     return this.users.list(q);
+  }
+
+  /** Names and emails of active users, for @mentions and workflow assignees. */
+  @Get('directory')
+  @RequireAnyPermission(PERMISSIONS.COMMENTS_WRITE, PERMISSIONS.GOVERNANCE_MANAGE)
+  directory(@Query(new ZodPipe(userDirectoryQuerySchema)) q: UserDirectoryQuery) {
+    return this.users.directory(q.q);
   }
 
   @Get(':id')

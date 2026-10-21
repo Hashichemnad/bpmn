@@ -20,6 +20,7 @@ import { badRequest, forbidden, notFound } from '../common/app-exception';
 import type { AuthUser, RequestMeta } from '../common/auth-user';
 import { DomainEvents } from '../events/domain-events';
 import { assertSafeBpmnXml, countFlowElements, elementLabel } from './bpmn-xml';
+import { assertEditable, markEdited } from '../governance/edit-guard';
 
 const userRef = { select: { id: true, email: true, nameEn: true, nameAr: true } } as const;
 
@@ -35,6 +36,13 @@ export class ModelsService {
   private async assertCanEdit(processId: string, user: AuthUser) {
     const p = await this.processes.findActive(processId);
     if (!canEditModel(user, p)) throw forbidden('You cannot edit this model');
+    return p;
+  }
+
+  /** Edit rights plus the governance lock (not while in review or archived). */
+  private async assertCanChange(processId: string, user: AuthUser) {
+    const p = await this.assertCanEdit(processId, user);
+    await assertEditable(this.prisma, 'PROCESS', processId);
     return p;
   }
 
@@ -54,14 +62,15 @@ export class ModelsService {
 
   /** Saves the working model and removes object links to elements that no longer exist. */
   async saveModel(processId: string, bpmnXml: string, actor: AuthUser, meta: RequestMeta) {
-    await this.assertCanEdit(processId, actor);
+    await this.assertCanChange(processId, actor);
     assertSafeBpmnXml(bpmnXml);
     const ids = [...extractBpmnElementIds(bpmnXml)];
     await this.prisma.$transaction(async (tx) => {
       const existing = await tx.processModel.findUnique({
         where: { processId },
-        select: { processId: true },
+        select: { processId: true, bpmnXml: true },
       });
+      if (existing?.bpmnXml !== bpmnXml) await markEdited(tx, 'PROCESS', processId, actor.id);
       await tx.processModel.upsert({
         where: { processId },
         create: { processId, bpmnXml, createdById: actor.id, updatedById: actor.id },
@@ -200,7 +209,7 @@ export class ModelsService {
     actor: AuthUser,
     meta: RequestMeta,
   ) {
-    await this.assertCanEdit(processId, actor);
+    await this.assertCanChange(processId, actor);
     const old = await this.prisma.processVersion.findFirst({ where: { id: versionId, processId } });
     if (!old) throw notFound('Version');
     return this.createVersion(
@@ -269,7 +278,7 @@ export class ModelsService {
   }
 
   async createLink(processId: string, input: CreateLinkInput, actor: AuthUser, meta: RequestMeta) {
-    await this.assertCanEdit(processId, actor);
+    await this.assertCanChange(processId, actor);
     const obj = await this.prisma.repoObject.findFirst({
       where: { id: input.repoObjectId, deletedAt: null },
     });
@@ -280,6 +289,7 @@ export class ModelsService {
     });
     if (!existing) {
       await this.prisma.$transaction(async (tx) => {
+        await markEdited(tx, 'PROCESS', processId, actor.id);
         const link = await tx.objectLink.create({
           data: {
             processId,
@@ -311,11 +321,12 @@ export class ModelsService {
   }
 
   async deleteLink(processId: string, linkId: string, actor: AuthUser, meta: RequestMeta) {
-    await this.assertCanEdit(processId, actor);
+    await this.assertCanChange(processId, actor);
     const link = await this.prisma.objectLink.findFirst({ where: { id: linkId, processId } });
     if (!link) throw notFound('Link');
     await this.prisma.$transaction(async (tx) => {
       await tx.objectLink.delete({ where: { id: linkId } });
+      await markEdited(tx, 'PROCESS', processId, actor.id);
       await this.audit.log(
         {
           action: 'DELETE',

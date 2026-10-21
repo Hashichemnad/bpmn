@@ -22,7 +22,7 @@ describe('Models, versions, objects and links (e2e)', () => {
   beforeEach(async () => {
     await resetDb(ctx.prisma);
     await createUser(ctx.prisma, 'modeler@test.local', ['MODELER']);
-    await createUser(ctx.prisma, 'viewer@test.local', ['VIEWER']);
+    await createUser(ctx.prisma, 'viewer@test.local', ['REVIEWER']);
     await createUser(ctx.prisma, 'owner@test.local', ['PROCESS_OWNER']);
     modeler = await loggedIn(ctx.app, 'modeler@test.local');
     processId = (

@@ -13,7 +13,7 @@ describe('Departments (e2e)', () => {
   beforeEach(async () => {
     await resetDb(ctx.prisma);
     await createUser(ctx.prisma, 'admin@test.local', ['ADMIN']);
-    await createUser(ctx.prisma, 'viewer@test.local', ['VIEWER']);
+    await createUser(ctx.prisma, 'viewer@test.local', ['REVIEWER']);
     admin = await loggedIn(ctx.app, 'admin@test.local');
   });
 
@@ -69,7 +69,10 @@ describe('Departments (e2e)', () => {
     expect((await admin.get('/departments')).body[0].userCount).toBe(1);
   });
 
-  it('viewers can read but not change departments', async () => {
+  it('read-only users can read but not change departments; viewers (portal only) cannot read', async () => {
+    await createUser(ctx.prisma, 'portal@test.local', ['VIEWER']);
+    const portalOnly = await loggedIn(ctx.app, 'portal@test.local');
+    await portalOnly.get('/departments').expect(403);
     const viewer = await loggedIn(ctx.app, 'viewer@test.local');
     await viewer.get('/departments').expect(200);
     await viewer.post('/departments').send({ nameEn: 'X' }).expect(403);

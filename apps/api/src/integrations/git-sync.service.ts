@@ -70,6 +70,11 @@ export class GitSyncService implements OnModuleInit, OnModuleDestroy {
         return s.syncPages
           ? e.pageIds.map((id) => ({ entityType: 'PAGE' as const, entityId: id }))
           : [];
+      case 'content.published':
+      case 'content.unpublished':
+        return (e.entityType === 'PROCESS' ? s.syncProcesses : s.syncPages)
+          ? [{ entityType: e.entityType, entityId: e.entityId }]
+          : [];
     }
   }
 
@@ -176,10 +181,10 @@ export class GitSyncService implements OnModuleInit, OnModuleDestroy {
       : { name: 'ProcessHub', email: 'processhub@localhost' };
   }
 
-  private build(t: SyncTarget, root: string): Promise<ExportItem | null> {
+  private build(t: SyncTarget, s: StoredGitSettings): Promise<ExportItem | null> {
     return t.entityType === 'PROCESS'
-      ? this.exporter.process(t.entityId, root)
-      : this.exporter.page(t.entityId, root);
+      ? this.exporter.process(t.entityId, s.folder, s.publishedOnly)
+      : this.exporter.page(t.entityId, s.folder, s.publishedOnly);
   }
 
   private async run(targets: SyncTarget[], actorId: string | null, bulk: boolean) {
@@ -196,7 +201,7 @@ export class GitSyncService implements OnModuleInit, OnModuleDestroy {
       const exports = new Map<string, ExportItem | null>();
       const wanted = new Map<string, string>();
       for (const t of targets) {
-        const item = await this.build(t, s.folder);
+        const item = await this.build(t, s);
         exports.set(key(t), item);
         for (const f of item?.files ?? []) wanted.set(f.path, f.content);
       }

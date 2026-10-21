@@ -18,6 +18,9 @@ import { EventsModule } from './events/domain-events';
 import { DocsModule } from './docs/docs.module';
 import { SearchModule } from './search/search.module';
 import { IntegrationsModule } from './integrations/integrations.module';
+import { NotificationsModule } from './notifications/notifications.module';
+import { GovernanceModule } from './governance/governance.module';
+import { CommentsModule } from './comments/comments.module';
 import { HealthController } from './health/health.controller';
 import { CsrfGuard, JwtAuthGuard, PermissionsGuard } from './common/guards';
 import { AllExceptionsFilter } from './common/http-exception.filter';
@@ -37,6 +40,7 @@ import { AllExceptionsFilter } from './common/http-exception.filter';
     PrismaModule,
     EventsModule,
     AuditModule,
+    NotificationsModule,
     AuthModule,
     StorageModule,
     UsersModule,
@@ -49,6 +53,8 @@ import { AllExceptionsFilter } from './common/http-exception.filter';
     DocsModule,
     SearchModule,
     IntegrationsModule,
+    GovernanceModule,
+    CommentsModule,
   ],
   controllers: [HealthController],
   providers: [
