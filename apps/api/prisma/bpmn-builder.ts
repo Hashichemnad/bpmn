@@ -22,6 +22,9 @@ export interface DiagramNode {
   x: number;
   y: number;
   linkedProcessId?: string;
+  /** Step description shown in the portal (ph:descriptionEn / ph:descriptionAr). */
+  descEn?: string;
+  descAr?: string;
 }
 
 export interface DiagramFlow {
@@ -62,7 +65,10 @@ export function buildBpmn(processKey: string, nodes: DiagramNode[], flows: Diagr
         ...outgoing(n.id).map((f) => `      <bpmn:outgoing>${f.id}</bpmn:outgoing>`),
       ].join('\n');
       const link = n.linkedProcessId ? ` ph:linkedProcessId="${n.linkedProcessId}"` : '';
-      return `    <bpmn:${n.type} id="${n.id}"${labelAttrs(n.en, n.ar)}${link}>\n${refs}\n    </bpmn:${n.type}>`;
+      const desc =
+        (n.descEn ? ` ph:descriptionEn="${esc(n.descEn)}"` : '') +
+        (n.descAr ? ` ph:descriptionAr="${esc(n.descAr)}"` : '');
+      return `    <bpmn:${n.type} id="${n.id}"${labelAttrs(n.en, n.ar)}${link}${desc}>\n${refs}\n    </bpmn:${n.type}>`;
     })
     .join('\n');
   const seqFlows = flows

@@ -21,6 +21,10 @@ export function requisitionXml(withBudgetCheck = false): string {
       type: 'userTask',
       en: 'Create purchase requisition',
       ar: 'إنشاء طلب الشراء',
+      descEn:
+        'The requester fills in the requisition form in the ERP: items, quantities, estimated cost and cost centre.',
+      descAr:
+        'يعبئ مقدم الطلب نموذج طلب الشراء في نظام تخطيط الموارد: الأصناف والكميات والتكلفة التقديرية ومركز التكلفة.',
       x: 250,
       y: 160,
     },
@@ -31,6 +35,8 @@ export function requisitionXml(withBudgetCheck = false): string {
             type: 'serviceTask' as const,
             en: 'Check available budget',
             ar: 'التحقق من توفر الميزانية',
+            descEn: 'The ERP checks the remaining budget of the cost centre automatically.',
+            descAr: 'يتحقق النظام تلقائياً من الميزانية المتبقية لمركز التكلفة.',
             x: 410,
             y: 160,
           },
@@ -41,6 +47,9 @@ export function requisitionXml(withBudgetCheck = false): string {
       type: 'userTask',
       en: withBudgetCheck ? 'Approve requisition' : 'Review requisition',
       ar: withBudgetCheck ? 'اعتماد الطلب' : 'مراجعة الطلب',
+      descEn:
+        'The department manager checks the need and the budget and approves or rejects the requisition within two working days.',
+      descAr: 'يتحقق مدير الإدارة من الحاجة والميزانية ثم يعتمد الطلب أو يرفضه خلال يومي عمل.',
       x: 410 + shift,
       y: 160,
     },
@@ -57,6 +66,8 @@ export function requisitionXml(withBudgetCheck = false): string {
       type: 'serviceTask',
       en: 'Create purchase order',
       ar: 'إنشاء أمر الشراء',
+      descEn: 'Procurement selects the supplier and issues the purchase order.',
+      descAr: 'تختار إدارة المشتريات المورد وتصدر أمر الشراء.',
       x: 680 + shift,
       y: 160,
     },
@@ -120,6 +131,9 @@ export function onboardingXml(verifyProcessId: string): string {
         type: 'userTask',
         en: 'Register application',
         ar: 'تسجيل الطلب',
+        descEn:
+          'The agent registers the application in the CRM and checks that all documents are attached.',
+        descAr: 'يسجل الموظف الطلب في نظام إدارة علاقات العملاء ويتأكد من إرفاق جميع المستندات.',
         x: 250,
         y: 160,
       },
@@ -158,4 +172,33 @@ export function onboardingXml(verifyProcessId: string): string {
       { id: 'Flow_5', from: 'Task_Welcome', to: 'End_1' },
     ],
   );
+}
+
+export interface LinearStep {
+  id: string;
+  type?: 'task' | 'userTask' | 'serviceTask' | 'callActivity';
+  en: string;
+  ar: string;
+  descEn?: string;
+  descAr?: string;
+  linkedProcessId?: string;
+}
+
+/** A simple left-to-right process: start → steps → end (used for further demo processes). */
+export function linearXml(
+  key: string,
+  start: { en: string; ar: string },
+  steps: LinearStep[],
+  end: { en: string; ar: string },
+): string {
+  const nodes: DiagramNode[] = [
+    { id: 'Start_1', type: 'startEvent', ...start, x: 160, y: 182 },
+    ...steps.map((s, i) => ({ ...s, type: s.type ?? 'userTask', x: 250 + i * 160, y: 160 })),
+    { id: 'End_1', type: 'endEvent', ...end, x: 250 + steps.length * 160 + 2, y: 182 },
+  ];
+  const ids = nodes.map((n) => n.id);
+  const flows: DiagramFlow[] = ids
+    .slice(1)
+    .map((id, i) => ({ id: `Flow_${i + 1}`, from: ids[i], to: id }));
+  return buildBpmn(key, nodes, flows);
 }

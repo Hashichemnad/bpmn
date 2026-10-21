@@ -5,12 +5,9 @@ import {
   addDays,
   addMonths,
   canTransition,
-  extractBpmnElementIds,
-  extractBpmnLabels,
   reviewDateState,
   stepAssignees,
   stepOutcome,
-  type ApprovalRule,
   type ArchiveInput,
   type ContentStatus,
   type ContentType,
@@ -34,21 +31,14 @@ import { NotificationsService } from '../notifications/notifications.service';
 import { DomainEvents } from '../events/domain-events';
 import { AppException, badRequest, conflict, forbidden, notFound } from '../common/app-exception';
 import type { AuthUser, RequestMeta } from '../common/auth-user';
-import { htmlToText } from '../docs/rich-text';
 import { ContentService, itemLink, itemParams, toRef, type ContentItem } from './content.service';
 import { WorkflowsService } from './workflows.service';
+import { createPublication, type StepSnapshot } from './publication';
 
 type Tx = Prisma.TransactionClient;
 type ReviewRow = Prisma.ReviewGetPayload<{ include: { tasks: true } }>;
 
-/** Steps as frozen at submission, with the users resolved then. */
-export interface StepSnapshot {
-  nameEn: string;
-  nameAr: string;
-  rule: ApprovalRule;
-  assigneeIds: string[];
-  approvedBySubmitter: boolean;
-}
+export type { StepSnapshot };
 
 const entityName = (type: ContentType) => (type === 'PROCESS' ? 'Process' : 'Page');
 const dir = (v: string): TextDirection => (v === 'rtl' ? 'rtl' : 'ltr');
@@ -468,86 +458,14 @@ export class ReviewsService {
     actor: AuthUser,
     label: string | undefined,
   ) {
-    const review = await tx.review.findUniqueOrThrow({
-      where: { id: reviewId },
-      include: { tasks: true },
-    });
-    const versionNumber = review.versionNumber;
-    const now = new Date();
-    await tx.publication.updateMany({
-      where: { entityType: item.type, entityId: item.id, current: true },
-      data: { current: false, endedAt: now },
-    });
-    const approverIds = review.tasks
-      .filter((t) => t.status === 'APPROVED')
-      .map((t) => t.assigneeId);
-    if (
-      review.submittedById &&
-      (review.steps as unknown as StepSnapshot[]).some((s) => s.approvedBySubmitter)
-    ) {
-      approverIds.push(review.submittedById);
-    }
-    const common = {
-      entityType: item.type,
-      entityId: item.id,
-      versionNumber,
-      reviewId,
-      approvedAt: review.completedAt,
-      approverIds: [...new Set(approverIds)],
-      publishedAt: now,
-      publishedById: actor.id,
-    };
     const settings = await this.workflows.settings();
-    const nextReviewAt = addMonths(now, settings.reviewIntervalMonths);
-    if (item.type === 'PROCESS') {
-      const [p, v] = await Promise.all([
-        tx.process.findUniqueOrThrow({ where: { id: item.id } }),
-        tx.processVersion.findUniqueOrThrow({
-          where: { processId_versionNumber: { processId: item.id, versionNumber } },
-        }),
-      ]);
-      if (label) await tx.processVersion.update({ where: { id: v.id }, data: { label } });
-      const labels = [...extractBpmnLabels(v.bpmnXml).values()];
-      const ids = [...extractBpmnElementIds(v.bpmnXml)];
-      const links = await tx.objectLink.findMany({
-        where: { processId: item.id, bpmnElementId: { in: ids }, repoObject: { deletedAt: null } },
-      });
-      await tx.process.update({ where: { id: item.id }, data: { nextReviewAt } });
-      return tx.publication.create({
-        data: {
-          ...common,
-          versionLabel: label || v.label,
-          code: p.code,
-          titleEn: p.nameEn,
-          titleAr: p.nameAr,
-          descriptionEn: p.descriptionEn,
-          descriptionAr: p.descriptionAr,
-          textEn: labels.map((l) => [l.nameEn || l.name, l.descriptionEn].join(' ')).join('\n'),
-          textAr: labels.map((l) => [l.nameAr, l.descriptionAr].join(' ')).join('\n'),
-          links: {
-            create: links.map((l) => ({
-              bpmnElementId: l.bpmnElementId,
-              repoObjectId: l.repoObjectId,
-              relation: l.relation,
-            })),
-          },
-        },
-      });
-    }
-    const v = await tx.pageVersion.findUniqueOrThrow({
-      where: { pageId_versionNumber: { pageId: item.id, versionNumber } },
-    });
-    if (label) await tx.pageVersion.update({ where: { id: v.id }, data: { label } });
-    await tx.page.update({ where: { id: item.id }, data: { nextReviewAt } });
-    return tx.publication.create({
-      data: {
-        ...common,
-        versionLabel: label || v.label,
-        titleEn: v.titleEn,
-        titleAr: v.titleAr,
-        textEn: htmlToText(v.contentEn),
-        textAr: htmlToText(v.contentAr),
-      },
+    return createPublication(tx, {
+      type: item.type,
+      id: item.id,
+      reviewId,
+      actorId: actor.id,
+      label,
+      nextReviewAt: addMonths(new Date(), settings.reviewIntervalMonths),
     });
   }
 
