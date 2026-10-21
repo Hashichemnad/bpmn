@@ -1,0 +1,269 @@
+// ProcessHub data model — Phase 1 (see CLAUDE.md §9).
+
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "debian-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserStatus {
+  ACTIVE
+  INACTIVE
+}
+
+enum ProcessCategory {
+  MANAGEMENT
+  CORE
+  SUPPORT
+}
+
+enum ProcessStatus {
+  DRAFT
+  IN_REVIEW
+  APPROVED
+  PUBLISHED
+  ARCHIVED
+}
+
+enum ObjectType {
+  ROLE
+  SYSTEM
+  DOCUMENT
+  RISK
+  CONTROL
+  KPI
+}
+
+enum LinkRelation {
+  PERFORMS
+  SUPPORTS
+  INPUT
+  OUTPUT
+  MITIGATES
+  MEASURES
+}
+
+model User {
+  id                 String     @id @default(uuid()) @db.Uuid
+  email              String     @unique
+  nameEn             String     @default("")
+  nameAr             String     @default("")
+  passwordHash       String
+  locale             String     @default("en")
+  status             UserStatus @default(ACTIVE)
+  departmentId       String?    @db.Uuid
+  department         Department? @relation(fields: [departmentId], references: [id], onDelete: SetNull)
+  failedLoginCount   Int        @default(0)
+  lockedUntil        DateTime?
+  lastLoginAt        DateTime?
+  passwordChangedAt  DateTime?
+  createdAt          DateTime   @default(now())
+  updatedAt          DateTime   @updatedAt
+  createdById        String?    @db.Uuid
+  updatedById        String?    @db.Uuid
+  deletedAt          DateTime?
+
+  roles          UserRole[]
+  refreshTokens  RefreshToken[]
+  ownedProcesses Process[]       @relation("ProcessOwner")
+  auditLogs      AuditLog[]
+
+  @@index([departmentId])
+  @@index([status])
+}
+
+model Role {
+  id            String           @id @default(uuid()) @db.Uuid
+  key           String           @unique
+  nameEn        String
+  nameAr        String
+  isSystem      Boolean          @default(true)
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+  permissions   RolePermission[]
+  users         UserRole[]
+}
+
+model Permission {
+  id    String           @id @default(uuid()) @db.Uuid
+  key   String           @unique
+  roles RolePermission[]
+}
+
+model RolePermission {
+  roleId       String     @db.Uuid
+  permissionId String     @db.Uuid
+  role         Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@id([roleId, permissionId])
+}
+
+model UserRole {
+  userId String @db.Uuid
+  roleId String @db.Uuid
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role   Role   @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  @@id([userId, roleId])
+}
+
+/// Refresh tokens are stored hashed and rotated on every use.
+model RefreshToken {
+  id         String    @id @default(uuid()) @db.Uuid
+  userId     String    @db.Uuid
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash  String    @unique
+  /// All tokens issued from one login share a family; reuse of a rotated token revokes the family.
+  familyId   String    @db.Uuid
+  expiresAt  DateTime
+  revokedAt  DateTime?
+  createdAt  DateTime  @default(now())
+  userAgent  String?
+  ip         String?
+
+  @@index([userId])
+  @@index([familyId])
+}
+
+model Department {
+  id          String       @id @default(uuid()) @db.Uuid
+  code        String?
+  nameEn      String       @default("")
+  nameAr      String       @default("")
+  parentId    String?      @db.Uuid
+  parent      Department?  @relation("DepartmentTree", fields: [parentId], references: [id], onDelete: SetNull)
+  children    Department[] @relation("DepartmentTree")
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  createdById String?      @db.Uuid
+  updatedById String?      @db.Uuid
+  deletedAt   DateTime?
+
+  users     User[]
+  processes Process[]
+
+  @@index([parentId])
+}
+
+model Process {
+  id            String          @id @default(uuid()) @db.Uuid
+  code          String
+  nameEn        String          @default("")
+  nameAr        String          @default("")
+  descriptionEn String          @default("")
+  descriptionAr String          @default("")
+  category      ProcessCategory
+  status        ProcessStatus   @default(DRAFT)
+  parentId      String?         @db.Uuid
+  parent        Process?        @relation("ProcessTree", fields: [parentId], references: [id], onDelete: Restrict)
+  children      Process[]       @relation("ProcessTree")
+  ownerId       String?         @db.Uuid
+  owner         User?           @relation("ProcessOwner", fields: [ownerId], references: [id], onDelete: SetNull)
+  departmentId  String?         @db.Uuid
+  department    Department?     @relation(fields: [departmentId], references: [id], onDelete: SetNull)
+  level         Int             @default(1)
+  sortOrder     Int             @default(0)
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+  createdById   String?         @db.Uuid
+  updatedById   String?         @db.Uuid
+  deletedAt     DateTime?
+
+  model    ProcessModel?
+  versions ProcessVersion[]
+  links    ObjectLink[]
+
+  @@index([parentId, sortOrder])
+  @@index([category])
+  @@index([code])
+}
+
+/// Current working BPMN model of a process. Bilingual labels live inside the XML (ph:nameEn / ph:nameAr).
+model ProcessModel {
+  processId   String   @id @db.Uuid
+  process     Process  @relation(fields: [processId], references: [id], onDelete: Cascade)
+  bpmnXml     String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  createdById String?  @db.Uuid
+  updatedById String?  @db.Uuid
+}
+
+model ProcessVersion {
+  id            String   @id @default(uuid()) @db.Uuid
+  processId     String   @db.Uuid
+  process       Process  @relation(fields: [processId], references: [id], onDelete: Cascade)
+  versionNumber Int
+  bpmnXml       String
+  changeNote    String
+  createdAt     DateTime @default(now())
+  createdById   String?  @db.Uuid
+
+  @@unique([processId, versionNumber])
+}
+
+model RepoObject {
+  id            String     @id @default(uuid()) @db.Uuid
+  type          ObjectType
+  code          String?
+  nameEn        String     @default("")
+  nameAr        String     @default("")
+  descriptionEn String     @default("")
+  descriptionAr String     @default("")
+  attributes    Json       @default("{}")
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+  createdById   String?    @db.Uuid
+  updatedById   String?    @db.Uuid
+  deletedAt     DateTime?
+
+  links ObjectLink[]
+
+  @@index([type])
+}
+
+model ObjectLink {
+  id            String       @id @default(uuid()) @db.Uuid
+  processId     String       @db.Uuid
+  process       Process      @relation(fields: [processId], references: [id], onDelete: Cascade)
+  bpmnElementId String
+  repoObjectId  String       @db.Uuid
+  repoObject    RepoObject   @relation(fields: [repoObjectId], references: [id], onDelete: Cascade)
+  relation      LinkRelation
+  createdAt     DateTime     @default(now())
+  createdById   String?      @db.Uuid
+
+  @@unique([processId, bpmnElementId, repoObjectId, relation])
+  @@index([repoObjectId])
+}
+
+model AuditLog {
+  id         String   @id @default(uuid()) @db.Uuid
+  userId     String?  @db.Uuid
+  user       User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  action     String
+  entityType String
+  entityId   String?
+  /// Before/after summary of the change (never contains secrets).
+  summary    Json?
+  ip         String?
+  userAgent  String?
+  createdAt  DateTime @default(now())
+
+  @@index([createdAt])
+  @@index([entityType, entityId])
+  @@index([userId])
+  @@index([action])
+}
+
+model Setting {
+  key         String   @id
+  value       Json
+  updatedAt   DateTime @updatedAt
+  updatedById String?  @db.Uuid
+}
