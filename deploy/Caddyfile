@@ -1,0 +1,35 @@
+# ProcessHub reverse proxy (production, docker-compose.prod.yml).
+# Caddy obtains and renews the HTTPS certificate automatically and redirects http:// to https://.
+# DOMAIN and CADDY_TLS come from .env (see .env.example.prod and docs/DEPLOYMENT.md).
+{
+	# The admin API only listens inside the container (used by the health check).
+	admin 127.0.0.1:2019
+}
+
+{$DOMAIN} {
+	# CADDY_TLS: your e-mail address (Let's Encrypt, public domain), "internal" (Caddy's own certificate
+	# authority, for intranet names) or "/certs/cert.pem /certs/key.pem" (your company's certificate files,
+	# placed in deploy/certs/).
+	tls {$CADDY_TLS}
+
+	header {
+		# Browsers only use HTTPS for this host for one year (add "; includeSubDomains" only if every
+		# sub-domain also serves HTTPS).
+		Strict-Transport-Security "max-age=31536000"
+		-Server
+	}
+
+	# Uploads: attachments are at most 10 MB; the API enforces the exact limits per route.
+	request_body {
+		max_size 12MB
+	}
+
+	# Everything goes to the web container (nginx serves the app and forwards /api to the API).
+	# Server-Sent Events (AI assistant) are streamed without buffering automatically.
+	reverse_proxy web:80
+
+	log {
+		output stdout
+		format json
+	}
+}
