@@ -24,4 +24,23 @@ describe('sanitizeSvg', () => {
     expect(out).not.toContain('onload');
     expect(out).toContain('<rect');
   });
+
+  it('removes links, animations, foreign content and external references', () => {
+    const vectors = [
+      '<svg><a xlink:href="javascript:alert(1)"><text>x</text></a></svg>',
+      '<svg><animate attributeName="href" values="javascript:alert(1)"/></svg>',
+      '<svg><set attributeName="onmouseover" to="alert(1)"/></svg>',
+      '<svg><foreignObject><iframe src="javascript:alert(1)"/></foreignObject></svg>',
+      '<svg><image href="https://evil.example/x.png"/></svg>',
+      '<svg><use href="data:image/svg+xml;base64,PHN2Zz48L3N2Zz4="/></svg>',
+      '<svg><style>@import url(https://evil.example/x.css); rect{fill:url("https://evil.example/y")}</style></svg>',
+      '<svg><rect style="fill:url(https://evil.example/x)"/></svg>',
+    ];
+    for (const v of vectors) {
+      const out = sanitizeSvg(v);
+      expect(out).not.toMatch(/javascript:|evil\.example|foreignObject|iframe|<use|<animate|<set/i);
+    }
+    // In-document references (gradients) keep working.
+    expect(sanitizeSvg('<svg><rect style="fill:url(#g)"/></svg>')).toContain('url(#g)');
+  });
 });

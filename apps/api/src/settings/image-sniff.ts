@@ -3,6 +3,19 @@ import { JSDOM } from 'jsdom';
 
 const DOMPurify = createDOMPurify(new JSDOM('').window);
 
+/** CSS references to anything but an in-document fragment (`url(#gradient)`) and @import rules. */
+const EXTERNAL_CSS = /@import[^;]*;?|url\(\s*(?!['"]?#)[^)]*\)/gi;
+
+// Remove external references from <style> elements and style attributes (tracking / data leaks).
+DOMPurify.addHook('uponSanitizeElement', (node, data) => {
+  if (data.tagName === 'style' && node.textContent) {
+    node.textContent = node.textContent.replace(EXTERNAL_CSS, 'none');
+  }
+});
+DOMPurify.addHook('uponSanitizeAttribute', (_node, data) => {
+  if (data.attrName === 'style') data.attrValue = data.attrValue.replace(EXTERNAL_CSS, 'none');
+});
+
 export type ImageType = 'image/png' | 'image/jpeg' | 'image/webp' | 'image/svg+xml';
 
 /** Detects the real image type from magic bytes; never trusts the client-supplied MIME type. */

@@ -19,7 +19,11 @@ Steps (tick as they are committed; a new session continues at the first unticked
       request host; blocks sub-domain cookie tossing); nginx security headers moved into one snippet
       included by every location (`/` and `/assets/` had lost `Permissions-Policy`), plus COOP.
       Tests: `test/security.e2e-spec.ts`.
-- [ ] 3. XSS: rich text, BPMN labels, SVG uploads, AI output, email templates
+- [x] 3. XSS: rich text (DOMPurify server + client, same allow-list), BPMN (DTD/entities rejected,
+      labels rendered as SVG text), comments / search snippets / AI answers (React text only, no
+      `dangerouslySetInnerHTML` anywhere), emails (escaped, links from `APP_URL`), downloads
+      (`attachment`, `nosniff`, `sandbox` CSP). Fixed: SVG logos lose external CSS references
+      (`@import`, `url(https://…)`), logo response gets `sandbox`; more SVG vectors in the unit test.
 - [ ] 4. Uploads, path traversal, SSRF in Git / AI / SMTP (block internal addresses unless allowed)
 - [ ] 5. Secrets in logs / errors / responses; encrypted fields
 - [ ] 6. Dependencies (`pnpm audit`)
