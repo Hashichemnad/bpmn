@@ -2,7 +2,27 @@
 
 Read this together with `CLAUDE.md` at the start of every session.
 
-## Current state — 2026-10-21 (Phase 6 — Hardening, branch `phase-6-part-1`)
+## Current state — 2026-10-21 (Phase 6 — Hardening, branch `phase-6-part-2`)
+
+Phase 6 is split into small parts, one branch each (`phase-6-part-<n>` from the latest `main`). Part 1
+(security review) is merged into `main`.
+
+### Part 2 — Production deployment, backups and storage (in progress)
+
+Steps (tick as they are committed; a new session continues at the first unticked one):
+
+- [ ] 1. Replace the frozen MinIO image (D-009) with a maintained S3-compatible store in `docker-compose.yml`;
+      migration script for files in an existing MinIO volume; DECISIONS entry.
+- [ ] 2. `docker-compose.prod.yml` + `deploy/Caddyfile`: Caddy with automatic HTTPS (only 80/443 published),
+      internal network for database and storage, health checks, restart policies, resource limits, log rotation.
+- [ ] 3. `.env.example.prod` with secure defaults + `scripts/generate-secrets.sh`.
+- [ ] 4. `scripts/backup.sh` / `scripts/restore.sh` (PostgreSQL dump + file storage + key fingerprint), daily
+      schedule example; restore tested end to end on the production stack.
+- [ ] 5. `docs/DEPLOYMENT.md` for a non-developer IT person.
+- [ ] 6. Verification (tests, lint, type-check, prod stack in Docker), docs (DECISIONS, BACKLOG, README,
+      SECURITY, CLAUDE.md phase table), push.
+
+## Phase 6 part 1 — 2026-10-21 (security review, merged into `main`)
 
 Phase 6 is split into small parts, one branch each (`phase-6-part-<n>` from the latest `main`). The AI phase
 is merged into `main`.
