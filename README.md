@@ -4,7 +4,7 @@
 
 **منصة ثنائية اللغة (العربية / الإنجليزية) لإدارة العمليات المؤسسية** — تجمع بين جوهر ARIS و GBTEC (BIC) مع ويكي للتوثيق على غرار Confluence، والتحكم في الإصدارات، وتكامل اختياري مع GitHub / GitLab.
 
-> **Status:** ✅ Phase 1 (Foundation) and ✅ Phase 2 (Documentation wiki, version control, Git integration) complete — see [`docs/PROGRESS.md`](./docs/PROGRESS.md). Phase 3 (governance, knowledge portal) is next.
+> **Status:** ✅ Phase 1 (Foundation), ✅ Phase 2 (Documentation wiki, version control, Git integration) and ✅ Phase 3 (Governance, Knowledge Portal) complete — see [`docs/PROGRESS.md`](./docs/PROGRESS.md). Next: the AI Assistant (M16).
 
 ---
 
@@ -19,8 +19,8 @@
 | **Documentation Wiki** | Spaces with access rules, page tree, rich-text editor (tables, checklists, callouts, images, attachments, embedded BPMN diagrams, RTL/LTR), English + Arabic versions, templates, trash, full-text search, PDF / Markdown export | ✅ 2 |
 | **Version Control** | Versions with change notes for processes and pages, visual BPMN diff, side-by-side / inline text diff, restore, labels | ✅ 2 |
 | **Git Integration** *(optional)* | One-way sync of BPMN models (.bpmn + .json) and pages (Markdown) to GitHub or GitLab, on every version or on demand, with a status page | ✅ 2 |
-| **Governance** | Draft → Review → Approved → Published workflow, comments, notifications | 3 |
-| **Knowledge Portal** | Read-only portal for all staff: browse, search, "my processes", feedback, PDF | 3 |
+| **Governance** | Draft → In Review → Approved → Published → Archived with approval workflows (sequential steps, any-one or all approvers), review page with visual diff, threaded comments with @mentions on BPMN elements, notification centre and email, review dates with reminders, My tasks, governance dashboard | ✅ 3 |
+| **Knowledge Portal** | Read-only portal for all staff with published content only: process house, step details, documentation with table of contents, English/Arabic search, "my processes", feedback to owners, PDF download, branding and access settings | ✅ 3 |
 | **GRC, EA & KPIs** | Risks and controls, IT landscape, KPI dashboards, Salesforce link | 4 |
 | **Process Mining & Execution** | Event-log analysis, bottlenecks, running approved processes as workflows | 5 |
 
@@ -40,9 +40,41 @@ Open **http://localhost:8080** and sign in with the default Super Admin:
 | `admin@processhub.local` | `ChangeMe-Admin1` |
 
 **Change this password straight away** (top-right menu → My profile). The first start applies database
-migrations and loads demo data: departments, 11 processes in Arabic and English, roles, IT systems, two
-BPMN models (one with two versions), six page templates and two documentation spaces with eight bilingual
-pages.
+migrations and loads demo data: departments, 11 processes in Arabic and English, roles, IT systems, BPMN
+models, six page templates, two documentation spaces with eight bilingual pages, two approval workflows,
+content in every lifecycle state, comments, notifications and portal feedback.
+
+**Demo users** (one per role; the password is `SEED_DEMO_PASSWORD`, default `Demo-Password1`):
+
+| Email | Role | Lands on |
+|---|---|---|
+| `viewer@processhub.local` | Viewer (Noura) | Knowledge Portal only |
+| `reviewer@processhub.local` | Reviewer (Rami) | Workspace — has reviews waiting in **My tasks** |
+| `owner@processhub.local` | Process Owner (Omar) | Workspace — owns the demo processes, overdue items, feedback |
+| `modeler@processhub.local` | Modeler / Editor (Maha) | Workspace — drafts and comments |
+
+Demo users are only created on a demo installation (`SEED_DEMO_DATA=true`, the default). **Emails** sent by
+the demo installation go to the bundled **Mailpit** at **http://localhost:8025** — nothing leaves the machine.
+
+### A short tour of Phase 3 — governance and the Knowledge Portal
+
+1. Sign in as **viewer@processhub.local**: you land on the **Knowledge Portal** (process house, featured and
+   recent items, quick links, search). Open **Processes → S.01.01 Purchase Requisition**, click a step for who
+   performs it, the systems and documents, and use **Download PDF**. Try **My processes**, the search (also in
+   Arabic, e.g. `طلب شراء`) and **Feedback** on any item. Workspace URLs send you back to the portal.
+2. Sign in as **reviewer@processhub.local** → **My tasks**: open the review of *Purchase Requisition v2*. The
+   review page shows the changes against the published version (coloured diagram and change list). Approve,
+   request changes (comment required) or reject.
+3. Sign in as **owner@processhub.local**: the owner step of that review is now yours. Approve, then **Publish**
+   with a label such as `v2.0` — the portal shows the new version with approver, approval date and next review
+   date. The **Governance dashboard** shows the overdue review (Order to Cash) and the overdue periodic review
+   (Strategic Planning); feedback from the portal waits in My tasks.
+4. As **modeler@processhub.local**, open a process model → **Comments** tab: comment on a BPMN element and
+   type `@` to mention someone. Mentioned users get a notification (bell) and, if enabled, an email.
+5. As **admin**: **Settings → Workflows** (templates, defaults per process category and space, review interval),
+   **Settings → Knowledge Portal** (name, tagline, featured items, quick links, who may use the portal),
+   **Settings → Email** (SMTP, test email). Each user picks which notifications they also get by email under
+   **My profile**.
 
 ### A short tour of Phase 2
 
@@ -75,7 +107,13 @@ Every variable is documented in [`.env.example`](./.env.example). The ones that 
 - `POSTGRES_PASSWORD`, `MINIO_SECRET_KEY`: database and object-storage passwords.
 - `SEED_ADMIN_EMAIL`, `SEED_ADMIN_PASSWORD`: the first Super Admin. These are read only when that user does not exist yet.
 - `JWT_ACCESS_SECRET`: leave it empty and the API generates a random secret on first start, kept in the `api-data` volume.
-- `INTEGRATIONS_ENCRYPTION_KEY`: encrypts GitHub/GitLab tokens (AES-256-GCM). Leave it empty with Docker and a key is generated and kept in the `api-data` volume — **back it up**: without it stored tokens cannot be decrypted and must be entered again.
+- `INTEGRATIONS_ENCRYPTION_KEY`: encrypts GitHub/GitLab tokens and the SMTP password (AES-256-GCM). Leave it empty with Docker and a key is generated and kept in the `api-data` volume.
+
+> ⚠️ **Back up `INTEGRATIONS_ENCRYPTION_KEY` (or the `api-data` volume) together with the database.** If the key is lost or changes, stored Git tokens and the SMTP password cannot be decrypted and must be entered again.
+
+- `APP_URL`: the address users open; used for links in emails.
+- `SEED_DEMO_PASSWORD`: password of the four demo users. `SEED_SMTP_HOST`: SMTP host the demo installation is configured with (Mailpit by default; set it empty to leave email unconfigured).
+- `SCHEDULER_INTERVAL_MINUTES`: how often review reminders are checked (default 60; `0` turns them off).
 - `WEB_PORT`, `CORS_ORIGINS`: the port and URL users open.
 - `COOKIE_SECURE`: keep `true`. It needs HTTPS (or `localhost`). Put a TLS reverse proxy in front for real use.
 - `SEED_DEMO_DATA=false`: start with an empty repository.
@@ -99,8 +137,16 @@ Every sync is one commit, authored as the ProcessHub user who made the change, e
 <folder>/docs/QM/quality-manual-1a2b3c4d/document-control-5e6f7a8b/index.en.md   (+ index.ar.md, front-matter)
 ```
 
-The sync is one-way (ProcessHub → Git). Pages of view-restricted spaces are never exported. Renames and
+The sync is one-way (ProcessHub → Git). Pages of view-restricted spaces are never exported. With
+**Published versions only**, only the current published version of each process and page is exported. Renames and
 moves are applied with the next version or with **Sync now**, which reconciles everything in a single commit.
+
+### Email
+
+Settings → Email (Super Admin): SMTP server, port, TLS, user name, password (stored encrypted, never shown
+again), sender. **Send test email** checks the settings. Emails are sent in each recipient's language; users
+choose per notification type whether they also want an email (My profile). For a real installation replace
+the demo Mailpit settings with your mail server and remove the `mailpit` service if you do not need it.
 
 Data lives in the Docker volumes `postgres-data`, `minio-data` and `api-data`. `docker compose down` keeps them; `docker compose down -v` deletes them.
 
@@ -129,7 +175,11 @@ pnpm lint           # ESLint
 pnpm typecheck      # TypeScript (strict)
 pnpm test           # shared + web (Vitest), api unit + e2e (Jest, needs PostgreSQL)
 pnpm build
+pnpm e2e            # Playwright smoke tests against a running, seeded stack (E2E_BASE_URL, default http://localhost:8080)
 ```
+
+The Playwright tests (`apps/e2e`) need a Chromium for Playwright 1.56 (`pnpm --filter @processhub/e2e exec
+playwright install chromium` once) and only read data or add feedback, so they can be re-run.
 
 The API end-to-end tests run against `TEST_DATABASE_URL`, which defaults to
 `postgresql://processhub:devpassword@localhost:5432/processhub_test`. They **empty every table** in that
@@ -153,18 +203,26 @@ apps/
       search/             PostgreSQL full-text search (English + Arabic)
       integrations/       Git sync: encrypted settings, GitHub/GitLab clients, export, sync queue
       events/             in-process domain events (e.g. "new version" → Git sync)
+      governance/         lifecycle, workflows, reviews, publications, tasks, dashboard, feedback,
+                          portal access rules, reminder scheduler
+      comments/           threaded comments with @mentions and BPMN element anchors
+      notifications/      notification centre, preferences, SMTP settings, bilingual email templates
+      portal/             Knowledge Portal read model (published content only) and search
     test/                 end-to-end tests (supertest + PostgreSQL)
   web/                    React + Vite + Ant Design client
     src/
       api/                fetch client (CSRF, token refresh) and React Query hooks
       app/ auth/ layout/  providers, theme, locale/RTL, shell
       features/           admin, settings, profile, processes, modeler, objects,
-                          docs (wiki, TipTap editor, history), versions (BPMN compare), search
+                          docs (wiki, TipTap editor, history), versions (BPMN compare), search,
+                          governance, comments, notifications, portal (Knowledge Portal + print views)
       locales/{en,ar}/    translations
 packages/
-  shared/                 zod schemas, types, permissions & roles, bilingual helpers, BPMN validation
+  shared/                 zod schemas, types, permissions & roles, bilingual helpers, BPMN validation,
+                          lifecycle transitions and portal visibility rules
+  e2e/ (in apps/)         Playwright smoke tests
 docs/                     PROGRESS.md, DECISIONS.md, BACKLOG.md
-docker-compose.yml        postgres, minio, api, web
+docker-compose.yml        postgres, minio, mailpit (demo email), api, web
 ```
 
 ## Security highlights
@@ -178,6 +236,9 @@ docker-compose.yml        postgres, minio, api, web
 - Attachments: extension allow-list plus a content check, 10 MB limit, stored in MinIO and delivered with a sandboxing CSP, `nosniff` and download disposition for non-images.
 - Per-space view/edit restrictions apply everywhere, including search and "related documentation".
 - GitHub/GitLab tokens are encrypted at rest (AES-256-GCM), write-only in the API and scrubbed from errors and the audit log.
+- Viewers can only use the Knowledge Portal; its endpoints return current published versions only (never drafts, reviews or archived content). Tested for every route.
+- Lifecycle transitions are checked on the server and audited; submitters never approve their own items.
+- The SMTP password is encrypted like the Git tokens; email content is HTML-escaped; tests never send email.
 - An audit log records every change and every sign-in, with secrets scrubbed.
 
 More detail in [`docs/DECISIONS.md`](./docs/DECISIONS.md).

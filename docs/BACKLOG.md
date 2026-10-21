@@ -6,7 +6,12 @@ where they belong; move items into the plan when that phase starts.
 ## Needs a decision
 
 - **MinIO image for production** — keep `bitnamilegacy/minio` for now, revisit in Phase 6 (D-009).
-- **PDF export** — browser print is used (D-024). Decide whether direct server-side PDF downloads are needed.
+- **PDF export** — decided for now: browser print (D-024, D-035). Option for Phase 6: a Gotenberg (headless
+  Chromium) service for direct PDF downloads without the print dialog.
+- **Self-approval** — a submitter is never an approver of their own item; when they are the only candidate of
+  a step, the step counts as approved by submission (D-030). Confirm, or require a second person (then the
+  submission would be refused instead).
+- **Viewer role** — Viewers are now portal-only (D-028). Workspace read-only users should get REVIEWER.
 
 ## Phase 2 follow-ups (wiki, version control, Git)
 
@@ -16,20 +21,32 @@ where they belong; move items into the plan when that phase starts.
 - Git: a persistent job queue (Redis/BullMQ) when running more than one API instance; scheduled reconcile.
 - Space grants for a department could include its sub-departments.
 - Move pages between spaces; copy a page; page-level permissions.
-- Comments and @mentions on pages (with the Phase 3 review workflow).
 - Real-time collaborative editing (TipTap collaboration / Yjs) instead of per-user drafts.
 - Search: include library objects; search inside attachments (PDF/Office text extraction).
 - Attachment housekeeping: report files no version references any more.
 - Template variables (e.g. owner, date) filled in when a page is created.
 
-## Phase 3 (governance, portal)
+## Phase 3 follow-ups (governance, portal)
 
-- Restrict the Viewer role to published content only (D-006).
-- Status workflow and reviewer assignment; re-enable status in the process update endpoint (D-014).
-- Playwright end-to-end tests in CI (browser smoke flows were run manually for Phase 1).
+- Run the Playwright smoke tests (`apps/e2e`) in CI against the Docker Compose stack.
+- Parallel approval steps (several groups at once) and conditional steps; delegation / out-of-office for
+  approvers; escalation to a manager when a review is overdue.
+- Email digest (daily summary) instead of one email per event; unsubscribe link in emails.
+- Notifications in real time (Server-Sent Events) instead of polling every minute.
+- Persistent job queue (Redis/BullMQ) for emails and the scheduler when running more than one API instance
+  (today the scheduler runs in every instance; reminders are de-duplicated in the database).
+- Comments: attachments, reactions, comment threads on document paragraphs (today: page level only).
+- Portal: favourites / "follow" an item to get notified of new versions; read confirmations ("I have read
+  this policy") with reports; analytics (most viewed, search terms without results).
+- Portal: a public (no sign-in) mode for selected content.
+- Portal search: synonyms and Arabic normalisation (hamza/alef variants, taa marbuta) beyond the built-in
+  stemmer; search inside attachments.
+- Feedback: attachments and a public status board.
+- Bulk actions on the governance dashboard (re-assign, extend review dates).
 
 ## Phase 6 (hardening)
 
+- Gotenberg service for server-generated PDFs (see "Needs a decision").
 - Optional TOTP two-factor authentication (CLAUDE.md §7 allowed deferral from Phase 1).
 - SSO (Azure AD / OIDC).
 - Slim API runtime image (`pnpm deploy --prod` plus a separate migration step); unprivileged nginx image.

@@ -216,3 +216,100 @@ modules independent of the Git integration.
 
 As decided for Phase 2, Viewers keep full read access (repository and documentation, `docs.read`). Restricting
 them to published content remains a Phase 3 task (D-006).
+
+## D-028 — Viewers use the Knowledge Portal only (Phase 3)
+
+Replaces D-027. The VIEWER role now has a single permission, `portal.read`. Every workspace endpoint
+(processes, models, objects, spaces, pages, search, governance) answers 403 to a Viewer; the web app sends
+portal-only users to `/portal` from any workspace URL. Workspace users who only read (e.g. auditors) get the
+REVIEWER role. The portal endpoints (`/api/v1/portal/*`) are a separate read model that only ever returns
+**current publications** of non-archived, non-deleted items (see D-031), so a Viewer cannot reach draft,
+in-review, approved-but-unpublished or archived content through any endpoint. This is covered by an API test
+that calls every workspace and portal route as a Viewer.
+
+## D-029 — Lifecycle on the item, working copy vs published version
+
+- Processes and pages carry `status` (DRAFT, IN_REVIEW, APPROVED, PUBLISHED, ARCHIVED). Allowed transitions
+  are one table in `packages/shared/src/governance.ts` (`TRANSITIONS`), enforced in the API inside the same
+  transaction as the change (`UPDATE … WHERE status = <expected>`), and audited (`SUBMIT`, `APPROVE`,
+  `REQUEST_CHANGES`, `REJECT`, `PUBLISH`, `ARCHIVE`, …). "Changes requested" and "Rejected" return the item to
+  DRAFT; the review keeps the outcome and the mandatory comment.
+- A review is always for one **saved version** (`Review.versionNumber`); unsaved model changes block
+  submission. While IN_REVIEW or ARCHIVED the item is locked for editing. Editing an APPROVED or PUBLISHED item
+  moves it back to DRAFT (the working copy); the published version stays visible in the portal until a newer
+  version is published.
+- `Publication` is the published snapshot: item, version number, version label (e.g. "v2.0"), approvers and
+  approval date, publisher, and the published title/description/text for search. The next review date is kept
+  on the item. Exactly one row per item has `current = true` (partial unique
+  index). The portal reads only these rows and the linked versions.
+
+## D-030 — Approval workflows
+
+- A workflow is a reusable template of up to 10 sequential steps. Each step has assignees (users, a system role
+  — optionally limited to one department — or "the item's owner") and a rule: `ANY` (one approval completes the
+  step) or `ALL` (everyone must approve). "Auto-publish" publishes on the last approval.
+- Resolution order: the item's own workflow (a template or custom steps for that item only) → the space's (pages) or the process category's (processes) →
+  the global default (Settings → Workflows). No workflow means the item cannot be submitted.
+- Assignees are resolved and **snapshotted** in the review at submission, so later role or workflow changes do
+  not alter a running review. The submitter never approves their own work: they are removed from a step's
+  assignees; if they were the only one, that step counts as approved by submission (recorded as such).
+- Job roles (repository "role" objects, e.g. "Requester") can be assigned to users. They drive "My processes"
+  in the portal; they are not permissions.
+
+## D-031 — Portal read model and search
+
+The portal service builds its responses from `Publication` + the published version's XML/content only, never
+from the working copy. Visibility rules: the portal access setting (all users, or selected departments and
+system roles), Viewer/`portal.read`, and the space's view restrictions (`portalSpaceVisible`). The process tree
+keeps only published nodes and re-attaches children whose parent is not published (`publishedForest`).
+Search uses a generated `tsvector` on `Publication` (English + Arabic configurations, prefix matching,
+`ts_headline` highlighting) with parameterised SQL. Attachments of published pages are served through
+`/portal/attachments/:id/content` only when a current publication references them.
+
+## D-032 — Comments
+
+Comments are threaded (one level of replies), attached to a process or page and optionally to a BPMN element
+id. Mentions are stored inline as `@[Name](userId)` and resolved on the server; only users who may see the
+item are notified. Threads can be resolved and reopened. Authors may edit/delete their own comments;
+`governance.manage` may delete any.
+
+## D-033 — Notifications and email
+
+- In-app notifications are rows (`Notification`) with a type, a link and bilingual parameters; the text is
+  rendered by the web app in the reader's language. Users choose per type whether they also get email.
+- Email goes through SMTP configured in Settings → Email (password AES-256-GCM-encrypted like the Git token,
+  never returned). Templates are bilingual (the recipient's language), HTML-escaped. Sending runs in an
+  in-process queue after the request; failures are logged and never fail the request.
+- `MailTransport` is the only class that talks SMTP. Tests replace it with a fake, so the suite never sends
+  email. Docker Compose includes **Mailpit** (UI on port 8025) and the seed points the demo installation at it.
+- A scheduler in the API (`SCHEDULER_INTERVAL_MINUTES`, default 60; disabled in tests) sends "review due" and
+  "review overdue" reminders for running reviews and periodic review dates. A `dedupeKey` per user and event
+  prevents duplicates across restarts.
+
+## D-034 — Review dates
+
+Publishing sets `nextReviewAt` (publication date + the organisation's review interval, default 12 months);
+the owner can change it in the item's governance settings. Items are DUE within the reminder window (default 14 days) and OVERDUE after the
+date; the owner gets reminders, the governance dashboard and My tasks list them. Confirming "still valid"
+moves the date forward without a new version. Running reviews also have a due date (default 5 days).
+
+## D-035 — Portal PDF stays browser print
+
+As decided (D-024), the portal's "Download PDF" opens a print-optimised view (diagram rendered to SVG with
+bpmn-js, step details, metadata, correct Arabic RTL) and calls the browser's print dialog. No headless browser
+in the API; a Gotenberg service is a Phase 6 option (BACKLOG).
+
+## D-036 — Git "published versions only"
+
+With the option on, the Git export writes only the current published version of each process and page and
+removes items that are not (or no longer) published. Publishing and archiving raise `content.published` /
+`content.unpublished` domain events that trigger the sync. Pages of view-restricted spaces are still never
+exported (D-025).
+
+## D-037 — Playwright smoke tests run against a running stack
+
+`apps/e2e` holds Playwright smoke tests (portal, Viewer restrictions, Arabic RTL, print view, review page,
+dashboard, notifications). They run against a seeded installation (`E2E_BASE_URL`, default
+http://localhost:8080) and only read data or add feedback, so they can be re-run. They are not part of
+`pnpm test` because they need the whole stack; CI integration is in the backlog. `@playwright/test` is pinned
+to the version whose Chromium build is installed in the development containers.
