@@ -134,8 +134,8 @@ export type ProcessStatus = (typeof PROCESS_STATUSES)[number];
 
 export const OBJECT_TYPES = ['ROLE', 'SYSTEM', 'DOCUMENT', 'RISK', 'CONTROL', 'KPI'] as const;
 export type ObjectType = (typeof OBJECT_TYPES)[number];
-/** Object types that have a library UI in Phase 1. */
-export const PHASE1_OBJECT_TYPES: ObjectType[] = ['ROLE', 'SYSTEM'];
+/** Object types that have a library UI (documents since Phase 3: linked to steps in the portal). */
+export const PHASE1_OBJECT_TYPES: ObjectType[] = ['ROLE', 'SYSTEM', 'DOCUMENT'];
 
 export const LINK_RELATIONS = [
   'PERFORMS',

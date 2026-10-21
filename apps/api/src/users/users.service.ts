@@ -109,6 +109,7 @@ export class UsersService {
     this.passwords.assertPolicy(input.password);
     await this.assertEmailFree(input.email);
     if (input.departmentId) await this.assertDepartment(input.departmentId);
+    if (input.jobRoleIds) await this.assertJobRoles(input.jobRoleIds);
     const roleIds = await this.roleIds(input.roles);
     const passwordHash = await this.passwords.hash(input.password);
     const user = await this.prisma.$transaction(async (tx) => {
@@ -123,6 +124,9 @@ export class UsersService {
           createdById: actor.id,
           updatedById: actor.id,
           roles: { create: roleIds.map((roleId) => ({ roleId })) },
+          jobRoles: {
+            create: [...new Set(input.jobRoleIds ?? [])].map((repoObjectId) => ({ repoObjectId })),
+          },
         },
         include,
       });

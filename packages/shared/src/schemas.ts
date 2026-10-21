@@ -106,6 +106,7 @@ export const createUserSchema = z
     locale: localeSchema.default('en'),
     departmentId: uuidSchema.nullable().optional(),
     roles: z.array(z.enum(SYSTEM_ROLE_KEYS)).min(1),
+    jobRoleIds: z.array(uuidSchema).max(20).optional(),
   })
   .superRefine(requireOneName);
 export type CreateUserInput = z.infer<typeof createUserSchema>;

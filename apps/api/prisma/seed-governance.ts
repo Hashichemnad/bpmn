@@ -532,6 +532,11 @@ export async function seedGovernanceDemo(
     submittedAt: days(-9),
     dueAt: days(-4),
   });
+  // The overdue reminder below was already sent.
+  await prisma.review.update({
+    where: { id: otcReview.id },
+    data: { overdueNotifiedAt: days(-3) },
+  });
   await setStatus('PROCESS', P['C.02'].id, 'IN_REVIEW');
   // Service Delivery: approved, waiting to be published.
   await review({
@@ -709,6 +714,8 @@ export async function seedGovernanceDemo(
     createdAt: Date,
     actorId: string | null,
     read = false,
+    // Same keys as the reminder scheduler, so it does not send these again.
+    dedupeKey: string | null = null,
   ) =>
     prisma.notification.create({
       data: {
@@ -721,6 +728,7 @@ export async function seedGovernanceDemo(
         createdAt,
         actorId,
         readAt: read ? createdAt : null,
+        dedupeKey,
       },
     });
   const reqLink = `/processes/${P['S.01.01'].id}`;
@@ -782,6 +790,8 @@ export async function seedGovernanceDemo(
     `/reviews/${otcReview.id}`,
     days(-3),
     null,
+    false,
+    `REVIEW_OVERDUE:review:${otcReview.id}`,
   );
   await n(
     users.owner,
@@ -806,6 +816,8 @@ export async function seedGovernanceDemo(
     `/processes/${P['M.01'].id}`,
     days(-34),
     null,
+    false,
+    `REVIEW_OVERDUE:PROCESS:${P['M.01'].id}:${days(-35).toISOString().slice(0, 10)}`,
   );
   await n(
     users.owner,

@@ -232,6 +232,8 @@ export interface SpaceDto {
   department: DepartmentRef | null;
   viewRestricted: boolean;
   editRestricted: boolean;
+  /** Default approval workflow of the space's pages. */
+  workflowId: string | null;
   pageCount: number;
   canEdit: boolean;
   canManage: boolean;
