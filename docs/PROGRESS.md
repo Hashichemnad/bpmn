@@ -23,7 +23,7 @@ Steps (tick as they are committed; a new session continues at the first unticked
 
 - [x] 1. API/shared defaults: `mfaRequiredRoles` = Super Admin + Admin, refresh token lifetime
       `REFRESH_TOKEN_TTL_HOURS` (default 24), roles from the directory only on first sign-in; tests.
-- [ ] 2. Web: Settings → Authentication hints for the new defaults; EN/AR.
+- [x] 2. Web: Settings → Authentication hints for the new defaults; EN/AR.
 - [ ] 3. Node 22 LTS: Dockerfiles, CI, `.nvmrc`, `engines`, `@types/node`, README, CLAUDE.md §4.
 - [ ] 4. Docs: DECISIONS D-061 – D-066, DEPLOYMENT.md (break-glass procedure, Conditional Access request),
       SECURITY.md, BACKLOG, CLAUDE.md phase table.
