@@ -1,0 +1,4 @@
+# Daily ProcessHub backup at 02:30 server time (docs/DEPLOYMENT.md "Backups").
+# Install:  sudo cp deploy/processhub-backup.cron /etc/cron.d/processhub-backup
+# Adjust the folder if ProcessHub is not installed in /opt/processhub. cron needs the trailing newline.
+30 2 * * * root /opt/processhub/scripts/backup.sh >> /var/log/processhub-backup.log 2>&1

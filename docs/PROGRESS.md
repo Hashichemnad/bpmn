@@ -27,8 +27,15 @@ Steps (tick as they are committed; a new session continues at the first unticked
       required in production (Compose refuses to start without them, so they live in `.env` and are backed up
       with it); `COMPOSE_FILE` in `.env` makes plain `docker compose` use the production file; the script
       only fills `__GENERATE__` values (safe to re-run), sets `chmod 600`, prints the first admin password once.
-- [ ] 4. `scripts/backup.sh` / `scripts/restore.sh` (PostgreSQL dump + file storage + key fingerprint), daily
-      schedule example; restore tested end to end on the production stack.
+- [x] 4. `scripts/backup.sh` / `scripts/restore.sh` (PostgreSQL dump + file storage + key fingerprint), daily
+      schedule example; restore tested end to end on the production stack. **Done:** `backup.sh` (dump checked
+      with `pg_restore --list`, storage volume as `tar.gz`, `MANIFEST.txt` with the encryption-key fingerprint,
+      `SHA256SUMS`, retention `BACKUP_KEEP_DAYS`, optional `--with-env`), `restore.sh` (checksums, key
+      fingerprint warning, typed confirmation, automatic `pre-restore` backup, drop/recreate database, replace
+      files, wait for the API), `deploy/processhub-backup.cron` (02:30 daily). **Disaster drill passed:**
+      `docker compose down -v` → fresh empty stack → restore (33 s) → the Arabic page and the 8 MB attachment
+      are back byte for byte. Damaged backup, different key and "no" at the prompt are refused/warned.
+      Migration script also verified on the production stack (internal network). `shellcheck` clean.
 - [ ] 5. `docs/DEPLOYMENT.md` for a non-developer IT person.
 - [ ] 6. Verification (tests, lint, type-check, prod stack in Docker), docs (DECISIONS, BACKLOG, README,
       SECURITY, CLAUDE.md phase table), push.

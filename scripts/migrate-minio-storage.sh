@@ -15,6 +15,7 @@
 # Environment overrides: OLD_VOLUME, BUCKET (default: the API's MINIO_BUCKET or processhub),
 #                         MINIO_IMAGE (old image), RCLONE_IMAGE.
 set -eu
+# shellcheck source=scripts/lib.sh
 . "$(dirname "$0")/lib.sh"
 
 MINIO_IMAGE=${MINIO_IMAGE:-bitnamilegacy/minio:2025.4.22}
@@ -80,6 +81,7 @@ cleanup
 if [ -n "$API" ]; then
   info "Starting the API again"
   compose up -d api
+  wait_healthy api 300
 fi
 info "Done: ${COUNT:-?} file(s) are in the new storage. The old volume '$OLD_VOLUME' is kept;"
 info "delete it after checking attachments and logos in ProcessHub: docker volume rm $OLD_VOLUME"
