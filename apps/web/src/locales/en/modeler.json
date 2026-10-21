@@ -43,11 +43,13 @@
   "noObjects": "Nothing found — add it to the library first",
   "add": {
     "ROLE": "Add a role…",
-    "SYSTEM": "Add an IT system…"
+    "SYSTEM": "Add an IT system…",
+    "DOCUMENT": "Add a document…"
   },
   "linked": {
     "ROLE": "Performed by (roles)",
-    "SYSTEM": "Supported by (IT systems)"
+    "SYSTEM": "Supported by (IT systems)",
+    "DOCUMENT": "Documents (input / output)"
   },
   "severity": {
     "warning": "Warning",
@@ -100,5 +102,14 @@
   "autosaving": "Saving draft…",
   "latestVersion": "Latest version: v{{number}} ({{time}})",
   "noVersionYet": "No version saved yet",
-  "restoreText": "The model of this version becomes the working model and the new version {{next}}. No version is deleted; unsaved canvas changes are replaced."
+  "restoreText": "The model of this version becomes the working model and the new version {{next}}. No version is deleted; unsaved canvas changes are replaced.",
+  "description": {
+    "en": "Description (English)",
+    "ar": "Description (Arabic)",
+    "hint": "Shown when staff click the step in the Knowledge Portal."
+  },
+  "commentsTab": "Comments",
+  "commentsAll": "All comments of the process. Select a step to see and add comments on it.",
+  "commentCount_one": "{{count}} open comment",
+  "commentCount_other": "{{count}} open comments"
 }

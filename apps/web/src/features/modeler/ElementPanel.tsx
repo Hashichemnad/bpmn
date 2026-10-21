@@ -102,12 +102,17 @@ export function ElementPanel({ instance, element, process, links, canEdit }: Pro
   const deleteLink = useDeleteLink(process.id);
   const tree = useProcessTree();
   const [names, setNames] = useState({ nameEn: '', nameAr: '' });
+  const [desc, setDesc] = useState({ descriptionEn: '', descriptionAr: '' });
 
   const bo = element?.businessObject;
   useEffect(() => {
     if (!bo) return;
     const l = readLabels(bo);
     setNames({ nameEn: l.nameEn ?? '', nameAr: l.nameAr ?? '' });
+    setDesc({
+      descriptionEn: (bo.get('ph:descriptionEn') as string | undefined) ?? '',
+      descriptionAr: (bo.get('ph:descriptionAr') as string | undefined) ?? '',
+    });
   }, [bo, version]);
 
   const processTree = useMemo(() => {
@@ -154,6 +159,13 @@ export function ElementPanel({ instance, element, process, links, canEdit }: Pro
     if ((bo.name ?? '') !== display) modeling.updateLabel(element, display || null);
   };
 
+  const commitDescription = (field: 'descriptionEn' | 'descriptionAr') => {
+    if (!modeling) return;
+    const value = desc[field].trim();
+    if (((bo.get(`ph:${field}`) as string | undefined) ?? '') === value) return;
+    modeling.updateModdleProperties(element, bo, { [`ph:${field}`]: value || undefined });
+  };
+
   const elementLinks = links.filter((l) => l.bpmnElementId === element.id);
   const linkSection = (type: ObjectType) => {
     const items = elementLinks.filter((l) => l.repoObject.type === type);
@@ -165,7 +177,7 @@ export function ElementPanel({ instance, element, process, links, canEdit }: Pro
           {items.map((l) => (
             <Tag
               key={l.id}
-              color={type === 'ROLE' ? 'purple' : 'cyan'}
+              color={type === 'ROLE' ? 'purple' : type === 'SYSTEM' ? 'cyan' : 'gold'}
               closable={canEdit}
               onClose={(e) => {
                 e.preventDefault();
@@ -230,6 +242,34 @@ export function ElementPanel({ instance, element, process, links, canEdit }: Pro
             onBlur={() => commitName('ar')}
           />
         </Form.Item>
+        {element.type !== 'bpmn:SequenceFlow' && (
+          <>
+            <Form.Item label={t('modeler:description.en')} extra={t('modeler:description.hint')}>
+              <Input.TextArea
+                dir="ltr"
+                lang="en"
+                autoSize={{ minRows: 2, maxRows: 8 }}
+                maxLength={2000}
+                value={desc.descriptionEn}
+                readOnly={!canEdit}
+                onChange={(e) => setDesc((d) => ({ ...d, descriptionEn: e.target.value }))}
+                onBlur={() => commitDescription('descriptionEn')}
+              />
+            </Form.Item>
+            <Form.Item label={t('modeler:description.ar')}>
+              <Input.TextArea
+                dir="rtl"
+                lang="ar"
+                autoSize={{ minRows: 2, maxRows: 8 }}
+                maxLength={2000}
+                value={desc.descriptionAr}
+                readOnly={!canEdit}
+                onChange={(e) => setDesc((d) => ({ ...d, descriptionAr: e.target.value }))}
+                onBlur={() => commitDescription('descriptionAr')}
+              />
+            </Form.Item>
+          </>
+        )}
       </Form>
 
       {canDrillDown(element) && (
@@ -283,6 +323,7 @@ export function ElementPanel({ instance, element, process, links, canEdit }: Pro
           <Divider style={{ margin: '12px 0' }} />
           {linkSection('ROLE')}
           {linkSection('SYSTEM')}
+          {linkSection('DOCUMENT')}
         </>
       )}
     </div>

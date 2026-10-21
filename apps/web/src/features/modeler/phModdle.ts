@@ -2,6 +2,7 @@
  * bpmn-moddle extension for ProcessHub attributes stored in the BPMN XML:
  *   ph:nameEn / ph:nameAr       — bilingual labels (the standard `name` mirrors the active language)
  *   ph:linkedProcessId          — repository process a call activity / sub-process drills down into
+ *   ph:descriptionEn / Ar       — step description shown in the Knowledge Portal
  */
 export const PH_NAMESPACE = 'http://processhub.io/schema/bpmn';
 
@@ -19,6 +20,8 @@ export const phModdleDescriptor = {
         { name: 'nameEn', isAttr: true, type: 'String' },
         { name: 'nameAr', isAttr: true, type: 'String' },
         { name: 'linkedProcessId', isAttr: true, type: 'String' },
+        { name: 'descriptionEn', isAttr: true, type: 'String' },
+        { name: 'descriptionAr', isAttr: true, type: 'String' },
       ],
     },
   ],
