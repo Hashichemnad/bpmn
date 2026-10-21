@@ -2,12 +2,12 @@
 
 Read this together with `CLAUDE.md` at the start of every session.
 
-## Phase 6 — Hardening (in progress, branch `phase-6-part-1`)
+## Current state — 2026-10-21 (Phase 6 — Hardening, branch `phase-6-part-1`)
 
 Phase 6 is split into small parts, one branch each (`phase-6-part-<n>` from the latest `main`). The AI phase
 is merged into `main`.
 
-### Part 1 — Security review and fixes (in progress)
+### Part 1 — Security review and fixes (done, awaiting review)
 
 Steps (tick as they are committed; a new session continues at the first unticked one):
 
@@ -41,8 +41,36 @@ Steps (tick as they are committed; a new session continues at the first unticked
       `js-yaml` ≥ 5.4.1 via an override (from `@nestjs/swagger`). `pnpm audit --prod`: no high/critical,
       4 moderate in MinIO's `stream-json` / `decode-uri-component` (code paths not used — SECURITY.md).
       Full audit: 1 high, `braces` via Jest (dev-only, no fixed version exists) — decision needed.
-- [ ] 7. `docs/SECURITY.md` (endpoint table generated from the inventory and kept in sync by a test), docs,
-      final checks
+- [x] 7. `docs/SECURITY.md`: scope and method, findings SEC-01 – SEC-09 with status, controls per OWASP
+      category, rate limits, the endpoint table (generated; `route-security.e2e-spec.ts` fails when it is out
+      of date, when an input is unvalidated or a route lacks an access declaration), remaining risks, go-live
+      configuration checklist and an external penetration-test checklist. DECISIONS D-047 – D-050, BACKLOG,
+      README (security highlights, `OUTBOUND_ALLOWED_HOSTS`), CLAUDE.md phase table updated.
+
+#### Verification (part 1)
+
+| Check                                              | Result                                                                                                                                                                         |
+| -------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `pnpm format:check`, `pnpm lint`, `pnpm typecheck` | clean (lint found `react-refresh` warnings hidden by the removed `ROUTER_FUTURE` export; fixed by moving the route guard components to `apps/web/src/app/RouteGuards.tsx`)     |
+| `pnpm test`                                        | **332 tests pass** — shared 64, web 31, API 237 (34 suites; new: `authorization-matrix`, `security` e2e, `outbound` unit, route-security extended, SVG and GCM-tag unit tests) |
+| `pnpm build`                                       | passes                                                                                                                                                                         |
+| `pnpm e2e` (Playwright, Vite dev + built API)      | 8 smoke tests pass on React Router 7 (also exercises the CSRF origin check through the Vite proxy)                                                                             |
+| nginx                                              | `nginx -t` passes in `nginx:1.27-alpine`; `/`, `/assets/…` and SPA routes all return CSP, Permissions-Policy, COOP, X-Frame-Options                                            |
+| SMTP through the SSRF guard                        | real delivery to Mailpit when allowed (connects to the checked IP with `servername`); refused when not listed                                                                  |
+| `pnpm audit --prod`                                | no high/critical; 4 moderate (MinIO transitive, unused paths — SEC-09). Full audit: 1 high `braces` (dev-only via Jest, no fix — SEC-08)                                       |
+
+Not run in this session: `docker compose up` from a clean clone (MinIO image not reachable from the sandbox).
+The compose change is one environment line (`OUTBOUND_ALLOWED_HOSTS`, default `mailpit`); the web image now
+copies `nginx-security-headers.conf` — build it once before merging.
+
+### Next (continue here)
+
+1. Review and merge `phase-6-part-1`; run `docker compose up --build` once (new nginx snippet, new env var).
+2. Decisions for you: `braces` (BACKLOG "Needs a decision"); whether TLS/HSTS will be handled by your own
+   reverse proxy (the deployment guide part will document it either way).
+3. Next Phase 6 parts (suggested order): TOTP two-factor and SSO (Azure AD / OIDC); slim API runtime image
+   (removes dev dependencies, SEC-08); performance; deployment guide; external penetration test with
+   `docs/SECURITY.md` §8.
 
 ## AI phase — 2026-10-21 (merged into `main`)
 
