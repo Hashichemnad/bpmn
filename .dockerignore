@@ -2,6 +2,6 @@
 **/dist
 **/coverage
 .git
-.env
-.env.*
+**/.env
+**/.env.*
 !.env.example
