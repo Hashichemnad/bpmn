@@ -1,6 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { createTransport } from 'nodemailer';
 import { APP_CONFIG, type AppConfig } from '../config/config';
+import { OutboundPolicy } from '../common/outbound';
 
 export interface SmtpConfig {
   host: string;
@@ -21,15 +22,22 @@ export interface MailMessage {
 
 /**
  * Sends one email. Replaced by an in-memory outbox in tests, so the test suite never sends
- * real email.
+ * real email. The SMTP host must not be internal unless allowed (OUTBOUND_ALLOWED_HOSTS); the
+ * checked address is the one connected to, and TLS still verifies the configured host name.
  */
 @Injectable()
 export class MailTransport {
-  constructor(@Inject(APP_CONFIG) private readonly config: AppConfig) {}
+  private readonly policy: OutboundPolicy;
+
+  constructor(@Inject(APP_CONFIG) private readonly config: AppConfig) {
+    this.policy = new OutboundPolicy(config.outboundAllowedHosts);
+  }
 
   async send(smtp: SmtpConfig, msg: MailMessage): Promise<void> {
+    const { address } = await this.policy.resolve(smtp.host);
     const transport = createTransport({
-      host: smtp.host,
+      host: address,
+      servername: smtp.host,
       port: smtp.port,
       secure: smtp.secure,
       auth: smtp.username ? { user: smtp.username, pass: smtp.password ?? '' } : undefined,

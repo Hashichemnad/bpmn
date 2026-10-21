@@ -24,7 +24,13 @@ Steps (tick as they are committed; a new session continues at the first unticked
       `dangerouslySetInnerHTML` anywhere), emails (escaped, links from `APP_URL`), downloads
       (`attachment`, `nosniff`, `sandbox` CSP). Fixed: SVG logos lose external CSS references
       (`@import`, `url(https://…)`), logo response gets `sandbox`; more SVG vectors in the unit test.
-- [ ] 4. Uploads, path traversal, SSRF in Git / AI / SMTP (block internal addresses unless allowed)
+- [x] 4. Uploads (allow-list + magic bytes + size limits — fine), path traversal (process codes / space
+      keys are regex-checked, Git paths drop `..`, storage keys are UUIDs — fine). **SSRF fixed**:
+      `src/common/outbound.ts` blocks internal addresses for Git (GitLab / GitHub Enterprise URL) and SMTP
+      unless listed in the new `OUTBOUND_ALLOWED_HOSTS` (Compose default `mailpit`); the checked address is
+      the one connected to (no DNS rebinding); plain `http://` Git URLs only for allowed hosts; redirects are
+      never followed; new error code `GIT_HOST_BLOCKED` (EN/AR). The AI provider URL is not configurable in
+      the UI (only `ANTHROPIC_BASE_URL` in the environment).
 - [ ] 5. Secrets in logs / errors / responses; encrypted fields
 - [ ] 6. Dependencies (`pnpm audit`)
 - [ ] 7. `docs/SECURITY.md` (endpoint table generated from the inventory and kept in sync by a test), docs,

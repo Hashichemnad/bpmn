@@ -53,6 +53,7 @@
   "GIT_RATE_LIMITED": "The Git provider is limiting requests. Try again later.",
   "GIT_CONFLICT": "The branch changed during the sync. Retry.",
   "GIT_NETWORK": "The Git server could not be reached.",
+  "GIT_HOST_BLOCKED": "The Git server is on an internal network address, which is blocked. An administrator can allow it with OUTBOUND_ALLOWED_HOSTS.",
   "GIT_NOT_CONFIGURED": "The integration is not fully configured (repository, branch or token missing).",
   "GIT_SOURCE_MISSING": "The item to synchronise no longer exists.",
   "GIT_UNKNOWN": "The Git provider returned an unexpected error.",

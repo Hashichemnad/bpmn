@@ -1,5 +1,8 @@
 import { Inject, Injectable } from '@nestjs/common';
+import { request as httpRequest, type IncomingMessage } from 'node:http';
+import { request as httpsRequest } from 'node:https';
 import { APP_CONFIG, type AppConfig } from '../../config/config';
+import { OutboundBlockedError, OutboundPolicy } from '../../common/outbound';
 import { GitError } from './types';
 
 export interface HttpResponse {
@@ -14,43 +17,93 @@ export interface HttpRequest {
   body?: unknown;
 }
 
+/** Largest response body read from a Git provider (tree listings of big repositories). */
+const MAX_RESPONSE_BYTES = 50 * 1024 * 1024;
+
 /**
  * The only place that talks to GitHub / GitLab over the network. Tests replace it,
- * so the test suite never calls real services.
+ * so the test suite never calls real services. Internal addresses are refused unless allowed
+ * (OUTBOUND_ALLOWED_HOSTS); redirects are never followed; plain http only for allowed hosts.
  */
 @Injectable()
 export class GitHttp {
-  constructor(@Inject(APP_CONFIG) private readonly config: AppConfig) {}
+  private readonly policy: OutboundPolicy;
+
+  constructor(@Inject(APP_CONFIG) private readonly config: AppConfig) {
+    this.policy = new OutboundPolicy(config.outboundAllowedHosts);
+  }
 
   async request(url: string, req: HttpRequest = {}): Promise<HttpResponse> {
-    let res: Response;
-    try {
-      res = await fetch(url, {
-        method: req.method ?? 'GET',
-        headers: {
-          Accept: 'application/json',
-          'User-Agent': 'ProcessHub',
-          ...(req.body !== undefined ? { 'Content-Type': 'application/json' } : {}),
-          ...req.headers,
-        },
-        body: req.body !== undefined ? JSON.stringify(req.body) : undefined,
-        redirect: 'error',
-        signal: AbortSignal.timeout(this.config.GIT_HTTP_TIMEOUT_MS),
-      });
-    } catch (err) {
+    const target = new URL(url);
+    if (target.protocol !== 'https:' && !this.policy.allowsHost(target.hostname)) {
       throw new GitError(
-        'GIT_NETWORK',
-        `Cannot reach ${new URL(url).host}: ${(err as Error).message}`,
+        'GIT_HOST_BLOCKED',
+        `Plain HTTP is only allowed for OUTBOUND_ALLOWED_HOSTS (${target.host})`,
       );
     }
-    const text = await res.text();
-    let body: unknown = text;
+    const payload = req.body !== undefined ? JSON.stringify(req.body) : undefined;
+    let res: { status: number; headers: Headers; text: string };
     try {
-      body = text ? JSON.parse(text) : null;
+      // Checked before connecting (an IP literal skips `lookup`); `lookup` pins host names.
+      await this.policy.resolve(target.hostname);
+      res = await this.send(target, req, payload);
+    } catch (err) {
+      if (err instanceof OutboundBlockedError) throw new GitError('GIT_HOST_BLOCKED', err.message);
+      throw new GitError('GIT_NETWORK', `Cannot reach ${target.host}: ${(err as Error).message}`);
+    }
+    let body: unknown = res.text;
+    try {
+      body = res.text ? JSON.parse(res.text) : null;
     } catch {
       /* not JSON */
     }
     return { status: res.status, headers: res.headers, body };
+  }
+
+  private send(target: URL, req: HttpRequest, payload: string | undefined) {
+    const send = target.protocol === 'https:' ? httpsRequest : httpRequest;
+    return new Promise<{ status: number; headers: Headers; text: string }>((resolve, reject) => {
+      const r = send(
+        target,
+        {
+          method: req.method ?? 'GET',
+          headers: {
+            Accept: 'application/json',
+            'User-Agent': 'ProcessHub',
+            ...(payload !== undefined
+              ? { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(payload) }
+              : {}),
+            ...req.headers,
+          },
+          lookup: this.policy.lookup(),
+          timeout: this.config.GIT_HTTP_TIMEOUT_MS,
+        },
+        (res: IncomingMessage) => {
+          const chunks: Buffer[] = [];
+          let size = 0;
+          res.on('data', (c: Buffer) => {
+            size += c.length;
+            if (size > MAX_RESPONSE_BYTES) r.destroy(new Error('response too large'));
+            else chunks.push(c);
+          });
+          res.on('end', () => {
+            const headers = new Headers();
+            for (const [k, v] of Object.entries(res.headers)) {
+              if (v !== undefined) headers.set(k, Array.isArray(v) ? v.join(', ') : v);
+            }
+            resolve({
+              status: res.statusCode ?? 0,
+              headers,
+              text: Buffer.concat(chunks).toString('utf8'),
+            });
+          });
+          res.on('error', reject);
+        },
+      );
+      r.on('timeout', () => r.destroy(new Error('timeout')));
+      r.on('error', reject);
+      r.end(payload);
+    });
   }
 }
 
