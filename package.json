@@ -1,0 +1,44 @@
+{
+  "name": "processhub",
+  "private": true,
+  "version": "0.1.0",
+  "description": "ProcessHub — bilingual (Arabic/English) business process management platform",
+  "packageManager": "pnpm@10.28.0",
+  "engines": {
+    "node": ">=20.11"
+  },
+  "scripts": {
+    "build": "pnpm -r --filter @processhub/shared build && pnpm -r --filter=!@processhub/shared build",
+    "dev:api": "pnpm --filter @processhub/api dev",
+    "dev:web": "pnpm --filter @processhub/web dev",
+    "lint": "eslint . --max-warnings=0",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "typecheck": "pnpm --filter @processhub/shared build && pnpm -r typecheck",
+    "test": "pnpm --filter @processhub/shared build && pnpm -r test",
+    "db:migrate": "pnpm --filter @processhub/api prisma:migrate",
+    "db:seed": "pnpm --filter @processhub/api seed"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.39.0",
+    "eslint": "^9.39.0",
+    "eslint-config-prettier": "^10.1.0",
+    "eslint-plugin-react-hooks": "^5.2.0",
+    "eslint-plugin-react-refresh": "^0.4.20",
+    "globals": "^16.0.0",
+    "prettier": "^3.6.0",
+    "typescript": "~5.9.3",
+    "typescript-eslint": "^8.46.0"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "@nestjs/core",
+      "@prisma/client",
+      "@prisma/engines",
+      "argon2",
+      "esbuild",
+      "prisma"
+    ]
+  }
+}
