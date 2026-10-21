@@ -2,7 +2,28 @@
 
 Read this together with `CLAUDE.md` at the start of every session.
 
-## Current state — 2026-10-21 (AI phase, branch `phase-ai-assistant`)
+## Phase 6 — Hardening (in progress, branch `phase-6-part-1`)
+
+Phase 6 is split into small parts, one branch each (`phase-6-part-<n>` from the latest `main`). The AI phase
+is merged into `main`.
+
+### Part 1 — Security review and fixes (in progress)
+
+Steps (tick as they are committed; a new session continues at the first unticked one):
+
+- [x] 1. Route inventory (`apps/api/test/route-inventory.ts`) and authorisation matrix
+      (`test/authorization-matrix.e2e-spec.ts`): every mutating route called as Viewer / Auditor / Reviewer
+      on the demo seed (items in every state, a view-restricted space) changes nothing; Viewers get 403/404 on
+      every workspace GET. No gaps found.
+- [ ] 2. Headers / CSP, CORS, cookies, CSRF review (API + nginx)
+- [ ] 3. XSS: rich text, BPMN labels, SVG uploads, AI output, email templates
+- [ ] 4. Uploads, path traversal, SSRF in Git / AI / SMTP (block internal addresses unless allowed)
+- [ ] 5. Secrets in logs / errors / responses; encrypted fields
+- [ ] 6. Dependencies (`pnpm audit`)
+- [ ] 7. `docs/SECURITY.md` (endpoint table generated from the inventory and kept in sync by a test), docs,
+      final checks
+
+## AI phase — 2026-10-21 (merged into `main`)
 
 **Phase "AI" (M16 AI Assistant) is complete on branch `phase-ai-assistant`, awaiting review.** Phases 1–3 are
 merged into `main`. The brief was built in three parts, committed separately (A, B, C) — all done, documented in
