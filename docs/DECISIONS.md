@@ -331,3 +331,61 @@ A new permission `reviews.decide` (all roles except Auditor and Viewer) is requi
 workflow approver and to record a decision, so read-only users can never approve — even when named in a
 workflow. Read-only roles cannot be a workflow role assignee (schema check). Space view restrictions still
 apply to Auditors; administrators grant the Auditor role access to restricted spaces where needed.
+
+## D-040 — AI platform layer (M16)
+
+- One NestJS module `ai`: `AiGatewayService` is the only way features reach a model. A provider
+  interface (`AiProviderClient`: one `complete()` call with optional streaming text and JSON schema)
+  keeps the rest provider-agnostic; `AiProviders` is the registry (tests replace it with `FakeAi`).
+- First provider: **Anthropic Claude** through the official `@anthropic-ai/sdk`, streaming
+  (`messages.stream` → `finalMessage()`), system prompts marked for prompt caching, `effort` per
+  feature (low for translation/summaries, medium for generation) and the server-side refusal
+  fallback (`fallbacks: "default"`, beta `server-side-fallback-2026-07-01`; a no-op on models
+  without one). A refusal becomes `AI_REFUSED`. SDK errors are mapped to `AI_*` codes; raw provider
+  messages and the key are never sent to the browser.
+- Default models as decided by the product owner: `claude-sonnet-5-5` (main) and
+  `claude-haiku-5-5` (fast: label/field translation). Both are free-text settings.
+- Data the model returns is requested as **structured output** (`output_config.format` with a JSON
+  schema), then parsed and validated on the server (zod + semantic checks). When invalid, the model
+  gets **one** repair attempt with the list of problems; the attempts are logged as one request.
+- Responses are streamed to the browser as **Server-Sent Events** over a POST (`fetch` reader, so
+  CSRF and cookies work as usual): `progress` / `delta`, then one `result` or `error`. Access,
+  permissions and limits are checked before the stream starts, so they are ordinary JSON 403/429.
+  nginx has an unbuffered location for `/api/v1/ai/` with a 300 s read timeout.
+
+## D-041 — AI settings, access, limits and logging
+
+- Setting `ai` (Super Admin, Settings → AI): enabled (default **off**), provider, model, fast model,
+  API key (AES-256-GCM with `INTEGRATIONS_ENCRYPTION_KEY`, write-only, never returned or logged),
+  roles allowed to use the assistant, requests per user per UTC day, requests per organisation per
+  UTC month (0 = no limit), the data notice (EN/AR) and suggestion chips per feature.
+- A user may use AI when it is enabled and one of their roles is allowed. Otherwise `GET /ai/status`
+  says so (the UI hides every ✨ AI entry point) and every AI endpoint returns 403
+  (`AI_DISABLED` / `AI_NOT_ALLOWED`); limits return 429 (`AI_USER_LIMIT` / `AI_ORG_LIMIT`).
+  Feature-specific rights still apply (e.g. editing the model you generate into).
+- Every request → one `AiUsage` row (user, feature, model, input/output tokens, status, error code,
+  duration, item) and an `AI_REQUEST` audit entry. The audit entry records the prompt size, never
+  the prompt (it may contain confidential content). Connection tests are logged but do not count
+  against the limits. New permission `ai.usage.read` (Admins, Super Admins, Auditors) for the
+  **AI usage** page (totals per user, feature, model and month).
+
+## D-042 — Generated BPMN: structure first, layout on the server
+
+The model never writes XML or coordinates. It returns a structured process (lanes, typed nodes,
+flows, bilingual labels/descriptions, IT system per step) that is validated (ids, references, one
+reachable start, end events, connections). The server builds BPMN 2.0 XML with `ph:nameEn/Ar`
+labels, a pool with one lane per role, and diagram interchange from a **layered (Sugiyama-style)
+layout**: columns = longest path without back edges, rows per lane, orthogonal edges, loops routed
+below. `bpmn-auto-layout` was evaluated and not used: it ignores lanes and is ESM-only (the API is
+CommonJS). The XML is read back (jsdom XML parser) to prove it parses and is checked with the shared
+validation rules; warnings are shown with the preview. Lanes and IT systems are matched to the
+library by normalised name (Arabic letter variants unified) and proposed as links (PERFORMS /
+SUPPORTS) that the user confirms. The result is never saved until the user accepts the preview.
+
+## D-043 — "AI-generated" flag
+
+`Process.aiGenerated` / `Page.aiGenerated` are set when the saved content is exactly what the
+assistant produced (the client sends `aiGenerated: true` with the save) and cleared by any later
+human save, by restoring a version and by an approval. While set, the process, modeler, page and
+editor show "AI-generated — review before publishing". Published content is always approved, so the
+portal never shows the badge.

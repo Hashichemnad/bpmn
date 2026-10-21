@@ -111,3 +111,65 @@ export async function api<T>(path: string, opts: RequestOptions = {}): Promise<T
   const type = res.headers.get('content-type') ?? '';
   return (type.includes('application/json') ? res.json() : res.text()) as Promise<T>;
 }
+
+/** One Server-Sent Event of a streamed request. */
+export interface StreamEvent {
+  event: string;
+  data: unknown;
+}
+
+/**
+ * POSTs JSON and reads a Server-Sent Events response (AI requests). Errors before the stream
+ * starts (403, 429, …) are thrown as ApiError like `api()`; events are passed to `onEvent`.
+ */
+export async function apiStream(
+  path: string,
+  body: unknown,
+  onEvent: (e: StreamEvent) => void,
+  signal?: AbortSignal,
+  retried = false,
+): Promise<void> {
+  const res = await fetch(buildUrl(path), {
+    method: 'POST',
+    headers: {
+      Accept: 'text/event-stream',
+      'Content-Type': 'application/json',
+      [CSRF_HEADER]: await csrfToken(),
+    },
+    body: JSON.stringify(body),
+    credentials: 'same-origin',
+    signal,
+  });
+  if (res.status === 401 && !retried) {
+    if (await refreshSession()) return apiStream(path, body, onEvent, signal, true);
+    sessionExpiredListeners.forEach((fn) => fn());
+  }
+  if (!res.ok || !res.body) {
+    let err: Partial<ApiErrorBody> = {};
+    try {
+      err = (await res.json()) as ApiErrorBody;
+    } catch {
+      /* non-JSON error */
+    }
+    throw new ApiError(res.status, err.code ?? 'ERROR', err.message ?? res.statusText, err.details);
+  }
+  const reader = res.body.pipeThrough(new TextDecoderStream()).getReader();
+  let buffer = '';
+  for (;;) {
+    const { value, done } = await reader.read();
+    if (done) break;
+    buffer += value;
+    let end: number;
+    while ((end = buffer.indexOf('\n\n')) >= 0) {
+      const block = buffer.slice(0, end);
+      buffer = buffer.slice(end + 2);
+      let event = 'message';
+      const data: string[] = [];
+      for (const line of block.split('\n')) {
+        if (line.startsWith('event: ')) event = line.slice(7);
+        else if (line.startsWith('data: ')) data.push(line.slice(6));
+      }
+      if (data.length) onEvent({ event, data: JSON.parse(data.join('\n')) });
+    }
+  }
+}

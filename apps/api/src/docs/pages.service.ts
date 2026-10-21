@@ -186,6 +186,7 @@ export class PagesService {
       createdBy: page.createdById ? (users.get(page.createdById) ?? null) : null,
       updatedBy: page.updatedById ? (users.get(page.updatedById) ?? null) : null,
       createdAt: page.createdAt.toISOString(),
+      aiGenerated: page.aiGenerated,
       canEdit: access.canEdit,
       canManage: access.canManage,
     };
@@ -291,7 +292,8 @@ export class PagesService {
     const versionNumber = page.version + 1;
     await tx.page.update({
       where: { id: page.id },
-      data: { ...content, version: versionNumber, updatedById: actor.id },
+      // A new version is human-made unless save() marks it as AI-generated.
+      data: { ...content, version: versionNumber, updatedById: actor.id, aiGenerated: false },
     });
     const v = await tx.pageVersion.create({
       data: {
@@ -356,6 +358,7 @@ export class PagesService {
     const version = await this.prisma.$transaction(async (tx) => {
       await markEdited(tx, 'PAGE', id, actor.id);
       const v = await this.writeVersion(tx, page, content, input.changeNote, actor);
+      await tx.page.update({ where: { id }, data: { aiGenerated: !!input.aiGenerated } });
       await this.audit.log(
         {
           action: 'VERSION',
@@ -368,6 +371,7 @@ export class PagesService {
             titleEn: content.titleEn,
             titleAr: content.titleAr,
             bytes: content.contentEn.length + content.contentAr.length,
+            ...(input.aiGenerated ? { aiGenerated: true } : {}),
           },
           meta,
         },

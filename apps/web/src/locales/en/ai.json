@@ -1,0 +1,143 @@
+{
+  "button": "AI",
+  "tryExample": "Try:",
+  "working": "The assistant is working…",
+  "received": "{{chars}} characters received",
+  "retry": "Try again",
+  "badge": {
+    "label": "AI-generated — review before publishing",
+    "hint": "This content was produced by the AI assistant and has not been edited or approved by a person yet. Check it carefully."
+  },
+  "menu": {
+    "generate": "Generate diagram from a description",
+    "translateToAr": "Translate missing labels into Arabic",
+    "translateToEn": "Translate missing labels into English"
+  },
+  "generate": {
+    "title": "Generate a process with AI",
+    "intro": "Describe the process in your own words — who is involved, the main steps, decisions and systems. Arabic or English. The assistant builds a BPMN diagram with lanes and labels in both languages; you review it before anything is saved.",
+    "placeholder": "e.g. Build a process for employee onboarding with HR, IT and the line manager. HR creates the employee record in SAP, IT prepares the laptop and accounts…",
+    "submit": "Generate",
+    "working": "Designing the process…",
+    "editPrompt": "Edit description",
+    "regenerate": "Regenerate",
+    "insert": "Insert into diagram",
+    "inserted": "The generated diagram was inserted and saved as a draft.",
+    "useForNew": "Use for the new process",
+    "fromDescription": "Generate from a description",
+    "attached_one": "A generated diagram with {{count}} suggested link will be saved as the draft model.",
+    "attached_other": "A generated diagram with {{count}} suggested links will be saved as the draft model.",
+    "replaces": "Inserting replaces the current diagram. Save a version first if you want to keep it.",
+    "untitled": "Generated process",
+    "counts": "Lanes: {{lanes}} · Tasks: {{tasks}} · Gateways: {{gateways}} · Events: {{events}} · Flows: {{flows}}",
+    "warnings": "Check these points",
+    "links": "Links to the library",
+    "linksHint": "Steps are linked to existing roles and IT systems with the same name. Untick what does not fit.",
+    "noLinks": "No matching roles or systems in the library.",
+    "relation": {
+      "PERFORMS_one": "performs {{count}} step",
+      "PERFORMS_other": "performs {{count}} steps",
+      "SUPPORTS_one": "supports {{count}} step",
+      "SUPPORTS_other": "supports {{count}} steps"
+    },
+    "unmatched": "Not in the library yet",
+    "unmatchedHint": "Add them to the Roles or IT systems library if they should be reused, then link them in the modeler."
+  },
+  "translate": {
+    "labelsTitle": {
+      "ar": "Translate labels into Arabic",
+      "en": "Translate labels into English"
+    },
+    "pageTitle": {
+      "ar": "Translate this page into Arabic",
+      "en": "Translate this page into English"
+    },
+    "fillFrom": {
+      "en": "Translate from English",
+      "ar": "Translate from Arabic"
+    },
+    "target": {
+      "ar": "Arabic (review and edit)",
+      "en": "English (review and edit)"
+    },
+    "source": "Original",
+    "label": "Label",
+    "description": "Description",
+    "reviewHint": "Only labels missing in this language are shown. Edit anything that is not right, then apply — you can still undo in the modeler.",
+    "apply_one": "Apply {{count}} translation",
+    "apply_other": "Apply {{count}} translations",
+    "applied": "Translations applied. Review the diagram and save.",
+    "nothingMissing": "Every label already exists in this language.",
+    "use": "Use this translation",
+    "fields": "Translate",
+    "fieldsTo": {
+      "ar": "Translate into Arabic",
+      "en": "Translate into English"
+    },
+    "fieldsFilled": "The empty fields were filled — review them before saving."
+  },
+  "features": {
+    "GENERATE_PROCESS": "Generate a process",
+    "REFINE_PROCESS": "Refine with chat",
+    "GENERATE_DOC": "Documentation from a process",
+    "DOC_TO_PROCESS": "Process from a page",
+    "TRANSLATE": "Translate",
+    "ANALYSE": "Analyse & improve",
+    "SUMMARISE": "Summarise",
+    "PORTAL_QA": "Portal assistant",
+    "TEST_CONNECTION": "Connection test"
+  },
+  "settings": {
+    "title": "AI assistant",
+    "enabled": "Enabled",
+    "intro": "The assistant generates and refines processes, writes documentation, translates between Arabic and English, analyses processes and answers questions in the Knowledge Portal. Requests go from the server to the AI provider; the API key never reaches the browser. Every request is logged.",
+    "enable": "Enable the AI assistant",
+    "provider": "Provider",
+    "providers": {
+      "anthropic": "Anthropic Claude"
+    },
+    "model": "Model",
+    "modelHint": "Used for generation, refinement and analysis. Default: {{model}}",
+    "fastModel": "Fast model",
+    "fastModelHint": "Used for small tasks such as translating labels. Default: {{model}}",
+    "apiKey": "API key",
+    "apiKeyHint": "Stored encrypted (AES-256-GCM); it is never shown again.",
+    "apiKeyStored": "A key is stored (encrypted). Type a new one only to replace it.",
+    "removeKey": "Remove key",
+    "removeKeyTitle": "Remove the API key?",
+    "removeKeyText": "The assistant is switched off until a new key is entered.",
+    "noEncryptionKey": "INTEGRATIONS_ENCRYPTION_KEY is not set: the API key cannot be stored.",
+    "roles": "Who may use the assistant",
+    "rolesHint": "Users with one of these roles see the ✨ AI buttons. Portal Q&A needs the Viewer role ticked for portal-only users.",
+    "userDailyLimit": "Requests per user per day",
+    "orgMonthlyLimit": "Requests for the organisation per month",
+    "zeroUnlimited": "0 = no limit",
+    "noticeEn": "Data notice (English)",
+    "noticeAr": "Data notice (Arabic)",
+    "suggestions": "Suggestion chips",
+    "suggestionsHint": "Sample prompts shown as clickable chips for each feature (up to six).",
+    "addSuggestion": "Add a suggestion",
+    "test": "Test connection",
+    "testOk": "Connection works ({{model}})."
+  },
+  "usage": {
+    "title": "AI usage",
+    "subtitle": "Requests and tokens per user, feature, model and month (UTC).",
+    "today": "{{used}} of {{limit}} requests used today",
+    "month": "Month",
+    "requests": "Requests",
+    "requestsIn": "Requests in {{month}}",
+    "requestCount": "{{value}} requests",
+    "inputTokens": "Input tokens",
+    "outputTokens": "Output tokens",
+    "errors": "Errors",
+    "trend": "Requests per month",
+    "byUser": "By user",
+    "byFeature": "By feature",
+    "byModel": "By model",
+    "user": "User",
+    "feature": "Feature",
+    "model": "Model",
+    "empty": "No AI requests in this month"
+  }
+}

@@ -42,6 +42,7 @@ import { GovernancePanel } from '@/features/governance/GovernancePanel';
 import { CommentsPanel } from '@/features/comments/CommentsPanel';
 import { useGovernance } from '@/api/governance';
 import { StatusTag } from '@/components/tags';
+import { AiBadge } from '@/features/ai/AiParts';
 
 export function LanguageAvailability({ hasEn, hasAr }: { hasEn: boolean; hasAr: boolean }) {
   const { t } = useTranslation();
@@ -176,6 +177,7 @@ export function PageViewPage() {
               rejected={governance.data?.rejected}
             />
             <LanguageAvailability hasEn={p.hasEn} hasAr={p.hasAr} />
+            {p.aiGenerated && <AiBadge />}
             <Typography.Text type="secondary" style={{ fontSize: 12 }}>
               {t('docs:pages.versionMeta', {
                 version: p.version,

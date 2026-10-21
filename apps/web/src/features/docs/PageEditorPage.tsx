@@ -32,6 +32,8 @@ import { PageHeader } from '@/components/PageHeader';
 import { ErrorState, LoadingState } from '@/components/states';
 import { useErrorMessage, useFormatDate, useLocalized } from '@/components/i18n-helpers';
 import { RichTextEditor } from './editor/RichTextEditor';
+import { AiBadge, AiButton } from '@/features/ai/AiParts';
+import { TranslatePageModal } from '@/features/ai/TranslatePageModal';
 import { useSpaceContext } from './space-context';
 
 interface EditorState {
@@ -78,6 +80,10 @@ function Editor({ page, initialDraft }: { page: PageDto; initialDraft: PageDraft
   stateRef.current = state;
   const timer = useRef<ReturnType<typeof setTimeout>>(undefined);
   const leavingRef = useRef(false);
+  /** Content is unedited AI output (translation / generated page): cleared by any edit. */
+  const aiRef = useRef(page.aiGenerated);
+  const [aiFlag, setAiFlag] = useState(page.aiGenerated);
+  const [translateTo, setTranslateTo] = useState<Locale | null>(null);
 
   const flushDraft = useCallback(async () => {
     clearTimeout(timer.current);
@@ -90,7 +96,9 @@ function Editor({ page, initialDraft }: { page: PageDto; initialDraft: PageDraft
     }
   }, [page.id, page.version]);
 
-  const update = (patch: Partial<EditorState>) => {
+  const update = (patch: Partial<EditorState>, ai = false) => {
+    aiRef.current = ai;
+    setAiFlag(ai);
     setState((s) => ({ ...s, ...patch }));
     setChanged(true);
     setPending(true);
@@ -133,7 +141,12 @@ function Editor({ page, initialDraft }: { page: PageDto; initialDraft: PageDraft
     const { changeNote } = await form.validateFields();
     try {
       clearTimeout(timer.current);
-      await savePage.mutateAsync({ ...state, changeNote, baseVersion: page.version });
+      await savePage.mutateAsync({
+        ...state,
+        changeNote,
+        baseVersion: page.version,
+        aiGenerated: aiRef.current,
+      });
       leavingRef.current = true;
       setPending(false);
       setSaveOpen(false);
@@ -207,6 +220,11 @@ function Editor({ page, initialDraft }: { page: PageDto; initialDraft: PageDraft
             }
             style={{ flex: 1, minInlineSize: 240 }}
           />
+          {filled(l === 'ar' ? 'en' : 'ar') && (
+            <AiButton onClick={() => setTranslateTo(l)}>
+              {t(`ai:translate.fillFrom.${l === 'ar' ? 'en' : 'ar'}`)}
+            </AiButton>
+          )}
           <Space size={6}>
             <Typography.Text type="secondary">{t('docs:editor.pageDirection')}</Typography.Text>
             <Segmented
@@ -255,6 +273,7 @@ function Editor({ page, initialDraft }: { page: PageDto; initialDraft: PageDraft
         subtitle={
           <Space size={8} style={{ marginTop: 4 }}>
             <Tag>{t('docs:editor.basedOn', { version: page.version })}</Tag>
+            {aiFlag && <AiBadge />}
             {pending ? (
               <Tag color="orange">{t('modeler:unsaved')}</Tag>
             ) : draftSavedAt ? (
@@ -314,6 +333,27 @@ function Editor({ page, initialDraft }: { page: PageDto; initialDraft: PageDraft
           }))}
         />
       </Card>
+      {translateTo && (
+        <TranslatePageModal
+          open
+          target={translateTo}
+          source={
+            translateTo === 'ar'
+              ? { title: state.titleEn, html: state.contentEn }
+              : { title: state.titleAr, html: state.contentAr }
+          }
+          onClose={() => setTranslateTo(null)}
+          onUse={({ title, html }) => {
+            update(
+              translateTo === 'ar'
+                ? { titleAr: title, contentAr: html, dirAr: 'rtl' }
+                : { titleEn: title, contentEn: html, dirEn: 'ltr' },
+              true,
+            );
+            setEditorKey((k) => k + 1);
+          }}
+        />
+      )}
       <Modal
         title={t('docs:editor.saveTitle')}
         open={saveOpen}

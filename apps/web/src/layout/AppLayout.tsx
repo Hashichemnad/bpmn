@@ -31,6 +31,7 @@ import {
   SettingOutlined,
   TeamOutlined,
   UserOutlined,
+  ThunderboltOutlined,
 } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
 import { PERMISSIONS, type Locale } from '@processhub/shared';
@@ -192,6 +193,13 @@ export function AppLayout() {
         key: '/admin/audit',
         icon: <AuditOutlined />,
         label: <Link to="/admin/audit">{t('nav.audit')}</Link>,
+      });
+    }
+    if (can(PERMISSIONS.AI_USAGE_READ)) {
+      admin.push({
+        key: '/admin/ai-usage',
+        icon: <ThunderboltOutlined />,
+        label: <Link to="/admin/ai-usage">{t('nav.aiUsage')}</Link>,
       });
     }
     if (can(PERMISSIONS.GOVERNANCE_MANAGE)) {

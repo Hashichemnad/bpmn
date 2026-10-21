@@ -38,6 +38,7 @@ import { TemplatesPage } from '@/features/docs/TemplatesPage';
 import { PrintPage } from '@/features/docs/PrintPage';
 import { SearchPage } from '@/features/search/SearchPage';
 import { SyncStatusPage } from '@/features/settings/SyncStatusPage';
+import { AiUsagePage } from '@/features/settings/AiUsagePage';
 import { ReviewPage } from '@/features/governance/ReviewPage';
 import { MyTasksPage } from '@/features/governance/MyTasksPage';
 import { GovernanceDashboardPage } from '@/features/governance/GovernanceDashboardPage';
@@ -326,6 +327,14 @@ export const routes: RouteObject[] = [
                     element: (
                       <RequirePermission all={[P.AUDIT_READ]}>
                         <AuditLogPage />
+                      </RequirePermission>
+                    ),
+                  },
+                  {
+                    path: 'admin/ai-usage',
+                    element: (
+                      <RequirePermission all={[P.AI_USAGE_READ]}>
+                        <AiUsagePage />
                       </RequirePermission>
                     ),
                   },

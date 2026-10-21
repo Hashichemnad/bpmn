@@ -19,6 +19,14 @@ import {
   type MailMessage,
   type SmtpConfig,
 } from '../src/notifications/mail-transport';
+import { AiProviders } from '../src/ai/ai-providers';
+import {
+  AiError,
+  type AiCompletion,
+  type AiCompletionRequest,
+  type AiConnection,
+  type AiProviderClient,
+} from '../src/ai/providers/types';
 import {
   GitError,
   gitBlobSha,
@@ -58,12 +66,69 @@ export class FakeMailer {
   }
 }
 
+/**
+ * Stands in for the AI provider: answers come from a queue of fixtures (text, an object sent as
+ * JSON, or an error). Requests are recorded so tests can check prompts. Never calls a real AI.
+ */
+export class FakeAi implements AiProviderClient {
+  queue: (string | object | AiError)[] = [];
+  requests: (AiCompletionRequest & { apiKey: string })[] = [];
+  validKey = 'sk-test-key';
+
+  reply(...answers: (string | object | AiError)[]) {
+    this.queue.push(...answers);
+    return this;
+  }
+
+  async complete(
+    conn: AiConnection,
+    req: AiCompletionRequest,
+    onText?: (delta: string) => void,
+  ): Promise<AiCompletion> {
+    this.requests.push({ ...req, apiKey: conn.apiKey });
+    if (conn.apiKey !== this.validKey)
+      throw new AiError('AI_AUTH_FAILED', 'HTTP 401: invalid x-api-key');
+    const next = this.queue.shift();
+    if (next === undefined) throw new Error('FakeAi: no answer queued');
+    if (next instanceof AiError) throw next;
+    const text = typeof next === 'string' ? next : JSON.stringify(next);
+    // Stream in a few chunks like a real provider.
+    for (let i = 0; i < text.length; i += 400) onText?.(text.slice(i, i + 400));
+    return {
+      text,
+      model: req.model,
+      inputTokens: 1000,
+      outputTokens: Math.ceil(text.length / 4),
+      truncated: false,
+    };
+  }
+}
+
+export interface SseEvent {
+  event: string;
+  data: any; // eslint-disable-line @typescript-eslint/no-explicit-any
+}
+
+/** Parses a Server-Sent Events body into events. */
+export function parseSse(body: string): SseEvent[] {
+  return body
+    .split('\n\n')
+    .map((block) => {
+      const lines = block.split('\n').filter((l) => !l.startsWith(':'));
+      const event = lines.find((l) => l.startsWith('event: '))?.slice(7);
+      const data = lines.find((l) => l.startsWith('data: '))?.slice(6);
+      return event && data ? { event, data: JSON.parse(data) } : null;
+    })
+    .filter((e): e is SseEvent => !!e);
+}
+
 export interface TestContext {
   app: INestApplication;
   prisma: PrismaService;
   storage: MemoryStorage;
   git: FakeGitRepo;
   mail: FakeMailer;
+  ai: FakeAi;
 }
 
 /** In-memory Git repository standing in for GitHub/GitLab: tests never call real services. */
@@ -107,6 +172,7 @@ export async function createApp(): Promise<TestContext> {
   const storage = new MemoryStorage();
   const git = new FakeGitRepo();
   const mail = new FakeMailer();
+  const ai = new FakeAi();
   const moduleRef = await Test.createTestingModule({ imports: [AppModule] })
     .overrideProvider(StorageService)
     .useValue(storage)
@@ -114,6 +180,8 @@ export async function createApp(): Promise<TestContext> {
     .useValue({ client: () => git })
     .overrideProvider(MailTransport)
     .useValue(mail)
+    .overrideProvider(AiProviders)
+    .useValue({ client: () => ai })
     .overrideProvider(GitHttp)
     .useValue({
       request: () => {
@@ -127,10 +195,11 @@ export async function createApp(): Promise<TestContext> {
   });
   configureApp(app);
   await app.init();
-  return { app, prisma: app.get(PrismaService), storage, git, mail };
+  return { app, prisma: app.get(PrismaService), storage, git, mail, ai };
 }
 
 const TABLES = [
+  'AiUsage',
   'Feedback',
   'Notification',
   'Comment',

@@ -87,7 +87,8 @@
       "REVIEW_CONFIRMED": "تأكيد المراجعة",
       "RESOLVE": "حل",
       "REOPEN": "إعادة فتح",
-      "EMAIL_TEST": "رسالة اختبار"
+      "EMAIL_TEST": "رسالة اختبار",
+      "AI_REQUEST": "طلب ذكاء اصطناعي"
     },
     "entities": {
       "User": "مستخدم",
@@ -109,7 +110,8 @@
       "Workflow": "مسار اعتماد",
       "Review": "مراجعة",
       "Comment": "تعليق",
-      "Feedback": "ملاحظة"
+      "Feedback": "ملاحظة",
+      "AI": "المساعد الذكي"
     }
   },
   "settings": {

@@ -237,6 +237,8 @@ export const saveModelSchema = z.object({
     .string()
     .min(1)
     .max(5 * 1024 * 1024),
+  /** The diagram is exactly what the AI assistant produced (no human edits since). */
+  aiGenerated: z.boolean().optional(),
 });
 export type SaveModelInput = z.infer<typeof saveModelSchema>;
 
@@ -246,6 +248,7 @@ export const createVersionSchema = z.object({
     .min(1)
     .max(5 * 1024 * 1024),
   changeNote: trimmed(1000).min(1),
+  aiGenerated: z.boolean().optional(),
 });
 export type CreateVersionInput = z.infer<typeof createVersionSchema>;
 
@@ -392,6 +395,8 @@ export const savePageSchema = z
     changeNote: trimmed(1000).min(1),
     /** Version the editor started from; a newer version on the server is reported as PAGE_CHANGED. */
     baseVersion: z.number().int().min(0).optional(),
+    /** The content is exactly what the AI assistant produced (no human edits since). */
+    aiGenerated: z.boolean().optional(),
   })
   .superRefine(requireOneTitle);
 export type SavePageInput = z.infer<typeof savePageSchema>;

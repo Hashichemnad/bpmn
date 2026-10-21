@@ -45,6 +45,8 @@ export const PERMISSIONS = {
   PORTAL_READ: 'portal.read',
   /** Portal name, branding, quick links, featured items and access. */
   PORTAL_MANAGE: 'portal.manage',
+  /** See the AI usage report (requests and tokens per user, feature and month). */
+  AI_USAGE_READ: 'ai.usage.read',
 } as const;
 export type Permission = (typeof PERMISSIONS)[keyof typeof PERMISSIONS];
 export const ALL_PERMISSIONS: Permission[] = Object.values(PERMISSIONS);
@@ -133,6 +135,7 @@ export const SYSTEM_ROLES: Record<
       P.USERS_READ,
       P.AUDIT_READ,
       P.GOVERNANCE_DASHBOARD,
+      P.AI_USAGE_READ,
     ],
   },
   VIEWER: {
@@ -211,6 +214,7 @@ export const AUDIT_ACTIONS = [
   'RESOLVE',
   'REOPEN',
   'EMAIL_TEST',
+  'AI_REQUEST',
 ] as const;
 export type AuditAction = (typeof AUDIT_ACTIONS)[number];
 
@@ -235,6 +239,7 @@ export const AUDIT_ENTITY_TYPES = [
   'Review',
   'Comment',
   'Feedback',
+  'AI',
 ] as const;
 export type AuditEntityType = (typeof AUDIT_ENTITY_TYPES)[number];
 
@@ -247,6 +252,7 @@ export const SETTING_KEYS = {
   GOVERNANCE: 'governance',
   PORTAL: 'portal',
   EMAIL: 'email',
+  AI: 'ai',
 } as const;
 
 /** Logo upload limits. */

@@ -21,6 +21,7 @@
     "seed": "ts-node --transpile-only prisma/seed.ts"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.137.0",
     "@joplin/turndown-plugin-gfm": "^1.0.68",
     "@nestjs/common": "^11.1.0",
     "@nestjs/core": "^11.1.0",

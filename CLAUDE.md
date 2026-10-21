@@ -38,8 +38,8 @@ with no per-user licensing. Target: 50–500 users on a single server.
 |---|---|---|
 | 1 | Foundation: M1 (core), M2, M3, M4 (roles & systems) | ✅ Done (merged into `main`) |
 | 2 | M5 Wiki, M6 Version control, M7 Git integration | ✅ Done (merged into `main`) |
-| 3 | M8 Governance, M9 Knowledge Portal | ✅ Done (branch `phase-3-governance-portal`, awaiting review) |
-| AI | M16 AI Assistant (after Phase 3) | ⬜ |
+| 3 | M8 Governance, M9 Knowledge Portal | ✅ Done (merged into `main`) |
+| AI | M16 AI Assistant (after Phase 3) | 🟡 In progress (branch `phase-ai-assistant`) |
 | 4 | M10 GRC, M11 EA, M12 KPIs + Salesforce | ⬜ |
 | 5 | M13 Mining, M14 Execution, simulation | ⬜ |
 | 6 | Hardening: SSO, performance, security review fixes, deployment guide | ⬜ |
@@ -143,6 +143,12 @@ Phase 3 additions (DECISIONS D-028 – D-037):
 - `Comment` (item, parentId, bpmnElementId, body with `@[Name](id)` mentions, resolvedAt)
 - `Notification` (userId, type, params, link, readAt, dedupeKey); `User.notificationPrefs`
 - `Feedback` (item, author, kind, message, status OPEN | IN_PROGRESS | DONE, reply); `UserJobRole` (user ↔ ROLE object)
+
+AI phase additions (DECISIONS D-038 – D-043):
+
+- System role `AUDITOR` (read-only workspace), permissions `reviews.decide`, `ai.usage.read`
+- `AiUsage` (user, feature, provider, model, input/output tokens, status, error code, duration, item); Setting `ai`
+- `Process.aiGenerated`, `Page.aiGenerated` (unedited AI output, cleared by a human save or an approval)
 
 ## 10. Definition of Done (every phase)
 

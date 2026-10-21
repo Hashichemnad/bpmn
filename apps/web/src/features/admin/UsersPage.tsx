@@ -346,7 +346,7 @@ export function UsersPage() {
           >
             <Input dir="ltr" autoComplete="off" />
           </Form.Item>
-          <BilingualFields />
+          <BilingualFields translate={false} />
           {editing === 'new' && (
             <Form.Item
               name="password"

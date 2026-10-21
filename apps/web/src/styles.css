@@ -1471,3 +1471,138 @@ html[lang='ar'] body {
     display: none;
   }
 }
+
+/* ---------- AI assistant (M16) ---------- */
+.ph-ai-icon {
+  font-size: 14px;
+  line-height: 1;
+}
+.ph-ai-button.ant-btn {
+  border-color: #c4b5fd;
+  color: #5b21b6;
+  background: linear-gradient(135deg, #faf5ff 0%, #eef2ff 100%);
+}
+.ph-ai-button.ant-btn:not(:disabled):hover {
+  border-color: #8b5cf6;
+  color: #4c1d95;
+}
+.ph-ai-button.ant-btn-text {
+  background: transparent;
+  border-color: transparent;
+}
+.ph-ai-badge.ant-tag {
+  border-color: #c4b5fd;
+  background: #f5f3ff;
+  color: #5b21b6;
+  margin-inline-end: 0;
+}
+.ph-ai-notice {
+  font-size: 12px;
+  margin-block: 8px 0 !important;
+}
+.ph-ai-chips .ph-ai-chip {
+  border: 1px dashed #c4b5fd;
+  background: #faf5ff;
+  color: #4c1d95;
+  white-space: normal;
+  text-align: start;
+}
+.ph-ai-working {
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: #f5f3ff;
+  border: 1px solid #ede9fe;
+}
+.ph-ai-preview {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 320px;
+  gap: 16px;
+}
+.ph-ai-preview-side {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-block-size: 620px;
+  overflow: auto;
+}
+.ph-ai-preview-canvas {
+  border: 1px solid var(--ph-border);
+  border-radius: 8px;
+  background: #fff;
+}
+.ph-ai-canvas {
+  block-size: 460px;
+}
+.ph-ai-list {
+  margin: 4px 0 0;
+  padding-inline-start: 18px;
+}
+.ph-ai-inline {
+  margin-block-end: 12px;
+}
+.ph-ai-fields-bar {
+  margin-block: -8px 4px;
+}
+.ph-ai-page-preview {
+  max-block-size: 60vh;
+  overflow: auto;
+  padding: 12px 16px;
+  border: 1px solid var(--ph-border);
+  border-radius: 8px;
+  margin-block: 12px;
+}
+.ph-ai-suggestion-group {
+  margin-block-end: 8px;
+}
+.ph-ai-trend {
+  display: flex;
+  align-items: stretch;
+  gap: 6px;
+  block-size: 180px;
+}
+.ph-ai-trend-col {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  min-inline-size: 0;
+  border: 0;
+  padding: 0;
+  background: none;
+  cursor: pointer;
+}
+.ph-ai-trend-bar-wrap {
+  flex: 1;
+  inline-size: 100%;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  border-block-end: 1px solid var(--ph-border);
+}
+.ph-ai-trend-bar {
+  display: block;
+  inline-size: min(28px, 70%);
+  min-block-size: 2px;
+  border-radius: 4px 4px 0 0;
+  background: #a5b4fc;
+}
+.ph-ai-trend-bar.is-current {
+  background: var(--ph-primary);
+}
+.ph-ai-trend-col:hover .ph-ai-trend-bar {
+  background: #6366f1;
+}
+.ph-ai-trend-label {
+  font-size: 11px;
+  color: var(--ph-muted);
+  white-space: nowrap;
+}
+@media (max-width: 900px) {
+  .ph-ai-preview {
+    grid-template-columns: 1fr;
+  }
+  .ph-ai-canvas {
+    block-size: 320px;
+  }
+}

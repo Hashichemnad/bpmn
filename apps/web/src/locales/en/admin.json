@@ -87,7 +87,8 @@
       "REVIEW_CONFIRMED": "Review confirmed",
       "RESOLVE": "Resolved",
       "REOPEN": "Reopened",
-      "EMAIL_TEST": "Test email"
+      "EMAIL_TEST": "Test email",
+      "AI_REQUEST": "AI request"
     },
     "entities": {
       "User": "User",
@@ -109,7 +110,8 @@
       "Workflow": "Workflow",
       "Review": "Review",
       "Comment": "Comment",
-      "Feedback": "Feedback"
+      "Feedback": "Feedback",
+      "AI": "AI assistant"
     }
   },
   "settings": {

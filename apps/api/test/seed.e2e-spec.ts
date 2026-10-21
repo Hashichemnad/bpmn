@@ -59,6 +59,10 @@ describe('Seed (e2e)', () => {
       ['viewer@processhub.local', 'VIEWER'],
     ]);
     expect(await ctx.prisma.workflow.count()).toBe(2);
+    // AI assistant: suggestion chips for the demo, disabled until a key is entered.
+    const ai = await ctx.prisma.setting.findUniqueOrThrow({ where: { key: 'ai' } });
+    expect(ai.value).toMatchObject({ enabled: false, apiKeySealed: null });
+    expect(Object.keys((ai.value as { suggestions: object }).suggestions)).toHaveLength(6);
     const statuses = (await ctx.prisma.process.findMany()).map((p) => p.status);
     for (const s of ['DRAFT', 'IN_REVIEW', 'APPROVED', 'PUBLISHED', 'ARCHIVED'] as const) {
       expect(statuses).toContain(s);

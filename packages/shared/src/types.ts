@@ -139,6 +139,8 @@ export interface ProcessDto extends ProcessSummaryDto {
   children: ProcessSummaryDto[];
   ancestors: Pick<ProcessSummaryDto, 'id' | 'code' | 'nameEn' | 'nameAr'>[];
   hasModel: boolean;
+  /** The working model was produced by the AI assistant and not yet edited or approved by a person. */
+  aiGenerated: boolean;
   /** Whether the current user may edit this process / its model. */
   canEdit: boolean;
   canEditModel: boolean;
@@ -279,6 +281,8 @@ export interface PageDto extends PageSummaryDto {
   createdBy: UserRef | null;
   updatedBy: UserRef | null;
   createdAt: string;
+  /** The saved content was produced by the AI assistant and not yet edited or approved by a person. */
+  aiGenerated: boolean;
   canEdit: boolean;
   canManage: boolean;
 }

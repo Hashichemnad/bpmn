@@ -146,6 +146,7 @@ model User {
   ownedPages     Page[]         @relation("PageOwner")
   jobRoles       UserJobRole[]
   notifications  Notification[]
+  aiUsage        AiUsage[]
 
   @@index([departmentId])
   @@index([status])
@@ -249,6 +250,8 @@ model Process {
   workflow      Workflow?       @relation(fields: [workflowId], references: [id], onDelete: SetNull)
   /// Next periodic review of the published content.
   nextReviewAt  DateTime?
+  /// The working model was produced by the AI assistant and not yet edited or approved by a person.
+  aiGenerated   Boolean         @default(false)
   createdAt     DateTime        @default(now())
   updatedAt     DateTime        @updatedAt
   createdById   String?         @db.Uuid
@@ -428,6 +431,8 @@ model Page {
   workflowId    String?                  @db.Uuid
   workflow      Workflow?                @relation(fields: [workflowId], references: [id], onDelete: SetNull)
   nextReviewAt  DateTime?
+  /// The saved content was produced by the AI assistant and not yet edited or approved by a person.
+  aiGenerated   Boolean                  @default(false)
   /// Maintained by a database trigger (see migration 20261021082019_phase2_wiki).
   searchVector  Unsupported("tsvector")?
   createdAt     DateTime                 @default(now())
@@ -766,4 +771,28 @@ model UserJobRole {
 
   @@id([userId, repoObjectId])
   @@index([repoObjectId])
+}
+
+/// One request to the AI assistant (M16): who, which feature and model, tokens and outcome.
+model AiUsage {
+  id           String   @id @default(uuid()) @db.Uuid
+  userId       String?  @db.Uuid
+  user         User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  /// GENERATE_PROCESS, TRANSLATE, REFINE_PROCESS, SUMMARISE, … (AI_FEATURES in packages/shared).
+  feature      String
+  provider     String
+  model        String
+  inputTokens  Int      @default(0)
+  outputTokens Int      @default(0)
+  /// SUCCESS | ERROR | INVALID_OUTPUT
+  status       String
+  errorCode    String?
+  durationMs   Int      @default(0)
+  /// The process or page the request was about, if any.
+  entityType   String?
+  entityId     String?  @db.Uuid
+  createdAt    DateTime @default(now())
+
+  @@index([createdAt])
+  @@index([userId, createdAt])
 }

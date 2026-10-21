@@ -60,8 +60,18 @@ export class ModelsService {
     };
   }
 
-  /** Saves the working model and removes object links to elements that no longer exist. */
-  async saveModel(processId: string, bpmnXml: string, actor: AuthUser, meta: RequestMeta) {
+  /**
+   * Saves the working model and removes object links to elements that no longer exist.
+   * `aiGenerated` marks content produced by the AI assistant without human edits since; any
+   * other change clears the mark.
+   */
+  async saveModel(
+    processId: string,
+    bpmnXml: string,
+    actor: AuthUser,
+    meta: RequestMeta,
+    aiGenerated = false,
+  ) {
     await this.assertCanChange(processId, actor);
     assertSafeBpmnXml(bpmnXml);
     const ids = [...extractBpmnElementIds(bpmnXml)];
@@ -70,7 +80,11 @@ export class ModelsService {
         where: { processId },
         select: { processId: true, bpmnXml: true },
       });
-      if (existing?.bpmnXml !== bpmnXml) await markEdited(tx, 'PROCESS', processId, actor.id);
+      const changed = existing?.bpmnXml !== bpmnXml;
+      if (changed) {
+        await markEdited(tx, 'PROCESS', processId, actor.id);
+        await tx.process.update({ where: { id: processId }, data: { aiGenerated } });
+      }
       await tx.processModel.upsert({
         where: { processId },
         create: { processId, bpmnXml, createdById: actor.id, updatedById: actor.id },
@@ -89,6 +103,7 @@ export class ModelsService {
             elements: countFlowElements(bpmnXml),
             bytes: bpmnXml.length,
             prunedLinks: pruned.count,
+            ...(aiGenerated ? { aiGenerated: true } : {}),
           },
           meta,
         },
@@ -150,7 +165,7 @@ export class ModelsService {
     meta: RequestMeta,
     restoredFrom: number | null = null,
   ) {
-    await this.saveModel(processId, input.bpmnXml, actor, meta);
+    await this.saveModel(processId, input.bpmnXml, actor, meta, input.aiGenerated);
     const version = await this.prisma.$transaction(async (tx) => {
       const last = await tx.processVersion.aggregate({
         where: { processId },

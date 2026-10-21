@@ -29,6 +29,7 @@ import { useDeleteProcess, useLinks, useProcess } from '@/api/hooks';
 import { useAuth } from '@/auth/AuthProvider';
 import { PageHeader } from '@/components/PageHeader';
 import { CategoryTag, StatusTag } from '@/components/tags';
+import { AiBadge } from '@/features/ai/AiParts';
 import { EmptyState, ErrorState, LoadingState } from '@/components/states';
 import { useErrorMessage, useFormatDate, useLocalized } from '@/components/i18n-helpers';
 import { ProcessFormModal } from './ProcessFormModal';
@@ -279,6 +280,7 @@ export function ProcessDetailPage() {
               changesRequested={governance.data?.changesRequested}
               rejected={governance.data?.rejected}
             />
+            {p.aiGenerated && <AiBadge />}
           </Space>
         }
         extra={

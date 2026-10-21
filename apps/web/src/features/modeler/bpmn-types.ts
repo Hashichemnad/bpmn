@@ -49,8 +49,19 @@ export interface CommandStack {
   clear(): void;
 }
 
+export interface Viewbox {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  scale: number;
+  inner: { x: number; y: number; width: number; height: number };
+  outer: { width: number; height: number };
+}
+
 export interface Canvas {
   zoom(level?: 'fit-viewport' | number, center?: 'auto'): number;
+  viewbox(box?: { x: number; y: number; width: number; height: number }): Viewbox;
   scrollToElement(element: DiagramElement): void;
   resized(): void;
   addMarker(element: DiagramElement | string, marker: string): void;

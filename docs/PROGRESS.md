@@ -2,10 +2,72 @@
 
 Read this together with `CLAUDE.md` at the start of every session.
 
-## Current state — 2026-10-21
+## Current state — 2026-10-21 (AI phase, branch `phase-ai-assistant`)
 
-**Phase 3 (Governance M8, Knowledge Portal M9): complete on branch `phase-3-governance-portal`, awaiting
-review.** Phases 1 and 2 are merged into `main`. Every item of the Phase 3 brief is implemented, covered by
+**Phase "AI" (M16 AI Assistant) is in progress.** Phases 1–3 are merged into `main`. The brief is built in
+three parts, committed separately; **Part A is done**, Parts B and C are next.
+
+### Done in this phase
+
+**Phase 3 open items (decided by the product owner)** — commit "Governance: block self-approval…"
+
+- Four-eyes principle: a submitter who is the only possible approver of a step cannot submit
+  (`SELF_APPROVAL_NOT_ALLOWED`, bilingual message with the step name) (D-038).
+- New system role **Auditor**: read-only workspace (drafts, history, reviews, audit log, dashboard,
+  AI usage), no edit/comment/approve/publish; new permission `reviews.decide` keeps read-only users out of
+  approval steps (D-039). Demo user `auditor@processhub.local`. Viewers stay portal-only.
+- PDF stays browser print (Gotenberg remains in the Phase 6 backlog).
+
+**Part A — AI platform, generate process from text, translate EN ↔ AR**
+
+- `apps/api/src/ai`: provider interface + Anthropic Claude (`@anthropic-ai/sdk`, streaming, structured
+  output, refusal fallback), gateway with access checks, per-user daily and organisation monthly limits,
+  one repair attempt for invalid output, usage table + audit log (D-040, D-041). SSE streaming to the UI.
+- Settings → AI (Super Admin): enable, provider, model / fast model, encrypted API key (write-only),
+  test connection, allowed roles, limits, data notice EN/AR, suggestion chips per feature.
+  **AI usage** page (Administration menu): totals per user, feature, model, 12-month trend.
+- Feature 1 — generate a process from a description (Arabic or English): in the modeler (✨ AI menu →
+  replaces the diagram, saved as draft) and in the "New process" dialog (fills names/descriptions, saves the
+  diagram as the new process's draft model). Server builds BPMN with lanes per role and a layered layout
+  (D-042), validates it, proposes links to library roles/IT systems (user confirms), lists roles/systems not in
+  the library, shows validation warnings. Preview with a read-only diagram before anything is saved.
+- Feature 4 — translate: form fields (every bilingual form except people's names: "✨ Translate into …"
+  fills the empty language), BPMN labels and step descriptions in the modeler (only missing ones, editable
+  review table, applied as undoable edits), wiki pages (preview, then fills the other language tab). The
+  library's EN/AR names are sent as a glossary.
+- "AI-generated — review before publishing" badge on processes/pages until a human edits or approves (D-043).
+- Suggestion chips: seeded demo prompts for every feature (Settings → AI → Suggestion chips).
+- Tests: `FakeAi` replaces the provider in every test; `test/ai.e2e-spec.ts` (settings & key never
+  returned, roles, limits, generate with library links, malformed fixtures → repair / rejection, provider
+  errors, permissions, AI flag, translate fields/BPMN/page with sanitising, usage report),
+  `src/ai/bpmn/structure-to-bpmn.spec.ts` (layout without overlaps, round trip, escaping).
+- Also fixed: the modeler's "fit" now centres the diagram right of the palette (it used to sit off-centre).
+
+### Next (continue here)
+
+1. **Part B** — feature 2 _refine with chat_ (side panel in the modeler: send `readBpmn()` structure +
+   instruction + history → `REFINE_PROCESS_SYSTEM` prompt already in `apps/api/src/ai/prompts.ts`; keep ids;
+   show the proposal with the existing BPMN compare (`features/versions/BpmnCompare`) → accept/reject),
+   feature 6 _summarise_ (process/page; version diff from the Phase 2 compare; also on the review page), feature 3
+   _documentation ↔ process_ (SOP / Work Instruction page from a process with its links; process draft from a
+   page via `DOC_TO_PROCESS_SYSTEM` + `buildProcessResult`). Shared schemas for all of them already exist in
+   `packages/shared/src/ai.ts`.
+2. **Part C** — feature 5 _analyse & improve_ (findings + plain-language validation warnings) and feature 7
+   _portal Q&A_ (retrieval over `Publication` full-text search with the portal visibility rules; sources with
+   links; seed a published IT page that answers "How do I request a new laptop?").
+3. Then `docs/AI-DEMO.md`, README, BACKLOG, CLAUDE.md phase table, `docker compose up --build` check.
+
+### Verification (Part A)
+
+- `pnpm lint`, `pnpm typecheck`, `pnpm format:check`: clean. Tests: shared 64, web 31, API 173 (all pass).
+- Browser (Playwright, dev servers, real `AnthropicProvider` against a local mock of the Messages streaming
+  API via `ANTHROPIC_BASE_URL`): Settings → AI save + test connection, New process → generate → preview →
+  create, modeler label translation, page translation, form field translation, AI usage page, Arabic RTL and
+  390 px phone width.
+
+## Phase 3 — 2026-10-21 (merged into `main`)
+
+**Phase 3 (Governance M8, Knowledge Portal M9): complete, merged into `main`.** Phases 1 and 2 are merged into `main`. Every item of the Phase 3 brief is implemented, covered by
 API tests (including a Viewer sweep over every route) and Playwright smoke tests, and verified in the browser
 (English and Arabic, desktop and phone width) and with `docker compose up` from a clean clone.
 
@@ -237,14 +299,14 @@ need no such change.
 
 ## Next
 
-1. Review and merge `phase-3-governance-portal`.
-2. Decisions for you: see "Needs a decision" in `docs/BACKLOG.md` (self-approval rule, Viewer role, PDF, MinIO).
-3. Phase "AI": M16 AI Assistant (CLAUDE.md §2) — Settings → AI with encrypted key, per-role access and usage
-   limits; BPMN from text, SOP from process, EN↔AR translation, suggestions, portal Q&A over published content
-   (the portal search and publication read model from Phase 3 are the natural retrieval source).
-4. Then Phase 4: GRC, EA, KPIs + Salesforce.
+See "Next (continue here)" at the top. After the AI phase: Phase 4 (GRC, EA, KPIs + Salesforce).
 
 ## Known issues / limitations
+
+- AI: tested only against a mocked provider (no real API calls in the suite); run `docs/AI-DEMO.md` with a
+  real key before a demo. Generating into an existing process replaces its diagram (the layout is
+  automatic; hand-made positions are not kept) — save a version first. Requests run in the API process
+  (no queue); the per-user/organisation limits are counted from the usage table.
 
 - PDF export uses the browser's print dialog ("Save as PDF"), not a direct download (D-024, D-035).
 - Emails and reminders run in-process; with several API instances the scheduler runs in each (reminders are

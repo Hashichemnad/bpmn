@@ -16,7 +16,7 @@ export interface AuditEntry {
 
 type Client = PrismaService | Prisma.TransactionClient;
 
-const SECRET_KEYS = /password|token|secret|hash/i;
+const SECRET_KEYS = /password|token|secret|hash|apikey|api_key/i;
 
 /** Removes secret-looking keys recursively so they never reach the audit table. */
 export function scrubSecrets(value: unknown): unknown {

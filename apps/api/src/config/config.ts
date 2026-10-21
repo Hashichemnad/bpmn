@@ -62,6 +62,8 @@ const envSchema = z.object({
   SCHEDULER_INTERVAL_MINUTES: z.coerce.number().int().min(0).default(60),
   /** Timeout for one SMTP delivery, in milliseconds. */
   SMTP_TIMEOUT_MS: z.coerce.number().int().min(1000).default(15000),
+  /** Timeout for one call to the AI provider, in milliseconds (generation can take a while). */
+  AI_HTTP_TIMEOUT_MS: z.coerce.number().int().min(1000).default(180000),
 });
 
 export type Env = z.infer<typeof envSchema>;

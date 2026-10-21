@@ -62,10 +62,12 @@ async function transition(
   to: ContentStatus,
 ) {
   const where = { id, status: from };
+  // An approval is a human sign-off: AI-generated content is no longer flagged as such.
+  const data = { status: to, ...(to === 'APPROVED' ? { aiGenerated: false } : {}) };
   const res =
     type === 'PROCESS'
-      ? await tx.process.updateMany({ where, data: { status: to } })
-      : await tx.page.updateMany({ where, data: { status: to } });
+      ? await tx.process.updateMany({ where, data })
+      : await tx.page.updateMany({ where, data });
   if (!res.count) throw conflict('INVALID_TRANSITION', 'The item changed in the meantime');
 }
 
