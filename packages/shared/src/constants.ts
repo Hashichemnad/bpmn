@@ -27,6 +27,12 @@ export const PERMISSIONS = {
   MODELS_EDIT_OWN: 'models.edit_own',
   OBJECTS_READ: 'objects.read',
   OBJECTS_MANAGE: 'objects.manage',
+  /** Read documentation spaces and pages (subject to per-space restrictions). */
+  DOCS_READ: 'docs.read',
+  /** Create and edit pages in spaces where editing is allowed. */
+  DOCS_EDIT: 'docs.edit',
+  /** Create and manage spaces, space permissions, templates and the trash. */
+  DOCS_MANAGE: 'docs.manage',
 } as const;
 export type Permission = (typeof PERMISSIONS)[keyof typeof PERMISSIONS];
 export const ALL_PERMISSIONS: Permission[] = Object.values(PERMISSIONS);
@@ -42,7 +48,12 @@ export const SYSTEM_ROLE_KEYS = [
 export type SystemRoleKey = (typeof SYSTEM_ROLE_KEYS)[number];
 
 const P = PERMISSIONS;
-const READ_REPOSITORY: Permission[] = [P.PROCESSES_READ, P.OBJECTS_READ, P.DEPARTMENTS_READ];
+const READ_REPOSITORY: Permission[] = [
+  P.PROCESSES_READ,
+  P.OBJECTS_READ,
+  P.DEPARTMENTS_READ,
+  P.DOCS_READ,
+];
 
 /** Default permission bundle of each system role (see CLAUDE.md §6). */
 export const SYSTEM_ROLES: Record<
@@ -62,7 +73,13 @@ export const SYSTEM_ROLES: Record<
   PROCESS_OWNER: {
     nameEn: 'Process Owner',
     nameAr: 'مالك العملية',
-    permissions: [...READ_REPOSITORY, P.USERS_READ, P.PROCESSES_EDIT_OWN, P.MODELS_EDIT_OWN],
+    permissions: [
+      ...READ_REPOSITORY,
+      P.USERS_READ,
+      P.PROCESSES_EDIT_OWN,
+      P.MODELS_EDIT_OWN,
+      P.DOCS_EDIT,
+    ],
   },
   MODELER: {
     nameEn: 'Modeler / Editor',
@@ -74,6 +91,7 @@ export const SYSTEM_ROLES: Record<
       P.PROCESSES_EDIT,
       P.MODELS_EDIT,
       P.OBJECTS_MANAGE,
+      P.DOCS_EDIT,
     ],
   },
   REVIEWER: {
@@ -142,6 +160,10 @@ export const AUDIT_ACTIONS = [
   'MOVE',
   'VERSION',
   'PUBLISH',
+  'RESTORE',
+  'LABEL',
+  'PURGE',
+  'SYNC',
 ] as const;
 export type AuditAction = (typeof AUDIT_ACTIONS)[number];
 
@@ -155,6 +177,13 @@ export const AUDIT_ENTITY_TYPES = [
   'ObjectLink',
   'Setting',
   'Auth',
+  'Space',
+  'Page',
+  'PageVersion',
+  'PageTemplate',
+  'PageLink',
+  'Attachment',
+  'Integration',
 ] as const;
 export type AuditEntityType = (typeof AUDIT_ENTITY_TYPES)[number];
 
@@ -163,6 +192,7 @@ export const SETTING_KEYS = {
   ORG_NAME_AR: 'org.nameAr',
   DEFAULT_LOCALE: 'org.defaultLocale',
   LOGO: 'branding.logo',
+  GIT_INTEGRATION: 'integrations.git',
 } as const;
 
 /** Logo upload limits. */
@@ -179,3 +209,107 @@ export const REFRESH_COOKIE = 'ph_refresh';
 
 export const DEFAULT_PAGE_SIZE = 20;
 export const MAX_PAGE_SIZE = 100;
+
+// ---------- Documentation wiki (M5) ----------
+
+/** Icons a space can use (mapped to Ant Design icons in the web client). */
+export const SPACE_ICONS = [
+  'book',
+  'safety',
+  'team',
+  'setting',
+  'database',
+  'cloud',
+  'bank',
+  'tool',
+  'rocket',
+  'heart',
+  'audit',
+  'global',
+] as const;
+export type SpaceIcon = (typeof SPACE_ICONS)[number];
+
+export const SPACE_ACCESS_LEVELS = ['VIEW', 'EDIT'] as const;
+export type SpaceAccessLevel = (typeof SPACE_ACCESS_LEVELS)[number];
+
+export const SPACE_PRINCIPAL_TYPES = ['USER', 'ROLE', 'DEPARTMENT'] as const;
+export type SpacePrincipalType = (typeof SPACE_PRINCIPAL_TYPES)[number];
+
+export const TEXT_DIRECTIONS = ['ltr', 'rtl'] as const;
+export type TextDirection = (typeof TEXT_DIRECTIONS)[number];
+
+/** Built-in page templates (bilingual, editable by admins). */
+export const SYSTEM_TEMPLATE_KEYS = [
+  'SOP',
+  'POLICY',
+  'WORK_INSTRUCTION',
+  'GUIDE',
+  'MEETING_NOTES',
+  'BLANK',
+] as const;
+export type SystemTemplateKey = (typeof SYSTEM_TEMPLATE_KEYS)[number];
+
+export const PAGE_LINK_TARGETS = ['PROCESS', 'OBJECT'] as const;
+export type PageLinkTarget = (typeof PAGE_LINK_TARGETS)[number];
+
+/** Maximum size of one language version of a page (HTML characters). */
+export const PAGE_CONTENT_MAX_CHARS = 1_000_000;
+
+/** Attachments: allowed file types and limits. Types are verified from the file content on the server. */
+export const ATTACHMENT_MAX_BYTES = 10 * 1024 * 1024;
+export const ATTACHMENT_IMAGE_TYPES = [
+  'image/png',
+  'image/jpeg',
+  'image/gif',
+  'image/webp',
+] as const;
+export const ATTACHMENT_TYPES: Record<string, string> = {
+  png: 'image/png',
+  jpg: 'image/jpeg',
+  jpeg: 'image/jpeg',
+  gif: 'image/gif',
+  webp: 'image/webp',
+  pdf: 'application/pdf',
+  docx: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  xlsx: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  pptx: 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+  txt: 'text/plain',
+  csv: 'text/csv',
+  md: 'text/markdown',
+  bpmn: 'application/xml',
+};
+
+// ---------- Search ----------
+export const SEARCH_TYPES = ['all', 'pages', 'processes'] as const;
+export type SearchType = (typeof SEARCH_TYPES)[number];
+/** Markers around highlighted words in search snippets (private-use characters, never in content). */
+export const HIGHLIGHT_START = '\uE000';
+export const HIGHLIGHT_END = '\uE001';
+
+// ---------- Git integration (M7) ----------
+export const GIT_PROVIDERS = ['github', 'gitlab'] as const;
+export type GitProvider = (typeof GIT_PROVIDERS)[number];
+
+export const GIT_SYNC_TRIGGERS = ['ON_VERSION', 'MANUAL'] as const;
+export type GitSyncTrigger = (typeof GIT_SYNC_TRIGGERS)[number];
+
+export const GIT_SYNC_STATUSES = ['PENDING', 'SUCCESS', 'FAILED'] as const;
+export type GitSyncStatus = (typeof GIT_SYNC_STATUSES)[number];
+
+export const GIT_ENTITY_TYPES = ['PROCESS', 'PAGE'] as const;
+export type GitEntityType = (typeof GIT_ENTITY_TYPES)[number];
+
+/** Machine-readable sync errors; translated in the web client (errors.json). */
+export const GIT_ERROR_CODES = [
+  'GIT_AUTH_FAILED',
+  'GIT_REPO_NOT_FOUND',
+  'GIT_BRANCH_NOT_FOUND',
+  'GIT_NO_PUSH_ACCESS',
+  'GIT_RATE_LIMITED',
+  'GIT_CONFLICT',
+  'GIT_NETWORK',
+  'GIT_NOT_CONFIGURED',
+  'GIT_SOURCE_MISSING',
+  'GIT_UNKNOWN',
+] as const;
+export type GitErrorCode = (typeof GIT_ERROR_CODES)[number];
