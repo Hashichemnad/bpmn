@@ -11,8 +11,11 @@ Phase 6 is split into small parts, one branch each (`phase-6-part-<n>` from the 
 
 Steps (tick as they are committed; a new session continues at the first unticked one):
 
-- [ ] 1. Replace the frozen MinIO image (D-009) with a maintained S3-compatible store in `docker-compose.yml`;
-      migration script for files in an existing MinIO volume; DECISIONS entry.
+- [x] 1. Replace the frozen MinIO image (D-009) with a maintained S3-compatible store in `docker-compose.yml`;
+      migration script for files in an existing MinIO volume; DECISIONS entry. **Done:** Versity S3 Gateway
+      (`versity/versitygw:v1.9.0`, objects as plain files + metadata sidecar, D-051), service `storage`, volume
+      `storage-data`; `scripts/migrate-minio-storage.sh` (tested: 25 files copied, checksums and content types
+      match); shared helpers in `scripts/lib.sh`.
 - [ ] 2. `docker-compose.prod.yml` + `deploy/Caddyfile`: Caddy with automatic HTTPS (only 80/443 published),
       internal network for database and storage, health checks, restart policies, resource limits, log rotation.
 - [ ] 3. `.env.example.prod` with secure defaults + `scripts/generate-secrets.sh`.

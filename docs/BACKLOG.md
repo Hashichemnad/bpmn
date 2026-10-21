@@ -5,7 +5,6 @@ where they belong; move items into the plan when that phase starts.
 
 ## Needs a decision
 
-- **MinIO image for production** — keep `bitnamilegacy/minio` for now, revisit in Phase 6 (D-009).
 - **`braces` (high, dev-only, via Jest; no fixed version)** — accept until the slim API runtime image drops
   dev dependencies, or migrate the API tests from Jest to Vitest (SECURITY.md SEC-08).
 

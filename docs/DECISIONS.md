@@ -71,6 +71,7 @@ receives no further updates. The image is configurable through `MINIO_IMAGE`, bu
 different start command and data path, so switching requires a compose change. **Needs a decision before
 production** (options: official `quay.io/minio/minio` image, a self-built image, or another S3-compatible store).
 _Update (Phase 2): decided to keep this image for now and revisit in Phase 6._
+_Update (Phase 6 part 2): replaced by Versity S3 Gateway, see D-051._
 
 ## D-010 — Docker images
 
@@ -471,3 +472,22 @@ only those flag props were removed), `vitest` 3 → 4 (dev server advisory), `js
 override (pulled in by `@nestjs/swagger`). MinIO's transitive `stream-json` 1.x / `decode-uri-component`
 0.2 are **not** overridden: the fixed versions are new majors (ESM-only / different module layout) that the
 MinIO client may not load, and the vulnerable code is not on any path ProcessHub uses (SECURITY.md SEC-09).
+
+## D-051 — File storage: Versity S3 Gateway replaces MinIO
+
+MinIO no longer ships community images or binaries and its community edition is in maintenance mode, so
+the `bitnamilegacy/minio` image (D-009) would never receive security fixes. Compared for a single server with
+50–500 users: **Versity S3 Gateway** (Apache-2.0, actively released, one small container), SeaweedFS
+(Apache-2.0, but its own volume format and more moving parts) and Garage (AGPL, needs a cluster layout and
+key import before first use). Chosen: **Versity S3 Gateway with the POSIX backend** (`versity/versitygw`,
+pinned to a release tag). Objects are stored as **plain files** (`/data/objects/<bucket>/<key>`) and metadata
+(content type, ETag) in a sidecar folder (`/data/meta`) instead of extended attributes, so a backup is a plain
+`tar` of the volume, files can be inspected or recovered without the gateway, and there is no lock-in.
+`--fsync` makes an acknowledged upload survive a power loss. The API keeps its S3 client (`minio` npm
+package, works with any S3 service) and the `MINIO_*` variable names, so existing `.env` files keep working;
+only `MINIO_ENDPOINT`/`MINIO_PORT` change (Compose sets `storage:7070`). Migration from an existing MinIO
+volume: `scripts/migrate-minio-storage.sh` starts the old image once on the old volume and copies every
+object with rclone, then checks size and checksum per file; the old volume is kept until an admin deletes it.
+Verified with the API's own client (bucket creation, upload with content type, download, delete) and a
+25-file migration. Moving to another S3 service later (cloud object storage, SeaweedFS, …) works the same
+way: rclone copy, then change the `MINIO_*` settings.
