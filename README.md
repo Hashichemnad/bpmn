@@ -4,7 +4,7 @@
 
 **منصة ثنائية اللغة (العربية / الإنجليزية) لإدارة العمليات المؤسسية** — تجمع بين جوهر ARIS و GBTEC (BIC) مع ويكي للتوثيق على غرار Confluence، والتحكم في الإصدارات، وتكامل اختياري مع GitHub / GitLab.
 
-> **Status:** ✅ Phase 1 (Foundation), ✅ Phase 2 (Documentation wiki, version control, Git integration), ✅ Phase 3 (Governance, Knowledge Portal) and ✅ the AI Assistant (M16, awaiting review) — see [`docs/PROGRESS.md`](./docs/PROGRESS.md). Next: Phase 4 (GRC, EA, KPIs).
+> **Status:** ✅ Phase 1 (Foundation), ✅ Phase 2 (Documentation wiki, version control, Git integration), ✅ Phase 3 (Governance, Knowledge Portal) and ✅ the AI Assistant (M16); 🟡 Phase 6 hardening in progress (security review done; production deployment, backups and storage on branch `phase-6-part-2`) — see [`docs/PROGRESS.md`](./docs/PROGRESS.md).
 
 ---
 
@@ -28,6 +28,10 @@
 ## Quick start (Docker)
 
 Requirements: Docker with Compose v2.24 or newer.
+
+> **Production / go-live:** use `docker-compose.prod.yml` (Caddy with automatic HTTPS, internal network,
+> backups) and follow [`docs/DEPLOYMENT.md`](./docs/DEPLOYMENT.md) — a step-by-step guide for IT, including
+> server sizing, backups and restore. The quick start below is a local trial with demo data.
 
 ```bash
 git clone <this repository> processhub && cd processhub
@@ -106,7 +110,7 @@ docker compose up --build -d
 
 Every variable is documented in [`.env.example`](./.env.example). The ones that matter most:
 
-- `POSTGRES_PASSWORD`, `MINIO_SECRET_KEY`: database and object-storage passwords.
+- `POSTGRES_PASSWORD`, `MINIO_SECRET_KEY`: database and file-storage passwords (the `MINIO_*` names are kept from earlier versions; the storage is now Versity S3 Gateway, DECISIONS D-051).
 - `SEED_ADMIN_EMAIL`, `SEED_ADMIN_PASSWORD`: the first Super Admin. These are read only when that user does not exist yet.
 - `JWT_ACCESS_SECRET`: leave it empty and the API generates a random secret on first start, kept in the `api-data` volume.
 - `INTEGRATIONS_ENCRYPTION_KEY`: encrypts GitHub/GitLab tokens and the SMTP password (AES-256-GCM). Leave it empty with Docker and a key is generated and kept in the `api-data` volume.
@@ -170,11 +174,15 @@ again), sender. **Send test email** checks the settings. Emails are sent in each
 choose per notification type whether they also want an email (My profile). For a real installation replace
 the demo Mailpit settings with your mail server and remove the `mailpit` service if you do not need it.
 
-Data lives in the Docker volumes `postgres-data`, `minio-data` and `api-data`. `docker compose down` keeps them; `docker compose down -v` deletes them.
+Data lives in the Docker volumes `postgres-data`, `storage-data` and `api-data`. `docker compose down` keeps them; `docker compose down -v` deletes them.
+
+**Upgrading an installation that used MinIO** (before Phase 6 part 2): run `./scripts/migrate-minio-storage.sh`
+once after updating; it copies every file from the old `minio-data` volume into the new storage and verifies it.
+Backups: `./scripts/backup.sh` / `./scripts/restore.sh` (see [`docs/DEPLOYMENT.md`](./docs/DEPLOYMENT.md) §7–8).
 
 ## Local development (without Docker for the apps)
 
-Requirements: Node.js 20+, pnpm 10 (`corepack enable`), PostgreSQL 16, and optionally MinIO for logo uploads.
+Requirements: Node.js 20+, pnpm 10 (`corepack enable`), PostgreSQL 16, and optionally an S3-compatible storage for uploads (e.g. `docker compose up -d storage` with a published port, or any S3 service).
 
 ```bash
 pnpm install
@@ -243,8 +251,11 @@ packages/
   shared/                 zod schemas, types, permissions & roles, bilingual helpers, BPMN validation,
                           lifecycle transitions and portal visibility rules
   e2e/ (in apps/)         Playwright smoke tests
-docs/                     PROGRESS.md, DECISIONS.md, BACKLOG.md
-docker-compose.yml        postgres, minio, mailpit (demo email), api, web
+docs/                     PROGRESS.md, DECISIONS.md, BACKLOG.md, SECURITY.md, DEPLOYMENT.md, AI-DEMO.md
+docker-compose.yml        local trial: postgres, storage, mailpit (demo email), api, web
+docker-compose.prod.yml   production: caddy (HTTPS), web, api, postgres, storage
+deploy/                   Caddyfile, own certificates (optional), daily backup cron example
+scripts/                  generate-secrets, backup, restore, migrate-minio-storage
 ```
 
 ## Security highlights
@@ -253,9 +264,10 @@ docker-compose.yml        postgres, minio, mailpit (demo email), api, web
 - Short-lived JWT access tokens and rotating refresh tokens in `httpOnly; Secure; SameSite=Strict` cookies, with reuse detection. Double-submit CSRF protection bound to the request origin.
 - Permissions are checked on the server for every request, and routes are denied by default. The UI only hides what a user cannot do.
 - Rate limiting, request size limits, helmet, strict CORS, and a CSP on the web app.
+- Production stack: HTTPS with automatic certificates and HSTS (Caddy), only ports 80/443 published, database and file storage on an internal network without internet access, secrets required in `.env` (no defaults), checksummed backups.
 - Uploaded logos are type-checked by content and SVGs are sanitised. BPMN imports reject DTDs and entities.
 - Wiki content is sanitised with DOMPurify on the server (on save) and again in the browser (on render); images may only point at ProcessHub attachments.
-- Attachments: extension allow-list plus a content check, 10 MB limit, stored in MinIO and delivered with a sandboxing CSP, `nosniff` and download disposition for non-images.
+- Attachments: extension allow-list plus a content check, 10 MB limit, stored in the S3-compatible file storage and delivered with a sandboxing CSP, `nosniff` and download disposition for non-images.
 - Per-space view/edit restrictions apply everywhere, including search and "related documentation".
 - GitHub/GitLab tokens are encrypted at rest (AES-256-GCM), write-only in the API and scrubbed from errors and the audit log.
 - Viewers can only use the Knowledge Portal; its endpoints return current published versions only (never drafts, reviews or archived content). Tested for every route.

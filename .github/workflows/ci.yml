@@ -55,3 +55,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - run: docker compose build
+      - name: Production compose file is valid
+        run: |
+          cp .env.example.prod .env
+          ./scripts/generate-secrets.sh
+          docker compose config --quiet
+      - name: Shell scripts (shellcheck)
+        run: shellcheck -x -s sh scripts/*.sh

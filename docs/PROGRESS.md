@@ -7,7 +7,7 @@ Read this together with `CLAUDE.md` at the start of every session.
 Phase 6 is split into small parts, one branch each (`phase-6-part-<n>` from the latest `main`). Part 1
 (security review) is merged into `main`.
 
-### Part 2 — Production deployment, backups and storage (in progress)
+### Part 2 — Production deployment, backups and storage (done, awaiting review)
 
 Steps (tick as they are committed; a new session continues at the first unticked one):
 
@@ -41,8 +41,35 @@ Steps (tick as they are committed; a new session continues at the first unticked
       firewall, Docker install, configure, DNS, start, first sign-in, HTTPS options (Let's Encrypt, company
       certificate, internal — the latter two verified in Docker), backups incl. off-site copies, restore incl.
       new server, updates (incl. MinIO migration and trial → production), monitoring, troubleshooting, reference.
-- [ ] 6. Verification (tests, lint, type-check, prod stack in Docker), docs (DECISIONS, BACKLOG, README,
-      SECURITY, CLAUDE.md phase table), push.
+- [x] 6. Verification, docs (DECISIONS D-051 – D-053, BACKLOG, README, SECURITY §6/§7, CLAUDE.md phase table and
+      stack), CI (production compose file validated, `shellcheck` on `scripts/`), push.
+
+#### Verification (part 2)
+
+| Check                                              | Result                                                                                                                                  |
+| -------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
+| `pnpm format:check`, `pnpm lint`, `pnpm typecheck` | clean                                                                                                                                   |
+| `pnpm test`                                        | **332 tests pass** — shared 64, web 31, API 237 (no application code changed in this part)                                              |
+| `pnpm build`                                       | passes                                                                                                                                  |
+| `pnpm audit --prod`                                | no high/critical; the same 4 moderate as part 1 (`minio` client, SEC-09)                                                                |
+| Trial stack (`docker-compose.yml`, clean clone)    | five services healthy with the new `storage` service; 8 Playwright smoke tests pass on `http://localhost:8080`                          |
+| Production stack (`docker-compose.prod.yml`)       | see steps 2 and 4: HTTPS (internal CA and company certificate), isolation, 8 MB upload, backup, disaster-drill restore, MinIO migration |
+| `shellcheck -s sh scripts/*.sh`                    | clean                                                                                                                                   |
+
+Docker in the sandbox: as before, base images from `mirror.gcr.io` (re-tagged locally) and the app images built
+from the committed Dockerfiles with an uncommitted CA line and `docker build --network host`.
+Let's Encrypt itself could not be tested here (no public DNS); the Caddyfile path is the same as for
+`internal` and company certificates, which were both verified.
+
+### Next (continue here)
+
+1. Review and merge `phase-6-part-2`. Existing installations: after updating, run
+   `./scripts/migrate-minio-storage.sh` once (copies files from the old `minio-data` volume).
+2. Decisions for you (also in the summary of this session): the storage choice (D-051); whether `.env` may be
+   included in backups (`--with-env`, default no); off-site backup target (Azure Blob / S3) and retention;
+   `braces` (BACKLOG "Needs a decision").
+3. Next Phase 6 parts (suggested order): TOTP two-factor and SSO (Azure AD / OIDC); slim API runtime image and
+   images in a registry; performance; external penetration test with `docs/SECURITY.md` §8.
 
 ## Phase 6 part 1 — 2026-10-21 (security review, merged into `main`)
 
@@ -110,7 +137,7 @@ guard (`OUTBOUND_ALLOWED_HOSTS=mailpit`); a foreign `Origin` gets `CSRF_INVALID`
 web image no longer type-checked after the Vitest 4 upgrade (Node types were only pulled in transitively):
 `@types/node` is now a web dev dependency and listed in the web tsconfig.
 
-### Next (continue here)
+### Next (at the end of that part — superseded)
 
 1. Review and merge `phase-6-part-1` (new env var `OUTBOUND_ALLOWED_HOSTS`: add internal Git / SMTP servers
    to it on existing installations, otherwise they are blocked).
@@ -176,7 +203,7 @@ merged into `main`. The brief was built in three parts, committed separately (A,
   only — never drafts, restricted spaces without a grant, or the working copy of a process; grants; not-found
   without an AI call; AI roles and portal access), `toAnyTsQuery` unit test.
 
-### Next (continue here)
+### Next (at the end of that part — superseded)
 
 1. Review and merge `phase-ai-assistant`; run `docs/AI-DEMO.md` once with a real API key before the management
    demo (the suite only uses a fake provider).

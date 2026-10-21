@@ -60,6 +60,13 @@ where they belong; move items into the plan when that phase starts.
 - Optional TOTP two-factor authentication (CLAUDE.md §7 allowed deferral from Phase 1).
 - SSO (Azure AD / OIDC).
 - Slim API runtime image (`pnpm deploy --prod` plus a separate migration step); unprivileged nginx image.
+- Production follow-ups from part 2 (D-051 – D-053): publish versioned images to a registry (GHCR / ACR /
+  ECR) so servers pull instead of build; rename the `MINIO_*` variables to `STORAGE_*` (keep the old names as
+  aliases); replace the `minio` npm client with `@aws-sdk/client-s3` (also clears SEC-09); run the storage
+  container as a non-root user; optional encryption of backup folders (age / GPG) and a built-in off-site
+  upload; an automated restore drill in CI; Prometheus metrics / Grafana dashboard; a `processhub` admin CLI
+  (reset a locked-out last Super Admin, show versions); point-in-time recovery (WAL archiving) if a daily
+  backup is not enough for the business.
 - Rate-limit storage in Redis when running more than one API instance (currently in-memory).
 - Password policy editable from Settings (currently environment variables).
 - "My sessions" list with remote sign-out in the profile.
@@ -67,7 +74,7 @@ where they belong; move items into the plan when that phase starts.
 - Code-split Ant Design to reduce the initial bundle (~370 KB gzipped).
 - Track the dev-only `braces` advisory (via Jest), which has no upstream fix yet (see "Needs a decision").
 - Moderate production advisories left after part 1: `minio` → `stream-json` / `decode-uri-component` (code
-  paths unused, SECURITY.md SEC-09) — update when the MinIO client moves to fixed versions.
+  paths unused, SECURITY.md SEC-09) — update when the MinIO client moves to fixed versions or replace the client.
 - External penetration test before go-live, using the checklist in `docs/SECURITY.md` §8.
 - CSP without `style-src 'unsafe-inline'` (Ant Design CSS-variables mode / nonces).
 - Optionally mark `ph_csrf` as a `__Host-` cookie when `COOKIE_SECURE=true` (the origin check, D-048,
