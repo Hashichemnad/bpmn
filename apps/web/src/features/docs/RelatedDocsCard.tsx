@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import { Card, List, Space, Tag, Typography } from 'antd';
 import { FileTextOutlined } from '@ant-design/icons';
@@ -9,7 +10,15 @@ import { EmptyState, ErrorState } from '@/components/states';
 import { useFormatDate, useLocalized } from '@/components/i18n-helpers';
 
 /** "Related documentation": wiki pages linked to a process or repository object. */
-export function RelatedDocsCard({ kind, id }: { kind: 'processes' | 'objects'; id: string }) {
+export function RelatedDocsCard({
+  kind,
+  id,
+  extra,
+}: {
+  kind: 'processes' | 'objects';
+  id: string;
+  extra?: ReactNode;
+}) {
   const { t } = useTranslation();
   const { can } = useAuth();
   const loc = useLocalized();
@@ -17,7 +26,7 @@ export function RelatedDocsCard({ kind, id }: { kind: 'processes' | 'objects'; i
   const pages = useRelatedPages(kind, id, can(PERMISSIONS.DOCS_READ));
   if (!can(PERMISSIONS.DOCS_READ)) return null;
   return (
-    <Card title={t('docs:related.title')}>
+    <Card title={t('docs:related.title')} extra={extra}>
       {pages.isError ? (
         <ErrorState error={pages.error} onRetry={() => void pages.refetch()} />
       ) : (

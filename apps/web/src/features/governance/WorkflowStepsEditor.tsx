@@ -13,7 +13,12 @@ import {
 } from 'antd';
 import { DeleteOutlined, PlusOutlined } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
-import { MAX_WORKFLOW_STEPS, SYSTEM_ROLE_KEYS, type UserRef } from '@processhub/shared';
+import {
+  MAX_WORKFLOW_STEPS,
+  READ_ONLY_ROLE_KEYS,
+  SYSTEM_ROLE_KEYS,
+  type UserRef,
+} from '@processhub/shared';
 import { useDepartmentTreeData } from '@/features/admin/useDepartmentTreeData';
 import { UserSelect } from './UserSelect';
 
@@ -151,12 +156,12 @@ export function WorkflowStepsEditor({ known = [] }: { known?: UserRef[] }) {
                                   >
                                     <Select
                                       placeholder={t('governance:workflows.role')}
-                                      options={SYSTEM_ROLE_KEYS.filter((r) => r !== 'VIEWER').map(
-                                        (r) => ({
-                                          value: r,
-                                          label: t(`admin:roles.${r}`),
-                                        }),
-                                      )}
+                                      options={SYSTEM_ROLE_KEYS.filter(
+                                        (r) => !READ_ONLY_ROLE_KEYS.includes(r),
+                                      ).map((r) => ({
+                                        value: r,
+                                        label: t(`admin:roles.${r}`),
+                                      }))}
                                     />
                                   </Form.Item>
                                   <Form.Item

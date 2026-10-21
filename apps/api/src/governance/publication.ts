@@ -15,6 +15,7 @@ export interface StepSnapshot {
   nameAr: string;
   rule: ApprovalRule;
   assigneeIds: string[];
+  /** Only in reviews submitted before self-approval was blocked (four-eyes principle); now always false. */
   approvedBySubmitter: boolean;
 }
 

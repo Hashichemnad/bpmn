@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import {
   Alert,
@@ -26,7 +26,12 @@ import {
   PlusOutlined,
 } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
-import type { Locale } from '@processhub/shared';
+import {
+  PERMISSIONS,
+  type AiGeneratedProcessDto,
+  type AiSuggestedLinkDto,
+  type Locale,
+} from '@processhub/shared';
 import { api } from '@/api/client';
 import { useDeletePage, usePage } from '@/api/docs';
 import { PageHeader } from '@/components/PageHeader';
@@ -42,6 +47,11 @@ import { GovernancePanel } from '@/features/governance/GovernancePanel';
 import { CommentsPanel } from '@/features/comments/CommentsPanel';
 import { useGovernance } from '@/api/governance';
 import { StatusTag } from '@/components/tags';
+import { AiBadge, AiButton } from '@/features/ai/AiParts';
+import { GenerateProcessModal } from '@/features/ai/GenerateProcessModal';
+import { ProcessFormModal } from '@/features/processes/ProcessFormModal';
+import { useAuth } from '@/auth/AuthProvider';
+import { SummaryButton } from '@/features/ai/SummaryModal';
 
 export function LanguageAvailability({ hasEn, hasAr }: { hasEn: boolean; hasAr: boolean }) {
   const { t } = useTranslation();
@@ -75,6 +85,12 @@ export function PageViewPage() {
   const governance = useGovernance('PAGE', pageId);
   const [params] = useSearchParams();
   const commentsRef = useRef<HTMLDivElement>(null);
+  const { can } = useAuth();
+  const [toProcess, setToProcess] = useState<'generate' | 'create' | null>(null);
+  const [generated, setGenerated] = useState<{
+    result: AiGeneratedProcessDto;
+    links: AiSuggestedLinkDto[];
+  } | null>(null);
   const showComments = params.get('comments') === '1';
   useEffect(() => {
     if (showComments && page.data) commentsRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -176,6 +192,7 @@ export function PageViewPage() {
               rejected={governance.data?.rejected}
             />
             <LanguageAvailability hasEn={p.hasEn} hasAr={p.hasAr} />
+            {p.aiGenerated && <AiBadge />}
             <Typography.Text type="secondary" style={{ fontSize: 12 }}>
               {t('docs:pages.versionMeta', {
                 version: p.version,
@@ -187,6 +204,12 @@ export function PageViewPage() {
         }
         extra={
           <>
+            {(p.hasEn || p.hasAr) && <SummaryButton target={{ type: 'PAGE', id: p.id }} />}
+            {(p.hasEn || p.hasAr) && can(PERMISSIONS.PROCESSES_CREATE) && (
+              <AiButton onClick={() => setToProcess('generate')}>
+                {t('ai:fromPage.button')}
+              </AiButton>
+            )}
             <Segmented
               value={lang}
               onChange={(l) => setLang(l as Locale)}
@@ -274,6 +297,25 @@ export function PageViewPage() {
           </Space>
         </Col>
       </Row>
+      <GenerateProcessModal
+        open={toProcess === 'generate'}
+        page={{ id: p.id, title: v.title }}
+        acceptLabel={t('ai:fromPage.accept')}
+        onClose={() => setToProcess((x) => (x === 'generate' ? null : x))}
+        onAccept={async (result, links) => {
+          setGenerated({ result, links });
+          setToProcess('create');
+        }}
+      />
+      {toProcess === 'create' && generated && (
+        <ProcessFormModal
+          open
+          mode="create"
+          generated={generated}
+          linkPageId={p.id}
+          onClose={() => setToProcess(null)}
+        />
+      )}
     </>
   );
 }

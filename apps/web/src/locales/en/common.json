@@ -45,7 +45,8 @@
     "workflows": "Workflows",
     "portalSettings": "Knowledge Portal",
     "portal": "Portal",
-    "portalHint": "Open the Knowledge Portal (published content)"
+    "portalHint": "Open the Knowledge Portal (published content)",
+    "aiUsage": "AI usage"
   },
   "auth": {
     "subtitle": "Sign in to continue",

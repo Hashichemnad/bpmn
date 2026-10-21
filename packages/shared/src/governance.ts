@@ -70,19 +70,17 @@ export function stepOutcome(rule: ApprovalRule, tasks: StepTaskState[]): StepOut
 }
 
 /**
- * Assignees of a step when `submitterId` submits: the submitter never reviews their own
- * work unless they are the only possible approver, in which case the step counts as approved
- * by submitting (e.g. a process owner submitting their own process for an owner step).
+ * Assignees of a step when `submitterId` submits. Four-eyes principle: the submitter never
+ * approves their own work. `onlySubmitter` is true when the submitter is the step's only
+ * possible approver — the submission must then be refused until another approver is assigned.
  */
 export function stepAssignees(
   candidates: readonly string[],
   submitterId: string,
-): { assigneeIds: string[]; approvedBySubmitter: boolean } {
+): { assigneeIds: string[]; onlySubmitter: boolean } {
   const unique = [...new Set(candidates)];
   const others = unique.filter((id) => id !== submitterId);
-  if (others.length) return { assigneeIds: others, approvedBySubmitter: false };
-  if (unique.includes(submitterId)) return { assigneeIds: [], approvedBySubmitter: true };
-  return { assigneeIds: [], approvedBySubmitter: false };
+  return { assigneeIds: others, onlySubmitter: !others.length && unique.includes(submitterId) };
 }
 
 // ---------- Review dates ----------

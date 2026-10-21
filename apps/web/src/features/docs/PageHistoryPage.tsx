@@ -37,6 +37,7 @@ import { RichTextView } from './RichTextView';
 import { DiffStatsTags, PageDiffView } from './PageDiffView';
 import { useDiff } from './use-diff';
 import { useSpaceContext } from './space-context';
+import { SummaryButton } from '@/features/ai/SummaryModal';
 
 export function VersionTitle({
   v,
@@ -139,6 +140,13 @@ export function PageHistoryPage() {
       message.error(errorMessage(err));
     }
   };
+
+  const numOf = (id: string | null) => list.find((x) => x.id === id)?.versionNumber;
+  const [na, nb] = [numOf(aId), numOf(bId)];
+  const comparePair =
+    na !== undefined && nb !== undefined && na !== nb
+      ? { from: Math.min(na, nb), to: Math.max(na, nb) }
+      : null;
 
   const vName = (id: string | null) => {
     const v = list.find((x) => x.id === id);
@@ -261,6 +269,12 @@ export function PageHistoryPage() {
             }
             extra={
               <Space wrap>
+                {comparePair && (
+                  <SummaryButton
+                    size="small"
+                    target={{ type: 'PAGE', id: p.id, compare: comparePair }}
+                  />
+                )}
                 <Segmented
                   size="small"
                   value={lang}

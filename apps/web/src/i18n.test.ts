@@ -28,6 +28,10 @@ import {
   REVIEW_STATUSES,
   REVIEW_TASK_STATUSES,
   WORKFLOW_SOURCES,
+  AI_ERROR_CODES,
+  AI_FEATURES,
+  AI_FINDING_KINDS,
+  AI_PROVIDERS,
 } from '@processhub/shared';
 import { resources } from './i18n';
 
@@ -161,6 +165,21 @@ describe('translations', () => {
       'governance:status.rejected',
       'errors:ITEM_IN_REVIEW',
       'errors:ITEM_ARCHIVED',
+      // AI assistant
+      ...AI_ERROR_CODES.map((c) => `errors:${c}`),
+      ...AI_FEATURES.map((f) => `ai:features.${f}`),
+      ...AI_PROVIDERS.map((p) => `ai:settings.providers.${p}`),
+      ...['PERFORMS', 'SUPPORTS'].map((r) => `ai:generate.relation.${r}`),
+      ...['SOP', 'WORK_INSTRUCTION'].map((k) => `ai:doc.templates.${k}`),
+      ...AI_FINDING_KINDS.map((k) => `ai:analyse.kind.${k}`),
+      ...['HIGH', 'MEDIUM', 'LOW'].map((k) => `ai:analyse.severity.${k}`),
+      ...['en', 'ar'].flatMap((l) => [
+        `ai:translate.labelsTitle.${l}`,
+        `ai:translate.pageTitle.${l}`,
+        `ai:translate.fillFrom.${l}`,
+        `ai:translate.target.${l}`,
+        `ai:translate.fieldsTo.${l}`,
+      ]),
     ];
     expect(expected.filter((k) => !en.has(k))).toEqual([]);
   });

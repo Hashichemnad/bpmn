@@ -139,6 +139,8 @@ export interface ProcessDto extends ProcessSummaryDto {
   children: ProcessSummaryDto[];
   ancestors: Pick<ProcessSummaryDto, 'id' | 'code' | 'nameEn' | 'nameAr'>[];
   hasModel: boolean;
+  /** The working model was produced by the AI assistant and not yet edited or approved by a person. */
+  aiGenerated: boolean;
   /** Whether the current user may edit this process / its model. */
   canEdit: boolean;
   canEditModel: boolean;
@@ -279,6 +281,8 @@ export interface PageDto extends PageSummaryDto {
   createdBy: UserRef | null;
   updatedBy: UserRef | null;
   createdAt: string;
+  /** The saved content was produced by the AI assistant and not yet edited or approved by a person. */
+  aiGenerated: boolean;
   canEdit: boolean;
   canManage: boolean;
 }
@@ -524,7 +528,7 @@ export interface ReviewStepDto {
   nameAr: string;
   rule: ApprovalRule;
   state: 'WAITING' | 'ACTIVE' | 'APPROVED' | 'CHANGES_REQUESTED' | 'REJECTED' | 'CANCELLED';
-  /** The submitter was this step's only approver, so submitting counted as approval. */
+  /** Legacy (before the four-eyes rule): submitting counted as this step's approval. */
   approvedBySubmitter: boolean;
   /** Users who will be asked when the step starts. */
   assignees: UserRef[];

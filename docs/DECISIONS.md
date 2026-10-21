@@ -313,3 +313,123 @@ dashboard, notifications). They run against a seeded installation (`E2E_BASE_URL
 http://localhost:8080) and only read data or add feedback, so they can be re-run. They are not part of
 `pnpm test` because they need the whole stack; CI integration is in the backlog. `@playwright/test` is pinned
 to the version whose Chromium build is installed in the development containers.
+
+## D-038 — Four-eyes principle: self-approval is never allowed
+
+Decided by the product owner at the start of the AI phase, replacing the "approved by submitting" rule of
+D-030. The submitter is always removed from a step's assignees. When they are the **only** possible approver
+of a step, the submission is refused with `SELF_APPROVAL_NOT_ALLOWED` (HTTP 400, the step's bilingual name in
+the details) and the item stays in Draft, so the submitter asks for another approver to be added. Reviews
+submitted earlier keep their `approvedBySubmitter` steps (shown as such on the review page).
+
+## D-039 — Auditor system role and `reviews.decide`
+
+A new system role **Auditor** gets read-only access to the workspace: processes and their working drafts,
+version history, pages, reviews, comments (read), the governance dashboard, users (read) and the audit log,
+plus the portal. It has no edit, comment, approve or publish permissions. Viewers stay portal-only (D-028).
+A new permission `reviews.decide` (all roles except Auditor and Viewer) is required to be resolved as a
+workflow approver and to record a decision, so read-only users can never approve — even when named in a
+workflow. Read-only roles cannot be a workflow role assignee (schema check). Space view restrictions still
+apply to Auditors; administrators grant the Auditor role access to restricted spaces where needed.
+
+## D-040 — AI platform layer (M16)
+
+- One NestJS module `ai`: `AiGatewayService` is the only way features reach a model. A provider
+  interface (`AiProviderClient`: one `complete()` call with optional streaming text and JSON schema)
+  keeps the rest provider-agnostic; `AiProviders` is the registry (tests replace it with `FakeAi`).
+- First provider: **Anthropic Claude** through the official `@anthropic-ai/sdk`, streaming
+  (`messages.stream` → `finalMessage()`), system prompts marked for prompt caching, `effort` per
+  feature (low for translation/summaries, medium for generation) and the server-side refusal
+  fallback (`fallbacks: "default"`, beta `server-side-fallback-2026-07-01`; a no-op on models
+  without one). A refusal becomes `AI_REFUSED`. SDK errors are mapped to `AI_*` codes; raw provider
+  messages and the key are never sent to the browser.
+- Default models as decided by the product owner: `claude-sonnet-5-5` (main) and
+  `claude-haiku-5-5` (fast: label/field translation). Both are free-text settings.
+- Data the model returns is requested as **structured output** (`output_config.format` with a JSON
+  schema), then parsed and validated on the server (zod + semantic checks). When invalid, the model
+  gets **one** repair attempt with the list of problems; the attempts are logged as one request.
+- Responses are streamed to the browser as **Server-Sent Events** over a POST (`fetch` reader, so
+  CSRF and cookies work as usual): `progress` / `delta`, then one `result` or `error`. Access,
+  permissions and limits are checked before the stream starts, so they are ordinary JSON 403/429.
+  nginx has an unbuffered location for `/api/v1/ai/` with a 300 s read timeout.
+
+## D-041 — AI settings, access, limits and logging
+
+- Setting `ai` (Super Admin, Settings → AI): enabled (default **off**), provider, model, fast model,
+  API key (AES-256-GCM with `INTEGRATIONS_ENCRYPTION_KEY`, write-only, never returned or logged),
+  roles allowed to use the assistant, requests per user per UTC day, requests per organisation per
+  UTC month (0 = no limit), the data notice (EN/AR) and suggestion chips per feature.
+- A user may use AI when it is enabled and one of their roles is allowed. Otherwise `GET /ai/status`
+  says so (the UI hides every ✨ AI entry point) and every AI endpoint returns 403
+  (`AI_DISABLED` / `AI_NOT_ALLOWED`); limits return 429 (`AI_USER_LIMIT` / `AI_ORG_LIMIT`).
+  Feature-specific rights still apply (e.g. editing the model you generate into).
+- Every request → one `AiUsage` row (user, feature, model, input/output tokens, status, error code,
+  duration, item) and an `AI_REQUEST` audit entry. The audit entry records the prompt size, never
+  the prompt (it may contain confidential content). Connection tests are logged but do not count
+  against the limits. New permission `ai.usage.read` (Admins, Super Admins, Auditors) for the
+  **AI usage** page (totals per user, feature, model and month).
+
+## D-042 — Generated BPMN: structure first, layout on the server
+
+The model never writes XML or coordinates. It returns a structured process (lanes, typed nodes,
+flows, bilingual labels/descriptions, IT system per step) that is validated (ids, references, one
+reachable start, end events, connections). The server builds BPMN 2.0 XML with `ph:nameEn/Ar`
+labels, a pool with one lane per role, and diagram interchange from a **layered (Sugiyama-style)
+layout**: columns = longest path without back edges, rows per lane, orthogonal edges, loops routed
+below. `bpmn-auto-layout` was evaluated and not used: it ignores lanes and is ESM-only (the API is
+CommonJS). The XML is read back (jsdom XML parser) to prove it parses and is checked with the shared
+validation rules; warnings are shown with the preview. Lanes and IT systems are matched to the
+library by normalised name (Arabic letter variants unified) and proposed as links (PERFORMS /
+SUPPORTS) that the user confirms. The result is never saved until the user accepts the preview.
+
+## D-043 — "AI-generated" flag
+
+`Process.aiGenerated` / `Page.aiGenerated` are set when the saved content is exactly what the
+assistant produced (the client sends `aiGenerated: true` with the save) and cleared by any later
+human save, by restoring a version and by an approval. While set, the process, modeler, page and
+editor show "AI-generated — review before publishing". Published content is always approved, so the
+portal never shows the badge.
+
+## D-044 — Refine, summarise and documentation features
+
+- **Refine with chat**: the client sends the diagram as shown (unsaved changes included); the server
+  turns it into the structure, the model returns the complete updated structure and the server
+  rebuilds the BPMN keeping element, flow and container ids (process, pool, lanes) so object links,
+  comments and the visual compare stay attached. The layout is regenerated (hand-made positions are
+  not kept); elements the structure cannot carry (annotations, boundary events, data objects, message
+  flows, content of expanded sub-processes) are counted and the user is warned before accepting. The
+  proposal is shown with the Phase 2 BPMN compare and applied only on "Accept".
+- **Summaries / what changed**: the changes are computed on the server — a structural diff of the
+  two versions' structures for processes (lanes, steps, connections, conditions, descriptions) and a
+  line diff of the page text for pages — and the model only explains them. No changes → no AI call.
+  The review screen compares like the review page: against the published version, or everything is
+  new. Plain summaries use the fast model; change summaries the main model. Text is streamed.
+- **Documentation from a process**: SOP or Work Instruction, following the structure of the built-in
+  template, from the process outline with its linked roles, systems and documents; both languages in
+  one request; sanitised; the read-only diagram is embedded at the top (which also links the page to
+  the process). The page is created as a draft by the user after the preview.
+- **Process from a page**: the page text (requested language, else the other) is modelled like
+  feature 1; the user then completes the "New process" form and the new process is linked to the page.
+
+## D-045 — Portal Q&A: full-text retrieval over publications, no embeddings (yet)
+
+The portal assistant retrieves with **PostgreSQL full-text search** over the `Publication` read model (the
+same generated English + Arabic `tsvector` as portal search, D-031), limited to the current publications the
+user may see (`PortalAccessService.publications`: portal access, live items, space view restrictions). Natural
+questions are turned into an any-term prefix query (`toAnyTsQuery`) ranked with `ts_rank_cd`; follow-up
+questions also search with the previous question. The top six sources go to the model: page text as published,
+and for processes an outline of the **published version's** BPMN with its published links — never the working
+copy. The model must cite sources as `[n]` and start with `[[NOT_FOUND]]` when the sources do not answer;
+only cited sources are returned as links. No match → no AI call. Arabic and English questions match because
+publications store both languages. **pgvector embeddings are not added**: retrieval quality on the demo and
+test content is good, it needs no extra extension, model or re-indexing, and embeddings would send all
+published content to an embedding provider. Revisit (BACKLOG) when the published corpus grows into the
+thousands of documents or users report missed answers.
+
+## D-046 — Analyse & improve
+
+The process outline (lanes, steps in flow order, linked roles/systems/documents, decisions) and the
+modeler's validation warnings go to the main model with a structured-output schema: findings (kind, severity,
+title, explanation, suggestion, element ids) and one plain-language explanation per warning. Element ids the
+diagram does not contain are dropped before the result reaches the browser. Read-only users who may read
+processes (e.g. Auditors) may analyse; nothing is saved.

@@ -39,11 +39,16 @@ import 'bpmn-js/dist/assets/bpmn-js.css';
 import 'bpmn-js/dist/assets/bpmn-font/css/bpmn-embedded.css';
 import {
   BPMN_MAX_BYTES,
+  isFlowNode,
   validateBpmnGraph,
+  type AiGeneratedProcessDto,
+  type AiSuggestedLinkDto,
   type BpmnIssue,
+  type Locale,
   type ProcessDto,
 } from '@processhub/shared';
 import {
+  useCreateLink,
   useCreateVersion,
   useLinks,
   useProcessModel,
@@ -60,6 +65,7 @@ import type {
   DiagramElement,
   ElementRegistry,
   EventBus,
+  Modeling,
   Overlays,
   Selection,
 } from './bpmn-types';
@@ -80,15 +86,39 @@ import { ElementPanel } from './ElementPanel';
 import { useComments } from '@/api/governance';
 import { CommentsPanel } from '@/features/comments/CommentsPanel';
 import { VersionsDrawer } from './VersionsDrawer';
+import { AiBadge, AiButton, AiIcon } from '@/features/ai/AiParts';
+import { AiChatPanel } from '@/features/ai/AiChatPanel';
+import { AnalysisDrawer } from '@/features/ai/AnalysisDrawer';
+import { useAi } from '@/features/ai/useAi';
+import { GenerateProcessModal } from '@/features/ai/GenerateProcessModal';
+import { TranslateLabelsModal, type LabelTranslation } from '@/features/ai/TranslateLabelsModal';
+
+/** Width of the bpmn-js palette on the inline-start side of the canvas. */
+const PALETTE_WIDTH = 120;
 
 /** Fits the diagram once the browser has laid out the canvas. */
 function fitViewport(instance: BpmnInstance) {
   requestAnimationFrame(() => {
     const canvas = instance.get<Canvas>('canvas');
     canvas.resized();
-    const fit = canvas.zoom('fit-viewport', 'auto');
-    // Leave room for the palette and never enlarge small diagrams beyond 100%.
-    canvas.zoom(Math.min(fit * 0.85, 1), 'auto');
+    canvas.zoom('fit-viewport', 'auto');
+    // Fit into the area right of the palette, never enlarge small diagrams beyond 100%, and
+    // keep the diagram in the upper part of tall canvases (centred in the first screenful).
+    const { inner, outer } = canvas.viewbox();
+    if (!outer.width || !outer.height || !inner.width || !inner.height) return;
+    const left = Math.min(PALETTE_WIDTH, outer.width / 3);
+    const visibleH = Math.min(outer.height, window.innerHeight * 0.6);
+    const zoom = Math.min(
+      ((outer.width - left) / inner.width) * 0.9,
+      (visibleH / inner.height) * 0.9,
+      1,
+    );
+    canvas.viewbox({
+      x: inner.x + inner.width / 2 - (left + (outer.width - left) / 2) / zoom,
+      y: inner.y + inner.height / 2 - visibleH / 2 / zoom,
+      width: outer.width / zoom,
+      height: outer.height / zoom,
+    });
   });
 }
 
@@ -114,6 +144,8 @@ export function BpmnEditor({ process, focusElementId }: Props) {
   const links = useLinks(process.id);
   const saveModel = useSaveModel(process.id);
   const createVersion = useCreateVersion(process.id);
+  const createLink = useCreateLink(process.id);
+  const { available: aiAvailable } = useAi();
   const versions = useVersions(process.id);
   const comments = useComments('PROCESS', process.id);
   const autosaveTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
@@ -128,12 +160,20 @@ export function BpmnEditor({ process, focusElementId }: Props) {
   const [dirty, setDirty] = useState(false);
   const [issues, setIssues] = useState<BpmnIssue[]>([]);
   const [importError, setImportError] = useState<string | null>(null);
-  const [panelTab, setPanelTab] = useState<'properties' | 'issues' | 'comments'>('properties');
+  const [panelTab, setPanelTab] = useState<'properties' | 'issues' | 'comments' | 'ai'>(
+    'properties',
+  );
   const [versionOpen, setVersionOpen] = useState(false);
   const [historyOpen, setHistoryOpen] = useState(false);
   const [canUndo, setCanUndo] = useState(false);
   const [canRedo, setCanRedo] = useState(false);
   const [versionForm] = Form.useForm<{ changeNote: string }>();
+  /** The diagram is exactly what the AI assistant produced: cleared by any edit (D-041). */
+  const aiRef = useRef(process.aiGenerated);
+  const [aiFlag, setAiFlag] = useState(process.aiGenerated);
+  const [aiDialog, setAiDialog] = useState<
+    'generate' | 'translate-ar' | 'translate-en' | 'analyse' | null
+  >(null);
 
   const fileBase = loc(process);
 
@@ -223,6 +263,8 @@ export function BpmnEditor({ process, focusElementId }: Props) {
       setCanUndo(stack.canUndo());
       setCanRedo(stack.canRedo());
       setDirty(true);
+      aiRef.current = false;
+      setAiFlag(false);
       revalidate();
       clearTimeout(autosaveTimer.current);
       autosaveTimer.current = setTimeout(() => void autosaveRef.current(), AUTOSAVE_MS);
@@ -344,7 +386,7 @@ export function BpmnEditor({ process, focusElementId }: Props) {
     clearTimeout(autosaveTimer.current);
     if (!instanceRef.current || !canEdit) return true;
     try {
-      await saveModel.mutateAsync(await currentXml());
+      await saveModel.mutateAsync({ bpmnXml: await currentXml(), aiGenerated: aiRef.current });
       setDirty(false);
       return true;
     } catch (err) {
@@ -358,7 +400,11 @@ export function BpmnEditor({ process, focusElementId }: Props) {
     const { changeNote } = await versionForm.validateFields();
     try {
       clearTimeout(autosaveTimer.current);
-      const v = await createVersion.mutateAsync({ bpmnXml: await currentXml(), changeNote });
+      const v = await createVersion.mutateAsync({
+        bpmnXml: await currentXml(),
+        changeNote,
+        aiGenerated: aiRef.current,
+      });
       setDirty(false);
       setVersionOpen(false);
       versionForm.resetFields();
@@ -379,6 +425,49 @@ export function BpmnEditor({ process, focusElementId }: Props) {
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, [canEdit]);
+
+  /** Feature 1: replaces the diagram with the generated one, saves it and adds the confirmed links. */
+  const applyAiModel = async (result: AiGeneratedProcessDto, accepted: AiSuggestedLinkDto[]) => {
+    if (!(await importDiagram(result.bpmnXml, true))) {
+      message.error(t('modeler:importFailed'));
+      throw new Error('import failed');
+    }
+    aiRef.current = true;
+    setAiFlag(true);
+    if (!(await autosaveRef.current())) throw new Error('save failed');
+    try {
+      for (const l of accepted)
+        await createLink.mutateAsync({
+          bpmnElementId: l.elementId,
+          repoObjectId: l.object.id,
+          relation: l.relation,
+        });
+    } catch (err) {
+      message.error(errorMessage(err));
+    }
+    message.success(t('ai:generate.inserted'));
+  };
+
+  /** Feature 4: writes reviewed label translations into the diagram as normal edits. */
+  const applyTranslations = (target: Locale, rows: LabelTranslation[]) => {
+    const instance = instanceRef.current;
+    if (!instance) return;
+    const registry = instance.get<ElementRegistry>('elementRegistry');
+    const modeling = instance.get<Modeling>('modeling');
+    const suffix = target === 'ar' ? 'Ar' : 'En';
+    for (const r of rows) {
+      const el = registry.get(r.id);
+      if (!el) continue;
+      const props: Record<string, string> = {};
+      if (r.name.trim()) props[`ph:name${suffix}`] = r.name.trim();
+      if (r.description.trim()) props[`ph:description${suffix}`] = r.description.trim();
+      if (Object.keys(props).length) modeling.updateModdleProperties(el, el.businessObject, props);
+    }
+    applyLanguage(instance, stateRef.current.locale);
+    aiRef.current = true;
+    setAiFlag(true);
+    message.success(t('ai:translate.applied'));
+  };
 
   /** After a restore the working model on the server changed: reload it. */
   const reloadModel = async () => {
@@ -497,6 +586,43 @@ export function BpmnEditor({ process, focusElementId }: Props) {
           ) : (
             <Tag color="default">{t('modeler:readOnly')}</Tag>
           )}
+          <AiButton
+            menu={[
+              ...(canEdit
+                ? [
+                    {
+                      key: 'generate',
+                      label: t('ai:menu.generate'),
+                      onClick: () => setAiDialog('generate'),
+                    },
+                    {
+                      key: 'chat',
+                      label: t('ai:menu.chat'),
+                      onClick: () => setPanelTab('ai'),
+                    },
+                  ]
+                : []),
+              {
+                key: 'analyse',
+                label: t('ai:menu.analyse'),
+                onClick: () => setAiDialog('analyse'),
+              },
+              ...(canEdit
+                ? [
+                    {
+                      key: 'translate-ar',
+                      label: t('ai:menu.translateToAr'),
+                      onClick: () => setAiDialog('translate-ar'),
+                    },
+                    {
+                      key: 'translate-en',
+                      label: t('ai:menu.translateToEn'),
+                      onClick: () => setAiDialog('translate-en'),
+                    },
+                  ]
+                : []),
+            ]}
+          />
           <Tooltip title={t('modeler:zoomIn')}>
             <Button
               icon={<ZoomInOutlined />}
@@ -588,7 +714,7 @@ export function BpmnEditor({ process, focusElementId }: Props) {
           <Tabs
             size="small"
             activeKey={panelTab}
-            onChange={(k) => setPanelTab(k as 'properties' | 'issues' | 'comments')}
+            onChange={(k) => setPanelTab(k as 'properties' | 'issues' | 'comments' | 'ai')}
             items={[
               {
                 key: 'properties',
@@ -621,30 +747,59 @@ export function BpmnEditor({ process, focusElementId }: Props) {
                   issues.length === 0 ? (
                     <Alert type="success" showIcon message={t('modeler:noIssues')} />
                   ) : (
-                    <ul className="ph-issues">
-                      {issues.map((i, idx) => (
-                        <li key={`${i.code}-${i.elementId ?? idx}`}>
-                          <button
-                            type="button"
-                            className="ph-issue"
-                            onClick={() => focusElement(i.elementId)}
-                            disabled={!i.elementId}
-                          >
-                            <Tag color={i.severity === 'warning' ? 'orange' : 'default'}>
-                              {t(`modeler:severity.${i.severity}`)}
-                            </Tag>
-                            <span>{t(`modeler:rules.${i.code}`)}</span>
-                            {i.elementId && (
-                              <Typography.Text type="secondary" className="ph-issue-id" dir="ltr">
-                                {i.elementId}
-                              </Typography.Text>
-                            )}
-                          </button>
-                        </li>
-                      ))}
-                    </ul>
+                    <>
+                      <AiButton
+                        size="small"
+                        onClick={() => setAiDialog('analyse')}
+                        style={{ marginBlockEnd: 8 }}
+                      >
+                        {t('ai:analyse.explainWarnings')}
+                      </AiButton>
+                      <ul className="ph-issues">
+                        {issues.map((i, idx) => (
+                          <li key={`${i.code}-${i.elementId ?? idx}`}>
+                            <button
+                              type="button"
+                              className="ph-issue"
+                              onClick={() => focusElement(i.elementId)}
+                              disabled={!i.elementId}
+                            >
+                              <Tag color={i.severity === 'warning' ? 'orange' : 'default'}>
+                                {t(`modeler:severity.${i.severity}`)}
+                              </Tag>
+                              <span>{t(`modeler:rules.${i.code}`)}</span>
+                              {i.elementId && (
+                                <Typography.Text type="secondary" className="ph-issue-id" dir="ltr">
+                                  {i.elementId}
+                                </Typography.Text>
+                              )}
+                            </button>
+                          </li>
+                        ))}
+                      </ul>
+                    </>
                   ),
               },
+              ...(canEdit && aiAvailable
+                ? [
+                    {
+                      key: 'ai',
+                      label: (
+                        <Space size={4}>
+                          <AiIcon />
+                          {t('ai:chat.tab')}
+                        </Space>
+                      ),
+                      children: (
+                        <AiChatPanel
+                          processId={process.id}
+                          getXml={currentXml}
+                          onAccept={applyAiModel}
+                        />
+                      ),
+                    },
+                  ]
+                : []),
               {
                 key: 'comments',
                 label: t('modeler:commentsTab'),
@@ -673,6 +828,7 @@ export function BpmnEditor({ process, focusElementId }: Props) {
 
       <Flex className="ph-modeler-status" justify="space-between" align="center" gap={8}>
         <Space size={6} wrap>
+          {aiFlag && <AiBadge />}
           {canEdit && <CloudSyncOutlined className="ph-muted" />}
           <Typography.Text type="secondary">{lastSaved}</Typography.Text>
         </Space>
@@ -717,6 +873,41 @@ export function BpmnEditor({ process, focusElementId }: Props) {
           </Form.Item>
         </Form>
       </Modal>
+      {canEdit && (
+        <>
+          <GenerateProcessModal
+            open={aiDialog === 'generate'}
+            processId={process.id}
+            replaces={
+              (instanceRef.current
+                ?.get<ElementRegistry>('elementRegistry')
+                .filter((e) => isFlowNode(e.type)).length ?? 0) > 1
+            }
+            acceptLabel={t('ai:generate.insert')}
+            onClose={() => setAiDialog(null)}
+            onAccept={applyAiModel}
+          />
+          <TranslateLabelsModal
+            open={aiDialog === 'translate-ar' || aiDialog === 'translate-en'}
+            target={aiDialog === 'translate-en' ? 'en' : 'ar'}
+            getXml={currentXml}
+            onClose={() => setAiDialog(null)}
+            onApply={(rows) => applyTranslations(aiDialog === 'translate-en' ? 'en' : 'ar', rows)}
+          />
+        </>
+      )}
+      <AnalysisDrawer
+        open={aiDialog === 'analyse'}
+        processId={process.id}
+        getXml={currentXml}
+        issues={issues}
+        nameOf={(id) => {
+          const el = instanceRef.current?.get<ElementRegistry>('elementRegistry').get(id);
+          return (el?.businessObject?.name as string | undefined) ?? '';
+        }}
+        onFocusElement={focusElement}
+        onClose={() => setAiDialog(null)}
+      />
       <VersionsDrawer
         processId={process.id}
         open={historyOpen}

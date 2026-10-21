@@ -62,10 +62,12 @@ async function transition(
   to: ContentStatus,
 ) {
   const where = { id, status: from };
+  // An approval is a human sign-off: AI-generated content is no longer flagged as such.
+  const data = { status: to, ...(to === 'APPROVED' ? { aiGenerated: false } : {}) };
   const res =
     type === 'PROCESS'
-      ? await tx.process.updateMany({ where, data: { status: to } })
-      : await tx.page.updateMany({ where, data: { status: to } });
+      ? await tx.process.updateMany({ where, data })
+      : await tx.page.updateMany({ where, data });
   if (!res.count) throw conflict('INVALID_TRANSITION', 'The item changed in the meantime');
 }
 
@@ -104,16 +106,27 @@ export class ReviewsService {
     const { workflow } = await this.workflows.resolve(item);
     if (!workflow) throw badRequest('NO_WORKFLOW', 'No approval workflow is configured');
     const resolved = await this.workflows.resolveSteps(item, workflow);
-    const steps: StepSnapshot[] = resolved.map((s) => {
-      const r = stepAssignees(s.candidateIds, actor.id);
-      return { nameEn: s.nameEn, nameAr: s.nameAr, rule: s.rule, ...r };
-    });
-    const empty = steps.findIndex((s) => !s.assigneeIds.length && !s.approvedBySubmitter);
-    if (empty >= 0) {
-      throw badRequest('WORKFLOW_NO_ASSIGNEES', 'A workflow step has nobody to review', {
-        step: empty,
-        nameEn: steps[empty].nameEn,
-        nameAr: steps[empty].nameAr,
+    const steps: StepSnapshot[] = [];
+    for (const [i, s] of resolved.entries()) {
+      const { assigneeIds, onlySubmitter } = stepAssignees(s.candidateIds, actor.id);
+      const details = { step: i, nameEn: s.nameEn, nameAr: s.nameAr };
+      // Four-eyes principle: nobody approves their own work.
+      if (onlySubmitter) {
+        throw badRequest(
+          'SELF_APPROVAL_NOT_ALLOWED',
+          'You are the only approver of a workflow step; assign another approver first',
+          details,
+        );
+      }
+      if (!assigneeIds.length) {
+        throw badRequest('WORKFLOW_NO_ASSIGNEES', 'A workflow step has nobody to review', details);
+      }
+      steps.push({
+        nameEn: s.nameEn,
+        nameAr: s.nameAr,
+        rule: s.rule,
+        assigneeIds,
+        approvedBySubmitter: false,
       });
     }
     const settings = await this.workflows.settings();
@@ -287,7 +300,7 @@ export class ReviewsService {
       (t) =>
         t.assigneeId === actor.id && t.stepIndex === review.currentStep && t.status === 'PENDING',
     );
-    if (!task)
+    if (!task || !actor.permissions.has(PERMISSIONS.REVIEWS_DECIDE))
       throw new AppException(HttpStatus.FORBIDDEN, 'NOT_YOUR_TASK', 'No open review task for you');
     const item = await this.content.find(review.entityType, review.entityId, actor);
     if (!item) throw notFound(entityName(review.entityType));

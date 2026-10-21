@@ -1,5 +1,8 @@
 import { useState } from 'react';
 import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
+import { AiButton } from '@/features/ai/AiParts';
+import { PortalAssistantProvider } from '@/features/ai/PortalAssistant';
+import { usePortalAssistant } from '@/features/ai/portal-assistant-context';
 import {
   Avatar,
   Button,
@@ -36,6 +39,14 @@ import { LanguageToggle } from '@/layout/AppLayout';
 import { NotificationBell } from '@/features/notifications/NotificationBell';
 
 const { Header, Content, Footer } = Layout;
+
+/** "✨ Ask" in the portal header (shown only when the assistant is available). */
+function PortalAskButton() {
+  const { t } = useTranslation();
+  const assistant = usePortalAssistant();
+  if (!assistant) return null;
+  return <AiButton onClick={() => assistant.ask()}>{t('ai:portal.ask')}</AiButton>;
+}
 
 /** The Knowledge Portal: a calm reading experience with published content only. */
 export function PortalLayout() {
@@ -136,90 +147,93 @@ export function PortalLayout() {
   };
 
   return (
-    <Layout className="ph-portal">
-      <Header className="ph-portal-header">
-        <Flex align="center" gap={12} style={{ minInlineSize: 0 }}>
-          <Button
-            type="text"
-            className="ph-portal-menu-button"
-            icon={<MenuOutlined />}
-            aria-label={t('toggleMenu')}
-            onClick={() => setMenuOpen(true)}
+    <PortalAssistantProvider>
+      <Layout className="ph-portal">
+        <Header className="ph-portal-header">
+          <Flex align="center" gap={12} style={{ minInlineSize: 0 }}>
+            <Button
+              type="text"
+              className="ph-portal-menu-button"
+              icon={<MenuOutlined />}
+              aria-label={t('toggleMenu')}
+              onClick={() => setMenuOpen(true)}
+            />
+            <Link to="/portal" className="ph-portal-brand" aria-label={portalName}>
+              <BrandMark settings={settings.data} size={30} />
+              <span className="ph-portal-brand-text">
+                <span className="ph-portal-brand-name">{portalName}</span>
+                <span className="ph-portal-brand-org">{orgName}</span>
+              </span>
+            </Link>
+            <Menu
+              mode="horizontal"
+              items={nav}
+              selectedKeys={[selected]}
+              className="ph-portal-nav"
+              disabledOverflow
+            />
+          </Flex>
+          <Flex align="center" gap={10}>
+            <Input.Search
+              className="ph-portal-header-search"
+              placeholder={t('portal:searchPlaceholder')}
+              allowClear
+              value={q}
+              onChange={(e) => setQ(e.target.value)}
+              onSearch={search}
+              aria-label={t('portal:nav.search')}
+            />
+            <PortalAskButton />
+            <LanguageToggle />
+            <NotificationBell allLink="/portal/notifications" />
+            {workspace && (
+              <Button
+                className="ph-portal-workspace"
+                icon={<AppstoreOutlined />}
+                onClick={() => navigate('/')}
+              >
+                {t('portal:workspace')}
+              </Button>
+            )}
+            <Dropdown menu={{ items: userMenu }} trigger={['click']}>
+              <Button type="text" className="ph-user-button" aria-label={loc(user) || user?.email}>
+                <Avatar size="small" style={{ background: '#0f766e' }} icon={<UserOutlined />} />
+                <span className="ph-user-name">{loc(user) || user?.email}</span>
+              </Button>
+            </Dropdown>
+          </Flex>
+        </Header>
+        <Drawer
+          open={menuOpen}
+          onClose={() => setMenuOpen(false)}
+          placement="left"
+          width={260}
+          title={portalName}
+        >
+          <Input.Search
+            placeholder={t('portal:searchPlaceholder')}
+            onSearch={(v) => {
+              search(v);
+              setMenuOpen(false);
+            }}
+            style={{ marginBlockEnd: 12 }}
           />
-          <Link to="/portal" className="ph-portal-brand" aria-label={portalName}>
-            <BrandMark settings={settings.data} size={30} />
-            <span className="ph-portal-brand-text">
-              <span className="ph-portal-brand-name">{portalName}</span>
-              <span className="ph-portal-brand-org">{orgName}</span>
-            </span>
-          </Link>
           <Menu
-            mode="horizontal"
+            mode="inline"
             items={nav}
             selectedKeys={[selected]}
-            className="ph-portal-nav"
-            disabledOverflow
+            onClick={() => setMenuOpen(false)}
           />
-        </Flex>
-        <Flex align="center" gap={10}>
-          <Input.Search
-            className="ph-portal-header-search"
-            placeholder={t('portal:searchPlaceholder')}
-            allowClear
-            value={q}
-            onChange={(e) => setQ(e.target.value)}
-            onSearch={search}
-            aria-label={t('portal:nav.search')}
-          />
-          <LanguageToggle />
-          <NotificationBell allLink="/portal/notifications" />
-          {workspace && (
-            <Button
-              className="ph-portal-workspace"
-              icon={<AppstoreOutlined />}
-              onClick={() => navigate('/')}
-            >
-              {t('portal:workspace')}
-            </Button>
-          )}
-          <Dropdown menu={{ items: userMenu }} trigger={['click']}>
-            <Button type="text" className="ph-user-button" aria-label={loc(user) || user?.email}>
-              <Avatar size="small" style={{ background: '#0f766e' }} icon={<UserOutlined />} />
-              <span className="ph-user-name">{loc(user) || user?.email}</span>
-            </Button>
-          </Dropdown>
-        </Flex>
-      </Header>
-      <Drawer
-        open={menuOpen}
-        onClose={() => setMenuOpen(false)}
-        placement="left"
-        width={260}
-        title={portalName}
-      >
-        <Input.Search
-          placeholder={t('portal:searchPlaceholder')}
-          onSearch={(v) => {
-            search(v);
-            setMenuOpen(false);
-          }}
-          style={{ marginBlockEnd: 12 }}
-        />
-        <Menu
-          mode="inline"
-          items={nav}
-          selectedKeys={[selected]}
-          onClick={() => setMenuOpen(false)}
-        />
-      </Drawer>
-      <Content className="ph-portal-content">
-        <Outlet />
-      </Content>
-      <Footer className="ph-portal-footer">
-        <Typography.Text type="secondary">
-          {orgName} · {t('portal:footer')}
-        </Typography.Text>
-      </Footer>
-    </Layout>
+        </Drawer>
+        <Content className="ph-portal-content">
+          <Outlet />
+        </Content>
+        <Footer className="ph-portal-footer">
+          <Typography.Text type="secondary">
+            {orgName} · {t('portal:footer')}
+          </Typography.Text>
+        </Footer>
+      </Layout>
+    </PortalAssistantProvider>
   );
 }

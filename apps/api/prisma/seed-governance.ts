@@ -18,7 +18,7 @@ import { createPublication, type StepSnapshot } from '../src/governance/publicat
 import { linearXml } from './demo-diagrams';
 
 const DEMO_USERS: {
-  key: 'viewer' | 'reviewer' | 'owner' | 'modeler';
+  key: 'viewer' | 'reviewer' | 'owner' | 'modeler' | 'auditor';
   role: SystemRoleKey;
   nameEn: string;
   nameAr: string;
@@ -51,6 +51,13 @@ const DEMO_USERS: {
     nameEn: 'Maha Modeler',
     nameAr: 'مها المصممة',
     department: 'IT',
+  },
+  {
+    key: 'auditor',
+    role: 'AUDITOR',
+    nameEn: 'Adel Auditor',
+    nameAr: 'عادل المدقق',
+    department: 'RSK',
   },
 ];
 

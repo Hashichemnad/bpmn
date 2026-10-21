@@ -54,7 +54,7 @@ export function ProfilePage() {
               initialValues={{ nameEn: user.nameEn, nameAr: user.nameAr, locale: user.locale }}
               onFinish={saveProfile}
             >
-              <BilingualFields />
+              <BilingualFields translate={false} />
               <Form.Item name="locale" label={t('profile.language')}>
                 <Radio.Group
                   optionType="button"

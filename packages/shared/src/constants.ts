@@ -35,6 +35,8 @@ export const PERMISSIONS = {
   DOCS_MANAGE: 'docs.manage',
   /** Comment on processes and pages (and @mention colleagues). */
   COMMENTS_WRITE: 'comments.write',
+  /** Approve, reject or request changes when assigned to a review step (read-only roles never are). */
+  REVIEWS_DECIDE: 'reviews.decide',
   /** Configure approval workflows and act on any item's lifecycle (publish, archive, withdraw). */
   GOVERNANCE_MANAGE: 'governance.manage',
   /** See the governance dashboard (status counts, reviews in progress, overdue reviews). */
@@ -43,6 +45,8 @@ export const PERMISSIONS = {
   PORTAL_READ: 'portal.read',
   /** Portal name, branding, quick links, featured items and access. */
   PORTAL_MANAGE: 'portal.manage',
+  /** See the AI usage report (requests and tokens per user, feature and month). */
+  AI_USAGE_READ: 'ai.usage.read',
 } as const;
 export type Permission = (typeof PERMISSIONS)[keyof typeof PERMISSIONS];
 export const ALL_PERMISSIONS: Permission[] = Object.values(PERMISSIONS);
@@ -53,6 +57,7 @@ export const SYSTEM_ROLE_KEYS = [
   'PROCESS_OWNER',
   'MODELER',
   'REVIEWER',
+  'AUDITOR',
   'VIEWER',
 ] as const;
 export type SystemRoleKey = (typeof SYSTEM_ROLE_KEYS)[number];
@@ -65,7 +70,11 @@ const READ_REPOSITORY: Permission[] = [
   P.DOCS_READ,
   P.COMMENTS_WRITE,
   P.PORTAL_READ,
+  P.REVIEWS_DECIDE,
 ];
+
+/** System roles that only read: never offered as workflow approvers. */
+export const READ_ONLY_ROLE_KEYS: readonly SystemRoleKey[] = ['AUDITOR', 'VIEWER'];
 
 /** Default permission bundle of each system role (see CLAUDE.md §6). */
 export const SYSTEM_ROLES: Record<
@@ -111,6 +120,23 @@ export const SYSTEM_ROLES: Record<
     nameEn: 'Reviewer',
     nameAr: 'مراجع',
     permissions: [...READ_REPOSITORY, P.USERS_READ],
+  },
+  AUDITOR: {
+    nameEn: 'Auditor',
+    nameAr: 'مدقق',
+    // Read-only workspace: drafts, history, reviews and the audit log; no edit, approve,
+    // publish or comment rights.
+    permissions: [
+      P.PROCESSES_READ,
+      P.OBJECTS_READ,
+      P.DEPARTMENTS_READ,
+      P.DOCS_READ,
+      P.PORTAL_READ,
+      P.USERS_READ,
+      P.AUDIT_READ,
+      P.GOVERNANCE_DASHBOARD,
+      P.AI_USAGE_READ,
+    ],
   },
   VIEWER: {
     nameEn: 'Viewer',
@@ -188,6 +214,7 @@ export const AUDIT_ACTIONS = [
   'RESOLVE',
   'REOPEN',
   'EMAIL_TEST',
+  'AI_REQUEST',
 ] as const;
 export type AuditAction = (typeof AUDIT_ACTIONS)[number];
 
@@ -212,6 +239,7 @@ export const AUDIT_ENTITY_TYPES = [
   'Review',
   'Comment',
   'Feedback',
+  'AI',
 ] as const;
 export type AuditEntityType = (typeof AUDIT_ENTITY_TYPES)[number];
 
@@ -224,6 +252,7 @@ export const SETTING_KEYS = {
   GOVERNANCE: 'governance',
   PORTAL: 'portal',
   EMAIL: 'email',
+  AI: 'ai',
 } as const;
 
 /** Logo upload limits. */

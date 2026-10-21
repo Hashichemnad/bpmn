@@ -1,14 +1,18 @@
-import { Col, Form, Input, Row } from 'antd';
+import { Col, Flex, Form, Input, Row } from 'antd';
 import { useTranslation } from 'react-i18next';
 import type { Rule } from 'antd/es/form';
+import { TranslateFieldsButton } from '@/features/ai/TranslateFieldsButton';
 
 /** Paired English/Arabic inputs. At least one name is required (fallback rule). */
 export function BilingualFields({
   description = false,
   required = true,
+  translate = true,
 }: {
   description?: boolean;
   required?: boolean;
+  /** Offer "✨ Translate" (AI) to fill the empty language; off for people's names. */
+  translate?: boolean;
 }) {
   const { t } = useTranslation();
   const oneName: Rule = ({ getFieldValue }) => ({
@@ -20,6 +24,11 @@ export function BilingualFields({
   });
   return (
     <>
+      {translate && (
+        <Flex justify="end" className="ph-ai-fields-bar">
+          <TranslateFieldsButton description={description} />
+        </Flex>
+      )}
       <Row gutter={16}>
         <Col xs={24} md={12}>
           <Form.Item

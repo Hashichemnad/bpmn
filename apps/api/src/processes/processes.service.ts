@@ -149,6 +149,7 @@ export class ProcessesService {
       children: p.children.map(toSummary),
       ancestors: await this.ancestors(p.parentId),
       hasModel: !!p.model,
+      aiGenerated: p.aiGenerated,
       canEdit: canEditProcess(user, p),
       canEditModel: canEditModel(user, p),
       canDelete: user.permissions.has(PERMISSIONS.PROCESSES_DELETE),

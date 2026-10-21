@@ -21,6 +21,7 @@ import type {
   PublicSettingsDto,
   RepoObjectDto,
   RoleDto,
+  SaveModelInput,
   SettingsDto,
   UpdateDepartmentInput,
   UpdateObjectInput,
@@ -224,8 +225,8 @@ export const useProcessModel = (id: string) =>
 export function useSaveModel(id: string) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (bpmnXml: string) =>
-      api<ProcessModelDto>(`/processes/${id}/model`, { method: 'PUT', body: { bpmnXml } }),
+    mutationFn: (body: SaveModelInput) =>
+      api<ProcessModelDto>(`/processes/${id}/model`, { method: 'PUT', body }),
     onSuccess: (model) => {
       qc.setQueryData(keys.model(id), model);
       void qc.invalidateQueries({ queryKey: keys.links(id) });

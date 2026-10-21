@@ -38,8 +38,8 @@ with no per-user licensing. Target: 50–500 users on a single server.
 |---|---|---|
 | 1 | Foundation: M1 (core), M2, M3, M4 (roles & systems) | ✅ Done (merged into `main`) |
 | 2 | M5 Wiki, M6 Version control, M7 Git integration | ✅ Done (merged into `main`) |
-| 3 | M8 Governance, M9 Knowledge Portal | ✅ Done (branch `phase-3-governance-portal`, awaiting review) |
-| AI | M16 AI Assistant (after Phase 3) | ⬜ |
+| 3 | M8 Governance, M9 Knowledge Portal | ✅ Done (merged into `main`) |
+| AI | M16 AI Assistant (after Phase 3) | ✅ Done (branch `phase-ai-assistant`, awaiting review) |
 | 4 | M10 GRC, M11 EA, M12 KPIs + Salesforce | ⬜ |
 | 5 | M13 Mining, M14 Execution, simulation | ⬜ |
 | 6 | Hardening: SSO, performance, security review fixes, deployment guide | ⬜ |
@@ -82,6 +82,7 @@ System roles (extensible, permission-based underneath):
 | Process Owner | Own processes: edit, submit for review, approve where assigned |
 | Modeler / Editor | Create and edit drafts |
 | Reviewer | Review and comment, approve where assigned |
+| Auditor | Read-only workspace: drafts, history, reviews, audit log — no edit, comment, approve or publish |
 | Viewer | Knowledge Portal only (published content, read-only) |
 
 Permissions are checked **on the server** for every request (NestJS guards). The UI hides what the user cannot do, but never relies on that for security.
@@ -142,6 +143,12 @@ Phase 3 additions (DECISIONS D-028 – D-037):
 - `Comment` (item, parentId, bpmnElementId, body with `@[Name](id)` mentions, resolvedAt)
 - `Notification` (userId, type, params, link, readAt, dedupeKey); `User.notificationPrefs`
 - `Feedback` (item, author, kind, message, status OPEN | IN_PROGRESS | DONE, reply); `UserJobRole` (user ↔ ROLE object)
+
+AI phase additions (DECISIONS D-038 – D-046):
+
+- System role `AUDITOR` (read-only workspace), permissions `reviews.decide`, `ai.usage.read`
+- `AiUsage` (user, feature, provider, model, input/output tokens, status, error code, duration, item); Setting `ai`
+- `Process.aiGenerated`, `Page.aiGenerated` (unedited AI output, cleared by a human save or an approval)
 
 ## 10. Definition of Done (every phase)
 

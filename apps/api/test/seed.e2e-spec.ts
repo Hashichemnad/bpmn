@@ -24,7 +24,12 @@ describe('Seed (e2e)', () => {
     expect(await ctx.prisma.pageTemplate.count({ where: { isSystem: true } })).toBe(6);
     const spaces = await ctx.prisma.space.findMany({ orderBy: { key: 'asc' } });
     expect(spaces.map((s) => s.key)).toEqual(['ITP', 'QM']);
-    expect(await ctx.prisma.page.count()).toBe(8);
+    // 8 documentation demo pages + the published IT equipment page for the portal assistant.
+    expect(await ctx.prisma.page.count()).toBe(9);
+    const equipment = await ctx.prisma.publication.findFirstOrThrow({
+      where: { titleEn: 'Requesting IT Equipment', current: true },
+    });
+    expect(equipment.textEn).toContain('IT Service Desk');
     const req = await ctx.prisma.page.findFirstOrThrow({
       where: { titleEn: 'Purchase Requisition Procedure' },
       include: { versions: true, links: true },
@@ -52,12 +57,17 @@ describe('Seed (e2e)', () => {
       include: { roles: { include: { role: true } } },
     });
     expect(demo.map((u) => [u.email, u.roles[0].role.key]).sort()).toEqual([
+      ['auditor@processhub.local', 'AUDITOR'],
       ['modeler@processhub.local', 'MODELER'],
       ['owner@processhub.local', 'PROCESS_OWNER'],
       ['reviewer@processhub.local', 'REVIEWER'],
       ['viewer@processhub.local', 'VIEWER'],
     ]);
     expect(await ctx.prisma.workflow.count()).toBe(2);
+    // AI assistant: suggestion chips for the demo, disabled until a key is entered.
+    const ai = await ctx.prisma.setting.findUniqueOrThrow({ where: { key: 'ai' } });
+    expect(ai.value).toMatchObject({ enabled: false, apiKeySealed: null });
+    expect(Object.keys((ai.value as { suggestions: object }).suggestions)).toHaveLength(6);
     const statuses = (await ctx.prisma.process.findMany()).map((p) => p.status);
     for (const s of ['DRAFT', 'IN_REVIEW', 'APPROVED', 'PUBLISHED', 'ARCHIVED'] as const) {
       expect(statuses).toContain(s);

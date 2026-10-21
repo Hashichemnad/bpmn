@@ -44,7 +44,7 @@ export class ModelsController {
     @CurrentUser() user: AuthUser,
     @ReqMeta() meta: RequestMeta,
   ) {
-    return this.models.saveModel(id, body.bpmnXml, user, meta);
+    return this.models.saveModel(id, body.bpmnXml, user, meta, body.aiGenerated);
   }
 
   @Get('versions')

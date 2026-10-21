@@ -2,10 +2,91 @@
 
 Read this together with `CLAUDE.md` at the start of every session.
 
-## Current state — 2026-10-21
+## Current state — 2026-10-21 (AI phase, branch `phase-ai-assistant`)
 
-**Phase 3 (Governance M8, Knowledge Portal M9): complete on branch `phase-3-governance-portal`, awaiting
-review.** Phases 1 and 2 are merged into `main`. Every item of the Phase 3 brief is implemented, covered by
+**Phase "AI" (M16 AI Assistant) is complete on branch `phase-ai-assistant`, awaiting review.** Phases 1–3 are
+merged into `main`. The brief was built in three parts, committed separately (A, B, C) — all done, documented in
+`docs/AI-DEMO.md` (manual demo script with a real key) and DECISIONS D-038 – D-046.
+
+### Done in this phase
+
+**Phase 3 open items (decided by the product owner)** — commit "Governance: block self-approval…"
+
+- Four-eyes principle: a submitter who is the only possible approver of a step cannot submit
+  (`SELF_APPROVAL_NOT_ALLOWED`, bilingual message with the step name) (D-038).
+- New system role **Auditor**: read-only workspace (drafts, history, reviews, audit log, dashboard,
+  AI usage), no edit/comment/approve/publish; new permission `reviews.decide` keeps read-only users out of
+  approval steps (D-039). Demo user `auditor@processhub.local`. Viewers stay portal-only.
+- PDF stays browser print (Gotenberg remains in the Phase 6 backlog).
+
+**Part A — AI platform, generate process from text, translate EN ↔ AR**
+
+- `apps/api/src/ai`: provider interface + Anthropic Claude (`@anthropic-ai/sdk`, streaming, structured
+  output, refusal fallback), gateway with access checks, per-user daily and organisation monthly limits,
+  one repair attempt for invalid output, usage table + audit log (D-040, D-041). SSE streaming to the UI.
+- Settings → AI (Super Admin): enable, provider, model / fast model, encrypted API key (write-only),
+  test connection, allowed roles, limits, data notice EN/AR, suggestion chips per feature.
+  **AI usage** page (Administration menu): totals per user, feature, model, 12-month trend.
+- Feature 1 — generate a process from a description (Arabic or English): in the modeler (✨ AI menu →
+  replaces the diagram, saved as draft) and in the "New process" dialog (fills names/descriptions, saves the
+  diagram as the new process's draft model). Server builds BPMN with lanes per role and a layered layout
+  (D-042), validates it, proposes links to library roles/IT systems (user confirms), lists roles/systems not in
+  the library, shows validation warnings. Preview with a read-only diagram before anything is saved.
+- Feature 4 — translate: form fields (every bilingual form except people's names: "✨ Translate into …"
+  fills the empty language), BPMN labels and step descriptions in the modeler (only missing ones, editable
+  review table, applied as undoable edits), wiki pages (preview, then fills the other language tab). The
+  library's EN/AR names are sent as a glossary.
+- "AI-generated — review before publishing" badge on processes/pages until a human edits or approves (D-043).
+- Suggestion chips: seeded demo prompts for every feature (Settings → AI → Suggestion chips).
+- Tests: `FakeAi` replaces the provider in every test; `test/ai.e2e-spec.ts` (settings & key never
+  returned, roles, limits, generate with library links, malformed fixtures → repair / rejection, provider
+  errors, permissions, AI flag, translate fields/BPMN/page with sanitising, usage report),
+  `src/ai/bpmn/structure-to-bpmn.spec.ts` (layout without overlaps, round trip, escaping).
+- Also fixed: the modeler's "fit" now centres the diagram right of the palette (it used to sit off-centre).
+
+**Part C — analyse & improve, portal Q&A** (D-045, D-046)
+
+- Feature 5 — modeler ✨ AI → "Analyse & improve" (also for read-only users) and "Explain with AI" in the
+  Validation tab: drawer with an assessment, findings (missing step, unclear responsibility, bottleneck, risk,
+  control, improvement; severity; explanation; suggestion; clickable steps) and plain-language warnings.
+- Feature 7 — Knowledge Portal: "✨ Ask" in the header and "Ask the assistant" + sample questions on the portal
+  home. Answers stream, cite numbered sources (links to the published process/page with version label), say
+  clearly when the published content does not cover the question. Retrieval: full-text search over current
+  publications the user may see (no pgvector, D-045); processes contribute their published version only.
+- Seed: published page "Requesting IT Equipment" (IT Policies) so the demo question has an answer.
+- Tests: `test/ai-portal.e2e-spec.ts` (analysis with unknown ids dropped and repair; Q&A uses published content
+  only — never drafts, restricted spaces without a grant, or the working copy of a process; grants; not-found
+  without an AI call; AI roles and portal access), `toAnyTsQuery` unit test.
+
+### Next (continue here)
+
+1. Review and merge `phase-ai-assistant`; run `docs/AI-DEMO.md` once with a real API key before the management
+   demo (the suite only uses a fake provider).
+2. Decisions for you: see "Needs a decision" in `docs/BACKLOG.md` and the AI follow-ups listed there.
+3. Then Phase 4: GRC, EA, KPIs + Salesforce.
+
+### Verification (AI phase)
+
+| Check                                                                                                                                       | Result                                                                                                                                                                                                                                                                                                                                                                                                              |
+| ------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `pnpm format:check`, `pnpm lint`, `pnpm typecheck`                                                                                          | clean                                                                                                                                                                                                                                                                                                                                                                                                               |
+| `pnpm test`                                                                                                                                 | **286 tests pass** — shared 64, web 31, API 191 (31 suites; new: `ai`, `ai-features`, `ai-portal`, `auditor` e2e, layout/outline/diff unit tests). The AI provider is always the fake `FakeAi`; malformed-output fixtures prove validation and the single repair attempt                                                                                                                                            |
+| `pnpm build`                                                                                                                                | passes                                                                                                                                                                                                                                                                                                                                                                                                              |
+| `pnpm audit --prod --audit-level high`                                                                                                      | no high/critical (7 moderate, pre-existing; the Anthropic SDK adds none). Full audit: only the known dev-only `braces` advisory (BACKLOG)                                                                                                                                                                                                                                                                           |
+| `docker compose up` from a clean clone                                                                                                      | five services healthy; all 4 migrations applied; full demo seeded incl. AI demo settings (disabled) and the "Requesting IT Equipment" page; with AI disabled `/ai/status` says DISABLED, AI endpoints 403 and no ✨ buttons render; after enabling (key via API) generation streams through nginx unbuffered (SSE chunks arrive progressively) and the portal assistant answers with its source                     |
+| Browser (Playwright, dev servers; the real `AnthropicProvider` against a local mock of the Messages streaming API via `ANTHROPIC_BASE_URL`) | Settings → AI save + test connection; New process → generate → preview → create; modeler label translation; page and form-field translation; refine with chat → compare → accept; summary, "what changed" on the review screen; SOP generation → page created; process from page; analyse drawer with clickable steps; portal assistant EN/AR incl. "not covered"; AI usage page; Arabic RTL and 390 px phone width |
+
+Docker note: as in earlier phases the sandbox reaches the internet only through a TLS-intercepting proxy, so the
+base images came from `mirror.gcr.io` and the two app images were built from the committed Dockerfiles in a clean
+clone with an uncommitted CA line and `docker build --network host`, then started with `docker compose up`.
+
+Also found and fixed while testing in the browser: the modeler's fit-to-screen placed diagrams under the palette
+(now centred in the free area); the Settings → AI form dropped the suggestion chips when saved with the panel
+collapsed; generated diagrams got new process/pool ids on every refinement (now kept, so the compare matches).
+
+## Phase 3 — 2026-10-21 (merged into `main`)
+
+**Phase 3 (Governance M8, Knowledge Portal M9): complete, merged into `main`.** Phases 1 and 2 are merged into `main`. Every item of the Phase 3 brief is implemented, covered by
 API tests (including a Viewer sweep over every route) and Playwright smoke tests, and verified in the browser
 (English and Arabic, desktop and phone width) and with `docker compose up` from a clean clone.
 
@@ -237,14 +318,14 @@ need no such change.
 
 ## Next
 
-1. Review and merge `phase-3-governance-portal`.
-2. Decisions for you: see "Needs a decision" in `docs/BACKLOG.md` (self-approval rule, Viewer role, PDF, MinIO).
-3. Phase "AI": M16 AI Assistant (CLAUDE.md §2) — Settings → AI with encrypted key, per-role access and usage
-   limits; BPMN from text, SOP from process, EN↔AR translation, suggestions, portal Q&A over published content
-   (the portal search and publication read model from Phase 3 are the natural retrieval source).
-4. Then Phase 4: GRC, EA, KPIs + Salesforce.
+See "Next (continue here)" at the top. After the AI phase: Phase 4 (GRC, EA, KPIs + Salesforce).
 
 ## Known issues / limitations
+
+- AI: tested only against a mocked provider (no real API calls in the suite); run `docs/AI-DEMO.md` with a
+  real key before a demo. Generating into an existing process replaces its diagram (the layout is
+  automatic; hand-made positions are not kept) — save a version first. Requests run in the API process
+  (no queue); the per-user/organisation limits are counted from the usage table.
 
 - PDF export uses the browser's print dialog ("Save as PDF"), not a direct download (D-024, D-035).
 - Emails and reminders run in-process; with several API instances the scheduler runs in each (reminders are
