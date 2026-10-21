@@ -40,11 +40,14 @@ function DefaultLocale() {
 }
 
 function RequireAuth() {
-  const { user, loading } = useAuth();
+  const { user, loading, signedOut } = useAuth();
   const location = useLocation();
   if (loading) return <LoadingState />;
-  if (!user)
-    return <Navigate to="/login" replace state={{ from: location.pathname + location.search }} />;
+  if (!user) {
+    // After an explicit sign-out the next user starts on the home page.
+    const state = signedOut ? undefined : { from: location.pathname + location.search };
+    return <Navigate to="/login" replace state={state} />;
+  }
   return <Outlet />;
 }
 

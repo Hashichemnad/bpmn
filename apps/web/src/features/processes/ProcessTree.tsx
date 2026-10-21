@@ -1,4 +1,4 @@
-import { useMemo, useState, type Key } from 'react';
+import { useEffect, useMemo, useState, type Key } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { App, Input, Tree, Typography, type TreeDataNode, type TreeProps } from 'antd';
 import { SearchOutlined } from '@ant-design/icons';
@@ -89,16 +89,21 @@ export function ProcessTree({ selectedId }: { selectedId?: string }) {
     }));
   }, [items, matches, loc, t]);
 
-  const defaultExpanded = useMemo<Key[]>(
-    () => [
-      ...PROCESS_CATEGORIES.map(categoryNodeKey),
-      ...(selectedId ? ancestorsOf(items, selectedId) : []),
-    ],
-    [items, selectedId],
-  );
+  // Keep the selected process and its ancestors expanded as the user navigates.
+  useEffect(() => {
+    if (!selectedId || !items.length) return;
+    setExpanded((prev) => [
+      ...new Set([
+        ...(prev ?? PROCESS_CATEGORIES.map(categoryNodeKey)),
+        selectedId,
+        ...ancestorsOf(items, selectedId),
+      ]),
+    ]);
+  }, [selectedId, items]);
+
   const expandedKeys = matches
     ? [...PROCESS_CATEGORIES.map(categoryNodeKey), ...matches.visible]
-    : (expanded ?? defaultExpanded);
+    : (expanded ?? PROCESS_CATEGORIES.map(categoryNodeKey));
 
   const onDrop: TreeProps['onDrop'] = (info) => {
     const dragId = String(info.dragNode.key);

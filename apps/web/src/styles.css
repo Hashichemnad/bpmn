@@ -439,3 +439,12 @@ html[lang='ar'] body {
 .ph-integration-card {
   opacity: 0.75;
 }
+
+/* Subtle focus indicator for the keyboard-focusable diagram canvas. */
+.ph-modeler-canvas :focus {
+  outline: none;
+}
+
+.ph-modeler-canvas:focus-within {
+  box-shadow: inset 0 0 0 2px #bfdbfe;
+}

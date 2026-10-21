@@ -1,4 +1,12 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, type ReactNode } from 'react';
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  type ReactNode,
+} from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import type { CurrentUser, LoginInput, Permission } from '@processhub/shared';
 import { ApiError, api, onSessionExpired } from '@/api/client';
@@ -7,6 +15,8 @@ import { useLocale } from '@/app/LocaleProvider';
 interface AuthContextValue {
   user: CurrentUser | null;
   loading: boolean;
+  /** True after an explicit sign-out (the next sign-in should not return to the previous page). */
+  signedOut: boolean;
   login: (input: LoginInput) => Promise<CurrentUser>;
   logout: () => Promise<void>;
   can: (...permissions: Permission[]) => boolean;
@@ -39,6 +49,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const { setLocale, locale } = useLocale();
   const me = useQuery({ queryKey: ME_KEY, queryFn: fetchMe, staleTime: Infinity, retry: false });
   const user = me.data ?? null;
+  // A ref, not state: it must be set before the cache update re-renders the route guards.
+  const signedOutRef = useRef(false);
 
   useEffect(
     () =>
@@ -68,12 +80,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const res = await api<{ user: CurrentUser }>('/auth/login', { method: 'POST', body: input });
       qc.setQueryData(ME_KEY, res.user);
       clearUserData();
+      signedOutRef.current = false;
       return res.user;
     },
     [qc, clearUserData],
   );
 
   const logout = useCallback(async () => {
+    // Set before the request: requests failing with 401 meanwhile also clear the session.
+    signedOutRef.current = true;
     try {
       await api('/auth/logout', { method: 'POST' });
     } finally {
@@ -87,6 +102,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return {
       user,
       loading: me.isLoading,
+      signedOut: signedOutRef.current,
       login,
       logout,
       can: (...p) => p.every((x) => perms.has(x)),
