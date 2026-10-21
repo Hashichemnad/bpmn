@@ -1,0 +1,26 @@
+{
+  "title": "البحث",
+  "subtitle": "ابحث عن العمليات وصفحات التوثيق بالعربية والإنجليزية.",
+  "placeholder": "ابحث في العمليات والصفحات…",
+  "quick": "بحث…",
+  "hint": "اكتب كلمة أو عبارة — الكلمات الجزئية تعمل أيضًا.",
+  "results_zero": "لا توجد نتائج",
+  "results_one": "نتيجة واحدة",
+  "results_two": "نتيجتان",
+  "results_few": "{{formatted}} نتائج",
+  "results_many": "{{formatted}} نتيجة",
+  "results_other": "{{formatted}} نتيجة",
+  "noResults": "لم يُعثر على شيء لـ «{{q}}»",
+  "typeFilter": "النوع",
+  "spaceFilter": "المساحة",
+  "authorFilter": "الكاتب",
+  "allSpaces": "كل المساحات",
+  "anyAuthor": "أي كاتب",
+  "page": "صفحة",
+  "process": "عملية",
+  "types": {
+    "all": "الكل",
+    "pages": "الصفحات",
+    "processes": "العمليات"
+  }
+}

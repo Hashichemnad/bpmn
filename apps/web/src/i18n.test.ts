@@ -4,6 +4,13 @@ import { join } from 'node:path';
 import {
   AUDIT_ACTIONS,
   AUDIT_ENTITY_TYPES,
+  CALLOUT_TYPES,
+  GIT_ENTITY_TYPES,
+  GIT_ERROR_CODES,
+  GIT_SYNC_STATUSES,
+  SEARCH_TYPES,
+  SPACE_ACCESS_LEVELS,
+  SPACE_PRINCIPAL_TYPES,
   LINK_RELATIONS,
   OBJECT_TYPES,
   PROCESS_CATEGORIES,
@@ -95,6 +102,18 @@ describe('translations', () => {
         'GATEWAY_NOT_BRANCHING',
         'CALL_ACTIVITY_UNLINKED',
       ].map((c) => `modeler:rules.${c}`),
+      ...GIT_ERROR_CODES.map((c) => `errors:${c}`),
+      ...GIT_SYNC_STATUSES.map((s) => `admin:git.status.${s}`),
+      ...GIT_ENTITY_TYPES.map((e) => `admin:git.entity.${e}`),
+      'admin:git.tokenHintGithub',
+      'admin:git.tokenHintGitlab',
+      ...CALLOUT_TYPES.map((c) => `docs:callout.${c}`),
+      ...SPACE_PRINCIPAL_TYPES.map((p) => `docs:permissions.principal.${p}`),
+      ...SPACE_ACCESS_LEVELS.map((a) => `docs:permissions.access.${a}`),
+      ...['PROCESS', 'ROLE', 'SYSTEM'].map((k) => `docs:links.kind.${k}`),
+      ...['added', 'removed', 'changed', 'layout'].map((k) => `docs:compare.kind.${k}`),
+      ...['p', 'h1', 'h2', 'h3', 'h4'].map((b) => `docs:editor.blocks.${b}`),
+      ...SEARCH_TYPES.map((s) => `search:types.${s}`),
     ];
     expect(expected.filter((k) => !en.has(k))).toEqual([]);
   });

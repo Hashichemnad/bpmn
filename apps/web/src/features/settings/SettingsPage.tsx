@@ -1,6 +1,5 @@
 import { useEffect } from 'react';
 import {
-  Alert,
   App,
   Button,
   Card,
@@ -12,11 +11,10 @@ import {
   Radio,
   Row,
   Space,
-  Tag,
   Typography,
   Upload,
 } from 'antd';
-import { DeleteOutlined, GithubOutlined, GitlabOutlined, UploadOutlined } from '@ant-design/icons';
+import { DeleteOutlined, UploadOutlined } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
 import { LOGO_MAX_BYTES, LOGO_MIME_TYPES, type UpdateSettingsInput } from '@processhub/shared';
 import { useRemoveLogo, useSettings, useUpdateSettings, useUploadLogo } from '@/api/hooks';
@@ -24,6 +22,7 @@ import { PageHeader } from '@/components/PageHeader';
 import { ErrorState, LoadingState } from '@/components/states';
 import { useErrorMessage } from '@/components/i18n-helpers';
 import { BrandMark } from '@/layout/BrandMark';
+import { GitIntegrationCard } from './GitIntegrationCard';
 
 export function SettingsPage() {
   const { t } = useTranslation();
@@ -167,41 +166,7 @@ export function SettingsPage() {
           </Card>
         </Col>
         <Col span={24}>
-          <Card
-            title={t('admin:settings.integrations')}
-            extra={<Tag>{t('admin:settings.comingPhase2')}</Tag>}
-          >
-            <Alert
-              type="info"
-              showIcon
-              message={t('admin:settings.integrationsInfo')}
-              style={{ marginBottom: 16 }}
-            />
-            <Row gutter={[16, 16]}>
-              {[
-                { key: 'github', icon: <GithubOutlined />, name: 'GitHub' },
-                { key: 'gitlab', icon: <GitlabOutlined />, name: 'GitLab' },
-              ].map((i) => (
-                <Col xs={24} md={12} key={i.key}>
-                  <Card size="small" className="ph-integration-card">
-                    <Flex justify="space-between" align="center">
-                      <Space>
-                        <span style={{ fontSize: 22 }}>{i.icon}</span>
-                        <div>
-                          <Typography.Text strong>{i.name}</Typography.Text>
-                          <br />
-                          <Typography.Text type="secondary" style={{ fontSize: 12 }}>
-                            {t('admin:settings.integrationDescription')}
-                          </Typography.Text>
-                        </div>
-                      </Space>
-                      <Tag>{t('admin:settings.disabled')}</Tag>
-                    </Flex>
-                  </Card>
-                </Col>
-              ))}
-            </Row>
-          </Card>
+          <GitIntegrationCard />
         </Col>
       </Row>
     </>

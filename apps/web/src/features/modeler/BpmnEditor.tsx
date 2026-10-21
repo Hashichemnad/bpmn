@@ -23,8 +23,8 @@ import {
   DownloadOutlined,
   HistoryOutlined,
   RedoOutlined,
+  CloudSyncOutlined,
   SaveOutlined,
-  TagsOutlined,
   UndoOutlined,
   UploadOutlined,
   WarningOutlined,
@@ -43,7 +43,13 @@ import {
   type BpmnIssue,
   type ProcessDto,
 } from '@processhub/shared';
-import { useCreateVersion, useLinks, useProcessModel, useSaveModel } from '@/api/hooks';
+import {
+  useCreateVersion,
+  useLinks,
+  useProcessModel,
+  useSaveModel,
+  useVersions,
+} from '@/api/hooks';
 import { useLocale } from '@/app/LocaleProvider';
 import { useErrorMessage, useFormatDate, useLocalized } from '@/components/i18n-helpers';
 import { ErrorState, LoadingState } from '@/components/states';
@@ -89,6 +95,9 @@ interface Props {
   focusElementId?: string;
 }
 
+/** Changes are autosaved to the working model (a draft) after this pause; versions are explicit. */
+const AUTOSAVE_MS = 3000;
+
 export function BpmnEditor({ process, focusElementId }: Props) {
   const { t } = useTranslation();
   const { locale } = useLocale();
@@ -103,6 +112,9 @@ export function BpmnEditor({ process, focusElementId }: Props) {
   const links = useLinks(process.id);
   const saveModel = useSaveModel(process.id);
   const createVersion = useCreateVersion(process.id);
+  const versions = useVersions(process.id);
+  const autosaveTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
+  const autosaveRef = useRef<() => Promise<boolean>>(async () => true);
 
   const containerRef = useRef<HTMLDivElement>(null);
   const instanceRef = useRef<BpmnInstance | null>(null);
@@ -188,6 +200,8 @@ export function BpmnEditor({ process, focusElementId }: Props) {
       setCanRedo(stack.canRedo());
       setDirty(true);
       revalidate();
+      clearTimeout(autosaveTimer.current);
+      autosaveTimer.current = setTimeout(() => void autosaveRef.current(), AUTOSAVE_MS);
     });
     if (!canEdit) {
       eventBus.on('element.click', (e: { element: DiagramElement }) => {
@@ -201,6 +215,7 @@ export function BpmnEditor({ process, focusElementId }: Props) {
     observer.observe(containerRef.current);
     setReady(true);
     return () => {
+      clearTimeout(autosaveTimer.current);
       observer.disconnect();
       instance.destroy();
       instanceRef.current = null;
@@ -220,6 +235,10 @@ export function BpmnEditor({ process, focusElementId }: Props) {
         fitViewport(instance);
         setImportError(null);
         setDirty(markDirty);
+        if (markDirty) {
+          clearTimeout(autosaveTimer.current);
+          autosaveTimer.current = setTimeout(() => void autosaveRef.current(), AUTOSAVE_MS);
+        }
         setSelected(null);
         revalidate();
         refreshOverlays();
@@ -267,14 +286,21 @@ export function BpmnEditor({ process, focusElementId }: Props) {
   );
   useEffect(() => {
     if (blocker.state !== 'blocked') return;
-    modal.confirm({
-      title: t('modeler:unsavedTitle'),
-      content: t('modeler:unsavedText'),
-      okText: t('modeler:leave'),
-      okButtonProps: { danger: true },
-      cancelText: t('modeler:stay'),
-      onOk: () => blocker.proceed(),
-      onCancel: () => blocker.reset(),
+    // Save the draft on the way out; only ask when that fails.
+    void autosaveRef.current().then((ok) => {
+      if (ok) {
+        blocker.proceed();
+        return;
+      }
+      modal.confirm({
+        title: t('modeler:unsavedTitle'),
+        content: t('modeler:unsavedText'),
+        okText: t('modeler:leave'),
+        okButtonProps: { danger: true },
+        cancelText: t('modeler:stay'),
+        onOk: () => blocker.proceed(),
+        onCancel: () => blocker.reset(),
+      });
     });
   }, [blocker, modal, t]);
   useEffect(() => {
@@ -289,20 +315,25 @@ export function BpmnEditor({ process, focusElementId }: Props) {
     [],
   );
 
-  const save = useCallback(async () => {
-    if (!instanceRef.current || !canEdit) return;
+  /** Saves the working model as a draft (no version). Returns false when saving failed. */
+  const autosave = useCallback(async () => {
+    clearTimeout(autosaveTimer.current);
+    if (!instanceRef.current || !canEdit) return true;
     try {
       await saveModel.mutateAsync(await currentXml());
       setDirty(false);
-      message.success(t('modeler:saved'));
+      return true;
     } catch (err) {
       message.error(errorMessage(err));
+      return false;
     }
-  }, [canEdit, currentXml, saveModel, message, t, errorMessage]);
+  }, [canEdit, currentXml, saveModel, message, errorMessage]);
+  autosaveRef.current = autosave;
 
   const saveVersion = async () => {
     const { changeNote } = await versionForm.validateFields();
     try {
+      clearTimeout(autosaveTimer.current);
       const v = await createVersion.mutateAsync({ bpmnXml: await currentXml(), changeNote });
       setDirty(false);
       setVersionOpen(false);
@@ -318,12 +349,18 @@ export function BpmnEditor({ process, focusElementId }: Props) {
     const onKey = (e: KeyboardEvent) => {
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') {
         e.preventDefault();
-        void save();
+        setVersionOpen(true);
       }
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [canEdit, save]);
+  }, [canEdit]);
+
+  /** After a restore the working model on the server changed: reload it. */
+  const reloadModel = async () => {
+    const res = await model.refetch();
+    if (res.data?.bpmnXml) await importDiagram(res.data.bpmnXml, false);
+  };
 
   const doExport = async (kind: 'bpmn' | 'svg' | 'png') => {
     const instance = instanceRef.current;
@@ -388,13 +425,14 @@ export function BpmnEditor({ process, focusElementId }: Props) {
   const lastSaved = useMemo(
     () =>
       model.data?.updatedAt
-        ? t('modeler:lastSaved', {
+        ? t('modeler:draftSaved', {
             time: formatDate(model.data.updatedAt),
             name: loc(model.data.updatedBy) || model.data.updatedBy?.email || '—',
           })
         : t('modeler:neverSaved'),
     [model.data, formatDate, loc, t],
   );
+  const latestVersion = versions.data?.[0];
 
   if (model.isError) return <ErrorState error={model.error} onRetry={() => void model.refetch()} />;
 
@@ -410,18 +448,11 @@ export function BpmnEditor({ process, focusElementId }: Props) {
         <Space wrap size={6}>
           {canEdit ? (
             <>
-              <Button
-                type="primary"
-                icon={<SaveOutlined />}
-                onClick={() => void save()}
-                loading={saveModel.isPending}
-                disabled={!dirty && !!model.data?.bpmnXml}
-              >
-                {t('save')}
-              </Button>
-              <Button icon={<TagsOutlined />} onClick={() => setVersionOpen(true)}>
-                {t('modeler:saveAsVersion')}
-              </Button>
+              <Tooltip title={t('modeler:saveHint')}>
+                <Button type="primary" icon={<SaveOutlined />} onClick={() => setVersionOpen(true)}>
+                  {t('save')}
+                </Button>
+              </Tooltip>
               <Tooltip title={t('modeler:undo')}>
                 <Button
                   icon={<UndoOutlined />}
@@ -596,16 +627,33 @@ export function BpmnEditor({ process, focusElementId }: Props) {
       </div>
 
       <Flex className="ph-modeler-status" justify="space-between" align="center" gap={8}>
-        <Typography.Text type="secondary">{lastSaved}</Typography.Text>
-        {dirty ? <Tag color="orange">{t('modeler:unsaved')}</Tag> : <span />}
+        <Space size={6} wrap>
+          {canEdit && <CloudSyncOutlined className="ph-muted" />}
+          <Typography.Text type="secondary">{lastSaved}</Typography.Text>
+        </Space>
+        <Space size={6} wrap>
+          {dirty ? (
+            <Tag color="orange">
+              {saveModel.isPending ? t('modeler:autosaving') : t('modeler:unsaved')}
+            </Tag>
+          ) : null}
+          <Typography.Text type="secondary">
+            {latestVersion
+              ? t('modeler:latestVersion', {
+                  number: latestVersion.versionNumber,
+                  time: formatDate(latestVersion.createdAt),
+                })
+              : t('modeler:noVersionYet')}
+          </Typography.Text>
+        </Space>
       </Flex>
 
       <Modal
-        title={t('modeler:saveAsVersion')}
+        title={t('modeler:saveVersionTitle')}
         open={versionOpen}
         onCancel={() => setVersionOpen(false)}
         onOk={() => void saveVersion()}
-        okText={t('modeler:createVersion')}
+        okText={t('save')}
         cancelText={t('cancel')}
         confirmLoading={createVersion.isPending}
         destroyOnHidden
@@ -627,7 +675,9 @@ export function BpmnEditor({ process, focusElementId }: Props) {
       <VersionsDrawer
         processId={process.id}
         open={historyOpen}
+        canEdit={canEdit}
         onClose={() => setHistoryOpen(false)}
+        onRestored={() => void reloadModel()}
       />
     </Card>
   );

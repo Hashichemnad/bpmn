@@ -330,7 +330,7 @@ export class GitSyncService implements OnModuleInit, OnModuleDestroy {
       }),
       this.prisma.page.findMany({
         where: { id: { in: ids('PAGE') } },
-        select: { id: true, titleEn: true, titleAr: true },
+        select: { id: true, titleEn: true, titleAr: true, spaceId: true },
       }),
       this.prisma.gitSyncItem.groupBy({ by: ['status'], _count: { _all: true } }),
       this.prisma.gitSyncItem.aggregate({ _max: { lastAttemptAt: true, lastSuccessAt: true } }),
@@ -349,7 +349,7 @@ export class GitSyncService implements OnModuleInit, OnModuleDestroy {
         title: proc
           ? { nameEn: proc.nameEn, nameAr: proc.nameAr, code: proc.code }
           : page
-            ? { nameEn: page.titleEn, nameAr: page.titleAr }
+            ? { nameEn: page.titleEn, nameAr: page.titleAr, spaceId: page.spaceId }
             : null,
         status: r.status,
         version: r.version,

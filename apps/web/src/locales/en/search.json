@@ -1,0 +1,22 @@
+{
+  "title": "Search",
+  "subtitle": "Find processes and documentation pages in English and Arabic.",
+  "placeholder": "Search processes and pages…",
+  "quick": "Search…",
+  "hint": "Type a word or phrase — partial words work too.",
+  "results_one": "{{formatted}} result",
+  "results_other": "{{formatted}} results",
+  "noResults": "Nothing found for “{{q}}”",
+  "typeFilter": "Type",
+  "spaceFilter": "Space",
+  "authorFilter": "Author",
+  "allSpaces": "All spaces",
+  "anyAuthor": "Any author",
+  "page": "Page",
+  "process": "Process",
+  "types": {
+    "all": "Everything",
+    "pages": "Pages",
+    "processes": "Processes"
+  }
+}

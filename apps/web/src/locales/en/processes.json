@@ -39,7 +39,8 @@
     "overview": "Overview",
     "subprocesses": "Sub-processes",
     "objects": "Linked objects",
-    "model": "Model"
+    "model": "Model",
+    "docs": "Documentation"
   },
   "new": "New process",
   "edit": "Edit process",

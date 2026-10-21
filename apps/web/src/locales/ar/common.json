@@ -38,7 +38,10 @@
     "departments": "الإدارات",
     "audit": "سجل التدقيق",
     "settings": "الإعدادات",
-    "profile": "ملفي الشخصي"
+    "profile": "ملفي الشخصي",
+    "documentation": "التوثيق",
+    "docs": "المساحات",
+    "search": "البحث"
   },
   "auth": {
     "subtitle": "سجّل الدخول للمتابعة",

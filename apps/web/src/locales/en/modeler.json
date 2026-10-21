@@ -1,15 +1,11 @@
 {
   "canvas": "BPMN diagram",
   "readOnly": "Read only",
-  "saved": "Model saved",
-  "saveAsVersion": "Save as version",
-  "createVersion": "Create version",
   "versionHint": "Saves the current model and records it as a new version with your note.",
   "changeNote": "Change note",
   "versionSaved": "Version {{number}} saved",
   "versions": "Versions",
   "versionHistory": "Version history",
-  "versionsPhase2": "Visual compare and restore will be available in Phase 2.",
   "noVersions": "No versions saved yet",
   "viewingVersion": "Version {{number}}",
   "undo": "Undo",
@@ -18,7 +14,6 @@
   "zoomOut": "Zoom out",
   "fit": "Fit to screen",
   "unsaved": "Unsaved changes",
-  "lastSaved": "Saved {{time}} by {{name}}",
   "neverSaved": "Not saved yet",
   "validation": "Validation",
   "issues": "Issues",
@@ -26,7 +21,7 @@
   "properties": "Properties",
   "import": "Import",
   "importTitle": "Import a BPMN file?",
-  "importText": "The current diagram will be replaced. Nothing is saved until you click Save.",
+  "importText": "The current diagram will be replaced. It is saved as a draft automatically; click Save to create a version.",
   "imported": "Diagram imported — review and save",
   "importFailed": "The file could not be imported as BPMN 2.0",
   "export": "Export",
@@ -98,5 +93,12 @@
     "DataStoreReference": "Data store",
     "Group": "Group",
     "Association": "Association"
-  }
+  },
+  "saveHint": "Creates a new version with your change note. Your edits are also saved automatically as a draft.",
+  "saveVersionTitle": "Save as a new version",
+  "draftSaved": "Draft autosaved {{time}} by {{name}}",
+  "autosaving": "Saving draft…",
+  "latestVersion": "Latest version: v{{number}} ({{time}})",
+  "noVersionYet": "No version saved yet",
+  "restoreText": "The model of this version becomes the working model and the new version {{next}}. No version is deleted; unsaved canvas changes are replaced."
 }

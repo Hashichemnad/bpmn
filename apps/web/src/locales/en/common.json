@@ -34,7 +34,10 @@
     "departments": "Departments",
     "audit": "Audit log",
     "settings": "Settings",
-    "profile": "My profile"
+    "profile": "My profile",
+    "documentation": "Documentation",
+    "docs": "Spaces",
+    "search": "Search"
   },
   "auth": {
     "subtitle": "Sign in to continue",

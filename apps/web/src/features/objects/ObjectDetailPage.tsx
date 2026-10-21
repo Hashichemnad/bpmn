@@ -10,6 +10,7 @@ import { PageHeader } from '@/components/PageHeader';
 import { CategoryTag } from '@/components/tags';
 import { EmptyState, ErrorState, LoadingState } from '@/components/states';
 import { useFormatDate, useLocalized } from '@/components/i18n-helpers';
+import { RelatedDocsCard } from '@/features/docs/RelatedDocsCard';
 import { ObjectFormModal } from './ObjectFormModal';
 import { useConfirmDeleteObject } from './useConfirmDeleteObject';
 
@@ -166,6 +167,9 @@ export function ObjectDetailPage() {
               />
             )}
           </Card>
+          <div style={{ marginTop: 24 }}>
+            <RelatedDocsCard kind="objects" id={o.id} />
+          </div>
         </Col>
       </Row>
       {editing && (

@@ -390,7 +390,7 @@ export interface GitSyncItemDto {
   id: string;
   entityType: GitEntityType;
   entityId: string;
-  title: { nameEn: string; nameAr: string; code?: string } | null;
+  title: { nameEn: string; nameAr: string; code?: string; spaceId?: string } | null;
   status: GitSyncStatus;
   version: number | null;
   paths: string[];
