@@ -16,9 +16,17 @@ Steps (tick as they are committed; a new session continues at the first unticked
       (`versity/versitygw:v1.9.0`, objects as plain files + metadata sidecar, D-051), service `storage`, volume
       `storage-data`; `scripts/migrate-minio-storage.sh` (tested: 25 files copied, checksums and content types
       match); shared helpers in `scripts/lib.sh`.
-- [ ] 2. `docker-compose.prod.yml` + `deploy/Caddyfile`: Caddy with automatic HTTPS (only 80/443 published),
+- [x] 2. `docker-compose.prod.yml` + `deploy/Caddyfile`: Caddy with automatic HTTPS (only 80/443 published),
       internal network for database and storage, health checks, restart policies, resource limits, log rotation.
-- [ ] 3. `.env.example.prod` with secure defaults + `scripts/generate-secrets.sh`.
+      **Done** and tested in Docker (DOMAIN=localhost, `CADDY_TLS=internal`): all five services healthy, only
+      80/443 published, http → https (308), HSTS + CSP, postgres/storage have no internet and no host ports, the
+      API resolves external hosts; sign-in, Arabic page and an 8 MB attachment work over HTTPS; audit log shows
+      the client IP (`TRUST_PROXY=2`). **Fixed on the way:** nginx `client_max_body_size` 6m → 11m (attachments
+      may be 10 MB; 6–10 MB uploads used to fail with nginx's untranslated 413).
+- [x] 3. `.env.example.prod` with secure defaults + `scripts/generate-secrets.sh`. **Done:** secrets are
+      required in production (Compose refuses to start without them, so they live in `.env` and are backed up
+      with it); `COMPOSE_FILE` in `.env` makes plain `docker compose` use the production file; the script
+      only fills `__GENERATE__` values (safe to re-run), sets `chmod 600`, prints the first admin password once.
 - [ ] 4. `scripts/backup.sh` / `scripts/restore.sh` (PostgreSQL dump + file storage + key fingerprint), daily
       schedule example; restore tested end to end on the production stack.
 - [ ] 5. `docs/DEPLOYMENT.md` for a non-developer IT person.
