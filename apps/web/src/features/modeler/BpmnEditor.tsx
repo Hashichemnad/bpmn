@@ -86,7 +86,9 @@ import { ElementPanel } from './ElementPanel';
 import { useComments } from '@/api/governance';
 import { CommentsPanel } from '@/features/comments/CommentsPanel';
 import { VersionsDrawer } from './VersionsDrawer';
-import { AiBadge, AiButton } from '@/features/ai/AiParts';
+import { AiBadge, AiButton, AiIcon } from '@/features/ai/AiParts';
+import { AiChatPanel } from '@/features/ai/AiChatPanel';
+import { useAi } from '@/features/ai/useAi';
 import { GenerateProcessModal } from '@/features/ai/GenerateProcessModal';
 import { TranslateLabelsModal, type LabelTranslation } from '@/features/ai/TranslateLabelsModal';
 
@@ -142,6 +144,7 @@ export function BpmnEditor({ process, focusElementId }: Props) {
   const saveModel = useSaveModel(process.id);
   const createVersion = useCreateVersion(process.id);
   const createLink = useCreateLink(process.id);
+  const { available: aiAvailable } = useAi();
   const versions = useVersions(process.id);
   const comments = useComments('PROCESS', process.id);
   const autosaveTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
@@ -156,7 +159,9 @@ export function BpmnEditor({ process, focusElementId }: Props) {
   const [dirty, setDirty] = useState(false);
   const [issues, setIssues] = useState<BpmnIssue[]>([]);
   const [importError, setImportError] = useState<string | null>(null);
-  const [panelTab, setPanelTab] = useState<'properties' | 'issues' | 'comments'>('properties');
+  const [panelTab, setPanelTab] = useState<'properties' | 'issues' | 'comments' | 'ai'>(
+    'properties',
+  );
   const [versionOpen, setVersionOpen] = useState(false);
   const [historyOpen, setHistoryOpen] = useState(false);
   const [canUndo, setCanUndo] = useState(false);
@@ -589,6 +594,11 @@ export function BpmnEditor({ process, focusElementId }: Props) {
                   onClick: () => setAiDialog('generate'),
                 },
                 {
+                  key: 'chat',
+                  label: t('ai:menu.chat'),
+                  onClick: () => setPanelTab('ai'),
+                },
+                {
                   key: 'translate-ar',
                   label: t('ai:menu.translateToAr'),
                   onClick: () => setAiDialog('translate-ar'),
@@ -692,7 +702,7 @@ export function BpmnEditor({ process, focusElementId }: Props) {
           <Tabs
             size="small"
             activeKey={panelTab}
-            onChange={(k) => setPanelTab(k as 'properties' | 'issues' | 'comments')}
+            onChange={(k) => setPanelTab(k as 'properties' | 'issues' | 'comments' | 'ai')}
             items={[
               {
                 key: 'properties',
@@ -749,6 +759,26 @@ export function BpmnEditor({ process, focusElementId }: Props) {
                     </ul>
                   ),
               },
+              ...(canEdit && aiAvailable
+                ? [
+                    {
+                      key: 'ai',
+                      label: (
+                        <Space size={4}>
+                          <AiIcon />
+                          {t('ai:chat.tab')}
+                        </Space>
+                      ),
+                      children: (
+                        <AiChatPanel
+                          processId={process.id}
+                          getXml={currentXml}
+                          onAccept={applyAiModel}
+                        />
+                      ),
+                    },
+                  ]
+                : []),
               {
                 key: 'comments',
                 label: t('modeler:commentsTab'),

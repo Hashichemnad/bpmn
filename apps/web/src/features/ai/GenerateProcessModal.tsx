@@ -5,6 +5,7 @@ import type { AiGeneratedProcessDto, AiSuggestedLinkDto } from '@processhub/shar
 import { useLocalized } from '@/components/i18n-helpers';
 import { DiagramCanvas } from '@/features/docs/EmbeddedDiagram';
 import { detectLocale } from '@/features/modeler/labels';
+import { useLocale } from '@/app/LocaleProvider';
 import { useAi, useAiRun } from './useAi';
 import { AiError, AiIcon, AiNotice, AiSuggestionChips, AiWorking } from './AiParts';
 
@@ -12,6 +13,8 @@ interface Props {
   open: boolean;
   /** Existing process (modeler); omitted when creating a new process. */
   processId?: string;
+  /** Model the process described by this wiki page instead of a typed description. */
+  page?: { id: string; title: string };
   /** The current diagram has content that will be replaced. */
   replaces?: boolean;
   acceptLabel: string;
@@ -26,6 +29,7 @@ const groupKey = (l: AiSuggestedLinkDto) => `${l.object.id}|${l.relation}`;
 export function GenerateProcessModal({
   open,
   processId,
+  page,
   replaces,
   acceptLabel,
   onClose,
@@ -34,6 +38,7 @@ export function GenerateProcessModal({
   const { t } = useTranslation();
   const loc = useLocalized();
   const { available } = useAi();
+  const { locale } = useLocale();
   const ai = useAiRun<AiGeneratedProcessDto>();
   const [description, setDescription] = useState('');
   const [selected, setSelected] = useState<Set<string>>(new Set());
@@ -60,11 +65,17 @@ export function GenerateProcessModal({
   }, [result]);
 
   const generate = () =>
-    void ai.run('/ai/generate-process', {
-      description: description.trim(),
-      language: detectLocale(description),
-      ...(processId ? { processId } : {}),
-    });
+    void (page
+      ? ai.run('/ai/doc-to-process', {
+          pageId: page.id,
+          language: locale,
+          ...(description.trim() ? { instructions: description.trim() } : {}),
+        })
+      : ai.run('/ai/generate-process', {
+          description: description.trim(),
+          language: detectLocale(description),
+          ...(processId ? { processId } : {}),
+        }));
 
   const accept = async () => {
     if (!result) return;
@@ -80,7 +91,7 @@ export function GenerateProcessModal({
     }
   };
 
-  const canGenerate = description.trim().length >= 3 && !ai.running;
+  const canGenerate = (!!page || description.trim().length >= 3) && !ai.running;
   const footer = result ? (
     <Flex justify="space-between" wrap gap={8}>
       <Button onClick={() => ai.setResult(null)}>{t('ai:generate.editPrompt')}</Button>
@@ -113,7 +124,7 @@ export function GenerateProcessModal({
       title={
         <Space>
           <AiIcon />
-          {t('ai:generate.title')}
+          {page ? t('ai:fromPage.title') : t('ai:generate.title')}
         </Space>
       }
       open={open && available}
@@ -126,21 +137,21 @@ export function GenerateProcessModal({
       {!result && (
         <Space direction="vertical" style={{ width: '100%' }} size={12}>
           <Typography.Paragraph type="secondary" style={{ marginBottom: 0 }}>
-            {t('ai:generate.intro')}
+            {page ? t('ai:fromPage.intro', { title: page.title }) : t('ai:generate.intro')}
           </Typography.Paragraph>
           <Input.TextArea
             value={description}
             onChange={(e) => setDescription(e.target.value)}
-            rows={6}
+            rows={page ? 2 : 6}
             maxLength={4000}
             showCount
             autoFocus
-            placeholder={t('ai:generate.placeholder')}
+            placeholder={page ? t('ai:fromPage.placeholder') : t('ai:generate.placeholder')}
             dir="auto"
             disabled={ai.running}
             aria-label={t('ai:generate.title')}
           />
-          <AiSuggestionChips feature="GENERATE_PROCESS" onPick={setDescription} />
+          {!page && <AiSuggestionChips feature="GENERATE_PROCESS" onPick={setDescription} />}
           {ai.running && (
             <AiWorking chars={ai.chars} label={t('ai:generate.working')} onCancel={ai.cancel} />
           )}

@@ -25,6 +25,7 @@ import { useErrorMessage, useFormatDate, useLocalized } from '@/components/i18n-
 import { EmptyState, ErrorState, LoadingState } from '@/components/states';
 import { DiagramCanvas } from '@/features/docs/EmbeddedDiagram';
 import { BpmnCompare } from '@/features/versions/BpmnCompare';
+import { SummaryButton } from '@/features/ai/SummaryModal';
 
 const CURRENT = 'current';
 
@@ -77,6 +78,13 @@ function CompareModal({
     { value: CURRENT, label: t('docs:compare.currentDraft') },
     ...versions.map((v) => ({ value: v.id, label: `v${v.versionNumber} — ${v.changeNote}` })),
   ];
+  // "What changed" works on saved versions (older first).
+  const numberOf = (id: string) => versions.find((v) => v.id === id)?.versionNumber;
+  const nums = [numberOf(a), numberOf(b)];
+  const versionPair =
+    nums[0] !== undefined && nums[1] !== undefined && nums[0] !== nums[1]
+      ? ([Math.min(nums[0], nums[1]), Math.max(nums[0], nums[1])] as const)
+      : null;
   const name = (id: string) =>
     id === CURRENT
       ? t('docs:compare.currentDraft')
@@ -107,6 +115,15 @@ function CompareModal({
           style={{ minInlineSize: 260 }}
           aria-label={t('docs:compare.to')}
         />
+        {versionPair && (
+          <SummaryButton
+            target={{
+              type: 'PROCESS',
+              id: processId,
+              compare: { from: versionPair[0], to: versionPair[1] },
+            }}
+          />
+        )}
       </Flex>
       {left.loading || right.loading ? (
         <LoadingState />

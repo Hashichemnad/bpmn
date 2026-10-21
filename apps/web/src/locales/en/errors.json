@@ -90,5 +90,7 @@
   "AI_INVALID_OUTPUT": "The AI produced an answer that could not be used. Try again or rephrase your request.",
   "AI_INPUT_TOO_LARGE": "This content is too large for the AI assistant.",
   "AI_KEY_REQUIRED": "Enter an API key to enable the AI assistant.",
-  "ERROR": "Something went wrong. Try again."
+  "ERROR": "Something went wrong. Try again.",
+  "AI_NO_DIAGRAM": "This process has no diagram yet.",
+  "INVALID_RANGE": "Choose an older and a newer version."
 }

@@ -3,11 +3,19 @@ import { ApiTags } from '@nestjs/swagger';
 import type { Request, Response } from 'express';
 import {
   PERMISSIONS,
+  aiDocToProcessSchema,
+  aiGenerateDocSchema,
   aiGenerateProcessSchema,
+  aiRefineProcessSchema,
   aiSettingsSchema,
+  aiSummariseSchema,
   aiTranslateSchema,
   aiUsageQuerySchema,
+  type AiDocToProcessInput,
+  type AiGenerateDocInput,
   type AiGenerateProcessInput,
+  type AiRefineProcessInput,
+  type AiSummariseInput,
   type AiSettingsInput,
   type AiTestResultDto,
   type AiTranslateInput,
@@ -23,6 +31,8 @@ import { AiError } from './providers/types';
 import { streamSse } from './sse';
 import { ProcessAiService } from './features/process-ai.service';
 import { TranslateService } from './features/translate.service';
+import { DocAiService } from './features/doc-ai.service';
+import { SummaryService } from './features/summary.service';
 
 /** Settings → AI and the usage report. The API key is write-only. */
 @ApiTags('ai')
@@ -98,6 +108,8 @@ export class AiController {
     private readonly gateway: AiGatewayService,
     private readonly processAi: ProcessAiService,
     private readonly translate: TranslateService,
+    private readonly docAi: DocAiService,
+    private readonly summary: SummaryService,
   ) {}
 
   /** What the current user may do (hides every AI button when not available). */
@@ -128,5 +140,49 @@ export class AiController {
   ) {
     const job = await this.translate.prepare(body, user, meta);
     await streamSse(req, res, job);
+  }
+
+  @Post('refine-process')
+  async refineProcess(
+    @Body(new ZodPipe(aiRefineProcessSchema)) body: AiRefineProcessInput,
+    @CurrentUser() user: AuthUser,
+    @ReqMeta() meta: RequestMeta,
+    @Req() req: Request,
+    @Res() res: Response,
+  ) {
+    await streamSse(req, res, await this.processAi.prepareRefine(body, user, meta));
+  }
+
+  @Post('doc-to-process')
+  async docToProcess(
+    @Body(new ZodPipe(aiDocToProcessSchema)) body: AiDocToProcessInput,
+    @CurrentUser() user: AuthUser,
+    @ReqMeta() meta: RequestMeta,
+    @Req() req: Request,
+    @Res() res: Response,
+  ) {
+    await streamSse(req, res, await this.processAi.prepareDocToProcess(body, user, meta));
+  }
+
+  @Post('generate-doc')
+  async generateDoc(
+    @Body(new ZodPipe(aiGenerateDocSchema)) body: AiGenerateDocInput,
+    @CurrentUser() user: AuthUser,
+    @ReqMeta() meta: RequestMeta,
+    @Req() req: Request,
+    @Res() res: Response,
+  ) {
+    await streamSse(req, res, await this.docAi.prepare(body, user, meta));
+  }
+
+  @Post('summarise')
+  async summarise(
+    @Body(new ZodPipe(aiSummariseSchema)) body: AiSummariseInput,
+    @CurrentUser() user: AuthUser,
+    @ReqMeta() meta: RequestMeta,
+    @Req() req: Request,
+    @Res() res: Response,
+  ) {
+    await streamSse(req, res, await this.summary.prepare(body, user, meta));
   }
 }

@@ -5,7 +5,7 @@ Read this together with `CLAUDE.md` at the start of every session.
 ## Current state — 2026-10-21 (AI phase, branch `phase-ai-assistant`)
 
 **Phase "AI" (M16 AI Assistant) is in progress.** Phases 1–3 are merged into `main`. The brief is built in
-three parts, committed separately; **Part A is done**, Parts B and C are next.
+three parts, committed separately; **Parts A and B are done**, Part C is next.
 
 ### Done in this phase
 
@@ -57,13 +57,14 @@ three parts, committed separately; **Part A is done**, Parts B and C are next.
    links; seed a published IT page that answers "How do I request a new laptop?").
 3. Then `docs/AI-DEMO.md`, README, BACKLOG, CLAUDE.md phase table, `docker compose up --build` check.
 
-### Verification (Part A)
+### Verification (Parts A and B)
 
-- `pnpm lint`, `pnpm typecheck`, `pnpm format:check`: clean. Tests: shared 64, web 31, API 173 (all pass).
+- `pnpm lint`, `pnpm typecheck`, `pnpm format:check`: clean. Tests: shared 64, web 31, API 183 (all pass).
 - Browser (Playwright, dev servers, real `AnthropicProvider` against a local mock of the Messages streaming
   API via `ANTHROPIC_BASE_URL`): Settings → AI save + test connection, New process → generate → preview →
   create, modeler label translation, page translation, form field translation, AI usage page, Arabic RTL and
-  390 px phone width.
+  390 px phone width; chat refine → review in compare → accept; summary; generate SOP → page created; review
+  screen summary.
 
 ## Phase 3 — 2026-10-21 (merged into `main`)
 

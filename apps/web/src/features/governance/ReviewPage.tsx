@@ -33,6 +33,9 @@ import type {
   ReviewStepDto,
 } from '@processhub/shared';
 import { useDecide, useGovernanceAction, useReview } from '@/api/governance';
+import { AiIcon } from '@/features/ai/AiParts';
+import { SummaryView } from '@/features/ai/SummaryModal';
+import { useAi } from '@/features/ai/useAi';
 import { useLocale } from '@/app/LocaleProvider';
 import { PageHeader } from '@/components/PageHeader';
 import { ErrorState, LoadingState } from '@/components/states';
@@ -136,6 +139,7 @@ export function ReviewPage() {
   const errorMessage = useErrorMessage();
   const { message, modal } = App.useApp();
   const review = useReview(reviewId);
+  const { available: aiAvailable } = useAi();
   const decide = useDecide(reviewId ?? '');
   const [decision, setDecision] = useState<ReviewDecision | null>(null);
   const [form] = Form.useForm<{ comment?: string }>();
@@ -259,6 +263,23 @@ export function ReviewPage() {
       )}
       <Row gutter={[24, 24]}>
         <Col xs={24} xl={16}>
+          {aiAvailable && (
+            <Card
+              className="ph-ai-card"
+              title={
+                <Space>
+                  <AiIcon />
+                  {t('ai:summary.reviewTitle')}
+                </Space>
+              }
+              style={{ marginBlockEnd: 24 }}
+            >
+              <SummaryView
+                auto={false}
+                target={{ type: r.item.entityType, id: r.item.entityId, reviewId: r.id }}
+              />
+            </Card>
+          )}
           <Card
             title={t('governance:review.changes')}
             extra={

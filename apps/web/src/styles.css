@@ -1606,3 +1606,45 @@ html[lang='ar'] body {
     block-size: 320px;
   }
 }
+.ph-ai-chat {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.ph-ai-chat-log {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-block-size: 46vh;
+  overflow: auto;
+}
+.ph-ai-msg {
+  display: flex;
+  gap: 6px;
+  align-items: flex-start;
+}
+.ph-ai-msg-body {
+  padding: 8px 10px;
+  border-radius: 10px;
+  max-inline-size: 92%;
+}
+.ph-ai-msg-user {
+  justify-content: flex-end;
+}
+.ph-ai-msg-user .ph-ai-msg-body {
+  background: #eef2ff;
+}
+.ph-ai-msg-assistant .ph-ai-msg-body {
+  background: #faf5ff;
+  border: 1px solid #ede9fe;
+}
+.ph-ai-text ul {
+  margin: 0 0 8px;
+  padding-inline-start: 20px;
+}
+.ph-ai-text li + li {
+  margin-block-start: 4px;
+}
+.ph-ai-card .ant-card-head {
+  background: linear-gradient(135deg, #faf5ff 0%, #eef2ff 100%);
+}

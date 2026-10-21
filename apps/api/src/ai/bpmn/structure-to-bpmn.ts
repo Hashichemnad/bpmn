@@ -19,6 +19,16 @@ export interface BuildOptions {
   preserve?: Map<string, PreservedElement>;
   /** Existing sequence-flow ids by "from->to", reused so comments and diffs stay stable. */
   flowIds?: Map<string, string>;
+  /** Ids of the existing definitions / process / pool, kept so a refinement diffs cleanly. */
+  containers?: ContainerIds;
+}
+
+export interface ContainerIds {
+  definitions?: string;
+  process?: string;
+  collaboration?: string;
+  participant?: string;
+  laneSet?: string;
 }
 
 const SIZE: Record<'event' | 'gateway' | 'activity', [number, number]> = {
@@ -230,9 +240,20 @@ function eventDefinitionXml(n: StructureNode, id: string): string {
 /** BPMN 2.0 XML (semantic model + diagram interchange) with bilingual ph: labels. */
 export function structureToBpmn(s: ProcessStructure, opts: BuildOptions): string {
   const layout = layoutStructure(s);
-  const processId = `Process_${opts.key}`;
+  const ids = {
+    definitions: opts.containers?.definitions ?? `Definitions_${opts.key}`,
+    process: opts.containers?.process ?? `Process_${opts.key}`,
+    collaboration: opts.containers?.collaboration ?? `Collaboration_${opts.key}`,
+    participant: opts.containers?.participant ?? `Participant_${opts.key}`,
+    laneSet: opts.containers?.laneSet ?? `LaneSet_${opts.key}`,
+  };
+  const processId = ids.process;
   const flowIds = new Map<string, string>();
-  const usedIds = new Set([...s.nodes.map((n) => n.id), ...s.lanes.map((l) => l.id)]);
+  const usedIds = new Set([
+    ...s.nodes.map((n) => n.id),
+    ...s.lanes.map((l) => l.id),
+    ...Object.values(ids),
+  ]);
   for (const [i, f] of s.flows.entries()) {
     const key = `${f.from}->${f.to}`;
     let id = opts.flowIds?.get(key);
@@ -270,7 +291,7 @@ export function structureToBpmn(s: ProcessStructure, opts: BuildOptions): string
     )
     .join('\n');
   const laneSetXml = s.lanes.length
-    ? `    <bpmn:laneSet id="LaneSet_${opts.key}">\n` +
+    ? `    <bpmn:laneSet id="${ids.laneSet}">\n` +
       s.lanes
         .map(
           (l) =>
@@ -288,7 +309,7 @@ export function structureToBpmn(s: ProcessStructure, opts: BuildOptions): string
   const shape = (id: string, b: { x: number; y: number; w: number; h: number }, extra = '') =>
     `      <bpmndi:BPMNShape id="${id}_di" bpmnElement="${id}"${extra}>\n        <dc:Bounds x="${b.x}" y="${b.y}" width="${b.w}" height="${b.h}" />\n      </bpmndi:BPMNShape>`;
   const pooled = s.lanes.length > 0;
-  const participantId = `Participant_${opts.key}`;
+  const participantId = ids.participant;
   const shapes = [
     ...(pooled ? [shape(participantId, layout.pool, ' isHorizontal="true"')] : []),
     ...layout.lanes.map((l) => shape(l.lane.id, l, ' isHorizontal="true"')),
@@ -305,12 +326,12 @@ export function structureToBpmn(s: ProcessStructure, opts: BuildOptions): string
     )
     .join('\n');
   const collaboration = pooled
-    ? `  <bpmn:collaboration id="Collaboration_${opts.key}">\n    <bpmn:participant id="${participantId}"${labelAttrs(s.nameEn, s.nameAr)} processRef="${processId}" />\n  </bpmn:collaboration>\n`
+    ? `  <bpmn:collaboration id="${ids.collaboration}">\n    <bpmn:participant id="${participantId}"${labelAttrs(s.nameEn, s.nameAr)} processRef="${processId}" />\n  </bpmn:collaboration>\n`
     : '';
-  const planeElement = pooled ? `Collaboration_${opts.key}` : processId;
+  const planeElement = pooled ? ids.collaboration : processId;
 
   return `<?xml version="1.0" encoding="UTF-8"?>
-<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" xmlns:ph="${PH_NAMESPACE}" id="Definitions_${opts.key}" targetNamespace="http://bpmn.io/schema/bpmn">
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" xmlns:ph="${PH_NAMESPACE}" id="${ids.definitions}" targetNamespace="http://bpmn.io/schema/bpmn">
 ${collaboration}  <bpmn:process id="${processId}" isExecutable="false">
 ${laneSetXml}${nodesXml}
 ${flowsXml}

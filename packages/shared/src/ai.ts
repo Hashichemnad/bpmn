@@ -325,6 +325,8 @@ export interface AiGeneratedProcessDto {
   unmatched: { type: 'ROLE' | 'SYSTEM'; nameEn: string; nameAr: string }[];
   /** Validation findings of the generated diagram (codes of validateBpmnGraph). */
   warnings: string[];
+  /** Refinement: elements of the current diagram the assistant cannot edit (dropped on accept). */
+  dropped: number;
   counts: { lanes: number; tasks: number; gateways: number; events: number; flows: number };
 }
 
@@ -348,6 +350,16 @@ export interface AiGeneratedDocDto {
   contentAr: string;
   template: AiDocTemplate;
   processId: string;
+}
+
+export interface AiSummaryDto {
+  kind: 'SUMMARY' | 'CHANGES';
+  /** Streamed text: a sentence and "- " bullet lines. Empty when nothing changed. */
+  text: string;
+  noChanges: boolean;
+  /** Compared versions (0 = nothing before). */
+  from?: number;
+  to?: number;
 }
 
 export const AI_FINDING_KINDS = [

@@ -29,7 +29,9 @@ import { useDeleteProcess, useLinks, useProcess } from '@/api/hooks';
 import { useAuth } from '@/auth/AuthProvider';
 import { PageHeader } from '@/components/PageHeader';
 import { CategoryTag, StatusTag } from '@/components/tags';
-import { AiBadge } from '@/features/ai/AiParts';
+import { AiBadge, AiButton } from '@/features/ai/AiParts';
+import { GenerateDocModal } from '@/features/ai/GenerateDocModal';
+import { SummaryButton } from '@/features/ai/SummaryModal';
 import { EmptyState, ErrorState, LoadingState } from '@/components/states';
 import { useErrorMessage, useFormatDate, useLocalized } from '@/components/i18n-helpers';
 import { ProcessFormModal } from './ProcessFormModal';
@@ -59,6 +61,7 @@ export function ProcessDetailPage() {
   const governance = useGovernance('PROCESS', id);
   const comments = useComments('PROCESS', id!);
   const [modalState, setModalState] = useState<'edit' | 'sub' | null>(null);
+  const [docOpen, setDocOpen] = useState(false);
   const tab = (params.get('tab') as Tab) || 'overview';
 
   const linksByObject = useMemo(() => {
@@ -285,6 +288,7 @@ export function ProcessDetailPage() {
         }
         extra={
           <>
+            {p.hasModel && <SummaryButton target={{ type: 'PROCESS', id: p.id }} />}
             {p.canEdit && (
               <Button icon={<EditOutlined />} onClick={() => setModalState('edit')}>
                 {t('edit')}
@@ -321,7 +325,18 @@ export function ProcessDetailPage() {
                 {
                   key: 'docs',
                   label: `${t('processes:tabs.docs')} (${related.data?.length ?? 0})`,
-                  children: <RelatedDocsCard kind="processes" id={p.id} />,
+                  children: (
+                    <RelatedDocsCard
+                      kind="processes"
+                      id={p.id}
+                      extra={
+                        p.hasModel &&
+                        can(PERMISSIONS.DOCS_EDIT) && (
+                          <AiButton onClick={() => setDocOpen(true)}>{t('ai:doc.button')}</AiButton>
+                        )
+                      }
+                    />
+                  ),
                 },
               ]
             : []),
@@ -353,6 +368,7 @@ export function ProcessDetailPage() {
       {modalState === 'sub' && (
         <ProcessFormModal open mode="create" parent={p} onClose={() => setModalState(null)} />
       )}
+      {docOpen && <GenerateDocModal process={p} open onClose={() => setDocOpen(false)} />}
     </>
   );
 }

@@ -10,7 +10,7 @@ import {
   type ProcessStructure,
   type StructureNode,
 } from './process-structure';
-import type { PreservedElement } from './structure-to-bpmn';
+import type { ContainerIds, PreservedElement } from './structure-to-bpmn';
 
 const BPMN_NS = 'http://www.omg.org/spec/BPMN/20100524/MODEL';
 const PH_NS = 'http://processhub.io/schema/bpmn';
@@ -21,6 +21,9 @@ export interface ReadBpmn {
   flowIds: Map<string, string>;
   /** Graph for the shared validation rules (validateBpmnGraph). */
   graph: BpmnGraphElement[];
+  /** Elements the structure cannot carry (boundary events, data objects, annotations, …). */
+  dropped: number;
+  containers: ContainerIds;
 }
 
 let dom: JSDOM | null = null;
@@ -58,6 +61,9 @@ export function readBpmn(xml: string): ReadBpmn {
   const flowIds = new Map<string, string>();
   const graph: BpmnGraphElement[] = [];
   const laneOf = new Map<string, string>();
+  let dropped = 0;
+  /** Children of a process that are containers or connectors, not lost content. */
+  const STRUCTURAL = new Set(['laneSet', 'extensionElements', 'documentation', 'association']);
 
   for (const proc of processes) {
     for (const lane of Array.from(proc.getElementsByTagNameNS(BPMN_NS, 'lane'))) {
@@ -87,8 +93,17 @@ export function readBpmn(xml: string): ReadBpmn {
         flowIds.set(`${from}->${to}`, id);
         continue;
       }
-      if (!(NODE_TYPES as readonly string[]).includes(el.localName)) continue;
+      if (!(NODE_TYPES as readonly string[]).includes(el.localName)) {
+        if (!STRUCTURAL.has(el.localName)) dropped++;
+        continue;
+      }
       const type = el.localName as NodeType;
+      // The content of an expanded sub-process is not part of the structure.
+      if (type === 'subProcess')
+        dropped += Array.from(el.children).filter(
+          (c) =>
+            c.namespaceURI === BPMN_NS && (NODE_TYPES as readonly string[]).includes(c.localName),
+        ).length;
       const defEl = Array.from(el.children).find((c) => c.localName.endsWith('EventDefinition'));
       const defName = defEl?.localName.replace('EventDefinition', '') ?? 'none';
       const node: StructureNode = {
@@ -128,7 +143,16 @@ export function readBpmn(xml: string): ReadBpmn {
     g.incoming = Math.max(g.incoming, structure.flows.filter((f) => f.to === g.id).length);
     g.outgoing = Math.max(g.outgoing, structure.flows.filter((f) => f.from === g.id).length);
   }
-  return { structure, preserve, flowIds, graph };
+  dropped += doc.getElementsByTagNameNS(BPMN_NS, 'messageFlow').length;
+  const idOf = (el: Element | undefined) => el?.getAttribute('id') || undefined;
+  const containers: ContainerIds = {
+    definitions: idOf(doc.documentElement),
+    process: idOf(processes[0]),
+    collaboration: idOf(doc.getElementsByTagNameNS(BPMN_NS, 'collaboration')[0]),
+    participant: idOf(participants[0]),
+    laneSet: idOf(processes[0]?.getElementsByTagNameNS(BPMN_NS, 'laneSet')[0]),
+  };
+  return { structure, preserve, flowIds, graph, dropped, containers };
 }
 
 /** Validation codes (shared rules) of a diagram, e.g. for the warnings shown with a preview. */

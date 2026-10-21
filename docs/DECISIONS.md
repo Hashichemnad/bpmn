@@ -389,3 +389,24 @@ assistant produced (the client sends `aiGenerated: true` with the save) and clea
 human save, by restoring a version and by an approval. While set, the process, modeler, page and
 editor show "AI-generated — review before publishing". Published content is always approved, so the
 portal never shows the badge.
+
+## D-044 — Refine, summarise and documentation features
+
+- **Refine with chat**: the client sends the diagram as shown (unsaved changes included); the server
+  turns it into the structure, the model returns the complete updated structure and the server
+  rebuilds the BPMN keeping element, flow and container ids (process, pool, lanes) so object links,
+  comments and the visual compare stay attached. The layout is regenerated (hand-made positions are
+  not kept); elements the structure cannot carry (annotations, boundary events, data objects, message
+  flows, content of expanded sub-processes) are counted and the user is warned before accepting. The
+  proposal is shown with the Phase 2 BPMN compare and applied only on "Accept".
+- **Summaries / what changed**: the changes are computed on the server — a structural diff of the
+  two versions' structures for processes (lanes, steps, connections, conditions, descriptions) and a
+  line diff of the page text for pages — and the model only explains them. No changes → no AI call.
+  The review screen compares like the review page: against the published version, or everything is
+  new. Plain summaries use the fast model; change summaries the main model. Text is streamed.
+- **Documentation from a process**: SOP or Work Instruction, following the structure of the built-in
+  template, from the process outline with its linked roles, systems and documents; both languages in
+  one request; sanitised; the read-only diagram is embedded at the top (which also links the page to
+  the process). The page is created as a draft by the user after the preview.
+- **Process from a page**: the page text (requested language, else the other) is modelled like
+  feature 1; the user then completes the "New process" form and the new process is linked to the page.

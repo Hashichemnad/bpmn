@@ -169,6 +169,7 @@ describe('translations', () => {
       ...AI_FEATURES.map((f) => `ai:features.${f}`),
       ...AI_PROVIDERS.map((p) => `ai:settings.providers.${p}`),
       ...['PERFORMS', 'SUPPORTS'].map((r) => `ai:generate.relation.${r}`),
+      ...['SOP', 'WORK_INSTRUCTION'].map((k) => `ai:doc.templates.${k}`),
       ...['en', 'ar'].flatMap((l) => [
         `ai:translate.labelsTitle.${l}`,
         `ai:translate.pageTitle.${l}`,
