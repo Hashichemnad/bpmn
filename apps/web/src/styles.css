@@ -1648,3 +1648,31 @@ html[lang='ar'] body {
 .ph-ai-card .ant-card-head {
   background: linear-gradient(135deg, #faf5ff 0%, #eef2ff 100%);
 }
+.ph-portal-ask {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-block-start: 14px;
+}
+.ph-portal-ask .ph-ai-chips .ant-typography {
+  color: #dbeafe;
+}
+.ph-portal-ask .ph-ai-chip {
+  background: rgb(255 255 255 / 92%);
+}
+.ph-ai-portal-log {
+  max-block-size: 58vh;
+}
+.ph-ai-element {
+  cursor: pointer;
+  margin-block: 2px;
+}
+.ph-ai-finding .ant-tag {
+  margin-inline-end: 0;
+}
+@media (max-width: 640px) {
+  .ph-portal-header .ph-ai-button > span:not(.ant-btn-icon) {
+    display: none;
+  }
+}

@@ -410,3 +410,26 @@ portal never shows the badge.
   the process). The page is created as a draft by the user after the preview.
 - **Process from a page**: the page text (requested language, else the other) is modelled like
   feature 1; the user then completes the "New process" form and the new process is linked to the page.
+
+## D-045 — Portal Q&A: full-text retrieval over publications, no embeddings (yet)
+
+The portal assistant retrieves with **PostgreSQL full-text search** over the `Publication` read model (the
+same generated English + Arabic `tsvector` as portal search, D-031), limited to the current publications the
+user may see (`PortalAccessService.publications`: portal access, live items, space view restrictions). Natural
+questions are turned into an any-term prefix query (`toAnyTsQuery`) ranked with `ts_rank_cd`; follow-up
+questions also search with the previous question. The top six sources go to the model: page text as published,
+and for processes an outline of the **published version's** BPMN with its published links — never the working
+copy. The model must cite sources as `[n]` and start with `[[NOT_FOUND]]` when the sources do not answer;
+only cited sources are returned as links. No match → no AI call. Arabic and English questions match because
+publications store both languages. **pgvector embeddings are not added**: retrieval quality on the demo and
+test content is good, it needs no extra extension, model or re-indexing, and embeddings would send all
+published content to an embedding provider. Revisit (BACKLOG) when the published corpus grows into the
+thousands of documents or users report missed answers.
+
+## D-046 — Analyse & improve
+
+The process outline (lanes, steps in flow order, linked roles/systems/documents, decisions) and the
+modeler's validation warnings go to the main model with a structured-output schema: findings (kind, severity,
+title, explanation, suggestion, element ids) and one plain-language explanation per warning. Element ids the
+diagram does not contain are dropped before the result reaches the browser. Read-only users who may read
+processes (e.g. Auditors) may analyse; nothing is saved.

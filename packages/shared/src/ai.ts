@@ -386,6 +386,8 @@ export interface AiAnalysisDto {
 }
 
 export interface AiSourceDto {
+  /** The number the answer cites, e.g. 2 for "[2]". */
+  ref: number;
   type: 'PROCESS' | 'PAGE';
   id: string;
   code: string | null;

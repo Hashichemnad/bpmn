@@ -3,7 +3,9 @@ import { ApiTags } from '@nestjs/swagger';
 import type { Request, Response } from 'express';
 import {
   PERMISSIONS,
+  aiAnalyseSchema,
   aiDocToProcessSchema,
+  aiPortalQuestionSchema,
   aiGenerateDocSchema,
   aiGenerateProcessSchema,
   aiRefineProcessSchema,
@@ -11,7 +13,9 @@ import {
   aiSummariseSchema,
   aiTranslateSchema,
   aiUsageQuerySchema,
+  type AiAnalyseInput,
   type AiDocToProcessInput,
+  type AiPortalQuestionInput,
   type AiGenerateDocInput,
   type AiGenerateProcessInput,
   type AiRefineProcessInput,
@@ -33,6 +37,8 @@ import { ProcessAiService } from './features/process-ai.service';
 import { TranslateService } from './features/translate.service';
 import { DocAiService } from './features/doc-ai.service';
 import { SummaryService } from './features/summary.service';
+import { AnalyseService } from './features/analyse.service';
+import { PortalQaService } from './features/portal-qa.service';
 
 /** Settings → AI and the usage report. The API key is write-only. */
 @ApiTags('ai')
@@ -110,6 +116,8 @@ export class AiController {
     private readonly translate: TranslateService,
     private readonly docAi: DocAiService,
     private readonly summary: SummaryService,
+    private readonly analyse: AnalyseService,
+    private readonly portalQa: PortalQaService,
   ) {}
 
   /** What the current user may do (hides every AI button when not available). */
@@ -184,5 +192,28 @@ export class AiController {
     @Res() res: Response,
   ) {
     await streamSse(req, res, await this.summary.prepare(body, user, meta));
+  }
+
+  @Post('analyse')
+  async analyseProcess(
+    @Body(new ZodPipe(aiAnalyseSchema)) body: AiAnalyseInput,
+    @CurrentUser() user: AuthUser,
+    @ReqMeta() meta: RequestMeta,
+    @Req() req: Request,
+    @Res() res: Response,
+  ) {
+    await streamSse(req, res, await this.analyse.prepare(body, user, meta));
+  }
+
+  /** Knowledge Portal assistant: answers only from published content the user may see. */
+  @Post('portal/ask')
+  async ask(
+    @Body(new ZodPipe(aiPortalQuestionSchema)) body: AiPortalQuestionInput,
+    @CurrentUser() user: AuthUser,
+    @ReqMeta() meta: RequestMeta,
+    @Req() req: Request,
+    @Res() res: Response,
+  ) {
+    await streamSse(req, res, await this.portalQa.prepare(body, user, meta));
   }
 }

@@ -88,6 +88,7 @@ import { CommentsPanel } from '@/features/comments/CommentsPanel';
 import { VersionsDrawer } from './VersionsDrawer';
 import { AiBadge, AiButton, AiIcon } from '@/features/ai/AiParts';
 import { AiChatPanel } from '@/features/ai/AiChatPanel';
+import { AnalysisDrawer } from '@/features/ai/AnalysisDrawer';
 import { useAi } from '@/features/ai/useAi';
 import { GenerateProcessModal } from '@/features/ai/GenerateProcessModal';
 import { TranslateLabelsModal, type LabelTranslation } from '@/features/ai/TranslateLabelsModal';
@@ -170,9 +171,9 @@ export function BpmnEditor({ process, focusElementId }: Props) {
   /** The diagram is exactly what the AI assistant produced: cleared by any edit (D-041). */
   const aiRef = useRef(process.aiGenerated);
   const [aiFlag, setAiFlag] = useState(process.aiGenerated);
-  const [aiDialog, setAiDialog] = useState<'generate' | 'translate-ar' | 'translate-en' | null>(
-    null,
-  );
+  const [aiDialog, setAiDialog] = useState<
+    'generate' | 'translate-ar' | 'translate-en' | 'analyse' | null
+  >(null);
 
   const fileBase = loc(process);
 
@@ -585,32 +586,43 @@ export function BpmnEditor({ process, focusElementId }: Props) {
           ) : (
             <Tag color="default">{t('modeler:readOnly')}</Tag>
           )}
-          {canEdit && (
-            <AiButton
-              menu={[
-                {
-                  key: 'generate',
-                  label: t('ai:menu.generate'),
-                  onClick: () => setAiDialog('generate'),
-                },
-                {
-                  key: 'chat',
-                  label: t('ai:menu.chat'),
-                  onClick: () => setPanelTab('ai'),
-                },
-                {
-                  key: 'translate-ar',
-                  label: t('ai:menu.translateToAr'),
-                  onClick: () => setAiDialog('translate-ar'),
-                },
-                {
-                  key: 'translate-en',
-                  label: t('ai:menu.translateToEn'),
-                  onClick: () => setAiDialog('translate-en'),
-                },
-              ]}
-            />
-          )}
+          <AiButton
+            menu={[
+              ...(canEdit
+                ? [
+                    {
+                      key: 'generate',
+                      label: t('ai:menu.generate'),
+                      onClick: () => setAiDialog('generate'),
+                    },
+                    {
+                      key: 'chat',
+                      label: t('ai:menu.chat'),
+                      onClick: () => setPanelTab('ai'),
+                    },
+                  ]
+                : []),
+              {
+                key: 'analyse',
+                label: t('ai:menu.analyse'),
+                onClick: () => setAiDialog('analyse'),
+              },
+              ...(canEdit
+                ? [
+                    {
+                      key: 'translate-ar',
+                      label: t('ai:menu.translateToAr'),
+                      onClick: () => setAiDialog('translate-ar'),
+                    },
+                    {
+                      key: 'translate-en',
+                      label: t('ai:menu.translateToEn'),
+                      onClick: () => setAiDialog('translate-en'),
+                    },
+                  ]
+                : []),
+            ]}
+          />
           <Tooltip title={t('modeler:zoomIn')}>
             <Button
               icon={<ZoomInOutlined />}
@@ -735,28 +747,37 @@ export function BpmnEditor({ process, focusElementId }: Props) {
                   issues.length === 0 ? (
                     <Alert type="success" showIcon message={t('modeler:noIssues')} />
                   ) : (
-                    <ul className="ph-issues">
-                      {issues.map((i, idx) => (
-                        <li key={`${i.code}-${i.elementId ?? idx}`}>
-                          <button
-                            type="button"
-                            className="ph-issue"
-                            onClick={() => focusElement(i.elementId)}
-                            disabled={!i.elementId}
-                          >
-                            <Tag color={i.severity === 'warning' ? 'orange' : 'default'}>
-                              {t(`modeler:severity.${i.severity}`)}
-                            </Tag>
-                            <span>{t(`modeler:rules.${i.code}`)}</span>
-                            {i.elementId && (
-                              <Typography.Text type="secondary" className="ph-issue-id" dir="ltr">
-                                {i.elementId}
-                              </Typography.Text>
-                            )}
-                          </button>
-                        </li>
-                      ))}
-                    </ul>
+                    <>
+                      <AiButton
+                        size="small"
+                        onClick={() => setAiDialog('analyse')}
+                        style={{ marginBlockEnd: 8 }}
+                      >
+                        {t('ai:analyse.explainWarnings')}
+                      </AiButton>
+                      <ul className="ph-issues">
+                        {issues.map((i, idx) => (
+                          <li key={`${i.code}-${i.elementId ?? idx}`}>
+                            <button
+                              type="button"
+                              className="ph-issue"
+                              onClick={() => focusElement(i.elementId)}
+                              disabled={!i.elementId}
+                            >
+                              <Tag color={i.severity === 'warning' ? 'orange' : 'default'}>
+                                {t(`modeler:severity.${i.severity}`)}
+                              </Tag>
+                              <span>{t(`modeler:rules.${i.code}`)}</span>
+                              {i.elementId && (
+                                <Typography.Text type="secondary" className="ph-issue-id" dir="ltr">
+                                  {i.elementId}
+                                </Typography.Text>
+                              )}
+                            </button>
+                          </li>
+                        ))}
+                      </ul>
+                    </>
                   ),
               },
               ...(canEdit && aiAvailable
@@ -875,6 +896,18 @@ export function BpmnEditor({ process, focusElementId }: Props) {
           />
         </>
       )}
+      <AnalysisDrawer
+        open={aiDialog === 'analyse'}
+        processId={process.id}
+        getXml={currentXml}
+        issues={issues}
+        nameOf={(id) => {
+          const el = instanceRef.current?.get<ElementRegistry>('elementRegistry').get(id);
+          return (el?.businessObject?.name as string | undefined) ?? '';
+        }}
+        onFocusElement={focusElement}
+        onClose={() => setAiDialog(null)}
+      />
       <VersionsDrawer
         processId={process.id}
         open={historyOpen}

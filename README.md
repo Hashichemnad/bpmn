@@ -4,7 +4,7 @@
 
 **منصة ثنائية اللغة (العربية / الإنجليزية) لإدارة العمليات المؤسسية** — تجمع بين جوهر ARIS و GBTEC (BIC) مع ويكي للتوثيق على غرار Confluence، والتحكم في الإصدارات، وتكامل اختياري مع GitHub / GitLab.
 
-> **Status:** ✅ Phase 1 (Foundation), ✅ Phase 2 (Documentation wiki, version control, Git integration) and ✅ Phase 3 (Governance, Knowledge Portal) complete — see [`docs/PROGRESS.md`](./docs/PROGRESS.md). Next: the AI Assistant (M16).
+> **Status:** ✅ Phase 1 (Foundation), ✅ Phase 2 (Documentation wiki, version control, Git integration), ✅ Phase 3 (Governance, Knowledge Portal) and ✅ the AI Assistant (M16, awaiting review) — see [`docs/PROGRESS.md`](./docs/PROGRESS.md). Next: Phase 4 (GRC, EA, KPIs).
 
 ---
 
@@ -21,6 +21,7 @@
 | **Git Integration** *(optional)* | One-way sync of BPMN models (.bpmn + .json) and pages (Markdown) to GitHub or GitLab, on every version or on demand, with a status page | ✅ 2 |
 | **Governance** | Draft → In Review → Approved → Published → Archived with approval workflows (sequential steps, any-one or all approvers), review page with visual diff, threaded comments with @mentions on BPMN elements, notification centre and email, review dates with reminders, My tasks, governance dashboard | ✅ 3 |
 | **Knowledge Portal** | Read-only portal for all staff with published content only: process house, step details, documentation with table of contents, English/Arabic search, "my processes", feedback to owners, PDF download, branding and access settings | ✅ 3 |
+| **AI Assistant** *(optional, off by default)* | Generate a BPMN process (lanes, bilingual labels, auto-layout) from a description; refine it by chat with a visual review; SOP / work instruction from a process and a process from a page; EN↔AR translation of fields, labels and pages; analysis (missing steps, responsibilities, bottlenecks, risks, controls) and plain-language validation warnings; summaries and "what changed"; a Knowledge Portal assistant that answers only from published content with links. Anthropic Claude, encrypted key, roles, limits, usage report, full audit | ✅ AI |
 | **GRC, EA & KPIs** | Risks and controls, IT landscape, KPI dashboards, Salesforce link | 4 |
 | **Process Mining & Execution** | Event-log analysis, bottlenecks, running approved processes as workflows | 5 |
 
@@ -52,7 +53,7 @@ content in every lifecycle state, comments, notifications and portal feedback.
 | `reviewer@processhub.local` | Reviewer (Rami) | Workspace — has reviews waiting in **My tasks** |
 | `owner@processhub.local` | Process Owner (Omar) | Workspace — owns the demo processes, overdue items, feedback |
 | `modeler@processhub.local` | Modeler / Editor (Maha) | Workspace — drafts and comments |
-| `auditor@processhub.local` | Auditor (Adel) | Workspace, read-only — drafts, history, reviews, audit log |
+| `auditor@processhub.local` | Auditor (Adel) | Workspace, read-only — drafts, history, reviews, audit log, AI usage |
 
 Demo users are only created on a demo installation (`SEED_DEMO_DATA=true`, the default). **Emails** sent by
 the demo installation go to the bundled **Mailpit** at **http://localhost:8025** — nothing leaves the machine.
@@ -141,6 +142,25 @@ Every sync is one commit, authored as the ProcessHub user who made the change, e
 The sync is one-way (ProcessHub → Git). Pages of view-restricted spaces are never exported. With
 **Published versions only**, only the current published version of each process and page is exported. Renames and
 moves are applied with the next version or with **Sync now**, which reconciles everything in a single commit.
+
+### AI assistant (optional)
+
+Off by default; everything else works without it. Settings → AI (Super Admin):
+
+1. Create an API key in the Anthropic Console (console.anthropic.com → API keys).
+2. Tick **Enable the AI assistant**, keep the provider **Anthropic Claude** and the default models
+   (`claude-sonnet-5-5`, fast model `claude-haiku-5-5`) or enter others, paste the key, **Test connection**,
+   **Save**. The key is stored encrypted (`INTEGRATIONS_ENCRYPTION_KEY`) and never shown again.
+3. Choose which roles may use it (tick **Viewer** for the portal assistant), the daily per-user and monthly
+   organisation request limits, and the data notice users see.
+
+Users with an allowed role then see **✨ AI** buttons: in the modeler (generate, refine with chat, analyse,
+translate labels), the "New process" dialog, bilingual forms ("Translate into …"), the wiki editor, the process
+and page views (summarise, documentation, process from a page), version compares and the review screen
+("What changed?"), and the Knowledge Portal ("Ask"). Everything the assistant creates is shown for review first
+and marked "AI-generated — review before publishing" until a person edits or approves it. Requests go from the
+server to the provider (never from the browser), are limited and logged (**Administration → AI usage**, audit
+log). A guided demo with sample prompts: [`docs/AI-DEMO.md`](./docs/AI-DEMO.md).
 
 ### Email
 
@@ -238,7 +258,8 @@ docker-compose.yml        postgres, minio, mailpit (demo email), api, web
 - Per-space view/edit restrictions apply everywhere, including search and "related documentation".
 - GitHub/GitLab tokens are encrypted at rest (AES-256-GCM), write-only in the API and scrubbed from errors and the audit log.
 - Viewers can only use the Knowledge Portal; its endpoints return current published versions only (never drafts, reviews or archived content). Tested for every route.
-- Lifecycle transitions are checked on the server and audited; submitters never approve their own items.
+- Lifecycle transitions are checked on the server and audited; submitters never approve their own items (four-eyes: a submission is refused when the submitter would be a step's only approver). Auditors and Viewers can never approve.
+- AI assistant: off by default; API key encrypted and write-only; every call goes through the server with role checks and limits, is logged without the prompt text, and structured output is validated (BPMN parsed and checked, rich text sanitised) before anything is shown. The portal assistant only reads current publications the user may see. Tests use a fake provider.
 - The SMTP password is encrypted like the Git tokens; email content is HTML-escaped; tests never send email.
 - An audit log records every change and every sign-in, with secrets scrubbed.
 

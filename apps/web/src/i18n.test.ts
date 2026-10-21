@@ -30,6 +30,7 @@ import {
   WORKFLOW_SOURCES,
   AI_ERROR_CODES,
   AI_FEATURES,
+  AI_FINDING_KINDS,
   AI_PROVIDERS,
 } from '@processhub/shared';
 import { resources } from './i18n';
@@ -170,6 +171,8 @@ describe('translations', () => {
       ...AI_PROVIDERS.map((p) => `ai:settings.providers.${p}`),
       ...['PERFORMS', 'SUPPORTS'].map((r) => `ai:generate.relation.${r}`),
       ...['SOP', 'WORK_INSTRUCTION'].map((k) => `ai:doc.templates.${k}`),
+      ...AI_FINDING_KINDS.map((k) => `ai:analyse.kind.${k}`),
+      ...['HIGH', 'MEDIUM', 'LOW'].map((k) => `ai:analyse.severity.${k}`),
       ...['en', 'ar'].flatMap((l) => [
         `ai:translate.labelsTitle.${l}`,
         `ai:translate.pageTitle.${l}`,

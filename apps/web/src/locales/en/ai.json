@@ -12,7 +12,8 @@
     "generate": "Generate diagram from a description",
     "translateToAr": "Translate missing labels into Arabic",
     "translateToEn": "Translate missing labels into English",
-    "chat": "Refine with chat"
+    "chat": "Refine with chat",
+    "analyse": "Analyse & improve"
   },
   "generate": {
     "title": "Generate a process with AI",
@@ -194,5 +195,40 @@
     "intro": "The assistant models the process described in “{{title}}” as a BPMN diagram with lanes. You review it, then create the process (linked to this page).",
     "placeholder": "Optional instructions, e.g. “only the approval part”",
     "accept": "Continue to the new process"
+  },
+  "analyse": {
+    "title": "Analyse & improve",
+    "focus": "Focus (optional), e.g. approval controls",
+    "run": "Analyse",
+    "working": "Analysing the process…",
+    "findings_one": "{{count}} finding",
+    "findings_other": "{{count}} findings",
+    "none": "No findings — the process looks complete.",
+    "warnings": "Validation warnings explained",
+    "explainWarnings": "Explain with AI",
+    "severity": {
+      "HIGH": "High",
+      "MEDIUM": "Medium",
+      "LOW": "Low"
+    },
+    "kind": {
+      "MISSING_STEP": "Missing step",
+      "UNCLEAR_RESPONSIBILITY": "Unclear responsibility",
+      "BOTTLENECK": "Bottleneck",
+      "RISK": "Risk",
+      "CONTROL": "Control",
+      "IMPROVEMENT": "Improvement"
+    }
+  },
+  "portal": {
+    "title": "Ask the portal assistant",
+    "ask": "Ask",
+    "askHero": "Ask the assistant",
+    "empty": "Ask how to get something done — the answer comes only from the official published processes and documents, with links.",
+    "placeholder": "Ask a question… (Enter to send)",
+    "searching": "Searching the published content…",
+    "notFound": "The published content does not answer this question.",
+    "sources": "Sources",
+    "onlyPublished": "Answers use only published content you are allowed to see."
   }
 }

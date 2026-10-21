@@ -2,6 +2,8 @@ import { useNavigate } from 'react-router-dom';
 import { Button, Card, Col, Input, Row, Space, Statistic, Typography } from 'antd';
 import { LinkOutlined, PartitionOutlined, ReadOutlined, StarOutlined } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
+import { AiButton, AiSuggestionChips } from '@/features/ai/AiParts';
+import { usePortalAssistant } from '@/features/ai/portal-assistant-context';
 import { usePortalHome, usePortalProcesses } from '@/api/portal';
 import { ErrorState, LoadingState } from '@/components/states';
 import { useLocalized } from '@/components/i18n-helpers';
@@ -36,6 +38,7 @@ export function PortalHomePage() {
             }
           />
         </div>
+        <PortalAskHero />
         <Space size={24} style={{ marginBlockStart: 20 }} wrap>
           <Statistic
             title={<span style={{ color: '#dbeafe' }}>{t('portal:counts.processes')}</span>}
@@ -106,5 +109,18 @@ export function PortalHomePage() {
         </Card>
       )}
     </>
+  );
+}
+
+/** Ask the assistant from the portal home page (sample questions as chips). */
+function PortalAskHero() {
+  const { t } = useTranslation();
+  const assistant = usePortalAssistant();
+  if (!assistant) return null;
+  return (
+    <div className="ph-portal-ask">
+      <AiButton onClick={() => assistant.ask()}>{t('ai:portal.askHero')}</AiButton>
+      <AiSuggestionChips feature="PORTAL_QA" onPick={(q) => assistant.ask(q)} />
+    </div>
   );
 }

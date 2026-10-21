@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { badRequest, notFound } from '../common/app-exception';
 import { readBpmn, type ReadBpmn } from './bpmn/read-bpmn';
+import { assertSafeBpmnXml } from '../models/bpmn-xml';
 import type { ElementLinks } from './bpmn/describe';
 
 /** Which content of a process the assistant reads. */
@@ -15,7 +16,7 @@ export type ProcessSource = { kind: 'working' } | { kind: 'version'; versionNumb
 export class AiContextService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async process(processId: string, source: ProcessSource = { kind: 'working' }) {
+  private async record(processId: string) {
     const p = await this.prisma.process.findFirst({
       where: { id: processId, deletedAt: null },
       include: {
@@ -25,6 +26,23 @@ export class AiContextService {
       },
     });
     if (!p) throw notFound('Process');
+    return p;
+  }
+
+  /** The process with a diagram sent by the client (e.g. unsaved modeler changes). */
+  async processWithXml(processId: string, xml: string) {
+    assertSafeBpmnXml(xml);
+    const p = await this.record(processId);
+    return {
+      process: p,
+      xml,
+      ...this.withRecord(readBpmn(xml), p),
+      links: await this.links(processId),
+    };
+  }
+
+  async process(processId: string, source: ProcessSource = { kind: 'working' }) {
+    const p = await this.record(processId);
     let xml: string | null = null;
     if (source.kind === 'working') xml = p.model?.bpmnXml ?? null;
     else {

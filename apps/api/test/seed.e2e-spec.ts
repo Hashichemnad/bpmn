@@ -24,7 +24,12 @@ describe('Seed (e2e)', () => {
     expect(await ctx.prisma.pageTemplate.count({ where: { isSystem: true } })).toBe(6);
     const spaces = await ctx.prisma.space.findMany({ orderBy: { key: 'asc' } });
     expect(spaces.map((s) => s.key)).toEqual(['ITP', 'QM']);
-    expect(await ctx.prisma.page.count()).toBe(8);
+    // 8 documentation demo pages + the published IT equipment page for the portal assistant.
+    expect(await ctx.prisma.page.count()).toBe(9);
+    const equipment = await ctx.prisma.publication.findFirstOrThrow({
+      where: { titleEn: 'Requesting IT Equipment', current: true },
+    });
+    expect(equipment.textEn).toContain('IT Service Desk');
     const req = await ctx.prisma.page.findFirstOrThrow({
       where: { titleEn: 'Purchase Requisition Procedure' },
       include: { versions: true, links: true },

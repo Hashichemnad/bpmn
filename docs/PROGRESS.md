@@ -4,8 +4,9 @@ Read this together with `CLAUDE.md` at the start of every session.
 
 ## Current state — 2026-10-21 (AI phase, branch `phase-ai-assistant`)
 
-**Phase "AI" (M16 AI Assistant) is in progress.** Phases 1–3 are merged into `main`. The brief is built in
-three parts, committed separately; **Parts A and B are done**, Part C is next.
+**Phase "AI" (M16 AI Assistant) is complete on branch `phase-ai-assistant`, awaiting review.** Phases 1–3 are
+merged into `main`. The brief was built in three parts, committed separately (A, B, C) — all done, documented in
+`docs/AI-DEMO.md` (manual demo script with a real key) and DECISIONS D-038 – D-046.
 
 ### Done in this phase
 
@@ -43,21 +44,28 @@ three parts, committed separately; **Parts A and B are done**, Part C is next.
   `src/ai/bpmn/structure-to-bpmn.spec.ts` (layout without overlaps, round trip, escaping).
 - Also fixed: the modeler's "fit" now centres the diagram right of the palette (it used to sit off-centre).
 
+**Part C — analyse & improve, portal Q&A** (D-045, D-046)
+
+- Feature 5 — modeler ✨ AI → "Analyse & improve" (also for read-only users) and "Explain with AI" in the
+  Validation tab: drawer with an assessment, findings (missing step, unclear responsibility, bottleneck, risk,
+  control, improvement; severity; explanation; suggestion; clickable steps) and plain-language warnings.
+- Feature 7 — Knowledge Portal: "✨ Ask" in the header and "Ask the assistant" + sample questions on the portal
+  home. Answers stream, cite numbered sources (links to the published process/page with version label), say
+  clearly when the published content does not cover the question. Retrieval: full-text search over current
+  publications the user may see (no pgvector, D-045); processes contribute their published version only.
+- Seed: published page "Requesting IT Equipment" (IT Policies) so the demo question has an answer.
+- Tests: `test/ai-portal.e2e-spec.ts` (analysis with unknown ids dropped and repair; Q&A uses published content
+  only — never drafts, restricted spaces without a grant, or the working copy of a process; grants; not-found
+  without an AI call; AI roles and portal access), `toAnyTsQuery` unit test.
+
 ### Next (continue here)
 
-1. **Part B** — feature 2 _refine with chat_ (side panel in the modeler: send `readBpmn()` structure +
-   instruction + history → `REFINE_PROCESS_SYSTEM` prompt already in `apps/api/src/ai/prompts.ts`; keep ids;
-   show the proposal with the existing BPMN compare (`features/versions/BpmnCompare`) → accept/reject),
-   feature 6 _summarise_ (process/page; version diff from the Phase 2 compare; also on the review page), feature 3
-   _documentation ↔ process_ (SOP / Work Instruction page from a process with its links; process draft from a
-   page via `DOC_TO_PROCESS_SYSTEM` + `buildProcessResult`). Shared schemas for all of them already exist in
-   `packages/shared/src/ai.ts`.
-2. **Part C** — feature 5 _analyse & improve_ (findings + plain-language validation warnings) and feature 7
-   _portal Q&A_ (retrieval over `Publication` full-text search with the portal visibility rules; sources with
-   links; seed a published IT page that answers "How do I request a new laptop?").
-3. Then `docs/AI-DEMO.md`, README, BACKLOG, CLAUDE.md phase table, `docker compose up --build` check.
+1. Review and merge `phase-ai-assistant`; run `docs/AI-DEMO.md` once with a real API key before the management
+   demo (the suite only uses a fake provider).
+2. Decisions for you: see "Needs a decision" in `docs/BACKLOG.md` and the AI follow-ups listed there.
+3. Then Phase 4: GRC, EA, KPIs + Salesforce.
 
-### Verification (Parts A and B)
+### Verification (AI phase)
 
 - `pnpm lint`, `pnpm typecheck`, `pnpm format:check`: clean. Tests: shared 64, web 31, API 183 (all pass).
 - Browser (Playwright, dev servers, real `AnthropicProvider` against a local mock of the Messages streaming
