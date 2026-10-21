@@ -6,7 +6,16 @@ export type DomainEvent =
   | { type: 'process.removed'; processId: string; actorId: string }
   | { type: 'page.versioned'; pageId: string; versionNumber: number; actorId: string }
   | { type: 'page.removed'; pageIds: string[]; actorId: string }
-  | { type: 'page.restored'; pageIds: string[]; actorId: string };
+  | { type: 'page.restored'; pageIds: string[]; actorId: string }
+  /** A new version became the published one (governance). */
+  | { type: 'content.published'; entityType: 'PROCESS' | 'PAGE'; entityId: string; actorId: string }
+  /** The item was archived: no published version any more. */
+  | {
+      type: 'content.unpublished';
+      entityType: 'PROCESS' | 'PAGE';
+      entityId: string;
+      actorId: string;
+    };
 
 type Listener = (event: DomainEvent) => void | Promise<void>;
 

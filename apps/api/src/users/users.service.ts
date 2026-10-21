@@ -8,6 +8,7 @@ import type {
   UpdateUserInput,
   UserDto,
   UserListQuery,
+  UserRef,
   UserStatus,
 } from '@processhub/shared';
 import { PrismaService } from '../prisma/prisma.service';
@@ -20,6 +21,10 @@ import { orderBy, pageArgs, paginated } from '../common/pagination';
 const include = {
   roles: { include: { role: true } },
   department: { select: { id: true, nameEn: true, nameAr: true } },
+  jobRoles: {
+    where: { repoObject: { deletedAt: null } },
+    include: { repoObject: { select: { id: true, code: true, nameEn: true, nameAr: true } } },
+  },
 } satisfies Prisma.UserInclude;
 
 type UserRow = Prisma.UserGetPayload<{ include: typeof include }>;
@@ -34,6 +39,7 @@ function toDto(u: UserRow): UserDto {
     status: u.status as UserStatus,
     roles: u.roles.map((r) => r.role.key as SystemRoleKey),
     department: u.department,
+    jobRoles: u.jobRoles.map((j) => j.repoObject),
     lastLoginAt: u.lastLoginAt?.toISOString() ?? null,
     lockedUntil: u.lockedUntil && u.lockedUntil > new Date() ? u.lockedUntil.toISOString() : null,
     createdAt: u.createdAt.toISOString(),
@@ -49,6 +55,7 @@ const snapshot = (u: UserDto) => ({
   status: u.status,
   roles: u.roles,
   departmentId: u.department?.id ?? null,
+  jobRoleIds: u.jobRoles.map((j) => j.id),
 });
 
 @Injectable()
@@ -102,6 +109,7 @@ export class UsersService {
     this.passwords.assertPolicy(input.password);
     await this.assertEmailFree(input.email);
     if (input.departmentId) await this.assertDepartment(input.departmentId);
+    if (input.jobRoleIds) await this.assertJobRoles(input.jobRoleIds);
     const roleIds = await this.roleIds(input.roles);
     const passwordHash = await this.passwords.hash(input.password);
     const user = await this.prisma.$transaction(async (tx) => {
@@ -116,6 +124,9 @@ export class UsersService {
           createdById: actor.id,
           updatedById: actor.id,
           roles: { create: roleIds.map((roleId) => ({ roleId })) },
+          jobRoles: {
+            create: [...new Set(input.jobRoleIds ?? [])].map((repoObjectId) => ({ repoObjectId })),
+          },
         },
         include,
       });
@@ -150,6 +161,7 @@ export class UsersService {
     }
     if (input.email && input.email !== before.email) await this.assertEmailFree(input.email);
     if (input.departmentId) await this.assertDepartment(input.departmentId);
+    if (input.jobRoleIds) await this.assertJobRoles(input.jobRoleIds);
     const nameEn = input.nameEn ?? before.nameEn;
     const nameAr = input.nameAr ?? before.nameAr;
     if (!nameEn && !nameAr) throw badRequest('NAME_REQUIRED');
@@ -162,6 +174,15 @@ export class UsersService {
       if (roleIds) {
         await tx.userRole.deleteMany({ where: { userId: id } });
         await tx.userRole.createMany({ data: roleIds.map((roleId) => ({ userId: id, roleId })) });
+      }
+      if (input.jobRoleIds) {
+        await tx.userJobRole.deleteMany({ where: { userId: id } });
+        await tx.userJobRole.createMany({
+          data: [...new Set(input.jobRoleIds)].map((repoObjectId) => ({
+            userId: id,
+            repoObjectId,
+          })),
+        });
       }
       const updated = await tx.user.update({
         where: { id },
@@ -270,6 +291,36 @@ export class UsersService {
   private async assertEmailFree(email: string) {
     const exists = await this.prisma.user.findFirst({ where: { email } });
     if (exists) throw conflict('EMAIL_TAKEN', 'Email is already in use');
+  }
+
+  private async assertJobRoles(ids: string[]) {
+    const unique = [...new Set(ids)];
+    const n = await this.prisma.repoObject.count({
+      where: { id: { in: unique }, type: 'ROLE', deletedAt: null },
+    });
+    if (n !== unique.length) throw badRequest('OBJECT_NOT_FOUND');
+  }
+
+  /** Active users matching a name or email (mentions, workflow assignees). */
+  async directory(q: string): Promise<UserRef[]> {
+    return this.prisma.user.findMany({
+      where: {
+        deletedAt: null,
+        status: 'ACTIVE',
+        ...(q
+          ? {
+              OR: [
+                { email: { contains: q, mode: 'insensitive' } },
+                { nameEn: { contains: q, mode: 'insensitive' } },
+                { nameAr: { contains: q, mode: 'insensitive' } },
+              ],
+            }
+          : {}),
+      },
+      select: { id: true, email: true, nameEn: true, nameAr: true },
+      orderBy: { nameEn: 'asc' },
+      take: 20,
+    });
   }
 
   private async assertDepartment(id: string) {

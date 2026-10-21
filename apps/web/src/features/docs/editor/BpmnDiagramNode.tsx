@@ -4,6 +4,8 @@ import { Button, Tooltip } from 'antd';
 import { DeleteOutlined } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
 import { EmbeddedDiagram } from '../EmbeddedDiagram';
+import { useRenderMode } from '../embed-context';
+import { PortalEmbeddedDiagram } from '@/features/portal/PortalEmbeddedDiagram';
 
 declare module '@tiptap/core' {
   interface Commands<ReturnType> {
@@ -16,6 +18,7 @@ declare module '@tiptap/core' {
 function DiagramNodeView({ node, editor, deleteNode, selected }: ReactNodeViewProps) {
   const { t } = useTranslation();
   const processId = node.attrs.processId as string;
+  const mode = useRenderMode();
   return (
     <NodeViewWrapper
       className={`ph-embed${selected && editor.isEditable ? ' ph-embed-selected' : ''}`}
@@ -34,7 +37,11 @@ function DiagramNodeView({ node, editor, deleteNode, selected }: ReactNodeViewPr
           />
         </Tooltip>
       )}
-      <EmbeddedDiagram processId={processId} />
+      {mode === 'portal' ? (
+        <PortalEmbeddedDiagram processId={processId} />
+      ) : (
+        <EmbeddedDiagram processId={processId} />
+      )}
     </NodeViewWrapper>
   );
 }

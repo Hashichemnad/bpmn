@@ -39,6 +39,14 @@ services:
       timeout: 5s
       retries: 20
 
+  # Local mail catcher: every email ProcessHub sends is shown at http://localhost:8025.
+  # For production, configure a real SMTP server in Settings → Email and remove this service.
+  mailpit:
+    image: axllent/mailpit:v1.27
+    restart: unless-stopped
+    ports:
+      - '${MAILPIT_UI_PORT:-8025}:8025'
+
   api:
     build:
       context: .
@@ -53,8 +61,8 @@ services:
       DATABASE_URL: postgresql://${POSTGRES_USER:-processhub}:${POSTGRES_PASSWORD:-processhub-local}@postgres:5432/${POSTGRES_DB:-processhub}?schema=public
       # Empty = generate a random secret on first start (stored in the api-data volume).
       JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET:-}
-      # Empty = generate a key on first start (stored in the api-data volume). Back it up: without it
-      # stored GitHub/GitLab tokens cannot be decrypted and must be entered again.
+      # Empty = generate a key on first start (stored in the api-data volume). Back it up with the
+      # database: without it stored GitHub/GitLab tokens and the SMTP password cannot be decrypted.
       INTEGRATIONS_ENCRYPTION_KEY: ${INTEGRATIONS_ENCRYPTION_KEY:-}
       COOKIE_SECURE: ${COOKIE_SECURE:-true}
       CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:8080}
@@ -69,6 +77,12 @@ services:
       SEED_DEMO_DATA: ${SEED_DEMO_DATA:-true}
       SEED_ADMIN_EMAIL: ${SEED_ADMIN_EMAIL:-admin@processhub.local}
       SEED_ADMIN_PASSWORD: ${SEED_ADMIN_PASSWORD:-ChangeMe-Admin1}
+      SEED_DEMO_PASSWORD: ${SEED_DEMO_PASSWORD:-Demo-Password1}
+      # Demo installations send email to Mailpit; real SMTP is configured in Settings → Email.
+      SEED_SMTP_HOST: ${SEED_SMTP_HOST-mailpit}
+      SEED_SMTP_PORT: ${SEED_SMTP_PORT:-1025}
+      APP_URL: ${APP_URL:-http://localhost:8080}
+      SCHEDULER_INTERVAL_MINUTES: ${SCHEDULER_INTERVAL_MINUTES:-60}
     volumes:
       - api-data:/app/data
     depends_on:
@@ -76,6 +90,8 @@ services:
         condition: service_healthy
       minio:
         condition: service_healthy
+      mailpit:
+        condition: service_started
 
   web:
     build:

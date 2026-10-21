@@ -23,6 +23,7 @@ import { ErrorState, LoadingState } from '@/components/states';
 import { useErrorMessage } from '@/components/i18n-helpers';
 import { BrandMark } from '@/layout/BrandMark';
 import { GitIntegrationCard } from './GitIntegrationCard';
+import { EmailSettingsCard } from './EmailSettingsCard';
 
 export function SettingsPage() {
   const { t } = useTranslation();
@@ -164,6 +165,9 @@ export function SettingsPage() {
               </Space>
             </Flex>
           </Card>
+        </Col>
+        <Col span={24}>
+          <EmailSettingsCard />
         </Col>
         <Col span={24}>
           <GitIntegrationCard />

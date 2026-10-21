@@ -15,6 +15,7 @@ import {
 } from '@processhub/shared';
 import { PrismaService } from '../prisma/prisma.service';
 import { htmlToMarkdown } from '../docs/markdown';
+import { htmlToText } from '../docs/rich-text';
 
 export interface ExportFile {
   path: string;
@@ -66,7 +67,23 @@ export class GitExportService {
     return processFilePaths(root, chain[0].category as ProcessCategory, chain);
   }
 
-  async process(id: string, root: string): Promise<ExportItem | null> {
+  /** Version number to export: the latest, or the published one (null = nothing to export). */
+  private async exportedVersion(
+    type: GitEntityType,
+    id: string,
+    publishedOnly: boolean,
+  ): Promise<number | null | undefined> {
+    if (!publishedOnly) return undefined;
+    const pub = await this.prisma.publication.findFirst({
+      where: { entityType: type, entityId: id, current: true },
+      select: { versionNumber: true },
+    });
+    return pub?.versionNumber ?? null;
+  }
+
+  async process(id: string, root: string, publishedOnly = false): Promise<ExportItem | null> {
+    const published = await this.exportedVersion('PROCESS', id, publishedOnly);
+    if (published === null) return null;
     const p = await this.prisma.process.findFirst({
       where: { id, deletedAt: null },
       include: {
@@ -76,7 +93,7 @@ export class GitExportService {
     });
     if (!p) return null;
     const version = await this.prisma.processVersion.findFirst({
-      where: { processId: id },
+      where: { processId: id, ...(published ? { versionNumber: published } : {}) },
       orderBy: { versionNumber: 'desc' },
     });
     if (!version) return null;
@@ -95,7 +112,7 @@ export class GitExportService {
       descriptionEn: p.descriptionEn,
       descriptionAr: p.descriptionAr,
       category: p.category,
-      status: p.status,
+      status: published ? 'PUBLISHED' : p.status,
       owner: p.owner,
       department: p.department,
       version: version.versionNumber,
@@ -146,16 +163,34 @@ export class GitExportService {
    * Pages of view-restricted spaces are never exported: the repository may be readable by
    * people who cannot see the space.
    */
-  async page(id: string, root: string): Promise<ExportItem | null> {
-    const page = await this.prisma.page.findFirst({
+  async page(id: string, root: string, publishedOnly = false): Promise<ExportItem | null> {
+    const published = await this.exportedVersion('PAGE', id, publishedOnly);
+    if (published === null) return null;
+    const row = await this.prisma.page.findFirst({
       where: { id, deletedAt: null, space: { deletedAt: null, viewRestricted: false } },
       include: { space: { select: { key: true } } },
     });
-    if (!page) return null;
+    if (!row) return null;
     const version = await this.prisma.pageVersion.findFirst({
-      where: { pageId: id },
+      where: { pageId: id, ...(published ? { versionNumber: published } : {}) },
       orderBy: { versionNumber: 'desc' },
     });
+    // With "published only" the content and title come from the published version.
+    const page =
+      published && version
+        ? {
+            ...row,
+            titleEn: version.titleEn,
+            titleAr: version.titleAr,
+            contentEn: version.contentEn,
+            contentAr: version.contentAr,
+            textEn: htmlToText(version.contentEn),
+            textAr: htmlToText(version.contentAr),
+            version: version.versionNumber,
+            updatedAt: version.createdAt,
+            updatedById: version.createdById,
+          }
+        : row;
     const author = page.updatedById
       ? await this.prisma.user.findUnique({
           where: { id: page.updatedById },
@@ -163,6 +198,13 @@ export class GitExportService {
         })
       : null;
     const chain = await this.pageChain(id);
+    if (published && chain.length) {
+      chain[chain.length - 1] = {
+        ...chain[chain.length - 1],
+        titleEn: page.titleEn,
+        titleAr: page.titleAr,
+      };
+    }
     const diagramPaths = new Map<string, { path: string; label: string }>();
     for (const pid of embeddedProcessIds(page.contentEn + page.contentAr)) {
       const proc = await this.prisma.process.findUnique({

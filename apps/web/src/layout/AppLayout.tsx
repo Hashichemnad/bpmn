@@ -16,6 +16,11 @@ import {
   ApartmentOutlined,
   AppstoreOutlined,
   AuditOutlined,
+  BranchesOutlined,
+  CheckSquareOutlined,
+  DashboardOutlined,
+  FileOutlined,
+  GlobalOutlined,
   ClusterOutlined,
   DesktopOutlined,
   ReadOutlined,
@@ -36,6 +41,8 @@ import { usePublicSettings } from '@/api/hooks';
 import { useLocalized } from '@/components/i18n-helpers';
 import { BrandMark } from './BrandMark';
 import { GlobalSearch } from '@/features/search/GlobalSearch';
+import { NotificationBell } from '@/features/notifications/NotificationBell';
+import { useMyTasks } from '@/api/governance';
 
 const { Header, Sider, Content } = Layout;
 
@@ -75,8 +82,37 @@ export function AppLayout() {
   const settings = usePublicSettings();
   const [collapsed, setCollapsed] = useState(false);
 
+  const tasks = useMyTasks();
+  const taskCount = tasks.data
+    ? tasks.data.reviews.length +
+      tasks.data.toPublish.length +
+      tasks.data.returned.length +
+      tasks.data.dueReviews.length +
+      tasks.data.feedback.length
+    : 0;
+
   const items = useMemo<MenuProps['items']>(() => {
     const list: MenuProps['items'] = [];
+    const governance: NonNullable<MenuProps['items']> = [
+      {
+        key: '/tasks',
+        icon: <CheckSquareOutlined />,
+        label: (
+          <Link to="/tasks">
+            {t('nav.tasks')}
+            {taskCount > 0 && <span className="ph-menu-count">{taskCount}</span>}
+          </Link>
+        ),
+      },
+    ];
+    if (can(PERMISSIONS.GOVERNANCE_DASHBOARD)) {
+      governance.push({
+        key: '/governance',
+        icon: <DashboardOutlined />,
+        label: <Link to="/governance">{t('nav.governance')}</Link>,
+      });
+    }
+    list.push({ type: 'group', label: t('nav.governanceGroup'), children: governance });
     if (can(PERMISSIONS.PROCESSES_READ)) {
       list.push({
         type: 'group',
@@ -128,6 +164,11 @@ export function AppLayout() {
             icon: <DesktopOutlined />,
             label: <Link to="/library/systems">{t('nav.systems')}</Link>,
           },
+          {
+            key: '/library/documents',
+            icon: <FileOutlined />,
+            label: <Link to="/library/documents">{t('nav.documents')}</Link>,
+          },
         ],
       });
     }
@@ -153,6 +194,20 @@ export function AppLayout() {
         label: <Link to="/admin/audit">{t('nav.audit')}</Link>,
       });
     }
+    if (can(PERMISSIONS.GOVERNANCE_MANAGE)) {
+      admin.push({
+        key: '/settings/workflows',
+        icon: <BranchesOutlined />,
+        label: <Link to="/settings/workflows">{t('nav.workflows')}</Link>,
+      });
+    }
+    if (can(PERMISSIONS.PORTAL_MANAGE)) {
+      admin.push({
+        key: '/settings/portal',
+        icon: <GlobalOutlined />,
+        label: <Link to="/settings/portal">{t('nav.portalSettings')}</Link>,
+      });
+    }
     if (can(PERMISSIONS.SETTINGS_MANAGE)) {
       admin.push({
         key: '/settings',
@@ -162,7 +217,7 @@ export function AppLayout() {
     }
     if (admin.length) list.push({ type: 'group', label: t('nav.administration'), children: admin });
     return list;
-  }, [can, t]);
+  }, [can, t, taskCount]);
 
   const selected = useMemo(() => {
     const p = location.pathname;
@@ -171,12 +226,18 @@ export function AppLayout() {
     if (p.startsWith('/docs')) return ['/docs'];
     if (p.startsWith('/search')) return ['/search'];
     if (p.startsWith('/library/objects')) return [];
+    if (p.startsWith('/reviews')) return ['/tasks'];
     const match = [
+      '/tasks',
+      '/governance',
       '/library/roles',
       '/library/systems',
+      '/library/documents',
       '/admin/users',
       '/admin/departments',
       '/admin/audit',
+      '/settings/workflows',
+      '/settings/portal',
       '/settings',
     ].find((k) => p.startsWith(k));
     return match ? [match] : [];
@@ -238,6 +299,18 @@ export function AppLayout() {
           </Flex>
           <Flex align="center" gap={16}>
             {canAny(PERMISSIONS.DOCS_READ, PERMISSIONS.PROCESSES_READ) && <GlobalSearch />}
+            {can(PERMISSIONS.PORTAL_READ) && (
+              <Tooltip title={t('nav.portalHint')}>
+                <Button
+                  icon={<GlobalOutlined />}
+                  onClick={() => navigate('/portal')}
+                  className="ph-portal-switch"
+                >
+                  {t('nav.portal')}
+                </Button>
+              </Tooltip>
+            )}
+            <NotificationBell />
             <Tooltip title={t('language')}>
               <span>
                 <LanguageToggle />

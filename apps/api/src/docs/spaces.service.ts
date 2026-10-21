@@ -58,6 +58,7 @@ export class SpacesService {
       department: s.department,
       viewRestricted: s.viewRestricted,
       editRestricted: s.editRestricted,
+      workflowId: s.workflowId,
       pageCount: s._count.pages,
       canEdit: a.canEdit,
       canManage: a.canManage,

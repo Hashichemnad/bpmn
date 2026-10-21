@@ -77,6 +77,8 @@ import { EMPTY_DIAGRAM, phModdleDescriptor } from './phModdle';
 import { translateModule } from './translate';
 import { downloadBlob, exportFileName, svgToPng } from './export';
 import { ElementPanel } from './ElementPanel';
+import { useComments } from '@/api/governance';
+import { CommentsPanel } from '@/features/comments/CommentsPanel';
 import { VersionsDrawer } from './VersionsDrawer';
 
 /** Fits the diagram once the browser has laid out the canvas. */
@@ -113,6 +115,7 @@ export function BpmnEditor({ process, focusElementId }: Props) {
   const saveModel = useSaveModel(process.id);
   const createVersion = useCreateVersion(process.id);
   const versions = useVersions(process.id);
+  const comments = useComments('PROCESS', process.id);
   const autosaveTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
   const autosaveRef = useRef<() => Promise<boolean>>(async () => true);
 
@@ -125,7 +128,7 @@ export function BpmnEditor({ process, focusElementId }: Props) {
   const [dirty, setDirty] = useState(false);
   const [issues, setIssues] = useState<BpmnIssue[]>([]);
   const [importError, setImportError] = useState<string | null>(null);
-  const [panelTab, setPanelTab] = useState<'properties' | 'issues'>('properties');
+  const [panelTab, setPanelTab] = useState<'properties' | 'issues' | 'comments'>('properties');
   const [versionOpen, setVersionOpen] = useState(false);
   const [historyOpen, setHistoryOpen] = useState(false);
   const [canUndo, setCanUndo] = useState(false);
@@ -146,6 +149,27 @@ export function BpmnEditor({ process, focusElementId }: Props) {
     const registry = instance.get<ElementRegistry>('elementRegistry');
     overlays.remove({ type: 'ph-badge' });
     overlays.remove({ type: 'ph-drill' });
+    overlays.remove({ type: 'ph-comments' });
+    const open = new Map<string, number>();
+    for (const c of comments.data ?? []) {
+      if (c.bpmnElementId && !c.resolvedAt)
+        open.set(c.bpmnElementId, (open.get(c.bpmnElementId) ?? 0) + 1);
+    }
+    for (const [elementId, count] of open) {
+      if (!registry.get(elementId)) continue;
+      const bubble = document.createElement('button');
+      bubble.type = 'button';
+      bubble.className = 'ph-overlay-comments';
+      bubble.textContent = `💬 ${count}`;
+      bubble.title = t('modeler:commentCount', { count });
+      bubble.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const el = registry.get(elementId);
+        if (el) setSelected(el);
+        setPanelTab('comments');
+      });
+      overlays.add(elementId, 'ph-comments', { position: { top: -12, left: 6 }, html: bubble });
+    }
     const counts = new Map<string, number>();
     for (const l of links.data ?? [])
       counts.set(l.bpmnElementId, (counts.get(l.bpmnElementId) ?? 0) + 1);
@@ -172,7 +196,7 @@ export function BpmnEditor({ process, focusElementId }: Props) {
       });
       overlays.add(el.id, 'ph-drill', { position: { bottom: 10, left: 6 }, html: button });
     }
-  }, [links.data, navigate, t]);
+  }, [links.data, comments.data, navigate, t]);
 
   // Create the modeler (editable) or viewer (read-only) once.
   useEffect(() => {
@@ -564,7 +588,7 @@ export function BpmnEditor({ process, focusElementId }: Props) {
           <Tabs
             size="small"
             activeKey={panelTab}
-            onChange={(k) => setPanelTab(k as 'properties' | 'issues')}
+            onChange={(k) => setPanelTab(k as 'properties' | 'issues' | 'comments')}
             items={[
               {
                 key: 'properties',
@@ -620,6 +644,27 @@ export function BpmnEditor({ process, focusElementId }: Props) {
                       ))}
                     </ul>
                   ),
+              },
+              {
+                key: 'comments',
+                label: t('modeler:commentsTab'),
+                children: (
+                  <>
+                    {!selected && (
+                      <Typography.Paragraph type="secondary" style={{ fontSize: 12 }}>
+                        {t('modeler:commentsAll')}
+                      </Typography.Paragraph>
+                    )}
+                    <CommentsPanel
+                      type="PROCESS"
+                      id={process.id}
+                      elementId={
+                        selected && selected.type !== 'bpmn:Process' ? selected.id : undefined
+                      }
+                      onOpenElement={focusElement}
+                    />
+                  </>
+                ),
               },
             ]}
           />

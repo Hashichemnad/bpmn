@@ -41,7 +41,15 @@
     "profile": "ملفي الشخصي",
     "documentation": "التوثيق",
     "docs": "المساحات",
-    "search": "البحث"
+    "search": "البحث",
+    "tasks": "مهامي",
+    "governance": "لوحة الحوكمة",
+    "governanceGroup": "الحوكمة",
+    "documents": "الوثائق",
+    "workflows": "مسارات الاعتماد",
+    "portalSettings": "بوابة المعرفة",
+    "portal": "البوابة",
+    "portalHint": "فتح بوابة المعرفة (المحتوى المنشور)"
   },
   "auth": {
     "subtitle": "سجّل الدخول للمتابعة",
@@ -95,5 +103,8 @@
     "confirmPassword": "تأكيد كلمة المرور الجديدة",
     "updatePassword": "تحديث كلمة المرور",
     "passwordChanged": "تم تغيير كلمة المرور وتسجيل الخروج من الجلسات الأخرى."
-  }
+  },
+  "close": "إغلاق",
+  "confirm": "تأكيد",
+  "noResults": "لا نتائج"
 }

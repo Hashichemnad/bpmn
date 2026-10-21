@@ -15,6 +15,11 @@ import { Readable } from 'node:stream';
 import { GitProviders } from '../src/integrations/git-providers';
 import { GitHttp } from '../src/integrations/providers/git-http';
 import {
+  MailTransport,
+  type MailMessage,
+  type SmtpConfig,
+} from '../src/notifications/mail-transport';
+import {
   GitError,
   gitBlobSha,
   type GitCommitRequest,
@@ -40,11 +45,25 @@ export class MemoryStorage {
   }
 }
 
+/** Outbox standing in for SMTP: tests never send real email. */
+export class FakeMailer {
+  sent: (MailMessage & { host: string })[] = [];
+  failNext = false;
+  async send(smtp: SmtpConfig, msg: MailMessage) {
+    if (this.failNext) {
+      this.failNext = false;
+      throw new Error(`SMTP refused (${smtp.password ?? ''})`);
+    }
+    this.sent.push({ ...msg, host: smtp.host });
+  }
+}
+
 export interface TestContext {
   app: INestApplication;
   prisma: PrismaService;
   storage: MemoryStorage;
   git: FakeGitRepo;
+  mail: FakeMailer;
 }
 
 /** In-memory Git repository standing in for GitHub/GitLab: tests never call real services. */
@@ -87,11 +106,14 @@ export class FakeGitRepo implements GitProviderClient {
 export async function createApp(): Promise<TestContext> {
   const storage = new MemoryStorage();
   const git = new FakeGitRepo();
+  const mail = new FakeMailer();
   const moduleRef = await Test.createTestingModule({ imports: [AppModule] })
     .overrideProvider(StorageService)
     .useValue(storage)
     .overrideProvider(GitProviders)
     .useValue({ client: () => git })
+    .overrideProvider(MailTransport)
+    .useValue(mail)
     .overrideProvider(GitHttp)
     .useValue({
       request: () => {
@@ -105,10 +127,18 @@ export async function createApp(): Promise<TestContext> {
   });
   configureApp(app);
   await app.init();
-  return { app, prisma: app.get(PrismaService), storage, git };
+  return { app, prisma: app.get(PrismaService), storage, git, mail };
 }
 
 const TABLES = [
+  'Feedback',
+  'Notification',
+  'Comment',
+  'PublishedLink',
+  'Publication',
+  'ReviewTask',
+  'Review',
+  'UserJobRole',
   'GitSyncItem',
   'Attachment',
   'PageLink',
@@ -118,6 +148,7 @@ const TABLES = [
   'PageTemplate',
   'SpaceGrant',
   'Space',
+  'Workflow',
   'AuditLog',
   'ObjectLink',
   'ProcessVersion',

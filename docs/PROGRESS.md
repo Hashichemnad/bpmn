@@ -4,15 +4,96 @@ Read this together with `CLAUDE.md` at the start of every session.
 
 ## Current state — 2026-10-21
 
-**Phase 2 (Documentation wiki M5, Version control M6, Git integration M7): complete on branch
-`phase-2-docs-versions-git`, awaiting review.** Phase 1 is merged into `main`. Every item of the Phase 2 brief
-is implemented, tested and verified in the browser (English and Arabic) and with `docker compose up` from a
-clean state.
+**Phase 3 (Governance M8, Knowledge Portal M9): complete on branch `phase-3-governance-portal`, awaiting
+review.** Phases 1 and 2 are merged into `main`. Every item of the Phase 3 brief is implemented, covered by
+API tests (including a Viewer sweep over every route) and Playwright smoke tests, and verified in the browser
+(English and Arabic, desktop and phone width) and with `docker compose up` from a clean clone.
 
-Decisions taken at the start of Phase 2: keep the current MinIO image (revisit in Phase 6); Viewers keep full
-read access until Phase 3 restricts them to published content (D-027).
+Decisions taken at the start of Phase 3 (by the product owner): keep `bitnamilegacy/minio` (Phase 6); keep
+browser "Save as PDF" (D-024/D-035, Gotenberg noted for Phase 6); never export pages of view-restricted spaces;
+warn about backing up `INTEGRATIONS_ENCRYPTION_KEY` (Settings → Integrations and README); Viewers see
+published content only, through the portal (D-028). The blueprint gained **M16 AI Assistant**, planned after
+Phase 3 (not built).
 
-### Phase 2 — done
+### Phase 3 — done
+
+**Governance (M8)**
+
+- Lifecycle Draft → In Review → Approved → Published → Archived, plus "Changes requested" / "Rejected" back to
+  Draft, for processes and pages. Transitions enforced on the server (one table in `packages/shared`), atomic,
+  audited (D-029). In-review and archived items are locked; editing an approved/published item makes a new
+  working copy (Draft) while the published version stays live in the portal.
+- Publications: each publication is linked to a saved version and its label (e.g. `v2.0`), records approvers,
+  approval date and publisher; the item gets its next review date. History of reviews and publications per item.
+- Workflows (Settings → Workflows): templates with sequential steps; assignees are users, a system role
+  (optionally within a department) or the item owner; rule "any one of" or "all"; optional auto-publish.
+  Defaults globally, per process category and per space; per-item template or custom steps (D-030). Assignees
+  are snapshotted at submission; submitters never approve their own items.
+- Review page: visual BPMN diff (or page text diff) against the published version, change list, the
+  submitter's note, step progress; approve, request changes (comment required) or reject (comment required).
+- Comments: threaded, on processes and pages, anchored to BPMN elements (💬 badges on the canvas, Comments tab
+  in the modeler), @mentions with autocomplete, resolve/reopen, edit/delete own (D-032).
+- Notifications: bell with unread count, notification centre, per-user preferences for email by type. Events:
+  review requested, changes requested, rejected, approved, published, mentioned, reply, review due/overdue,
+  feedback received/updated. Email via SMTP settings (Settings → Email, encrypted password, test email),
+  bilingual HTML templates; Mailpit in Docker Compose; tests use a fake transport (D-033).
+- Review dates: next review on publication (default 12 months), reminders before and after the due date by a
+  scheduler, overdue flags, "confirm still valid"; review due dates for running reviews (D-034).
+- My tasks (reviews to do, returned items, items to publish, due periodic reviews, mentions, feedback) and
+  the Governance dashboard (counts per state, running reviews with their age, overdue and soon-due periodic
+  reviews, recent publications, open feedback).
+- Documents library (repository object type DOCUMENT) so steps can link to documents shown in the portal;
+  step descriptions (EN/AR) in the modeler side panel; job roles on users (for "My processes").
+
+**Knowledge Portal (M9)** at `/portal`, the home of Viewers
+
+- Home: portal name/tagline and logo, search hero, process house, featured and recently published items,
+  quick links. Process browser (tree per category) and process page: diagram with clickable steps (performers,
+  systems, documents, description), drill-down into sub-processes, linked documentation.
+- Documentation: spaces, page tree, page with table of contents, embedded diagrams, related processes.
+- Search in English and Arabic with type/category/space filters and highlighted snippets (D-031).
+- "My processes": items owned by me, of my department or performed by my job roles (with "your steps").
+- Every item shows version label, approval date, approver(s), owner, next review date and an "Official" badge.
+- Feedback on any item, routed to the owner (status Open / In progress / Done, reply, notifications);
+  "My feedback" page.
+- Download PDF: print-optimised view (diagram + step details / page content, metadata, Arabic RTL) that opens
+  the print dialog (D-035).
+- Settings → Knowledge Portal: name and tagline EN/AR, featured items, quick links, access (all users or
+  selected departments and roles).
+- Viewers cannot reach draft, in-review, approved-unpublished or archived content via any endpoint (D-028);
+  workspace URLs redirect them to the portal.
+- Git: "Published versions only" option (D-036).
+
+**Seed data** (demo installation)
+
+- Demo users per role: viewer / reviewer / owner / modeler `@processhub.local`, password `SEED_DEMO_PASSWORD`
+  (default `Demo-Password1`); email settings pointing at Mailpit.
+- Two workflows ("Standard approval (two steps)": Quality review by any Reviewer → Owner approval; "Policy
+  review (any one reviewer)").
+- Content in every state: S.01.01 published v1 with v2 in review; C.02 in review with the overdue owner step;
+  C.03 approved, waiting for publication; M.01 published 13 months ago (periodic review overdue); M.02
+  archived; S.02 changes requested; pages published / in review / approved.
+- Comments with replies and mentions, notifications, two feedback items, portal settings with featured items
+  and quick links.
+
+### Verification (Phase 3 session)
+
+| Check                                              | Result                                                                                                                                                                                                                 |
+| -------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `pnpm format:check`, `pnpm lint`, `pnpm typecheck` | clean                                                                                                                                                                                                                  |
+| `pnpm test`                                        | **238 tests pass** — shared 61, web 31, API 146 (25 suites; new: governance, portal incl. Viewer sweep and Git published-only, comments and notifications, email templates)                                            |
+| `pnpm e2e` (Playwright)                            | 8 smoke tests pass against the Vite dev server and against the Docker stack                                                                                                                                            |
+| `pnpm build`                                       | passes                                                                                                                                                                                                                 |
+| `pnpm audit --prod --audit-level high`             | no high/critical (nodemailer upgraded to 10.0.16); 7 moderate, pre-existing. The full audit still lists the dev-only `braces` advisory (no upstream fix, see BACKLOG)                                                  |
+| `docker compose up` from a clean clone             | five services healthy (postgres, minio, mailpit, api, web); migrations and full demo seeded; test email and a scheduler reminder delivered to Mailpit                                                                  |
+| Browser (Playwright screenshots)                   | portal home/process/page/search/print (EN + AR RTL, 390 px phone), review page with BPMN diff, approve → approve → publish v2.0 flow, feedback, @mention comment, My tasks, dashboard, workflows/portal/email settings |
+
+Docker note: as in earlier phases this sandbox reaches the internet only through a TLS-intercepting proxy and
+Docker Hub rate-limited it, so the base images were pulled from `mirror.gcr.io` and the two app images were
+built from the committed Dockerfiles in a clean clone, with an uncommitted CA line and `docker build --network
+host`, then started with `docker compose up`. The committed Dockerfiles need no change.
+
+### Phase 2 (Documentation wiki, version control, Git) — done, merged into `main`
 
 **Documentation wiki (M5)**
 
@@ -72,7 +153,7 @@ read access until Phase 3 restricts them to published content (D-027).
   review step renamed) for compare/restore.
 - Only on a demo installation: skipped when spaces exist or the demo processes are missing.
 
-### Verification (this session)
+### Verification (Phase 2 session)
 
 | Check                                                            | Result                                                                                                                                                                                                                                                                                                                                                                           |
 | ---------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -156,15 +237,19 @@ need no such change.
 
 ## Next
 
-1. Review and merge `phase-2-docs-versions-git`.
-2. Decisions for you: see "Needs a decision" in `docs/BACKLOG.md` (PDF export approach, MinIO image).
-3. Phase 3: M8 governance workflow (Draft → In Review → Approved → Published → Archived, reviewers, comments,
-   notifications) and M9 Knowledge Portal (published content only for Viewers, D-006 / D-027). Version labels
-   and the wiki are ready to be tied into approval.
+1. Review and merge `phase-3-governance-portal`.
+2. Decisions for you: see "Needs a decision" in `docs/BACKLOG.md` (self-approval rule, Viewer role, PDF, MinIO).
+3. Phase "AI": M16 AI Assistant (CLAUDE.md §2) — Settings → AI with encrypted key, per-role access and usage
+   limits; BPMN from text, SOP from process, EN↔AR translation, suggestions, portal Q&A over published content
+   (the portal search and publication read model from Phase 3 are the natural retrieval source).
+4. Then Phase 4: GRC, EA, KPIs + Salesforce.
 
 ## Known issues / limitations
 
-- PDF export uses the browser's print dialog ("Save as PDF"), not a direct download (D-024).
+- PDF export uses the browser's print dialog ("Save as PDF"), not a direct download (D-024, D-035).
+- Emails and reminders run in-process; with several API instances the scheduler runs in each (reminders are
+  de-duplicated in the database, but a queue is in the backlog). Notifications refresh every minute (polling).
+- The Playwright smoke tests are not yet in CI (they need the whole stack).
 - Git sync: one-way; process renames/moves without a new version reach Git with the next version or
   "Sync now"; jobs run in-process (single API instance); pages of view-restricted spaces are not exported.
 - Autosaved page drafts are per user; two people editing the same page at once get a conflict on the second
@@ -172,6 +257,7 @@ need no such change.
 - MinIO uses the frozen `bitnamilegacy/minio` image (D-009, revisit in Phase 6).
 - Secure cookies (`COOKIE_SECURE=true`, the default) need HTTPS or `localhost`.
 - The API e2e tests **truncate every table** of the database in `TEST_DATABASE_URL`. Never point it at real data.
-- `INTEGRATIONS_ENCRYPTION_KEY` must be backed up with the data; if it changes, stored tokens must be re-entered.
+- `INTEGRATIONS_ENCRYPTION_KEY` must be backed up with the data; if it changes, stored Git tokens and the SMTP
+  password must be re-entered.
 - Moderate dependency advisories (react-router 6, minio, swagger transitive) — see BACKLOG.
 - External BPMN labels keep their original size when the language is switched (from Phase 1).

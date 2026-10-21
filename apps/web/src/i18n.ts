@@ -9,6 +9,8 @@ import enObjects from './locales/en/objects.json';
 import enErrors from './locales/en/errors.json';
 import enDocs from './locales/en/docs.json';
 import enSearch from './locales/en/search.json';
+import enGovernance from './locales/en/governance.json';
+import enPortal from './locales/en/portal.json';
 import arCommon from './locales/ar/common.json';
 import arAdmin from './locales/ar/admin.json';
 import arProcesses from './locales/ar/processes.json';
@@ -17,6 +19,8 @@ import arObjects from './locales/ar/objects.json';
 import arErrors from './locales/ar/errors.json';
 import arDocs from './locales/ar/docs.json';
 import arSearch from './locales/ar/search.json';
+import arGovernance from './locales/ar/governance.json';
+import arPortal from './locales/ar/portal.json';
 
 export const resources = {
   en: {
@@ -28,6 +32,8 @@ export const resources = {
     errors: enErrors,
     docs: enDocs,
     search: enSearch,
+    governance: enGovernance,
+    portal: enPortal,
   },
   ar: {
     common: arCommon,
@@ -38,6 +44,8 @@ export const resources = {
     errors: arErrors,
     docs: arDocs,
     search: arSearch,
+    governance: arGovernance,
+    portal: arPortal,
   },
 } as const;
 
@@ -50,6 +58,8 @@ export const NAMESPACES = [
   'errors',
   'docs',
   'search',
+  'governance',
+  'portal',
 ] as const;
 
 const STORAGE_KEY = 'ph.locale';

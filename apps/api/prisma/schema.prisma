@@ -1,4 +1,5 @@
-// ProcessHub data model — Phase 1 core (see CLAUDE.md §9) + Phase 2 wiki, versions and Git sync.
+// ProcessHub data model — Phase 1 core (see CLAUDE.md §9), Phase 2 wiki, versions and Git sync,
+// Phase 3 governance (reviews, publications, comments, notifications) and Knowledge Portal.
 
 generator client {
   provider      = "prisma-client-js"
@@ -66,6 +67,45 @@ enum GitSyncStatus {
   FAILED
 }
 
+enum ContentType {
+  PROCESS
+  PAGE
+}
+
+enum ReviewStatus {
+  IN_PROGRESS
+  APPROVED
+  CHANGES_REQUESTED
+  REJECTED
+  WITHDRAWN
+}
+
+enum ReviewTaskStatus {
+  PENDING
+  APPROVED
+  CHANGES_REQUESTED
+  REJECTED
+  SKIPPED
+}
+
+enum FeedbackKind {
+  IMPROVEMENT
+  OUTDATED
+}
+
+enum FeedbackStatus {
+  OPEN
+  IN_PROGRESS
+  DONE
+}
+
+enum EmailStatus {
+  PENDING
+  SENT
+  FAILED
+  SKIPPED
+}
+
 enum LinkRelation {
   PERFORMS
   SUPPORTS
@@ -89,6 +129,8 @@ model User {
   lockedUntil       DateTime?
   lastLoginAt       DateTime?
   passwordChangedAt DateTime?
+  /// Per notification type: { inApp, email }. Missing types use the defaults (both on).
+  notificationPrefs Json        @default("{}")
   createdAt         DateTime    @default(now())
   updatedAt         DateTime    @updatedAt
   createdById       String?     @db.Uuid
@@ -101,6 +143,9 @@ model User {
   ownedSpaces    Space[]        @relation("SpaceOwner")
   auditLogs      AuditLog[]
   pageDrafts     PageDraft[]
+  ownedPages     Page[]         @relation("PageOwner")
+  jobRoles       UserJobRole[]
+  notifications  Notification[]
 
   @@index([departmentId])
   @@index([status])
@@ -199,6 +244,11 @@ model Process {
   department    Department?     @relation(fields: [departmentId], references: [id], onDelete: SetNull)
   level         Int             @default(1)
   sortOrder     Int             @default(0)
+  /// Approval workflow for this process only (null = category / global default).
+  workflowId    String?         @db.Uuid
+  workflow      Workflow?       @relation(fields: [workflowId], references: [id], onDelete: SetNull)
+  /// Next periodic review of the published content.
+  nextReviewAt  DateTime?
   createdAt     DateTime        @default(now())
   updatedAt     DateTime        @updatedAt
   createdById   String?         @db.Uuid
@@ -260,6 +310,8 @@ model RepoObject {
 
   links     ObjectLink[]
   pageLinks PageLink[]
+  users     UserJobRole[]
+  published PublishedLink[]
 
   @@index([type])
 }
@@ -323,6 +375,9 @@ model Space {
   /// Restricted spaces are visible / editable only for the owner, docs managers and granted principals.
   viewRestricted Boolean     @default(false)
   editRestricted Boolean     @default(false)
+  /// Default approval workflow for the pages of this space.
+  workflowId     String?     @db.Uuid
+  workflow       Workflow?   @relation(fields: [workflowId], references: [id], onDelete: SetNull)
   createdAt      DateTime    @default(now())
   updatedAt      DateTime    @updatedAt
   createdById    String?     @db.Uuid
@@ -366,6 +421,13 @@ model Page {
   textEn        String                   @default("")
   textAr        String                   @default("")
   version       Int                      @default(0)
+  status        ProcessStatus            @default(DRAFT)
+  /// Owner responsible for the content (falls back to the space owner).
+  ownerId       String?                  @db.Uuid
+  owner         User?                    @relation("PageOwner", fields: [ownerId], references: [id], onDelete: SetNull)
+  workflowId    String?                  @db.Uuid
+  workflow      Workflow?                @relation(fields: [workflowId], references: [id], onDelete: SetNull)
+  nextReviewAt  DateTime?
   /// Maintained by a database trigger (see migration 20261021082019_phase2_wiki).
   searchVector  Unsupported("tsvector")?
   createdAt     DateTime                 @default(now())
@@ -504,4 +566,204 @@ model GitSyncItem {
 
   @@unique([entityType, entityId])
   @@index([status])
+}
+
+// ---------- Governance (M8) ----------
+
+/// Approval workflow: steps run in order; each step needs ANY or ALL of its assignees.
+model Workflow {
+  id            String    @id @default(uuid()) @db.Uuid
+  nameEn        String    @default("")
+  nameAr        String    @default("")
+  descriptionEn String    @default("")
+  descriptionAr String    @default("")
+  /// [{ nameEn, nameAr, rule, assignees: [{ type: USER|ROLE|OWNER, userId?, roleKey?, departmentId? }] }]
+  steps         Json
+  autoPublish   Boolean   @default(false)
+  /// False for custom workflows that belong to one process or page.
+  isTemplate    Boolean   @default(true)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  createdById   String?   @db.Uuid
+  updatedById   String?   @db.Uuid
+  deletedAt     DateTime?
+
+  processes Process[]
+  pages     Page[]
+  spaces    Space[]
+}
+
+/// One review round of one version of a process or page.
+model Review {
+  id                String       @id @default(uuid()) @db.Uuid
+  entityType        ContentType
+  entityId          String       @db.Uuid
+  versionNumber     Int
+  status            ReviewStatus @default(IN_PROGRESS)
+  workflowId        String?      @db.Uuid
+  workflowNameEn    String       @default("")
+  workflowNameAr    String       @default("")
+  /// Snapshot of the steps with the users resolved at submission:
+  /// [{ nameEn, nameAr, rule, assigneeIds: [], approvedBySubmitter }]
+  steps             Json
+  autoPublish       Boolean      @default(false)
+  currentStep       Int          @default(0)
+  note              String       @default("")
+  submittedById     String?      @db.Uuid
+  submittedAt       DateTime     @default(now())
+  dueAt             DateTime?
+  completedAt       DateTime?
+  overdueNotifiedAt DateTime?
+
+  tasks        ReviewTask[]
+  publications Publication[]
+
+  @@index([entityType, entityId])
+  @@index([status])
+}
+
+model ReviewTask {
+  id         String           @id @default(uuid()) @db.Uuid
+  reviewId   String           @db.Uuid
+  review     Review           @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+  stepIndex  Int
+  assigneeId String           @db.Uuid
+  status     ReviewTaskStatus @default(PENDING)
+  comment    String?
+  decidedAt  DateTime?
+  createdAt  DateTime         @default(now())
+
+  @@index([assigneeId, status])
+  @@index([reviewId])
+}
+
+/// A published version. Exactly one publication per item is current (partial unique index).
+model Publication {
+  id            String                   @id @default(uuid()) @db.Uuid
+  entityType    ContentType
+  entityId      String                   @db.Uuid
+  versionNumber Int
+  versionLabel  String?
+  /// Snapshot of the published title/description (processes: name and description).
+  code          String?
+  titleEn       String                   @default("")
+  titleAr       String                   @default("")
+  descriptionEn String                   @default("")
+  descriptionAr String                   @default("")
+  /// Plain text for portal search (process description + step names; page text).
+  textEn        String                   @default("")
+  textAr        String                   @default("")
+  /// Generated column (see migration 20261021120000_phase3_governance_portal).
+  searchVector  Unsupported("tsvector")?
+  reviewId      String?                  @db.Uuid
+  review        Review?                  @relation(fields: [reviewId], references: [id], onDelete: SetNull)
+  approvedAt    DateTime?
+  approverIds   String[]                 @db.Uuid
+  publishedAt   DateTime                 @default(now())
+  publishedById String?                  @db.Uuid
+  current       Boolean                  @default(true)
+  /// Set when a newer publication replaced this one or the item was archived.
+  endedAt       DateTime?
+
+  links PublishedLink[]
+
+  @@index([entityType, entityId])
+  @@index([current, publishedAt])
+  @@index([searchVector], type: Gin)
+}
+
+/// Object links of the published BPMN version (step → role / system / document …).
+model PublishedLink {
+  id            String       @id @default(uuid()) @db.Uuid
+  publicationId String       @db.Uuid
+  publication   Publication  @relation(fields: [publicationId], references: [id], onDelete: Cascade)
+  bpmnElementId String
+  repoObjectId  String       @db.Uuid
+  repoObject    RepoObject   @relation(fields: [repoObjectId], references: [id], onDelete: Cascade)
+  relation      LinkRelation
+
+  @@index([publicationId])
+  @@index([repoObjectId])
+}
+
+model Comment {
+  id            String      @id @default(uuid()) @db.Uuid
+  entityType    ContentType
+  entityId      String      @db.Uuid
+  /// Root comment of the thread (replies are one level deep).
+  parentId      String?     @db.Uuid
+  parent        Comment?    @relation("CommentThread", fields: [parentId], references: [id], onDelete: Cascade)
+  replies       Comment[]   @relation("CommentThread")
+  bpmnElementId String?
+  /// Plain text; mentions as @[Name](userId).
+  body          String
+  mentionIds    String[]    @db.Uuid
+  createdById   String?     @db.Uuid
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  editedAt      DateTime?
+  resolvedAt    DateTime?
+  resolvedById  String?     @db.Uuid
+  deletedAt     DateTime?
+
+  @@index([entityType, entityId])
+  @@index([parentId])
+}
+
+model Notification {
+  id          String       @id @default(uuid()) @db.Uuid
+  userId      String       @db.Uuid
+  user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type        String
+  entityType  ContentType?
+  entityId    String?      @db.Uuid
+  params      Json         @default("{}")
+  link        String?
+  actorId     String?      @db.Uuid
+  /// False when the user turned in-app notifications of this type off (email only).
+  inApp       Boolean      @default(true)
+  readAt      DateTime?
+  emailStatus EmailStatus?
+  emailError  String?
+  /// Prevents duplicate reminders (e.g. "REVIEW_DUE:PROCESS:<id>:2026-11-01").
+  dedupeKey   String?
+  createdAt   DateTime     @default(now())
+
+  @@unique([userId, dedupeKey])
+  @@index([userId, readAt])
+  @@index([createdAt])
+}
+
+// ---------- Knowledge Portal (M9) ----------
+
+model Feedback {
+  id          String         @id @default(uuid()) @db.Uuid
+  entityType  ContentType
+  entityId    String         @db.Uuid
+  kind        FeedbackKind
+  message     String
+  status      FeedbackStatus @default(OPEN)
+  reply       String?
+  repliedAt   DateTime?
+  repliedById String?        @db.Uuid
+  /// Owner of the item when the feedback was sent.
+  assigneeId  String?        @db.Uuid
+  createdById String?        @db.Uuid
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+
+  @@index([assigneeId, status])
+  @@index([createdById])
+  @@index([entityType, entityId])
+}
+
+/// Job roles of a user (Roles library), used for "My processes" in the portal.
+model UserJobRole {
+  userId       String     @db.Uuid
+  user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  repoObjectId String     @db.Uuid
+  repoObject   RepoObject @relation(fields: [repoObjectId], references: [id], onDelete: Cascade)
+
+  @@id([userId, repoObjectId])
+  @@index([repoObjectId])
 }

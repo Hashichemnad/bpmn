@@ -34,7 +34,7 @@ import {
   type UserDto,
   type UserStatus,
 } from '@processhub/shared';
-import { useResetPassword, useSaveUser, useUnlockUser, useUsers } from '@/api/hooks';
+import { useObjects, useResetPassword, useSaveUser, useUnlockUser, useUsers } from '@/api/hooks';
 import { useAuth } from '@/auth/AuthProvider';
 import { PageHeader } from '@/components/PageHeader';
 import { BilingualFields } from '@/components/BilingualFields';
@@ -74,6 +74,7 @@ export function UsersPage() {
   const departmentTree = useDepartmentTreeData();
   const [editing, setEditing] = useState<UserDto | 'new' | null>(null);
   const [resetting, setResetting] = useState<UserDto | null>(null);
+  const jobRoles = useObjects({ type: 'ROLE', pageSize: 100, sort: 'nameEn' }, editing !== null);
   const [form] = Form.useForm();
   const [resetForm] = Form.useForm();
 
@@ -94,6 +95,7 @@ export function UsersPage() {
             locale: u.locale,
             roles: u.roles,
             departmentId: u.department?.id ?? null,
+            jobRoleIds: u.jobRoles.map((j) => j.id),
           },
     );
   };
@@ -372,6 +374,19 @@ export function UsersPage() {
               treeData={departmentTree}
               treeDefaultExpandAll
               placeholder={t('none')}
+            />
+          </Form.Item>
+          <Form.Item
+            name="jobRoleIds"
+            label={t('admin:users.jobRoles')}
+            extra={t('admin:users.jobRolesHint')}
+          >
+            <Select
+              mode="multiple"
+              allowClear
+              optionFilterProp="label"
+              loading={jobRoles.isLoading}
+              options={(jobRoles.data?.items ?? []).map((r) => ({ value: r.id, label: loc(r) }))}
             />
           </Form.Item>
           <Form.Item name="locale" label={t('profile.language')}>

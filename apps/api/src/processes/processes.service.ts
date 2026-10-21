@@ -18,6 +18,7 @@ import type { AuthUser, RequestMeta } from '../common/auth-user';
 import { orderBy, pageArgs, paginated } from '../common/pagination';
 import { DomainEvents } from '../events/domain-events';
 import { MoveError, nextSortOrder, planMove } from './process-tree';
+import { assertEditable, markEdited, withdrawReviewsOf } from '../governance/edit-guard';
 
 const summarySelect = {
   id: true,
@@ -246,8 +247,14 @@ export class ProcessesService {
     const nameEn = input.nameEn ?? before.nameEn;
     const nameAr = input.nameAr ?? before.nameAr;
     if (!nameEn && !nameAr) throw badRequest('NAME_REQUIRED');
+    // Name, code and description are published content; owner and department are not.
+    const contentChanged = (
+      ['code', 'nameEn', 'nameAr', 'descriptionEn', 'descriptionAr', 'category'] as const
+    ).some((f) => input[f] !== undefined && input[f] !== before[f]);
+    if (contentChanged) await assertEditable(this.prisma, 'PROCESS', id);
 
     return this.prisma.$transaction(async (tx) => {
+      if (contentChanged) await markEdited(tx, 'PROCESS', id, actor.id);
       const p = await tx.process.update({
         where: { id },
         data: {
@@ -354,6 +361,7 @@ export class ProcessesService {
         where: { id },
         data: { deletedAt: new Date(), updatedById: actor.id },
       });
+      await withdrawReviewsOf(tx, 'PROCESS', [id]);
       await this.audit.log(
         {
           action: 'DELETE',

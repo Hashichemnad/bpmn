@@ -18,6 +18,20 @@ import type {
   ProcessStatus,
   SystemRoleKey,
   UserStatus,
+  ApprovalRule,
+  AssigneeType,
+  ContentStatus,
+  ContentType,
+  EmailStatus,
+  FeedbackKind,
+  FeedbackStatus,
+  InvolvementReason,
+  NotificationType,
+  PortalAccessMode,
+  ReviewDateState,
+  ReviewStatus,
+  ReviewTaskStatus,
+  WorkflowSource,
 } from './constants';
 
 /** API response shapes shared by web and api. Dates are ISO strings on the wire. */
@@ -42,11 +56,20 @@ export interface CurrentUser extends UserRef {
   departmentId: string | null;
 }
 
+export interface JobRoleRef {
+  id: string;
+  code: string | null;
+  nameEn: string;
+  nameAr: string;
+}
+
 export interface UserDto extends UserRef {
   locale: Locale;
   status: UserStatus;
   roles: SystemRoleKey[];
   department: DepartmentRef | null;
+  /** Job roles from the Roles library. */
+  jobRoles: JobRoleRef[];
   lastLoginAt: string | null;
   lockedUntil: string | null;
   createdAt: string;
@@ -209,6 +232,8 @@ export interface SpaceDto {
   department: DepartmentRef | null;
   viewRestricted: boolean;
   editRestricted: boolean;
+  /** Default approval workflow of the space's pages. */
+  workflowId: string | null;
   pageCount: number;
   canEdit: boolean;
   canManage: boolean;
@@ -232,6 +257,7 @@ export interface PageSummaryDto {
   /** Languages with content. */
   hasEn: boolean;
   hasAr: boolean;
+  status: ContentStatus;
   updatedAt: string;
 }
 
@@ -374,6 +400,7 @@ export interface GitSettingsDto {
   syncProcesses: boolean;
   syncPages: boolean;
   trigger: GitSyncTrigger;
+  publishedOnly: boolean;
   /** False when INTEGRATIONS_ENCRYPTION_KEY is not configured (tokens cannot be stored). */
   encryptionAvailable: boolean;
 }
@@ -409,4 +436,434 @@ export interface GitSyncStatusDto {
   running: boolean;
   counts: Record<GitSyncStatus, number>;
   items: GitSyncItemDto[];
+}
+
+// ---------- Governance ----------
+
+/** Title of a governed item, enough to list and link it. */
+export interface ContentRefDto {
+  entityType: ContentType;
+  entityId: string;
+  titleEn: string;
+  titleAr: string;
+  /** Processes. */
+  code?: string;
+  /** Pages: the space, for links. */
+  spaceId?: string;
+}
+
+export interface GovernedItemDto extends ContentRefDto {
+  status: ContentStatus;
+  owner: UserRef | null;
+  nextReviewAt: string | null;
+  reviewState: ReviewDateState;
+  updatedAt: string;
+}
+
+export interface WorkflowAssigneeDto {
+  type: AssigneeType;
+  userId?: string;
+  roleKey?: SystemRoleKey;
+  departmentId?: string | null;
+  /** Display name of the user / department (roles are translated on the client). */
+  label: { nameEn: string; nameAr: string; email?: string } | null;
+}
+
+export interface WorkflowStepDto {
+  nameEn: string;
+  nameAr: string;
+  rule: ApprovalRule;
+  assignees: WorkflowAssigneeDto[];
+}
+
+export interface WorkflowDto {
+  id: string;
+  nameEn: string;
+  nameAr: string;
+  descriptionEn: string;
+  descriptionAr: string;
+  steps: WorkflowStepDto[];
+  autoPublish: boolean;
+  /** False for custom workflows that belong to one item. */
+  isTemplate: boolean;
+  /** Where the template is used as a default (categories, spaces, items). */
+  usage: number;
+  updatedAt: string;
+}
+
+export interface GovernanceSettingsDto {
+  reviewIntervalMonths: number;
+  reminderDays: number;
+  reviewDueDays: number;
+  defaultWorkflowId: string | null;
+  categoryWorkflows: Record<ProcessCategory, string | null>;
+}
+
+export interface PublicationDto {
+  id: string;
+  versionNumber: number;
+  versionLabel: string | null;
+  publishedAt: string;
+  publishedBy: UserRef | null;
+  approvedAt: string | null;
+  approvedBy: UserRef[];
+}
+
+export interface ReviewTaskDto {
+  id: string;
+  stepIndex: number;
+  assignee: UserRef | null;
+  status: ReviewTaskStatus;
+  comment: string | null;
+  decidedAt: string | null;
+}
+
+export interface ReviewStepDto {
+  index: number;
+  nameEn: string;
+  nameAr: string;
+  rule: ApprovalRule;
+  state: 'WAITING' | 'ACTIVE' | 'APPROVED' | 'CHANGES_REQUESTED' | 'REJECTED' | 'CANCELLED';
+  /** The submitter was this step's only approver, so submitting counted as approval. */
+  approvedBySubmitter: boolean;
+  /** Users who will be asked when the step starts. */
+  assignees: UserRef[];
+  tasks: ReviewTaskDto[];
+}
+
+export interface ReviewSummaryDto {
+  id: string;
+  item: ContentRefDto;
+  versionNumber: number;
+  status: ReviewStatus;
+  currentStep: number;
+  stepCount: number;
+  currentStepName: { nameEn: string; nameAr: string } | null;
+  workflowName: { nameEn: string; nameAr: string };
+  note: string;
+  submittedBy: UserRef | null;
+  submittedAt: string;
+  dueAt: string | null;
+  overdue: boolean;
+  completedAt: string | null;
+  /** Set in "My tasks": the current user's open task. */
+  myTaskId?: string | null;
+}
+
+export interface PageContentDto {
+  titleEn: string;
+  titleAr: string;
+  contentEn: string;
+  contentAr: string;
+  dirEn: TextDirection;
+  dirAr: TextDirection;
+}
+
+/** What the reviewer compares: the version under review against the last published version. */
+export type ReviewCompareDto =
+  | {
+      kind: 'PROCESS';
+      baseVersion: number | null;
+      baseLabel: string | null;
+      baseXml: string | null;
+      newXml: string;
+    }
+  | {
+      kind: 'PAGE';
+      baseVersion: number | null;
+      baseLabel: string | null;
+      base: PageContentDto | null;
+      next: PageContentDto;
+    };
+
+export interface ReviewDetailDto extends ReviewSummaryDto {
+  steps: ReviewStepDto[];
+  changeNote: string;
+  compare: ReviewCompareDto;
+  canDecide: boolean;
+  canWithdraw: boolean;
+}
+
+export interface GovernanceInfoDto {
+  entityType: ContentType;
+  entityId: string;
+  status: ContentStatus;
+  /** Last review ended with "changes requested" (the item is back in Draft). */
+  changesRequested: boolean;
+  rejected: boolean;
+  owner: UserRef | null;
+  latestVersion: number | null;
+  latestVersionLabel: string | null;
+  /** Processes: the working model differs from the latest version (save a version first). */
+  hasUnversionedChanges: boolean;
+  activeReview: ReviewSummaryDto | null;
+  lastReview: ReviewSummaryDto | null;
+  publication: PublicationDto | null;
+  nextReviewAt: string | null;
+  reviewState: ReviewDateState;
+  workflow: { source: WorkflowSource; workflow: WorkflowDto | null };
+  can: {
+    submit: boolean;
+    withdraw: boolean;
+    publish: boolean;
+    archive: boolean;
+    restore: boolean;
+    configure: boolean;
+    confirmReview: boolean;
+    comment: boolean;
+  };
+}
+
+export interface PublishedItemDto extends GovernedItemDto {
+  versionNumber: number;
+  versionLabel: string | null;
+  publishedAt: string;
+}
+
+export interface MyTasksDto {
+  reviews: ReviewSummaryDto[];
+  /** Approved items the user can publish. */
+  toPublish: GovernedItemDto[];
+  /** The user's submissions that came back with changes requested or were rejected. */
+  returned: ReviewSummaryDto[];
+  /** Items the user owns whose periodic review is due or overdue. */
+  dueReviews: GovernedItemDto[];
+  mentions: NotificationDto[];
+  feedback: FeedbackDto[];
+}
+
+export interface GovernanceDashboardDto {
+  counts: Record<ContentType, Record<ContentStatus, number>>;
+  inReview: (ReviewSummaryDto & { days: number })[];
+  overdueReviews: GovernedItemDto[];
+  dueSoon: GovernedItemDto[];
+  recentlyPublished: PublishedItemDto[];
+  openFeedback: number;
+}
+
+// ---------- Comments ----------
+export interface CommentDto {
+  id: string;
+  entityType: ContentType;
+  entityId: string;
+  parentId: string | null;
+  bpmnElementId: string | null;
+  /** Label of the BPMN element (current working model). */
+  element: ElementLabelDto | null;
+  /** Plain text with mentions as `@[Name](userId)`; render as text, never as HTML. */
+  body: string;
+  author: UserRef | null;
+  createdAt: string;
+  editedAt: string | null;
+  resolvedAt: string | null;
+  resolvedBy: UserRef | null;
+  canEdit: boolean;
+  canResolve: boolean;
+  replies: CommentDto[];
+}
+
+// ---------- Notifications ----------
+export interface NotificationDto {
+  id: string;
+  type: NotificationType;
+  entityType: ContentType | null;
+  entityId: string | null;
+  /** Values for the translated text (titles, comment preview, …). */
+  params: Record<string, string | number>;
+  /** In-app path to open. */
+  link: string | null;
+  actor: UserRef | null;
+  readAt: string | null;
+  createdAt: string;
+  emailStatus: EmailStatus | null;
+}
+
+export interface NotificationPrefsDto {
+  /** Effective preference for every notification type. */
+  prefs: Record<NotificationType, { inApp: boolean; email: boolean }>;
+  /** Whether email is configured in Settings at all. */
+  emailEnabled: boolean;
+}
+
+export interface EmailSettingsDto {
+  enabled: boolean;
+  host: string;
+  port: number;
+  secure: boolean;
+  username: string;
+  hasPassword: boolean;
+  fromAddress: string;
+  fromName: string;
+  encryptionAvailable: boolean;
+}
+
+// ---------- Feedback ----------
+export interface FeedbackDto {
+  id: string;
+  item: ContentRefDto;
+  kind: FeedbackKind;
+  message: string;
+  status: FeedbackStatus;
+  reply: string | null;
+  repliedAt: string | null;
+  repliedBy: UserRef | null;
+  createdBy: UserRef | null;
+  assignee: UserRef | null;
+  createdAt: string;
+  updatedAt: string;
+  /** The current user may change the status and reply. */
+  canManage: boolean;
+}
+
+// ---------- Knowledge Portal ----------
+export interface PortalQuickLink {
+  titleEn: string;
+  titleAr: string;
+  url: string;
+}
+
+export interface PortalSettingsDto {
+  nameEn: string;
+  nameAr: string;
+  taglineEn: string;
+  taglineAr: string;
+  access: { mode: PortalAccessMode; departmentIds: string[]; roleKeys: SystemRoleKey[] };
+  quickLinks: PortalQuickLink[];
+  featured: { entityType: ContentType; entityId: string }[];
+}
+
+/** Publication details shown on every portal item. */
+export interface PortalMetaDto {
+  versionNumber: number;
+  versionLabel: string | null;
+  publishedAt: string;
+  approvedAt: string | null;
+  approvedBy: UserRef[];
+  owner: UserRef | null;
+  nextReviewAt: string | null;
+  reviewState: ReviewDateState;
+}
+
+export interface PortalItemDto {
+  type: ContentType;
+  id: string;
+  titleEn: string;
+  titleAr: string;
+  descriptionEn: string;
+  descriptionAr: string;
+  code?: string;
+  category?: ProcessCategory;
+  space?: { id: string; key: string; nameEn: string; nameAr: string; icon: SpaceIcon };
+  versionLabel: string | null;
+  versionNumber: number;
+  publishedAt: string;
+}
+
+export interface PortalHomeDto {
+  nameEn: string;
+  nameAr: string;
+  taglineEn: string;
+  taglineAr: string;
+  quickLinks: PortalQuickLink[];
+  featured: PortalItemDto[];
+  recent: PortalItemDto[];
+  counts: { processes: number; pages: number };
+  canManage: boolean;
+}
+
+export interface PortalProcessNodeDto {
+  id: string;
+  code: string;
+  nameEn: string;
+  nameAr: string;
+  category: ProcessCategory;
+  /** Nearest published ancestor. */
+  parentId: string | null;
+  sortOrder: number;
+}
+
+export interface PortalStepObjectDto {
+  id: string;
+  type: ObjectType;
+  code: string | null;
+  nameEn: string;
+  nameAr: string;
+  descriptionEn: string;
+  descriptionAr: string;
+}
+
+export interface PortalStepLinkDto {
+  bpmnElementId: string;
+  relation: LinkRelation;
+  object: PortalStepObjectDto;
+}
+
+export interface PortalProcessDto extends PortalProcessNodeDto {
+  descriptionEn: string;
+  descriptionAr: string;
+  department: DepartmentRef | null;
+  bpmnXml: string | null;
+  meta: PortalMetaDto;
+  ancestors: Pick<PortalProcessNodeDto, 'id' | 'code' | 'nameEn' | 'nameAr'>[];
+  children: PortalProcessNodeDto[];
+  links: PortalStepLinkDto[];
+  /** Published processes that call activities drill down into. */
+  drillTargets: Pick<PortalProcessNodeDto, 'id' | 'code' | 'nameEn' | 'nameAr'>[];
+  relatedPages: PortalItemDto[];
+}
+
+export interface PortalSpaceDto {
+  id: string;
+  key: string;
+  nameEn: string;
+  nameAr: string;
+  descriptionEn: string;
+  descriptionAr: string;
+  icon: SpaceIcon;
+  pageCount: number;
+}
+
+export interface PortalPageNodeDto {
+  id: string;
+  spaceId: string;
+  /** Nearest published ancestor. */
+  parentId: string | null;
+  sortOrder: number;
+  titleEn: string;
+  titleAr: string;
+  hasEn: boolean;
+  hasAr: boolean;
+}
+
+export interface PortalPageDto extends PortalPageNodeDto, PageContentDto {
+  space: PortalSpaceDto;
+  meta: PortalMetaDto;
+  ancestors: PageRefDto[];
+  children: PageRefDto[];
+  relatedProcesses: PortalItemDto[];
+}
+
+export interface PortalSearchHitDto extends PortalItemDto {
+  snippet: string;
+  rank: number;
+}
+
+export interface PortalSearchResultDto {
+  items: PortalSearchHitDto[];
+  total: number;
+  page: number;
+  pageSize: number;
+}
+
+export interface MyPortalItemDto extends PortalItemDto {
+  reasons: InvolvementReason[];
+  /** Steps performed by one of the user's job roles. */
+  steps: { bpmnElementId: string; nameEn: string; nameAr: string }[];
+}
+
+export interface MyPortalDto {
+  processes: MyPortalItemDto[];
+  pages: MyPortalItemDto[];
+  jobRoles: JobRoleRef[];
+  department: DepartmentRef | null;
 }

@@ -19,6 +19,18 @@ import {
   SPACE_ICONS,
   SPACE_PRINCIPAL_TYPES,
   TEXT_DIRECTIONS,
+  APPROVAL_RULES,
+  COMMENT_MAX_CHARS,
+  CONTENT_TYPES,
+  FEEDBACK_KINDS,
+  FEEDBACK_STATUSES,
+  MAX_WORKFLOW_STEPS,
+  NOTIFICATION_TYPES,
+  PORTAL_ACCESS_MODES,
+  PORTAL_MAX_FEATURED,
+  PORTAL_MAX_QUICK_LINKS,
+  PORTAL_SEARCH_TYPES,
+  REVIEW_DECISIONS,
 } from './constants';
 
 const trimmed = (max: number) => z.string().trim().max(max);
@@ -94,6 +106,7 @@ export const createUserSchema = z
     locale: localeSchema.default('en'),
     departmentId: uuidSchema.nullable().optional(),
     roles: z.array(z.enum(SYSTEM_ROLE_KEYS)).min(1),
+    jobRoleIds: z.array(uuidSchema).max(20).optional(),
   })
   .superRefine(requireOneName);
 export type CreateUserInput = z.infer<typeof createUserSchema>;
@@ -106,6 +119,8 @@ export const updateUserSchema = z.object({
   departmentId: uuidSchema.nullable().optional(),
   status: z.enum(USER_STATUSES).optional(),
   roles: z.array(z.enum(SYSTEM_ROLE_KEYS)).min(1).optional(),
+  /** Job roles from the Roles library ("My processes" in the portal). */
+  jobRoleIds: z.array(uuidSchema).max(20).optional(),
 });
 export type UpdateUserInput = z.infer<typeof updateUserSchema>;
 
@@ -465,6 +480,8 @@ export const gitSettingsSchema = z
     syncProcesses: z.boolean().default(true),
     syncPages: z.boolean().default(true),
     trigger: z.enum(GIT_SYNC_TRIGGERS).default('ON_VERSION'),
+    /** Export only the published version of each process/page (nothing for unpublished items). */
+    publishedOnly: z.boolean().default(false),
   })
   .superRefine((v, ctx) => {
     if (v.enabled && !v.repository) {
@@ -480,3 +497,249 @@ export const gitSyncNowSchema = z.object({
   scope: z.enum(['all', 'processes', 'pages']).default('all'),
 });
 export type GitSyncNowInput = z.infer<typeof gitSyncNowSchema>;
+
+// ---------- Governance ----------
+export const contentTypeSchema = z.enum(CONTENT_TYPES);
+
+export const workflowAssigneeSchema = z.discriminatedUnion('type', [
+  z.object({ type: z.literal('USER'), userId: uuidSchema }),
+  z.object({
+    type: z.literal('ROLE'),
+    roleKey: z.enum(SYSTEM_ROLE_KEYS),
+    /** Only users of this department (null = any department). */
+    departmentId: uuidSchema.nullable().optional(),
+  }),
+  z.object({ type: z.literal('OWNER') }),
+]);
+export type WorkflowAssigneeInput = z.infer<typeof workflowAssigneeSchema>;
+
+export const workflowStepSchema = z
+  .object({
+    nameEn: optionalText(200),
+    nameAr: optionalText(200),
+    rule: z.enum(APPROVAL_RULES).default('ANY'),
+    assignees: z.array(workflowAssigneeSchema).min(1).max(20),
+  })
+  .superRefine(requireOneName);
+export type WorkflowStepInput = z.infer<typeof workflowStepSchema>;
+
+export const workflowSchema = z
+  .object({
+    ...bilingualFields,
+    steps: z.array(workflowStepSchema).min(1).max(MAX_WORKFLOW_STEPS),
+    /** Publish automatically when the last step approves. */
+    autoPublish: z.boolean().default(false),
+  })
+  .superRefine(requireOneName);
+export type WorkflowInput = z.infer<typeof workflowSchema>;
+
+export const governanceSettingsSchema = z.object({
+  /** Months between publication and the next periodic review. */
+  reviewIntervalMonths: z.number().int().min(1).max(60),
+  /** Reminder this many days before the next review date. */
+  reminderDays: z.number().int().min(0).max(90),
+  /** Reviewers have this many days to decide before the review is overdue. */
+  reviewDueDays: z.number().int().min(1).max(60),
+  defaultWorkflowId: uuidSchema.nullable(),
+  categoryWorkflows: z.object({
+    MANAGEMENT: uuidSchema.nullable(),
+    CORE: uuidSchema.nullable(),
+    SUPPORT: uuidSchema.nullable(),
+  }),
+});
+export type GovernanceSettingsInput = z.infer<typeof governanceSettingsSchema>;
+
+/** Per-item governance settings (any field may be omitted). */
+export const itemGovernanceSchema = z.object({
+  /** Workflow template for this item only (null = inherit from category / space / default). */
+  workflowId: uuidSchema.nullable().optional(),
+  /** Custom steps for this item only; replaces `workflowId`. Send null to drop them. */
+  customWorkflow: workflowSchema.nullable().optional(),
+  nextReviewAt: z.coerce.date().nullable().optional(),
+  /** Pages only (processes keep their owner on the process itself). */
+  ownerId: uuidSchema.nullable().optional(),
+});
+export type ItemGovernanceInput = z.infer<typeof itemGovernanceSchema>;
+
+export const submitReviewSchema = z.object({
+  note: trimmed(1000).optional(),
+  dueAt: z.coerce.date().optional(),
+});
+export type SubmitReviewInput = z.infer<typeof submitReviewSchema>;
+
+export const reviewDecisionSchema = z
+  .object({
+    decision: z.enum(REVIEW_DECISIONS),
+    comment: trimmed(2000).optional(),
+  })
+  .superRefine((v, ctx) => {
+    if (v.decision !== 'APPROVE' && !v.comment) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['comment'], message: 'COMMENT_REQUIRED' });
+    }
+  });
+export type ReviewDecisionInput = z.infer<typeof reviewDecisionSchema>;
+
+export const publishSchema = z.object({
+  /** Optional label for the published version, e.g. "v2.0". */
+  versionLabel: trimmed(100).optional(),
+});
+export type PublishInput = z.infer<typeof publishSchema>;
+
+export const archiveSchema = z.object({ reason: trimmed(1000).optional() });
+export type ArchiveInput = z.infer<typeof archiveSchema>;
+
+export const reviewListQuerySchema = paginationQuerySchema.extend({
+  status: z
+    .enum(['IN_PROGRESS', 'APPROVED', 'CHANGES_REQUESTED', 'REJECTED', 'WITHDRAWN'])
+    .optional(),
+  entityType: contentTypeSchema.optional(),
+  entityId: uuidSchema.optional(),
+});
+export type ReviewListQuery = z.infer<typeof reviewListQuerySchema>;
+
+// ---------- Comments ----------
+export const createCommentSchema = z.object({
+  body: z.string().trim().min(1).max(COMMENT_MAX_CHARS),
+  /** Reply to a thread (the root comment). */
+  parentId: uuidSchema.nullable().optional(),
+  /** Attach the thread to a BPMN element (processes only). */
+  bpmnElementId: z
+    .string()
+    .trim()
+    .max(255)
+    .regex(/^[A-Za-z_][\w.-]*$/, 'INVALID_ELEMENT_ID')
+    .nullable()
+    .optional(),
+});
+export type CreateCommentInput = z.infer<typeof createCommentSchema>;
+
+export const updateCommentSchema = z.object({
+  body: z.string().trim().min(1).max(COMMENT_MAX_CHARS),
+});
+export type UpdateCommentInput = z.infer<typeof updateCommentSchema>;
+
+// ---------- Notifications ----------
+export const notificationListQuerySchema = z.object({
+  unread: z
+    .enum(['true', 'false'])
+    .optional()
+    .transform((v) => v === 'true'),
+  page: z.coerce.number().int().min(1).default(1),
+  pageSize: z.coerce.number().int().min(1).max(100).default(20),
+});
+export type NotificationListQuery = z.infer<typeof notificationListQuerySchema>;
+
+export const notificationPrefSchema = z.object({ inApp: z.boolean(), email: z.boolean() });
+export const notificationPrefsSchema = z.object({
+  prefs: z.record(z.enum(NOTIFICATION_TYPES), notificationPrefSchema),
+});
+export type NotificationPrefsInput = z.infer<typeof notificationPrefsSchema>;
+
+export const emailSettingsSchema = z
+  .object({
+    enabled: z.boolean(),
+    host: trimmed(255).default(''),
+    port: z.number().int().min(1).max(65535).default(587),
+    /** TLS from the start (port 465); otherwise STARTTLS is used when offered. */
+    secure: z.boolean().default(false),
+    username: trimmed(255).default(''),
+    /** Write-only. Omit or send an empty string to keep the stored password. */
+    password: z.string().max(500).optional(),
+    clearPassword: z.boolean().optional(),
+    fromAddress: z.union([z.string().trim().email().max(254), z.literal('')]).default(''),
+    fromName: trimmed(200).default(''),
+  })
+  .superRefine((v, ctx) => {
+    if (v.enabled && !v.host) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['host'], message: 'REQUIRED' });
+    }
+    if (v.enabled && !v.fromAddress) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['fromAddress'], message: 'REQUIRED' });
+    }
+  });
+export type EmailSettingsInput = z.infer<typeof emailSettingsSchema>;
+
+export const testEmailSchema = z.object({ to: z.string().trim().toLowerCase().email().max(254) });
+export type TestEmailInput = z.infer<typeof testEmailSchema>;
+
+// ---------- Knowledge Portal ----------
+/** Quick links: http(s) URLs or in-app paths. */
+export const portalLinkUrlSchema = z
+  .string()
+  .trim()
+  .max(500)
+  .refine(
+    (v) => /^https?:\/\/[^\s]+$/i.test(v) || (/^\/[^\s]*$/.test(v) && !v.startsWith('//')),
+    'INVALID_URL',
+  );
+
+export const portalSettingsSchema = z.object({
+  nameEn: trimmed(200).default(''),
+  nameAr: trimmed(200).default(''),
+  taglineEn: trimmed(300).default(''),
+  taglineAr: trimmed(300).default(''),
+  access: z.object({
+    mode: z.enum(PORTAL_ACCESS_MODES),
+    departmentIds: z.array(uuidSchema).max(200).default([]),
+    roleKeys: z.array(z.enum(SYSTEM_ROLE_KEYS)).default([]),
+  }),
+  quickLinks: z
+    .array(
+      z
+        .object({
+          titleEn: optionalText(100),
+          titleAr: optionalText(100),
+          url: portalLinkUrlSchema,
+        })
+        .superRefine((v, ctx) => {
+          if (!v.titleEn && !v.titleAr) {
+            ctx.addIssue({
+              code: z.ZodIssueCode.custom,
+              path: ['titleEn'],
+              message: 'TITLE_REQUIRED',
+            });
+          }
+        }),
+    )
+    .max(PORTAL_MAX_QUICK_LINKS)
+    .default([]),
+  featured: z
+    .array(z.object({ entityType: contentTypeSchema, entityId: uuidSchema }))
+    .max(PORTAL_MAX_FEATURED)
+    .default([]),
+});
+export type PortalSettingsInput = z.infer<typeof portalSettingsSchema>;
+
+export const portalSearchQuerySchema = z.object({
+  q: trimmed(200).min(1),
+  type: z.enum(PORTAL_SEARCH_TYPES).default('all'),
+  category: z.enum(PROCESS_CATEGORIES).optional(),
+  spaceId: uuidSchema.optional(),
+  page: z.coerce.number().int().min(1).default(1),
+  pageSize: z.coerce.number().int().min(1).max(50).default(20),
+});
+export type PortalSearchQuery = z.infer<typeof portalSearchQuerySchema>;
+
+export const createFeedbackSchema = z.object({
+  entityType: contentTypeSchema,
+  entityId: uuidSchema,
+  kind: z.enum(FEEDBACK_KINDS),
+  message: z.string().trim().min(1).max(3000),
+});
+export type CreateFeedbackInput = z.infer<typeof createFeedbackSchema>;
+
+export const updateFeedbackSchema = z.object({
+  status: z.enum(FEEDBACK_STATUSES).optional(),
+  reply: trimmed(3000).optional(),
+});
+export type UpdateFeedbackInput = z.infer<typeof updateFeedbackSchema>;
+
+export const feedbackListQuerySchema = paginationQuerySchema.extend({
+  status: z.enum(FEEDBACK_STATUSES).optional(),
+  /** mine = sent by me; assigned = routed to me; all = every item (governance managers). */
+  scope: z.enum(['mine', 'assigned', 'all']).default('mine'),
+});
+export type FeedbackListQuery = z.infer<typeof feedbackListQuerySchema>;
+
+export const userDirectoryQuerySchema = z.object({ q: trimmed(100).default('') });
+export type UserDirectoryQuery = z.infer<typeof userDirectoryQuerySchema>;

@@ -30,14 +30,16 @@ with no per-user licensing. Target: 50–500 users on a single server.
 | M13 | Process Mining | Import event logs (CSV), discover flows, variants, bottlenecks |
 | M14 | Workflow Execution | Run approved processes as task flows (forms, assignments, approvals) |
 | M15 | Migration Tools | Import existing documentation, incl. from Salesforce |
+| M16 | AI Assistant | Generate a BPMN process from a text description; generate SOP/documentation from a process (and the reverse); translate EN↔AR; suggest missing steps, risks and controls and explain validation warnings; summarise processes and version changes; Q&A assistant in the Knowledge Portal answering from published content with links. Provider-agnostic (Anthropic Claude first), enabled and configured in Settings → AI with an encrypted API key, per-role access, per-user usage limits and full audit logging |
 
 ## 3. Build Phases
 
 | Phase | Scope | Status |
 |---|---|---|
 | 1 | Foundation: M1 (core), M2, M3, M4 (roles & systems) | ✅ Done (merged into `main`) |
-| 2 | M5 Wiki, M6 Version control, M7 Git integration | ✅ Done (branch `phase-2-docs-versions-git`, awaiting review) |
-| 3 | M8 Governance, M9 Knowledge Portal | ⬜ |
+| 2 | M5 Wiki, M6 Version control, M7 Git integration | ✅ Done (merged into `main`) |
+| 3 | M8 Governance, M9 Knowledge Portal | ✅ Done (branch `phase-3-governance-portal`, awaiting review) |
+| AI | M16 AI Assistant (after Phase 3) | ⬜ |
 | 4 | M10 GRC, M11 EA, M12 KPIs + Salesforce | ⬜ |
 | 5 | M13 Mining, M14 Execution, simulation | ⬜ |
 | 6 | Hardening: SSO, performance, security review fixes, deployment guide | ⬜ |
@@ -130,6 +132,16 @@ Phase 2 additions (see `apps/api/prisma/schema.prisma`, DECISIONS D-018 – D-02
 - `PageVersion` (pageId, versionNumber, content snapshot, changeNote, label, restoredFrom), `PageDraft` (per user)
 - `PageTemplate`, `PageLink` (page ↔ process / repository object), `Attachment`
 - `ProcessVersion` + `label`, `restoredFrom`; `GitSyncItem` (sync state per process / page)
+
+Phase 3 additions (DECISIONS D-028 – D-037):
+
+- `Process` / `Page` + `status` (DRAFT | IN_REVIEW | APPROVED | PUBLISHED | ARCHIVED), `workflowId`, `nextReviewAt`; `Page.ownerId`; `Space.workflowId`
+- `Workflow` (bilingual name, steps JSON: assignees USER / ROLE (+ department) / OWNER, rule ANY | ALL, autoPublish)
+- `Review` (item, versionNumber, workflow name + steps snapshot, currentStep, status, note, due date), `ReviewTask` (per assignee decision + comment)
+- `Publication` (item, version, label, published title/description/text, approverIds, approvedAt, publisher, `current`, searchVector), `PublishedLink` (step ↔ object links as published)
+- `Comment` (item, parentId, bpmnElementId, body with `@[Name](id)` mentions, resolvedAt)
+- `Notification` (userId, type, params, link, readAt, dedupeKey); `User.notificationPrefs`
+- `Feedback` (item, author, kind, message, status OPEN | IN_PROGRESS | DONE, reply); `UserJobRole` (user ↔ ROLE object)
 
 ## 10. Definition of Done (every phase)
 

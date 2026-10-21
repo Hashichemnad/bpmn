@@ -45,5 +45,39 @@ describe('Seed (e2e)', () => {
     const hits = await ctx.prisma.$queryRaw<{ n: bigint }[]>`
       SELECT count(*) AS n FROM "Page" WHERE "searchVector" @@ (to_tsquery('arabic', 'الميزانية:*') || to_tsquery('english', 'budget:*'))`;
     expect(Number(hits[0].n)).toBeGreaterThan(0);
+
+    // Phase 3: demo users, workflows and every lifecycle state.
+    const demo = await ctx.prisma.user.findMany({
+      where: { email: { endsWith: '@processhub.local' } },
+      include: { roles: { include: { role: true } } },
+    });
+    expect(demo.map((u) => [u.email, u.roles[0].role.key]).sort()).toEqual([
+      ['modeler@processhub.local', 'MODELER'],
+      ['owner@processhub.local', 'PROCESS_OWNER'],
+      ['reviewer@processhub.local', 'REVIEWER'],
+      ['viewer@processhub.local', 'VIEWER'],
+    ]);
+    expect(await ctx.prisma.workflow.count()).toBe(2);
+    const statuses = (await ctx.prisma.process.findMany()).map((p) => p.status);
+    for (const s of ['DRAFT', 'IN_REVIEW', 'APPROVED', 'PUBLISHED', 'ARCHIVED'] as const) {
+      expect(statuses).toContain(s);
+    }
+    expect((await ctx.prisma.page.findMany()).map((p) => p.status)).toEqual(
+      expect.arrayContaining(['DRAFT', 'IN_REVIEW', 'APPROVED', 'PUBLISHED']),
+    );
+    const reqPub = await ctx.prisma.publication.findFirstOrThrow({
+      where: { code: 'S.01.01', current: true },
+      include: { links: true },
+    });
+    expect(reqPub.versionNumber).toBe(1);
+    expect(reqPub.links.length).toBeGreaterThan(0);
+    expect(await ctx.prisma.review.count({ where: { status: 'CHANGES_REQUESTED' } })).toBe(1);
+    expect(await ctx.prisma.reviewTask.count({ where: { status: 'PENDING' } })).toBeGreaterThan(1);
+    const overdue = await ctx.prisma.process.findFirstOrThrow({ where: { code: 'M.01' } });
+    expect(overdue.nextReviewAt!.getTime()).toBeLessThan(Date.now());
+    expect(await ctx.prisma.comment.count()).toBeGreaterThan(2);
+    expect(await ctx.prisma.notification.count()).toBeGreaterThan(5);
+    expect(await ctx.prisma.feedback.count()).toBe(2);
+    expect(await ctx.prisma.setting.findUnique({ where: { key: 'portal' } })).not.toBeNull();
   });
 });

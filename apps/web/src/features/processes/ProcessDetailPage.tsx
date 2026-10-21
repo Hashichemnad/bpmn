@@ -35,8 +35,11 @@ import { ProcessFormModal } from './ProcessFormModal';
 import { BpmnEditor } from '@/features/modeler/BpmnEditor';
 import { RelatedDocsCard } from '@/features/docs/RelatedDocsCard';
 import { useRelatedPages } from '@/api/docs';
+import { useComments, useGovernance } from '@/api/governance';
+import { GovernancePanel } from '@/features/governance/GovernancePanel';
+import { CommentsPanel } from '@/features/comments/CommentsPanel';
 
-type Tab = 'overview' | 'subprocesses' | 'objects' | 'docs' | 'model';
+type Tab = 'overview' | 'subprocesses' | 'objects' | 'docs' | 'comments' | 'model';
 
 export function ProcessDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -52,6 +55,8 @@ export function ProcessDetailPage() {
   const links = useLinks(id!);
   const remove = useDeleteProcess();
   const related = useRelatedPages('processes', id, can(PERMISSIONS.DOCS_READ));
+  const governance = useGovernance('PROCESS', id);
+  const comments = useComments('PROCESS', id!);
   const [modalState, setModalState] = useState<'edit' | 'sub' | null>(null);
   const tab = (params.get('tab') as Tab) || 'overview';
 
@@ -142,7 +147,8 @@ export function ProcessDetailPage() {
         </Card>
       </Col>
       <Col xs={24} xl={8}>
-        <Card title={t('processes:details')}>
+        <GovernancePanel type="PROCESS" id={p.id} />
+        <Card title={t('processes:details')} style={{ marginBlockStart: 24 }}>
           <Descriptions column={1} size="small">
             <Descriptions.Item label={t('fields.code')}>
               <span dir="ltr">{p.code}</span>
@@ -268,7 +274,11 @@ export function ProcessDetailPage() {
         subtitle={
           <Space size={6} style={{ marginTop: 4 }}>
             <CategoryTag category={p.category} />
-            <StatusTag status={p.status} />
+            <StatusTag
+              status={p.status}
+              changesRequested={governance.data?.changesRequested}
+              rejected={governance.data?.rejected}
+            />
           </Space>
         }
         extra={
@@ -313,6 +323,15 @@ export function ProcessDetailPage() {
                 },
               ]
             : []),
+          {
+            key: 'comments',
+            label: `${t('processes:tabs.comments')} (${(comments.data ?? []).filter((c) => !c.resolvedAt).length})`,
+            children: (
+              <Card>
+                <CommentsPanel type="PROCESS" id={p.id} onOpenElement={openModelAt} />
+              </Card>
+            ),
+          },
           {
             key: 'model',
             label: t('processes:tabs.model'),

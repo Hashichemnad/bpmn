@@ -29,6 +29,8 @@ export interface StoredGitSettings {
   syncProcesses: boolean;
   syncPages: boolean;
   trigger: GitSyncTrigger;
+  /** Export only published versions (governance). */
+  publishedOnly: boolean;
 }
 
 const DEFAULTS: StoredGitSettings = {
@@ -42,6 +44,7 @@ const DEFAULTS: StoredGitSettings = {
   syncProcesses: true,
   syncPages: true,
   trigger: 'ON_VERSION',
+  publishedOnly: false,
 };
 
 /** Removes the token itself from error messages, whatever the provider echoed back. */
@@ -83,6 +86,7 @@ export class GitSettingsService {
       syncProcesses: s.syncProcesses,
       syncPages: s.syncPages,
       trigger: s.trigger,
+      publishedOnly: s.publishedOnly,
       encryptionAvailable: !!this.box,
     };
   }
@@ -112,6 +116,7 @@ export class GitSettingsService {
       syncProcesses: input.syncProcesses,
       syncPages: input.syncPages,
       trigger: input.trigger,
+      publishedOnly: input.publishedOnly,
     };
   }
 

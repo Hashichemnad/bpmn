@@ -30,7 +30,9 @@
     "deactivate": "Deactivate",
     "activateTitle": "Activate {{name}}?",
     "deactivateTitle": "Deactivate {{name}}?",
-    "deactivateText": "The user will be signed out immediately and will not be able to sign in."
+    "deactivateText": "The user will be signed out immediately and will not be able to sign in.",
+    "jobRoles": "Job roles",
+    "jobRolesHint": "Roles from the Roles library. The Knowledge Portal shows the user the processes in which these roles perform steps (“My processes”)."
   },
   "departments": {
     "title": "Departments",
@@ -73,7 +75,18 @@
       "RESTORE": "Restored",
       "LABEL": "Version labelled",
       "PURGE": "Deleted permanently",
-      "SYNC": "Synchronised"
+      "SYNC": "Synchronised",
+      "SUBMIT": "Submitted for review",
+      "WITHDRAW": "Review withdrawn",
+      "APPROVE": "Approved",
+      "REQUEST_CHANGES": "Changes requested",
+      "REJECT": "Rejected",
+      "ARCHIVE": "Archived",
+      "UNARCHIVE": "Restored from archive",
+      "REVIEW_CONFIRMED": "Review confirmed",
+      "RESOLVE": "Resolved",
+      "REOPEN": "Reopened",
+      "EMAIL_TEST": "Test email"
     },
     "entities": {
       "User": "User",
@@ -91,7 +104,11 @@
       "PageTemplate": "Page template",
       "PageLink": "Page link",
       "Attachment": "Attachment",
-      "Integration": "Integration"
+      "Integration": "Integration",
+      "Workflow": "Workflow",
+      "Review": "Review",
+      "Comment": "Comment",
+      "Feedback": "Feedback"
     }
   },
   "settings": {
@@ -169,6 +186,27 @@
     "entity": {
       "PROCESS": "Process",
       "PAGE": "Page"
-    }
+    },
+    "publishedOnly": "Published versions only",
+    "publishedOnlyHint": "Export only the officially published version of each process and page. Unpublished items are not exported (and are removed if they were exported before).",
+    "keyBackupTitle": "Back up the encryption key",
+    "keyBackup": "Access tokens and the SMTP password are encrypted with INTEGRATIONS_ENCRYPTION_KEY (with Docker Compose it is generated in the api-data volume). Back it up together with the database: if it is lost or changes, stored tokens and passwords must be entered again."
+  },
+  "email": {
+    "title": "Email (SMTP)",
+    "intro": "Notification emails are sent through this SMTP server in each recipient's language. Users choose which notifications they receive by email in their profile.",
+    "enable": "Send notification emails",
+    "host": "SMTP server",
+    "port": "Port",
+    "secure": "TLS (465)",
+    "username": "User name",
+    "password": "Password",
+    "passwordStored": "A password is stored (encrypted). Leave empty to keep it.",
+    "fromAddress": "Sender address",
+    "fromName": "Sender name",
+    "testTo": "Send a test to…",
+    "sendTest": "Send test email",
+    "testSent": "Test email sent to {{to}}",
+    "testFailed": "Sending failed: {{error}}"
   }
 }

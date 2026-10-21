@@ -1,0 +1,142 @@
+{
+  "name": "Knowledge Portal",
+  "tagline": "Official processes, procedures and policies — always the approved version.",
+  "workspace": "Workspace",
+  "switchToWorkspace": "Switch to the workspace",
+  "searchPlaceholder": "Search processes and documents",
+  "searchHero": "What are you looking for? e.g. purchase request, leave, password",
+  "footer": "Knowledge Portal — published, approved content only",
+  "downloadPdf": "Download PDF",
+  "updatedOn": "updated {{date}}",
+  "house": "Process house",
+  "featured": "Featured",
+  "recent": "Recently updated",
+  "nothingPublished": "Nothing has been published yet.",
+  "noProcesses": "No published processes yet.",
+  "openProcess": "Open process",
+  "diagramNotPublished": "This process diagram is not published yet.",
+  "subProcessCount_one": "{{count}} sub-process",
+  "subProcessCount_other": "{{count}} sub-processes",
+  "counts": {
+    "processes": "Published processes",
+    "pages": "Published documents"
+  },
+  "nav": {
+    "home": "Home",
+    "processes": "Processes",
+    "docs": "Documentation",
+    "my": "My processes",
+    "search": "Search",
+    "feedback": "My feedback",
+    "settings": "Portal settings"
+  },
+  "meta": {
+    "approved": "Approved",
+    "published": "Published",
+    "nextReview": "Next review"
+  },
+  "processes": {
+    "title": "Processes",
+    "subtitle": "How the organisation works, from management to support processes.",
+    "all": "All processes",
+    "filter": "Filter by name or code"
+  },
+  "process": {
+    "diagram": "Process diagram",
+    "clickHint": "Click a step for details",
+    "clickStep": "Click a step in the diagram to see who performs it, the IT systems and documents involved and its description.",
+    "noStepDescription": "No description for this step.",
+    "noLinks": "No roles, systems or documents linked to this step.",
+    "noDiagram": "No diagram has been published for this process.",
+    "openSub": "Open {{name}}",
+    "drillDown": "Open the sub-process",
+    "subProcesses": "Sub-processes",
+    "noSubProcesses": "No published sub-processes.",
+    "documentation": "Documentation",
+    "noDocumentation": "No published documentation is linked.",
+    "linked": {
+      "ROLE": "Performed by",
+      "SYSTEM": "IT systems",
+      "DOCUMENT": "Documents",
+      "RISK": "Risks",
+      "CONTROL": "Controls",
+      "KPI": "KPIs"
+    }
+  },
+  "docs": {
+    "title": "Documentation",
+    "subtitle": "Policies, procedures, work instructions and guides.",
+    "empty": "No published documentation yet.",
+    "pageCount_one": "{{count}} published page",
+    "pageCount_other": "{{count}} published pages",
+    "pages": "Pages",
+    "choosePage": "Choose a page in the list.",
+    "toc": "On this page",
+    "relatedProcesses": "Related processes",
+    "noRelated": "No related published processes."
+  },
+  "search": {
+    "title": "Search",
+    "all": "All",
+    "category": "Process category",
+    "space": "Documentation space",
+    "prompt": "Type a word or a process code, in English or Arabic.",
+    "count_one": "{{count}} result",
+    "count_other": "{{count}} results",
+    "none": "No published content matches “{{q}}”."
+  },
+  "my": {
+    "title": "My processes",
+    "yourSteps": "Your steps",
+    "noProfile": "Your department and job roles are not set. Ask an administrator to add them to see the processes you take part in.",
+    "noProcesses": "No published processes involve your department or job roles.",
+    "noPages": "No related published documentation.",
+    "reason": {
+      "OWNER": "You own it",
+      "DEPARTMENT": "Your department",
+      "ROLE": "Your role"
+    }
+  },
+  "feedback": {
+    "button": "Suggest an improvement",
+    "title": "Suggest an improvement or report outdated content",
+    "intro": "Your message goes to the owner of this content. You can follow its status under “My feedback”.",
+    "send": "Send",
+    "sent": "Thank you — your feedback was sent to the owner.",
+    "yours": "Your earlier feedback on this item",
+    "myTitle": "My feedback",
+    "mySubtitle": "Suggestions and reports you sent, with their status and the owner's reply.",
+    "none": "You have not sent any feedback yet.",
+    "replyFrom": "Reply from {{name}} · {{date}}"
+  },
+  "print": {
+    "steps": "Process steps",
+    "step": "Step",
+    "description": "Description",
+    "footer": "Printed from the Knowledge Portal on {{date}}. Only the online version is authoritative.",
+    "pageMeta": "Approved {{approved}} · Owner {{owner}} · Next review {{next}}"
+  },
+  "settings": {
+    "title": "Knowledge Portal",
+    "subtitle": "Name and tagline, featured content, quick links and who may use the portal.",
+    "branding": "Name and tagline",
+    "nameEn": "Portal name (English)",
+    "nameAr": "Portal name (Arabic)",
+    "taglineEn": "Tagline (English)",
+    "taglineAr": "Tagline (Arabic)",
+    "logoHint": "The portal uses the organisation logo from Settings.",
+    "access": "Access",
+    "accessAll": "All users",
+    "accessRestricted": "Only selected departments and roles",
+    "departments": "Departments",
+    "roles": "Roles",
+    "accessHint": "Portal administrators always have access. Restricted spaces stay visible only to their members.",
+    "featured": "Featured on the home page",
+    "featuredHint": "Up to {{max}} published processes or pages.",
+    "quickLinks": "Quick links",
+    "linkTitleEn": "Title (English)",
+    "linkTitleAr": "Title (Arabic)",
+    "urlInvalid": "Use an https:// address or an in-app path starting with /",
+    "addLink": "Add link"
+  }
+}

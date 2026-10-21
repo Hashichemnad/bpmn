@@ -11,6 +11,7 @@ const page = (id: string, parentId: string | null, sortOrder: number): PageSumma
   titleAr: '',
   hasEn: true,
   hasAr: false,
+  status: 'DRAFT',
   updatedAt: '',
 });
 const pages = [page('a', null, 0), page('b', null, 1), page('c', null, 2), page('a1', 'a', 0)];

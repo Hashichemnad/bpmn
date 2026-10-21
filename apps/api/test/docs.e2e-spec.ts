@@ -26,7 +26,7 @@ describe('Documentation wiki (e2e)', () => {
     await resetDb(ctx.prisma);
     await createUser(ctx.prisma, 'admin@test.local', ['ADMIN']);
     await createUser(ctx.prisma, 'modeler@test.local', ['MODELER']);
-    await createUser(ctx.prisma, 'viewer@test.local', ['VIEWER']);
+    await createUser(ctx.prisma, 'viewer@test.local', ['REVIEWER']);
     admin = await loggedIn(ctx.app, 'admin@test.local');
     modeler = await loggedIn(ctx.app, 'modeler@test.local');
     viewer = await loggedIn(ctx.app, 'viewer@test.local');
@@ -82,7 +82,7 @@ describe('Documentation wiki (e2e)', () => {
           editRestricted: true,
           grants: [
             { principalType: 'DEPARTMENT', principalId: dept.id, access: 'EDIT' },
-            { principalType: 'ROLE', principalId: 'VIEWER', access: 'VIEW' },
+            { principalType: 'ROLE', principalId: 'REVIEWER', access: 'VIEW' },
           ],
         })
         .expect(200);
@@ -95,7 +95,7 @@ describe('Documentation wiki (e2e)', () => {
           }),
           expect.objectContaining({
             principalType: 'ROLE',
-            label: expect.objectContaining({ nameEn: 'Viewer' }),
+            label: expect.objectContaining({ nameEn: 'Reviewer' }),
           }),
         ]),
       );
@@ -104,7 +104,7 @@ describe('Documentation wiki (e2e)', () => {
       expect((await modeler.get('/spaces')).body).toHaveLength(0);
       await modeler.get(`/spaces/${spaceId}`).expect(404);
       await modeler.get(`/pages/${page.id}`).expect(404);
-      // viewer: view grant, read-only
+      // reviewer role: view grant, read-only
       await viewer.get(`/pages/${page.id}`).expect(200);
       await save(viewer, page.id, {}).expect(403);
       // QA department: edit grant

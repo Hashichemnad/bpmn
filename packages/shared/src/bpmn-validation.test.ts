@@ -85,8 +85,14 @@ describe('extractBpmnLabels', () => {
   it('reads bilingual labels and decodes entities', () => {
     const xml = `<bpmn:definitions><bpmn:task id="T1" name="R&amp;D" ph:nameEn="R&amp;D review" ph:nameAr="مراجعة" /><bpmn:task id="T2" name="Plain" /><bpmn:process id="P1"></bpmn:process></bpmn:definitions>`;
     const labels = extractBpmnLabels(xml);
-    expect(labels.get('T1')).toEqual({ name: 'R&D', nameEn: 'R&D review', nameAr: 'مراجعة' });
-    expect(labels.get('T2')).toEqual({ name: 'Plain', nameEn: '', nameAr: '' });
+    expect(labels.get('T1')).toEqual({
+      name: 'R&D',
+      nameEn: 'R&D review',
+      nameAr: 'مراجعة',
+      descriptionEn: '',
+      descriptionAr: '',
+    });
+    expect(labels.get('T2')).toMatchObject({ name: 'Plain', nameEn: '', nameAr: '' });
     expect(labels.has('P1')).toBe(false);
   });
 });

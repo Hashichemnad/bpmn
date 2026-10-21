@@ -15,6 +15,7 @@ import {
 import { hashPassword } from '../src/auth/argon';
 import { onboardingXml, requisitionXml } from './demo-diagrams';
 import { ensureSystemTemplates, seedDocsDemo } from './seed-docs';
+import { ensureDemoEmailSettings, seedGovernanceDemo } from './seed-governance';
 
 const prisma = new PrismaClient();
 
@@ -413,6 +414,8 @@ export async function main() {
   if (process.env.SEED_DEMO_DATA === 'true') {
     await seedDemoData(adminId);
     await seedDocsDemo(prisma, adminId);
+    await seedGovernanceDemo(prisma, adminId);
+    await ensureDemoEmailSettings(prisma);
   }
 }
 

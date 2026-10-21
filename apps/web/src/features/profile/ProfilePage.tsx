@@ -9,6 +9,7 @@ import { BilingualFields } from '@/components/BilingualFields';
 import { useErrorMessage } from '@/components/i18n-helpers';
 import { PasswordPolicyHint } from '@/features/admin/PasswordPolicyHint';
 import { passwordRules } from '@/features/admin/password';
+import { NotificationPrefsCard } from '@/features/notifications/NotificationPrefsCard';
 
 export function ProfilePage() {
   const { t } = useTranslation();
@@ -120,6 +121,9 @@ export function ProfilePage() {
               </Button>
             </Form>
           </Card>
+        </Col>
+        <Col xs={24}>
+          <NotificationPrefsCard />
         </Col>
       </Row>
     </>

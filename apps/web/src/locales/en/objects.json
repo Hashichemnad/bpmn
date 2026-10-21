@@ -25,6 +25,11 @@
       "title": "IT systems",
       "subtitle": "Applications and platforms that support process steps.",
       "empty": "No IT systems in the library yet"
+    },
+    "DOCUMENT": {
+      "title": "Documents",
+      "subtitle": "Forms, templates and reference documents used or produced by process steps.",
+      "empty": "No documents in the library yet"
     }
   },
   "new": {
@@ -52,7 +57,8 @@
   "attributesHint": {
     "default": "Additional properties as name/value pairs.",
     "ROLE": "For example: grade, reports to, required skills.",
-    "SYSTEM": "For example: vendor, hosting, business owner, criticality."
+    "SYSTEM": "For example: vendor, hosting, business owner, criticality.",
+    "DOCUMENT": "For example: document number, location (URL), retention period."
   },
   "attributeName": "Name",
   "attributeValue": "Value",

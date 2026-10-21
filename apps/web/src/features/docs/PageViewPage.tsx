@@ -1,4 +1,5 @@
-import { Link, useNavigate, useParams } from 'react-router-dom';
+import { useEffect, useRef } from 'react';
+import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import {
   Alert,
   App,
@@ -37,6 +38,10 @@ import { PageLinksPanel } from './PageLinksPanel';
 import { AttachmentsPanel } from './AttachmentsPanel';
 import { useSpaceContext } from './space-context';
 import { pageVersionFor, useLanguageVersion } from './useLanguageVersion';
+import { GovernancePanel } from '@/features/governance/GovernancePanel';
+import { CommentsPanel } from '@/features/comments/CommentsPanel';
+import { useGovernance } from '@/api/governance';
+import { StatusTag } from '@/components/tags';
 
 export function LanguageAvailability({ hasEn, hasAr }: { hasEn: boolean; hasAr: boolean }) {
   const { t } = useTranslation();
@@ -67,6 +72,13 @@ export function PageViewPage() {
   const page = usePage(pageId);
   const remove = useDeletePage(space.id);
   const { lang, setLang, fallback, has } = useLanguageVersion(page.data);
+  const governance = useGovernance('PAGE', pageId);
+  const [params] = useSearchParams();
+  const commentsRef = useRef<HTMLDivElement>(null);
+  const showComments = params.get('comments') === '1';
+  useEffect(() => {
+    if (showComments && page.data) commentsRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [showComments, page.data]);
 
   if (page.isLoading) return <LoadingState />;
   if (page.isError || !page.data)
@@ -158,6 +170,11 @@ export function PageViewPage() {
         title={<span dir={v.dir}>{v.title || t('docs:untitled')}</span>}
         subtitle={
           <Flex gap={12} wrap="wrap" align="center" style={{ marginTop: 6 }}>
+            <StatusTag
+              status={p.status}
+              changesRequested={governance.data?.changesRequested}
+              rejected={governance.data?.rejected}
+            />
             <LanguageAvailability hasEn={p.hasEn} hasAr={p.hasAr} />
             <Typography.Text type="secondary" style={{ fontSize: 12 }}>
               {t('docs:pages.versionMeta', {
@@ -228,9 +245,15 @@ export function PageViewPage() {
               <Typography.Text type="secondary">{t('docs:pages.noContent')}</Typography.Text>
             )}
           </Card>
+          <div ref={commentsRef}>
+            <Card title={t('governance:comments.title')} style={{ marginBlockStart: 24 }}>
+              <CommentsPanel type="PAGE" id={p.id} />
+            </Card>
+          </div>
         </Col>
         <Col xs={24} xl={8} xxl={7}>
           <Space direction="vertical" size={16} style={{ inlineSize: '100%' }}>
+            <GovernancePanel type="PAGE" id={p.id} />
             <PageLinksPanel pageId={p.id} canEdit={p.canEdit} />
             <AttachmentsPanel pageId={p.id} canEdit={p.canEdit} />
             {p.children.length > 0 && (
