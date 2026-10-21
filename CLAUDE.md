@@ -35,8 +35,8 @@ with no per-user licensing. Target: 50–500 users on a single server.
 
 | Phase | Scope | Status |
 |---|---|---|
-| 1 | Foundation: M1 (core), M2, M3, M4 (roles & systems) | ✅ Done (branch `phase-1-foundation`, awaiting review) |
-| 2 | M5 Wiki, M6 Version control, M7 Git integration | ⬜ |
+| 1 | Foundation: M1 (core), M2, M3, M4 (roles & systems) | ✅ Done (merged into `main`) |
+| 2 | M5 Wiki, M6 Version control, M7 Git integration | ✅ Done (branch `phase-2-docs-versions-git`, awaiting review) |
 | 3 | M8 Governance, M9 Knowledge Portal | ⬜ |
 | 4 | M10 GRC, M11 EA, M12 KPIs + Salesforce | ⬜ |
 | 5 | M13 Mining, M14 Execution, simulation | ⬜ |
@@ -122,6 +122,14 @@ Permissions are checked **on the server** for every request (NestJS guards). The
 - `ObjectLink` (processId, bpmnElementId, repoObjectId, relation e.g. PERFORMS, SUPPORTS, INPUT, OUTPUT)
 - `AuditLog`
 - `Setting` (key, value JSON)
+
+Phase 2 additions (see `apps/api/prisma/schema.prisma`, DECISIONS D-018 – D-025):
+
+- `Space` (key, nameEn/Ar, descriptionEn/Ar, icon, ownerId, departmentId, viewRestricted, editRestricted), `SpaceGrant`
+- `Page` (spaceId, parentId, sortOrder, titleEn/Ar, contentEn/Ar, dirEn/Ar, textEn/Ar, version, searchVector, deletedAt, deleteBatchId)
+- `PageVersion` (pageId, versionNumber, content snapshot, changeNote, label, restoredFrom), `PageDraft` (per user)
+- `PageTemplate`, `PageLink` (page ↔ process / repository object), `Attachment`
+- `ProcessVersion` + `label`, `restoredFrom`; `GitSyncItem` (sync state per process / page)
 
 ## 10. Definition of Done (every phase)
 
