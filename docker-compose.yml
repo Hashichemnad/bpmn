@@ -88,6 +88,9 @@ services:
       # Internal hosts the Git / SMTP integrations may reach (SSRF protection blocks all others).
       # Mailpit is internal; add your own GitLab / SMTP server here if it runs in a private network.
       OUTBOUND_ALLOWED_HOSTS: ${OUTBOUND_ALLOWED_HOSTS-mailpit}
+      # Emergency switch: password sign-in for everyone (see Settings → Authentication).
+      AUTH_FORCE_LOCAL_LOGIN: ${AUTH_FORCE_LOCAL_LOGIN:-false}
+      SSO_HTTP_TIMEOUT_MS: ${SSO_HTTP_TIMEOUT_MS:-15000}
       APP_URL: ${APP_URL:-http://localhost:8080}
       SCHEDULER_INTERVAL_MINUTES: ${SCHEDULER_INTERVAL_MINUTES:-60}
     volumes:

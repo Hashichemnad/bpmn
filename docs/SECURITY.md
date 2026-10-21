@@ -166,6 +166,8 @@ zod / UUID pipe; file uploads are checked in the service (allow-list, content sn
 | POST   | `/auth/mfa/setup`                            | authenticated                                             | body                                | login      |
 | GET    | `/auth/options`                              | **public**                                                | —                                   | default    |
 | POST   | `/auth/refresh`                              | **public**                                                | —                                   | login      |
+| GET    | `/auth/sso/callback`                         | **public**                                                | query                               | login      |
+| GET    | `/auth/sso/start`                            | **public**                                                | query                               | login      |
 | DELETE | `/comments/:commentId`                       | `comments.write`                                          | param `commentId`                   | default    |
 | PATCH  | `/comments/:commentId`                       | `comments.write`                                          | body, param `commentId`             | default    |
 | POST   | `/comments/:commentId/reopen`                | `comments.write`                                          | param `commentId`                   | default    |
@@ -271,6 +273,7 @@ zod / UUID pipe; file uploads are checked in the service (allow-list, content sn
 | PATCH  | `/settings`                                  | `settings.manage`                                         | body                                | default    |
 | GET    | `/settings/auth`                             | `settings.manage`                                         | —                                   | default    |
 | PUT    | `/settings/auth`                             | `settings.manage`                                         | body                                | default    |
+| POST   | `/settings/auth/test`                        | `settings.manage`                                         | body                                | default    |
 | GET    | `/settings/email`                            | `settings.manage`                                         | —                                   | default    |
 | PUT    | `/settings/email`                            | `settings.manage`                                         | body                                | default    |
 | POST   | `/settings/email/test`                       | `settings.manage`                                         | body                                | default    |

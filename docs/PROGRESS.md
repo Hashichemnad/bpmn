@@ -37,9 +37,16 @@ Steps (tick as they are committed; a new session continues at the first unticked
       and a correct password no longer resets the counter while the code is pending. Accounts without a
       password (`passwordHash = ''`, SSO) cannot use password sign-in (same timing as a wrong password).
       `test/mfa.e2e-spec.ts` (10 tests); route-security lists and SECURITY.md route table updated.
-- [ ] 3. API: authentication settings (Super Admin, encrypted secret), OIDC start/callback, JIT users, group
+- [x] 3. API: authentication settings (Super Admin, encrypted secret), OIDC start/callback, JIT users, group
       mapping, allowed domains, local sign-in restriction + break-glass; e2e tests with a mocked identity
-      provider (local discovery / JWKS / token endpoint).
+      provider (local discovery / JWKS / token endpoint). **Done:** `src/auth/sso/` (`OidcClient` — the only
+      code talking to the provider, through `common/safe-fetch.ts` + SSRF policy; `SsoService`; pure
+      `sso-claims.ts` + spec; `SsoController`: `GET /auth/sso/start`, `GET /auth/sso/callback`,
+      `POST /settings/auth/test`). ID-token signatures are verified even from the token endpoint
+      (`enableNonRepudiationChecks` — found by the "foreign key" test). Mock provider
+      `test/fixtures/mock-idp.ts`; `test/sso.e2e-spec.ts` (26 tests); SSO client secret and TOTP secret added
+      to the cross-cutting secret-leak test. Env `AUTH_FORCE_LOCAL_LOGIN`, `SSO_HTTP_TIMEOUT_MS` (both Compose
+      files, `.env.example*`). API: 289 tests pass.
 - [ ] 4. Web: login page (SSO button, 2FA step, 2FA set-up step), Profile → two-factor, Settings →
       Authentication, Users (2FA status, reset, SSO badge); EN/AR translations; Vitest.
 - [ ] 5. Docs (DECISIONS, SECURITY, DEPLOYMENT/README Entra ID guide, BACKLOG, CLAUDE.md), full verification,

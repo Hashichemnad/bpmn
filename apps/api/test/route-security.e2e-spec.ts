@@ -37,6 +37,8 @@ describe('Route security declarations', () => {
     expect(publicRoutes).toEqual([
       'GET /auth/csrf',
       'GET /auth/options',
+      'GET /auth/sso/callback',
+      'GET /auth/sso/start',
       'GET /health',
       'GET /settings/logo',
       'GET /settings/public',
@@ -66,6 +68,8 @@ describe('Route security declarations', () => {
       .map((r) => `${r.method} ${r.path}`)
       .sort();
     expect(strict).toEqual([
+      'GET /auth/sso/callback',
+      'GET /auth/sso/start',
       'POST /auth/change-password',
       'POST /auth/login',
       'POST /auth/login/mfa',
