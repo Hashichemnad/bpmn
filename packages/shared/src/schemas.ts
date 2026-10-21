@@ -184,7 +184,7 @@ export const updateProcessSchema = z.object({
   category: z.enum(PROCESS_CATEGORIES).optional(),
   ownerId: uuidSchema.nullable().optional(),
   departmentId: uuidSchema.nullable().optional(),
-  status: z.enum(PROCESS_STATUSES).optional(),
+  // Status changes are handled by the governance workflow (Phase 3).
 });
 export type UpdateProcessInput = z.infer<typeof updateProcessSchema>;
 
