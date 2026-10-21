@@ -59,13 +59,19 @@ Steps (tick as they are committed; a new session continues at the first unticked
 | SMTP through the SSRF guard                        | real delivery to Mailpit when allowed (connects to the checked IP with `servername`); refused when not listed                                                                  |
 | `pnpm audit --prod`                                | no high/critical; 4 moderate (MinIO transitive, unused paths — SEC-09). Full audit: 1 high `braces` (dev-only via Jest, no fix — SEC-08)                                       |
 
-Not run in this session: `docker compose up` from a clean clone (MinIO image not reachable from the sandbox).
-The compose change is one environment line (`OUTBOUND_ALLOWED_HOSTS`, default `mailpit`); the web image now
-copies `nginx-security-headers.conf` — build it once before merging.
+Docker: as in earlier phases the sandbox reaches the internet only through a TLS-intercepting proxy, so base
+images came from `mirror.gcr.io` and the two app images were built from the committed Dockerfiles in a clean
+clone with an uncommitted CA line and `docker build --network host`, then started with `docker compose up`.
+Result: five services healthy, demo seeded; nginx sends the full header set on SPA routes; the 8 Playwright
+smoke tests pass against `http://localhost:8080`; Settings → Email test mail reaches Mailpit through the SSRF
+guard (`OUTBOUND_ALLOWED_HOSTS=mailpit`); a foreign `Origin` gets `CSRF_INVALID`. This check found that the
+web image no longer type-checked after the Vitest 4 upgrade (Node types were only pulled in transitively):
+`@types/node` is now a web dev dependency and listed in the web tsconfig.
 
 ### Next (continue here)
 
-1. Review and merge `phase-6-part-1`; run `docker compose up --build` once (new nginx snippet, new env var).
+1. Review and merge `phase-6-part-1` (new env var `OUTBOUND_ALLOWED_HOSTS`: add internal Git / SMTP servers
+   to it on existing installations, otherwise they are blocked).
 2. Decisions for you: `braces` (BACKLOG "Needs a decision"); whether TLS/HSTS will be handled by your own
    reverse proxy (the deployment guide part will document it either way).
 3. Next Phase 6 parts (suggested order): TOTP two-factor and SSO (Azure AD / OIDC); slim API runtime image
