@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1
 # ProcessHub web image (static build served by nginx). Build from the repository root:
 #   docker build -f apps/web/Dockerfile .
-FROM node:20-bookworm-slim AS build
+FROM node:20-alpine AS build
 RUN corepack enable
 WORKDIR /app
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml tsconfig.base.json ./

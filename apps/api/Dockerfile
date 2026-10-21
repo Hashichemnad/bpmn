@@ -1,10 +1,8 @@
 # syntax=docker/dockerfile:1
 # ProcessHub API image. Build from the repository root:
 #   docker build -f apps/api/Dockerfile .
-FROM node:20-bookworm-slim AS base
-RUN apt-get update \
-  && apt-get install -y --no-install-recommends openssl ca-certificates \
-  && rm -rf /var/lib/apt/lists/*
+# Alpine ships OpenSSL 3 (needed by the Prisma engines), so no extra system packages are required.
+FROM node:20-alpine AS base
 RUN corepack enable
 WORKDIR /app
 
