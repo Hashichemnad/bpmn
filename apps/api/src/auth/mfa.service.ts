@@ -39,9 +39,13 @@ export class MfaService {
       : null;
   }
 
-  /** Whether the user's roles require 2FA for password sign-in. */
-  async isRequired(roles: AuthUser['roles']): Promise<boolean> {
-    return mfaRequiredFor(roles, (await this.authSettings.get()).mfaRequiredRoles);
+  /**
+   * Whether 2FA is required for the user's password sign-in: one of their roles requires it, or the
+   * user is the break-glass account (always, D-062).
+   */
+  async isRequired(user: Pick<AuthUser, 'id' | 'roles'>): Promise<boolean> {
+    const s = await this.authSettings.get();
+    return s.breakGlassUserId === user.id || mfaRequiredFor(user.roles, s.mfaRequiredRoles);
   }
 
   async status(user: AuthUser): Promise<MfaStatusDto> {
@@ -51,7 +55,7 @@ export class MfaService {
     });
     return {
       enabled: !!record.totpEnabledAt,
-      required: await this.isRequired(user.roles),
+      required: await this.isRequired(user),
       available: record.passwordHash !== '',
       recoveryCodesLeft: record.totpEnabledAt ? recoveryCodesLeft : 0,
       enabledAt: record.totpEnabledAt?.toISOString() ?? null,
@@ -116,7 +120,7 @@ export class MfaService {
   }
 
   async disable(user: AuthUser, input: MfaConfirmInput, meta: RequestMeta): Promise<void> {
-    if (await this.isRequired(user.roles)) {
+    if (await this.isRequired(user)) {
       throw forbidden('Two-factor authentication is required for your role');
     }
     const record = await this.confirmIdentity(user.id, input);

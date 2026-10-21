@@ -4,12 +4,13 @@ import { type INestApplication } from '@nestjs/common';
 import { type NestExpressApplication } from '@nestjs/platform-express';
 import request from 'supertest';
 import TestAgent from 'supertest/lib/agent';
-import { CSRF_HEADER, type SystemRoleKey } from '@processhub/shared';
+import { CSRF_HEADER, SETTING_KEYS, type SystemRoleKey } from '@processhub/shared';
 import { AppModule } from '../src/app.module';
 import { configureApp } from '../src/bootstrap';
 import { PrismaService } from '../src/prisma/prisma.service';
 import { StorageService } from '../src/storage/storage.service';
 import { hashPassword } from '../src/auth/argon';
+import { AUTH_DEFAULTS } from '../src/auth/auth-settings.service';
 import { syncRolesAndPermissions } from '../prisma/seed';
 import { Readable } from 'node:stream';
 import { GitProviders } from '../src/integrations/git-providers';
@@ -239,6 +240,16 @@ const TABLES = [
 export async function resetDb(prisma: PrismaService) {
   await prisma.$executeRawUnsafe(`TRUNCATE ${TABLES.map((t) => `"${t}"`).join(', ')} CASCADE`);
   await syncRolesAndPermissions(prisma);
+  // Admins must use 2FA by default (D-061); the suites that are not about 2FA sign in with a password
+  // only. `withDefaultAuthSettings` restores the shipped defaults.
+  await prisma.setting.create({
+    data: { key: SETTING_KEYS.AUTH, value: { ...AUTH_DEFAULTS, mfaRequiredRoles: [] } },
+  });
+}
+
+/** Removes the test override from `resetDb`: Settings → Authentication as shipped. */
+export async function withDefaultAuthSettings(prisma: PrismaService) {
+  await prisma.setting.deleteMany({ where: { key: SETTING_KEYS.AUTH } });
 }
 
 let passwordHash: string | undefined;

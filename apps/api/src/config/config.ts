@@ -14,7 +14,8 @@ const envSchema = z.object({
 
   JWT_ACCESS_SECRET: z.string().min(32, 'JWT_ACCESS_SECRET must be at least 32 characters'),
   JWT_ACCESS_TTL_SECONDS: z.coerce.number().int().min(60).default(900),
-  REFRESH_TOKEN_TTL_DAYS: z.coerce.number().int().min(1).default(7),
+  /** Refresh token (session) lifetime in hours; tokens rotate on every use (D-065). */
+  REFRESH_TOKEN_TTL_HOURS: z.coerce.number().int().min(1).max(2160).default(24),
   COOKIE_SECURE: bool(true),
   CORS_ORIGINS: z.string().default('http://localhost:8080'),
   TRUST_PROXY: z.coerce.number().int().min(0).default(1),

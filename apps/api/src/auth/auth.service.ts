@@ -164,7 +164,7 @@ export class AuthService {
     if (!authUser) throw invalidCredentials();
     // The failure counter is only reset once every factor is correct (no endless code guessing).
     if (user.totpEnabledAt) return this.challenge(user.id, 'VERIFY');
-    if (await this.mfa.isRequired(authUser.roles)) return this.challenge(user.id, 'SETUP');
+    if (await this.mfa.isRequired(authUser)) return this.challenge(user.id, 'SETUP');
     return this.completeLogin(user.id, meta, { method: 'PASSWORD' });
   }
 
@@ -426,7 +426,7 @@ export class AuthService {
     );
     const refreshToken = randomBytes(48).toString('base64url');
     const refreshExpiresAt = new Date(
-      Date.now() + this.config.REFRESH_TOKEN_TTL_DAYS * 24 * 3600 * 1000,
+      Date.now() + this.config.REFRESH_TOKEN_TTL_HOURS * 3600 * 1000,
     );
     await this.prisma.refreshToken.create({
       data: {

@@ -258,9 +258,16 @@ describe('Single sign-on with OpenID Connect (e2e, mocked identity provider)', (
         groupMappings: [{ group: 'grp-editors', roles: ['MODELER'], departmentId: null }],
         syncRolesOnLogin: false,
       });
-      await signIn({ groups: ['grp-editors'] });
+      const first = await signIn({ groups: ['grp-editors'] });
       const again = await signIn({ groups: [] });
       expect((await again.c.get('/auth/me')).body.roles).toEqual(['MODELER']);
+      // Roles are managed in ProcessHub (D-063): a change made there survives the next sign-in.
+      const userId: string = (await first.c.get('/auth/me')).body.id;
+      const reviewer = await ctx.prisma.role.findUniqueOrThrow({ where: { key: 'REVIEWER' } });
+      await ctx.prisma.userRole.deleteMany({ where: { userId } });
+      await ctx.prisma.userRole.create({ data: { userId, roleId: reviewer.id } });
+      const later = await signIn({ groups: ['grp-editors'] });
+      expect((await later.c.get('/auth/me')).body.roles).toEqual(['REVIEWER']);
     });
 
     it('sync never removes Super Admin from the last Super Admin', async () => {
@@ -404,8 +411,11 @@ describe('Single sign-on with OpenID Connect (e2e, mocked identity provider)', (
       expect((await lastAudit('LOGIN_FAILED'))?.summary).toMatchObject({
         reason: 'LOCAL_LOGIN_DISABLED',
       });
+      // The break-glass account always needs 2FA, even when no role requires it (D-062).
       const breakGlass = await new Client(ctx.app).init();
-      expect((await breakGlass.login('admin@example.com')).status).toBe(200);
+      const res = await breakGlass.login('admin@example.com');
+      expect(res.status).toBe(200);
+      expect(res.body).toEqual({ mfa: 'SETUP' });
       // SSO still works for everyone.
       const { c: ssoClient } = await signIn({ email: 'local@example.com', sub: 'local-sub' });
       await ssoClient.get('/auth/me').expect(200);
