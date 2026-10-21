@@ -1,4 +1,7 @@
-import DOMPurify from 'isomorphic-dompurify';
+import createDOMPurify from 'dompurify';
+import { JSDOM } from 'jsdom';
+
+const DOMPurify = createDOMPurify(new JSDOM('').window);
 
 export type ImageType = 'image/png' | 'image/jpeg' | 'image/webp' | 'image/svg+xml';
 
