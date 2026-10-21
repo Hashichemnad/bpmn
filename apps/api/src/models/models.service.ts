@@ -10,12 +10,15 @@ import {
   type ObjectType,
   type ProcessModelDto,
   type ProcessVersionDto,
+  type RestoreVersionInput,
+  type VersionLabelInput,
 } from '@processhub/shared';
 import { PrismaService } from '../prisma/prisma.service';
 import { AuditService } from '../audit/audit.service';
 import { ProcessesService, canEditModel } from '../processes/processes.service';
 import { badRequest, forbidden, notFound } from '../common/app-exception';
 import type { AuthUser, RequestMeta } from '../common/auth-user';
+import { DomainEvents } from '../events/domain-events';
 import { assertSafeBpmnXml, countFlowElements, elementLabel } from './bpmn-xml';
 
 const userRef = { select: { id: true, email: true, nameEn: true, nameAr: true } } as const;
@@ -26,6 +29,7 @@ export class ModelsService {
     private readonly prisma: PrismaService,
     private readonly audit: AuditService,
     private readonly processes: ProcessesService,
+    private readonly events: DomainEvents,
   ) {}
 
   private async assertCanEdit(processId: string, user: AuthUser) {
@@ -94,6 +98,8 @@ export class ModelsService {
         id: true,
         versionNumber: true,
         changeNote: true,
+        label: true,
+        restoredFrom: true,
         createdAt: true,
         createdById: true,
       },
@@ -105,6 +111,8 @@ export class ModelsService {
       id: r.id,
       versionNumber: r.versionNumber,
       changeNote: r.changeNote,
+      label: r.label,
+      restoredFrom: r.restoredFrom,
       createdAt: r.createdAt.toISOString(),
       createdBy: r.createdById ? (byId.get(r.createdById) ?? null) : null,
     }));
@@ -118,6 +126,8 @@ export class ModelsService {
       id: v.id,
       versionNumber: v.versionNumber,
       changeNote: v.changeNote,
+      label: v.label,
+      restoredFrom: v.restoredFrom,
       bpmnXml: v.bpmnXml,
       createdAt: v.createdAt.toISOString(),
     };
@@ -129,6 +139,7 @@ export class ModelsService {
     input: CreateVersionInput,
     actor: AuthUser,
     meta: RequestMeta,
+    restoredFrom: number | null = null,
   ) {
     await this.saveModel(processId, input.bpmnXml, actor, meta);
     const version = await this.prisma.$transaction(async (tx) => {
@@ -142,29 +153,94 @@ export class ModelsService {
           versionNumber: (last._max.versionNumber ?? 0) + 1,
           bpmnXml: input.bpmnXml,
           changeNote: input.changeNote,
+          restoredFrom,
           createdById: actor.id,
         },
       });
       await this.audit.log(
         {
-          action: 'VERSION',
+          action: restoredFrom ? 'RESTORE' : 'VERSION',
           entityType: 'ProcessVersion',
           entityId: v.id,
           userId: actor.id,
-          summary: { processId, versionNumber: v.versionNumber, changeNote: v.changeNote },
+          summary: {
+            processId,
+            versionNumber: v.versionNumber,
+            changeNote: v.changeNote,
+            ...(restoredFrom ? { restoredFrom } : {}),
+          },
           meta,
         },
         tx,
       );
       return v;
     });
+    this.events.emit({
+      type: 'process.versioned',
+      processId,
+      versionNumber: version.versionNumber,
+      actorId: actor.id,
+    });
     return {
       id: version.id,
       versionNumber: version.versionNumber,
       changeNote: version.changeNote,
+      label: null,
+      restoredFrom,
       createdAt: version.createdAt.toISOString(),
       createdBy: { id: actor.id, email: actor.email, nameEn: actor.nameEn, nameAr: actor.nameAr },
     } satisfies ProcessVersionDto;
+  }
+
+  /** Restoring never deletes history: the old model becomes the working model and a new version. */
+  async restoreVersion(
+    processId: string,
+    versionId: string,
+    input: RestoreVersionInput,
+    actor: AuthUser,
+    meta: RequestMeta,
+  ) {
+    await this.assertCanEdit(processId, actor);
+    const old = await this.prisma.processVersion.findFirst({ where: { id: versionId, processId } });
+    if (!old) throw notFound('Version');
+    return this.createVersion(
+      processId,
+      {
+        bpmnXml: old.bpmnXml,
+        changeNote: input.changeNote || `Restored version ${old.versionNumber}`,
+      },
+      actor,
+      meta,
+      old.versionNumber,
+    );
+  }
+
+  async labelVersion(
+    processId: string,
+    versionId: string,
+    input: VersionLabelInput,
+    actor: AuthUser,
+    meta: RequestMeta,
+  ) {
+    await this.assertCanEdit(processId, actor);
+    const v = await this.prisma.processVersion.findFirst({ where: { id: versionId, processId } });
+    if (!v) throw notFound('Version');
+    const label = input.label || null;
+    await this.prisma.$transaction(async (tx) => {
+      await tx.processVersion.update({ where: { id: versionId }, data: { label } });
+      await this.audit.log(
+        {
+          action: 'LABEL',
+          entityType: 'ProcessVersion',
+          entityId: versionId,
+          userId: actor.id,
+          summary: { processId, versionNumber: v.versionNumber, from: v.label, to: label },
+          meta,
+        },
+        tx,
+      );
+    });
+    return this.listVersions(processId);
   }
 
   // ---------- Object links ----------

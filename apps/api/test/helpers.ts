@@ -53,6 +53,15 @@ export async function createApp(): Promise<TestContext> {
 }
 
 const TABLES = [
+  'GitSyncItem',
+  'Attachment',
+  'PageLink',
+  'PageDraft',
+  'PageVersion',
+  'Page',
+  'PageTemplate',
+  'SpaceGrant',
+  'Space',
   'AuditLog',
   'ObjectLink',
   'ProcessVersion',
@@ -81,7 +90,7 @@ export async function createUser(
   prisma: PrismaService,
   email: string,
   roles: SystemRoleKey[],
-  extra: { status?: 'ACTIVE' | 'INACTIVE'; nameEn?: string } = {},
+  extra: { status?: 'ACTIVE' | 'INACTIVE'; nameEn?: string; departmentId?: string } = {},
 ) {
   passwordHash ??= await hashPassword(PASSWORD);
   const roleRows = await prisma.role.findMany({ where: { key: { in: roles } } });
@@ -92,6 +101,7 @@ export async function createUser(
       nameAr: 'مستخدم',
       passwordHash,
       status: extra.status ?? 'ACTIVE',
+      departmentId: extra.departmentId,
       roles: { create: roleRows.map((r) => ({ roleId: r.id })) },
     },
   });
@@ -156,3 +166,5 @@ export function sampleBpmn(ids: string[] = ['Task_1']): string {
   return `<?xml version="1.0" encoding="UTF-8"?>
 <bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" id="Defs_1"><bpmn:process id="Process_1">${tasks}</bpmn:process></bpmn:definitions>`;
 }
+
+export const PNG_BYTES = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0, 0, 0, 0]);

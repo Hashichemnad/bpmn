@@ -1,4 +1,4 @@
-// ProcessHub data model — Phase 1 (see CLAUDE.md §9).
+// ProcessHub data model — Phase 1 core (see CLAUDE.md §9) + Phase 2 wiki, versions and Git sync.
 
 generator client {
   provider      = "prisma-client-js"
@@ -39,6 +39,33 @@ enum ObjectType {
   KPI
 }
 
+enum SpaceAccessLevel {
+  VIEW
+  EDIT
+}
+
+enum SpacePrincipalType {
+  USER
+  ROLE
+  DEPARTMENT
+}
+
+enum PageLinkTarget {
+  PROCESS
+  OBJECT
+}
+
+enum GitEntityType {
+  PROCESS
+  PAGE
+}
+
+enum GitSyncStatus {
+  PENDING
+  SUCCESS
+  FAILED
+}
+
 enum LinkRelation {
   PERFORMS
   SUPPORTS
@@ -49,44 +76,46 @@ enum LinkRelation {
 }
 
 model User {
-  id                 String     @id @default(uuid()) @db.Uuid
-  email              String     @unique
-  nameEn             String     @default("")
-  nameAr             String     @default("")
-  passwordHash       String
-  locale             String     @default("en")
-  status             UserStatus @default(ACTIVE)
-  departmentId       String?    @db.Uuid
-  department         Department? @relation(fields: [departmentId], references: [id], onDelete: SetNull)
-  failedLoginCount   Int        @default(0)
-  lockedUntil        DateTime?
-  lastLoginAt        DateTime?
-  passwordChangedAt  DateTime?
-  createdAt          DateTime   @default(now())
-  updatedAt          DateTime   @updatedAt
-  createdById        String?    @db.Uuid
-  updatedById        String?    @db.Uuid
-  deletedAt          DateTime?
+  id                String      @id @default(uuid()) @db.Uuid
+  email             String      @unique
+  nameEn            String      @default("")
+  nameAr            String      @default("")
+  passwordHash      String
+  locale            String      @default("en")
+  status            UserStatus  @default(ACTIVE)
+  departmentId      String?     @db.Uuid
+  department        Department? @relation(fields: [departmentId], references: [id], onDelete: SetNull)
+  failedLoginCount  Int         @default(0)
+  lockedUntil       DateTime?
+  lastLoginAt       DateTime?
+  passwordChangedAt DateTime?
+  createdAt         DateTime    @default(now())
+  updatedAt         DateTime    @updatedAt
+  createdById       String?     @db.Uuid
+  updatedById       String?     @db.Uuid
+  deletedAt         DateTime?
 
   roles          UserRole[]
   refreshTokens  RefreshToken[]
-  ownedProcesses Process[]       @relation("ProcessOwner")
+  ownedProcesses Process[]      @relation("ProcessOwner")
+  ownedSpaces    Space[]        @relation("SpaceOwner")
   auditLogs      AuditLog[]
+  pageDrafts     PageDraft[]
 
   @@index([departmentId])
   @@index([status])
 }
 
 model Role {
-  id            String           @id @default(uuid()) @db.Uuid
-  key           String           @unique
-  nameEn        String
-  nameAr        String
-  isSystem      Boolean          @default(true)
-  createdAt     DateTime         @default(now())
-  updatedAt     DateTime         @updatedAt
-  permissions   RolePermission[]
-  users         UserRole[]
+  id          String           @id @default(uuid()) @db.Uuid
+  key         String           @unique
+  nameEn      String
+  nameAr      String
+  isSystem    Boolean          @default(true)
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+  permissions RolePermission[]
+  users       UserRole[]
 }
 
 model Permission {
@@ -115,17 +144,17 @@ model UserRole {
 
 /// Refresh tokens are stored hashed and rotated on every use.
 model RefreshToken {
-  id         String    @id @default(uuid()) @db.Uuid
-  userId     String    @db.Uuid
-  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  tokenHash  String    @unique
+  id        String    @id @default(uuid()) @db.Uuid
+  userId    String    @db.Uuid
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash String    @unique
   /// All tokens issued from one login share a family; reuse of a rotated token revokes the family.
-  familyId   String    @db.Uuid
-  expiresAt  DateTime
-  revokedAt  DateTime?
-  createdAt  DateTime  @default(now())
-  userAgent  String?
-  ip         String?
+  familyId  String    @db.Uuid
+  expiresAt DateTime
+  revokedAt DateTime?
+  createdAt DateTime  @default(now())
+  userAgent String?
+  ip        String?
 
   @@index([userId])
   @@index([familyId])
@@ -147,6 +176,7 @@ model Department {
 
   users     User[]
   processes Process[]
+  spaces    Space[]
 
   @@index([parentId])
 }
@@ -175,9 +205,10 @@ model Process {
   updatedById   String?         @db.Uuid
   deletedAt     DateTime?
 
-  model    ProcessModel?
-  versions ProcessVersion[]
-  links    ObjectLink[]
+  model     ProcessModel?
+  versions  ProcessVersion[]
+  links     ObjectLink[]
+  pageLinks PageLink[]
 
   @@index([parentId, sortOrder])
   @@index([category])
@@ -202,6 +233,10 @@ model ProcessVersion {
   versionNumber Int
   bpmnXml       String
   changeNote    String
+  /// Optional label such as "v1.0 – approved by committee".
+  label         String?
+  /// Set when this version was created by restoring an older one.
+  restoredFrom  Int?
   createdAt     DateTime @default(now())
   createdById   String?  @db.Uuid
 
@@ -223,7 +258,8 @@ model RepoObject {
   updatedById   String?    @db.Uuid
   deletedAt     DateTime?
 
-  links ObjectLink[]
+  links     ObjectLink[]
+  pageLinks PageLink[]
 
   @@index([type])
 }
@@ -267,4 +303,205 @@ model Setting {
   value       Json
   updatedAt   DateTime @updatedAt
   updatedById String?  @db.Uuid
+}
+
+// ---------- Documentation wiki (M5) ----------
+
+model Space {
+  id             String      @id @default(uuid()) @db.Uuid
+  /// Short immutable key (e.g. "QM"), used in Git paths.
+  key            String      @unique
+  nameEn         String      @default("")
+  nameAr         String      @default("")
+  descriptionEn  String      @default("")
+  descriptionAr  String      @default("")
+  icon           String      @default("book")
+  ownerId        String?     @db.Uuid
+  owner          User?       @relation("SpaceOwner", fields: [ownerId], references: [id], onDelete: SetNull)
+  departmentId   String?     @db.Uuid
+  department     Department? @relation(fields: [departmentId], references: [id], onDelete: SetNull)
+  /// Restricted spaces are visible / editable only for the owner, docs managers and granted principals.
+  viewRestricted Boolean     @default(false)
+  editRestricted Boolean     @default(false)
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+  createdById    String?     @db.Uuid
+  updatedById    String?     @db.Uuid
+  deletedAt      DateTime?
+
+  grants SpaceGrant[]
+  pages  Page[]
+}
+
+/// Per-space access for a user, a system role (by key) or a department.
+model SpaceGrant {
+  id            String             @id @default(uuid()) @db.Uuid
+  spaceId       String             @db.Uuid
+  space         Space              @relation(fields: [spaceId], references: [id], onDelete: Cascade)
+  principalType SpacePrincipalType
+  principalId   String
+  access        SpaceAccessLevel
+  createdAt     DateTime           @default(now())
+
+  @@unique([spaceId, principalType, principalId])
+}
+
+/// A wiki page. Title/content hold the latest explicitly saved version (`version`).
+model Page {
+  id            String                   @id @default(uuid()) @db.Uuid
+  spaceId       String                   @db.Uuid
+  space         Space                    @relation(fields: [spaceId], references: [id], onDelete: Restrict)
+  parentId      String?                  @db.Uuid
+  parent        Page?                    @relation("PageTree", fields: [parentId], references: [id], onDelete: Restrict)
+  children      Page[]                   @relation("PageTree")
+  sortOrder     Int                      @default(0)
+  titleEn       String                   @default("")
+  titleAr       String                   @default("")
+  /// Sanitised HTML produced by the TipTap editor.
+  contentEn     String                   @default("")
+  contentAr     String                   @default("")
+  dirEn         String                   @default("ltr")
+  dirAr         String                   @default("rtl")
+  /// Plain text of the content, for full-text search and snippets.
+  textEn        String                   @default("")
+  textAr        String                   @default("")
+  version       Int                      @default(0)
+  /// Maintained by a database trigger (see migration 20261021082019_phase2_wiki).
+  searchVector  Unsupported("tsvector")?
+  createdAt     DateTime                 @default(now())
+  updatedAt     DateTime                 @updatedAt
+  createdById   String?                  @db.Uuid
+  updatedById   String?                  @db.Uuid
+  deletedAt     DateTime?
+  deletedById   String?                  @db.Uuid
+  /// Pages deleted together (a page and its sub-pages) share a batch id and are restored together.
+  deleteBatchId String?                  @db.Uuid
+
+  versions    PageVersion[]
+  drafts      PageDraft[]
+  links       PageLink[]
+  attachments Attachment[]
+
+  @@index([spaceId, parentId, sortOrder])
+  @@index([deleteBatchId])
+  @@index([searchVector], type: Gin)
+}
+
+model PageVersion {
+  id            String   @id @default(uuid()) @db.Uuid
+  pageId        String   @db.Uuid
+  page          Page     @relation(fields: [pageId], references: [id], onDelete: Cascade)
+  versionNumber Int
+  titleEn       String
+  titleAr       String
+  contentEn     String
+  contentAr     String
+  dirEn         String
+  dirAr         String
+  changeNote    String
+  label         String?
+  restoredFrom  Int?
+  createdAt     DateTime @default(now())
+  createdById   String?  @db.Uuid
+
+  @@unique([pageId, versionNumber])
+}
+
+/// Autosaved editor state of one user; never a version.
+model PageDraft {
+  pageId      String   @db.Uuid
+  page        Page     @relation(fields: [pageId], references: [id], onDelete: Cascade)
+  userId      String   @db.Uuid
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  titleEn     String
+  titleAr     String
+  contentEn   String
+  contentAr   String
+  dirEn       String
+  dirAr       String
+  baseVersion Int?
+  updatedAt   DateTime @updatedAt
+
+  @@id([pageId, userId])
+}
+
+model PageTemplate {
+  id            String    @id @default(uuid()) @db.Uuid
+  /// Set for the built-in templates (SOP, POLICY, …).
+  key           String?   @unique
+  nameEn        String    @default("")
+  nameAr        String    @default("")
+  descriptionEn String    @default("")
+  descriptionAr String    @default("")
+  contentEn     String    @default("")
+  contentAr     String    @default("")
+  isSystem      Boolean   @default(false)
+  sortOrder     Int       @default(0)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  createdById   String?   @db.Uuid
+  updatedById   String?   @db.Uuid
+  deletedAt     DateTime?
+}
+
+model PageLink {
+  id           String         @id @default(uuid()) @db.Uuid
+  pageId       String         @db.Uuid
+  page         Page           @relation(fields: [pageId], references: [id], onDelete: Cascade)
+  targetType   PageLinkTarget
+  processId    String?        @db.Uuid
+  process      Process?       @relation(fields: [processId], references: [id], onDelete: Cascade)
+  repoObjectId String?        @db.Uuid
+  repoObject   RepoObject?    @relation(fields: [repoObjectId], references: [id], onDelete: Cascade)
+  /// Created automatically because the page embeds the process diagram.
+  embedded     Boolean        @default(false)
+  createdAt    DateTime       @default(now())
+  createdById  String?        @db.Uuid
+
+  @@unique([pageId, processId])
+  @@unique([pageId, repoObjectId])
+  @@index([processId])
+  @@index([repoObjectId])
+}
+
+model Attachment {
+  id          String    @id @default(uuid()) @db.Uuid
+  pageId      String    @db.Uuid
+  page        Page      @relation(fields: [pageId], references: [id], onDelete: Cascade)
+  fileName    String
+  contentType String
+  size        Int
+  storageKey  String    @unique
+  createdAt   DateTime  @default(now())
+  createdById String?   @db.Uuid
+  deletedAt   DateTime?
+
+  @@index([pageId])
+}
+
+// ---------- Git integration (M7) ----------
+
+/// Sync state of one process or page in the configured Git repository.
+model GitSyncItem {
+  id            String        @id @default(uuid()) @db.Uuid
+  entityType    GitEntityType
+  entityId      String        @db.Uuid
+  status        GitSyncStatus @default(PENDING)
+  /// Version that was (or is being) synchronised.
+  version       Int?
+  /// Repository paths written by the last successful sync (to remove them after moves/renames).
+  paths         String[]
+  /// Set when the item should be removed from the repository (deleted in ProcessHub).
+  removed       Boolean       @default(false)
+  errorCode     String?
+  errorMessage  String?
+  commitSha     String?
+  commitUrl     String?
+  lastAttemptAt DateTime?
+  lastSuccessAt DateTime?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  @@unique([entityType, entityId])
+  @@index([status])
 }
