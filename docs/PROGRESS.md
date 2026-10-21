@@ -28,8 +28,15 @@ Steps (tick as they are committed; a new session continues at the first unticked
 
 - [x] 1. Shared schemas/types/constants (auth settings, MFA, login response, audit actions); Prisma migration
       (User SSO + TOTP fields, `MfaRecoveryCode`); Jest transform for ESM-only `openid-client`.
-- [ ] 2. API: TOTP service, enrolment / disable / recovery-code endpoints, two-step password login,
-      "required for role" setup during login, admin reset; unit + e2e tests.
+- [x] 2. API: TOTP service, enrolment / disable / recovery-code endpoints, two-step password login,
+      "required for role" setup during login, admin reset; unit + e2e tests. **Done:** `src/auth/totp.ts`
+      (+ spec), `MfaService`, `AuthSettingsService` (settings key `auth`, `GET/PUT /settings/auth`, public
+      `GET /auth/options`), login returns `{ mfa: 'VERIFY' | 'SETUP' }` + `ph_mfa` cookie; endpoints
+      `POST /auth/login/mfa`, `/auth/login/mfa/setup[/confirm]`, `GET /auth/mfa`, `POST /auth/mfa/{setup,enable,
+      disable,recovery-codes}`, `POST /users/:id/mfa/reset`. A wrong code counts towards the password lockout
+      and a correct password no longer resets the counter while the code is pending. Accounts without a
+      password (`passwordHash = ''`, SSO) cannot use password sign-in (same timing as a wrong password).
+      `test/mfa.e2e-spec.ts` (10 tests); route-security lists and SECURITY.md route table updated.
 - [ ] 3. API: authentication settings (Super Admin, encrypted secret), OIDC start/callback, JIT users, group
       mapping, allowed domains, local sign-in restriction + break-glass; e2e tests with a mocked identity
       provider (local discovery / JWKS / token endpoint).

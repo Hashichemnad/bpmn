@@ -153,9 +153,18 @@ zod / UUID pipe; file uploads are checked in the service (allow-list, content sn
 | POST   | `/auth/change-password`                      | authenticated                                             | body                                | login      |
 | GET    | `/auth/csrf`                                 | **public**                                                | —                                   | default    |
 | POST   | `/auth/login`                                | **public**                                                | body                                | login      |
+| POST   | `/auth/login/mfa`                            | **public**                                                | body                                | login      |
+| POST   | `/auth/login/mfa/setup`                      | **public**                                                | —                                   | login      |
+| POST   | `/auth/login/mfa/setup/confirm`              | **public**                                                | body                                | login      |
 | POST   | `/auth/logout`                               | **public**                                                | —                                   | default    |
 | GET    | `/auth/me`                                   | authenticated                                             | —                                   | default    |
 | PATCH  | `/auth/me`                                   | authenticated                                             | body                                | default    |
+| GET    | `/auth/mfa`                                  | authenticated                                             | —                                   | default    |
+| POST   | `/auth/mfa/disable`                          | authenticated                                             | body                                | login      |
+| POST   | `/auth/mfa/enable`                           | authenticated                                             | body                                | login      |
+| POST   | `/auth/mfa/recovery-codes`                   | authenticated                                             | body                                | login      |
+| POST   | `/auth/mfa/setup`                            | authenticated                                             | body                                | login      |
+| GET    | `/auth/options`                              | **public**                                                | —                                   | default    |
 | POST   | `/auth/refresh`                              | **public**                                                | —                                   | login      |
 | DELETE | `/comments/:commentId`                       | `comments.write`                                          | param `commentId`                   | default    |
 | PATCH  | `/comments/:commentId`                       | `comments.write`                                          | body, param `commentId`             | default    |
@@ -260,6 +269,8 @@ zod / UUID pipe; file uploads are checked in the service (allow-list, content sn
 | GET    | `/search`                                    | any of `docs.read`, `processes.read`                      | query                               | default    |
 | GET    | `/settings`                                  | `settings.manage`                                         | —                                   | default    |
 | PATCH  | `/settings`                                  | `settings.manage`                                         | body                                | default    |
+| GET    | `/settings/auth`                             | `settings.manage`                                         | —                                   | default    |
+| PUT    | `/settings/auth`                             | `settings.manage`                                         | body                                | default    |
 | GET    | `/settings/email`                            | `settings.manage`                                         | —                                   | default    |
 | PUT    | `/settings/email`                            | `settings.manage`                                         | body                                | default    |
 | POST   | `/settings/email/test`                       | `settings.manage`                                         | body                                | default    |
@@ -287,6 +298,7 @@ zod / UUID pipe; file uploads are checked in the service (allow-list, content sn
 | POST   | `/users`                                     | `users.manage`                                            | body                                | default    |
 | GET    | `/users/:id`                                 | `users.read`                                              | param `id`                          | default    |
 | PATCH  | `/users/:id`                                 | `users.manage`                                            | body, param `id`                    | default    |
+| POST   | `/users/:id/mfa/reset`                       | `users.manage`                                            | param `id`                          | default    |
 | POST   | `/users/:id/reset-password`                  | `users.manage`                                            | body, param `id`                    | default    |
 | POST   | `/users/:id/unlock`                          | `users.manage`                                            | param `id`                          | default    |
 | GET    | `/users/directory`                           | any of `comments.write`, `governance.manage`              | query                               | default    |

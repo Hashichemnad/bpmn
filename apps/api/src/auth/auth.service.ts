@@ -5,6 +5,9 @@ import type {
   ChangePasswordInput,
   CurrentUser,
   LoginInput,
+  LoginMfaStep,
+  MfaSetupDto,
+  MfaVerifyInput,
   UpdateProfileInput,
 } from '@processhub/shared';
 import { APP_CONFIG, type AppConfig } from '../config/config';
@@ -15,6 +18,8 @@ import type { AuthUser, RequestMeta } from '../common/auth-user';
 import { PasswordService } from './password.service';
 import { AuthUserLoader } from './auth-user.loader';
 import { isLocked, registerFailure } from './lockout';
+import { AuthSettingsService } from './auth-settings.service';
+import { MfaService } from './mfa.service';
 
 export interface IssuedTokens {
   accessToken: string;
@@ -26,6 +31,25 @@ const invalidCredentials = () =>
   new AppException(HttpStatus.UNAUTHORIZED, 'INVALID_CREDENTIALS', 'Invalid email or password');
 const invalidSession = () =>
   new AppException(HttpStatus.UNAUTHORIZED, 'SESSION_EXPIRED', 'Session expired');
+const challengeExpired = () =>
+  new AppException(
+    HttpStatus.UNAUTHORIZED,
+    'MFA_CHALLENGE_EXPIRED',
+    'Sign in again with your password',
+  );
+
+/** Lifetime of the "password was correct, second factor pending" challenge. */
+export const MFA_CHALLENGE_TTL_SECONDS = 300;
+
+interface MfaChallengePayload {
+  sub: string;
+  typ: 'mfa';
+  step: LoginMfaStep;
+}
+
+/** Result of the password step: signed in, or a second step is needed (challenge token). */
+export type LoginResult =
+  ({ user: CurrentUser } & IssuedTokens) | { mfa: LoginMfaStep; challenge: string };
 
 export const hashToken = (token: string) => createHash('sha256').update(token).digest('hex');
 
@@ -54,9 +78,11 @@ export class AuthService {
     private readonly passwords: PasswordService,
     private readonly audit: AuditService,
     private readonly loader: AuthUserLoader,
+    private readonly authSettings: AuthSettingsService,
+    private readonly mfa: MfaService,
   ) {}
 
-  async login(input: LoginInput, meta: RequestMeta): Promise<{ user: CurrentUser } & IssuedTokens> {
+  async login(input: LoginInput, meta: RequestMeta): Promise<LoginResult> {
     const user = await this.prisma.user.findFirst({
       where: { email: input.email, deletedAt: null },
     });
@@ -117,21 +143,158 @@ export class AuthService {
       throw invalidCredentials();
     }
 
+    // Checked after the password so the answer does not reveal the break-glass account.
+    if (!this.authSettings.localLoginAllowed(await this.authSettings.get(), user.id)) {
+      await this.audit.log({
+        action: 'LOGIN_FAILED',
+        entityType: 'Auth',
+        entityId: user.id,
+        userId: user.id,
+        summary: { reason: 'LOCAL_LOGIN_DISABLED' },
+        meta,
+      });
+      throw new AppException(
+        HttpStatus.FORBIDDEN,
+        'LOCAL_LOGIN_DISABLED',
+        'Password sign-in is turned off; use single sign-on',
+      );
+    }
+
+    const authUser = await this.loader.load(user.id);
+    if (!authUser) throw invalidCredentials();
+    // The failure counter is only reset once every factor is correct (no endless code guessing).
+    if (user.totpEnabledAt) return this.challenge(user.id, 'VERIFY');
+    if (await this.mfa.isRequired(authUser.roles)) return this.challenge(user.id, 'SETUP');
+    return this.completeLogin(user.id, meta, { method: 'PASSWORD' });
+  }
+
+  /** Second step: TOTP or recovery code after a correct password. */
+  async loginMfa(challenge: string | undefined, input: MfaVerifyInput, meta: RequestMeta) {
+    const user = await this.challengedUser(challenge, 'VERIFY', meta);
+    let method: 'TOTP' | 'RECOVERY_CODE';
+    try {
+      method = await this.mfa.verifyLogin(user, input);
+    } catch (err) {
+      await this.registerMfaFailure(user, meta);
+      throw err;
+    }
+    return this.completeLogin(user.id, meta, { method: 'PASSWORD', mfa: method });
+  }
+
+  /** 2FA is required for the user's role but not set up yet: start enrolment during sign-in. */
+  async loginMfaSetup(challenge: string | undefined, meta: RequestMeta): Promise<MfaSetupDto> {
+    const user = await this.challengedUser(challenge, 'SETUP', meta);
+    return this.mfa.startSetup(user);
+  }
+
+  async loginMfaSetupConfirm(challenge: string | undefined, code: string, meta: RequestMeta) {
+    const user = await this.challengedUser(challenge, 'SETUP', meta);
+    let recoveryCodes: string[];
+    try {
+      ({ recoveryCodes } = await this.mfa.confirmSetup(user.id, code, meta));
+    } catch (err) {
+      if (err instanceof AppException && err.code === 'MFA_CODE_INVALID') {
+        await this.registerMfaFailure(user, meta);
+      }
+      throw err;
+    }
+    const result = await this.completeLogin(user.id, meta, { method: 'PASSWORD', mfa: 'TOTP' });
+    return { ...result, recoveryCodes };
+  }
+
+  /** Every sign-in method ends here: counters reset, LOGIN audited, tokens issued. */
+  async completeLogin(
+    userId: string,
+    meta: RequestMeta,
+    summary: Record<string, unknown>,
+  ): Promise<{ user: CurrentUser } & IssuedTokens> {
     await this.prisma.user.update({
-      where: { id: user.id },
+      where: { id: userId },
       data: { failedLoginCount: 0, lockedUntil: null, lastLoginAt: new Date() },
     });
     await this.audit.log({
       action: 'LOGIN',
       entityType: 'Auth',
-      entityId: user.id,
-      userId: user.id,
+      entityId: userId,
+      userId,
+      summary,
       meta,
     });
-    const authUser = await this.loader.load(user.id);
+    const authUser = await this.loader.load(userId);
     if (!authUser) throw invalidCredentials();
-    const tokens = await this.issueTokens(user.id, randomUUID(), meta);
+    const tokens = await this.issueTokens(userId, randomUUID(), meta);
     return { user: toCurrentUser(authUser), ...tokens };
+  }
+
+  private async challenge(userId: string, step: LoginMfaStep): Promise<LoginResult> {
+    const challenge = await this.jwt.signAsync(
+      { sub: userId, typ: 'mfa', step } satisfies MfaChallengePayload,
+      { expiresIn: MFA_CHALLENGE_TTL_SECONDS, algorithm: 'HS256' },
+    );
+    return { mfa: step, challenge };
+  }
+
+  /** The user behind a valid challenge of the given kind (still active, not locked). */
+  private async challengedUser(token: string | undefined, step: LoginMfaStep, meta: RequestMeta) {
+    if (!token) throw challengeExpired();
+    let payload: MfaChallengePayload;
+    try {
+      payload = await this.jwt.verifyAsync<MfaChallengePayload>(token, { algorithms: ['HS256'] });
+    } catch {
+      throw challengeExpired();
+    }
+    if (payload.typ !== 'mfa' || payload.step !== step) throw challengeExpired();
+    const user = await this.prisma.user.findFirst({
+      where: { id: payload.sub, deletedAt: null, status: 'ACTIVE' },
+    });
+    if (!user) throw challengeExpired();
+    if (isLocked(user)) {
+      await this.audit.log({
+        action: 'LOGIN_FAILED',
+        entityType: 'Auth',
+        entityId: user.id,
+        userId: user.id,
+        summary: { reason: 'LOCKED' },
+        meta,
+      });
+      throw new AppException(HttpStatus.UNAUTHORIZED, 'ACCOUNT_LOCKED', 'Account is locked', {
+        lockedUntil: user.lockedUntil,
+      });
+    }
+    return user;
+  }
+
+  /** A wrong second factor counts towards the same lockout as a wrong password. */
+  private async registerMfaFailure(
+    user: { id: string; failedLoginCount: number; lockedUntil: Date | null },
+    meta: RequestMeta,
+  ) {
+    const next = registerFailure(user, {
+      maxAttempts: this.config.LOGIN_MAX_ATTEMPTS,
+      lockoutMinutes: this.config.LOGIN_LOCKOUT_MINUTES,
+    });
+    await this.prisma.user.update({
+      where: { id: user.id },
+      data: { failedLoginCount: next.failedLoginCount, lockedUntil: next.lockedUntil },
+    });
+    if (next.justLocked) {
+      await this.audit.log({
+        action: 'LOCKOUT',
+        entityType: 'User',
+        entityId: user.id,
+        userId: user.id,
+        summary: { lockedUntil: next.lockedUntil },
+        meta,
+      });
+    }
+    await this.audit.log({
+      action: 'LOGIN_FAILED',
+      entityType: 'Auth',
+      entityId: user.id,
+      userId: user.id,
+      summary: { reason: 'BAD_MFA_CODE' },
+      meta,
+    });
   }
 
   /** Rotates a refresh token. Reuse of an already-rotated token revokes the whole family. */
@@ -218,6 +381,7 @@ export class AuthService {
     meta: RequestMeta,
   ): Promise<IssuedTokens> {
     const record = await this.prisma.user.findUniqueOrThrow({ where: { id: user.id } });
+    if (record.passwordHash === '') throw badRequest('NO_LOCAL_PASSWORD');
     if (!(await this.passwords.verify(record.passwordHash, input.currentPassword))) {
       throw badRequest('INVALID_CURRENT_PASSWORD', 'Current password is incorrect');
     }

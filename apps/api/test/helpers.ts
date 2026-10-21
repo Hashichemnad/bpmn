@@ -224,6 +224,7 @@ const TABLES = [
   'ProcessModel',
   'Process',
   'RepoObject',
+  'MfaRecoveryCode',
   'RefreshToken',
   'UserRole',
   'User',
@@ -279,7 +280,7 @@ export class Client {
   }
 
   /** Re-reads the CSRF cookie (it is rotated on login). */
-  private syncCsrf(res: request.Response) {
+  syncCsrf(res: request.Response) {
     const cookies = ([] as string[]).concat(res.headers['set-cookie'] ?? []);
     const c = cookies.find((v) => v.startsWith('ph_csrf='));
     if (c) this.csrf = decodeURIComponent(c.split(';')[0].split('=')[1]);

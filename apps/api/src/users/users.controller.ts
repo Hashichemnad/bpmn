@@ -22,11 +22,15 @@ import {
 import type { AuthUser, RequestMeta } from '../common/auth-user';
 import { UuidPipe, ZodPipe } from '../common/zod.pipe';
 import { UsersService } from './users.service';
+import { MfaService } from '../auth/mfa.service';
 
 @ApiTags('users')
 @Controller('users')
 export class UsersController {
-  constructor(private readonly users: UsersService) {}
+  constructor(
+    private readonly users: UsersService,
+    private readonly mfa: MfaService,
+  ) {}
 
   @Get()
   @RequirePermissions(PERMISSIONS.USERS_READ)
@@ -89,5 +93,17 @@ export class UsersController {
     @ReqMeta() meta: RequestMeta,
   ) {
     return this.users.unlock(id, user, meta);
+  }
+
+  /** Removes the user's two-factor authentication (lost phone) and ends their sessions. */
+  @Post(':id/mfa/reset')
+  @RequirePermissions(PERMISSIONS.USERS_MANAGE)
+  @HttpCode(204)
+  async resetMfa(
+    @Param('id', UuidPipe()) id: string,
+    @CurrentUser() user: AuthUser,
+    @ReqMeta() meta: RequestMeta,
+  ) {
+    await this.mfa.reset(id, user, meta);
   }
 }

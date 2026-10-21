@@ -5,6 +5,9 @@ import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { AuthUserLoader } from './auth-user.loader';
 import { PasswordService } from './password.service';
+import { AuthSettingsController } from './auth-settings.controller';
+import { AuthSettingsService } from './auth-settings.service';
+import { MfaService } from './mfa.service';
 
 @Global()
 @Module({
@@ -16,8 +19,8 @@ import { PasswordService } from './password.service';
       }),
     }),
   ],
-  controllers: [AuthController],
-  providers: [AuthService, AuthUserLoader, PasswordService],
-  exports: [AuthUserLoader, PasswordService, JwtModule],
+  controllers: [AuthController, AuthSettingsController],
+  providers: [AuthService, AuthUserLoader, PasswordService, AuthSettingsService, MfaService],
+  exports: [AuthUserLoader, PasswordService, JwtModule, AuthSettingsService, MfaService],
 })
 export class AuthModule {}
