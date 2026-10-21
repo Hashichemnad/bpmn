@@ -158,8 +158,15 @@ function Toolbar({ editor, pageId }: { editor: Editor; pageId?: string }) {
     setUploading(true);
     try {
       const a = await uploadAttachment(pageId, file);
-      if (kind === 'image') chain().setImage({ src: a.url, alt: a.fileName }).run();
-      else
+      if (kind === 'image') {
+        // Paragraph after the image: the cursor must not stay on the (atom) image node.
+        chain()
+          .insertContent([
+            { type: 'image', attrs: { src: a.url, alt: a.fileName } },
+            { type: 'paragraph' },
+          ])
+          .run();
+      } else {
         chain()
           .insertContent([
             {
@@ -170,6 +177,7 @@ function Toolbar({ editor, pageId }: { editor: Editor; pageId?: string }) {
             { type: 'text', text: ' ' },
           ])
           .run();
+      }
       void qc.invalidateQueries({ queryKey: docKeys.attachments(pageId) });
     } catch (err) {
       message.error(errorMessage(err));

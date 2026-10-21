@@ -838,10 +838,14 @@ html[lang='ar'] body {
   font-weight: 600;
 }
 
-.ph-diff-kind-code,
-.ph-diff-kind-row {
+.ph-diff-kind-code {
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
   font-size: 13px;
+}
+
+.ph-diff-kind-row {
+  font-size: 13px;
+  color: #334155;
 }
 
 .ph-diff-kind-special {
@@ -1087,4 +1091,25 @@ html[lang='ar'] body {
   .ph-embed-header a {
     display: none;
   }
+}
+
+.ph-link-item.ant-list-item {
+  padding-inline: 0;
+}
+
+.ph-link-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-inline-size: 0;
+  flex-wrap: wrap;
+}
+
+.ph-link-text {
+  min-inline-size: 0;
+  overflow-wrap: anywhere;
+}
+
+.ph-card-title-wrap {
+  white-space: normal;
 }

@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { App, Button, Card, Empty, Flex, List, Select, Space, Tag, Tooltip } from 'antd';
+import { App, Button, Card, Empty, Flex, List, Select, Tag, Tooltip } from 'antd';
 import { DeleteOutlined, LinkOutlined, PartitionOutlined, PlusOutlined } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
 import { useObjects, useProcessTree } from '@/api/hooks';
@@ -66,10 +66,9 @@ export function PageLinksPanel({ pageId, canEdit }: { pageId: string; canEdit: b
     <Card
       size="small"
       title={
-        <Space>
-          <LinkOutlined />
-          {t('docs:links.title')}
-        </Space>
+        <span className="ph-card-title-wrap">
+          <LinkOutlined /> {t('docs:links.title')}
+        </span>
       }
       loading={links.isLoading}
       extra={
@@ -120,10 +119,10 @@ export function PageLinksPanel({ pageId, canEdit }: { pageId: string; canEdit: b
               header={<strong>{t('docs:links.processes')}</strong>}
               dataSource={processLinks}
               renderItem={(l) => (
-                <List.Item actions={[removeButton(l.id)]}>
-                  <Space size={4} wrap>
+                <List.Item actions={[removeButton(l.id)]} className="ph-link-item">
+                  <div className="ph-link-row">
                     <PartitionOutlined className="ph-muted" />
-                    <Link to={`/processes/${l.process!.id}`}>
+                    <Link to={`/processes/${l.process!.id}`} className="ph-link-text">
                       <span dir="ltr" className="ph-tree-code">
                         {l.process!.code}
                       </span>{' '}
@@ -134,7 +133,7 @@ export function PageLinksPanel({ pageId, canEdit }: { pageId: string; canEdit: b
                         <Tag color="blue">{t('docs:links.embedded')}</Tag>
                       </Tooltip>
                     )}
-                  </Space>
+                  </div>
                 </List.Item>
               )}
             />
@@ -145,11 +144,13 @@ export function PageLinksPanel({ pageId, canEdit }: { pageId: string; canEdit: b
               header={<strong>{t('docs:links.objects')}</strong>}
               dataSource={objectLinks}
               renderItem={(l) => (
-                <List.Item actions={[removeButton(l.id)]}>
-                  <Space size={4} wrap>
-                    <Link to={`/library/objects/${l.object!.id}`}>{loc(l.object)}</Link>
+                <List.Item actions={[removeButton(l.id)]} className="ph-link-item">
+                  <div className="ph-link-row">
+                    <Link to={`/library/objects/${l.object!.id}`} className="ph-link-text">
+                      {loc(l.object)}
+                    </Link>
                     <Tag>{t(`objects:types.${l.object!.type}`)}</Tag>
-                  </Space>
+                  </div>
                 </List.Item>
               )}
             />

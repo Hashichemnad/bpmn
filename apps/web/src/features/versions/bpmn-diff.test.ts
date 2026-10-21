@@ -30,6 +30,17 @@ describe('diffBpmn', () => {
     expect(changes[1]).toMatchObject({ nameEn: 'Old', nameAr: '' });
   });
 
+  it('shows references by element id', async () => {
+    const a = doc(
+      '<bpmn:task id="A" /><bpmn:task id="B" /><bpmn:sequenceFlow id="F" sourceRef="A" targetRef="A" />',
+    );
+    const b = doc(
+      '<bpmn:task id="A" /><bpmn:task id="B" /><bpmn:sequenceFlow id="F" sourceRef="A" targetRef="B" />',
+    );
+    const flow = (await diffBpmn(a, b)).find((c) => c.id === 'F');
+    expect(flow?.attrs).toEqual([{ name: 'targetRef', oldValue: 'A', newValue: 'B' }]);
+  });
+
   it('returns nothing for identical models', async () => {
     const a = doc('<bpmn:task id="T1" name="x" />');
     expect(await diffBpmn(a, a)).toEqual([]);

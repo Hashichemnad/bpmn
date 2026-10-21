@@ -53,8 +53,10 @@ export const BlockDirection = Extension.create({
         ({ tr, state, dispatch }) => {
           const { from, to } = state.selection;
           let changed = false;
+          // Only the paragraphs/headings themselves: containers (lists, callouts, cells) that
+          // merely contain the selection keep their direction.
           state.doc.nodesBetween(from, to, (node, pos) => {
-            if (!DIRECTIONAL_TYPES.includes(node.type.name)) return;
+            if (!node.isTextblock || !DIRECTIONAL_TYPES.includes(node.type.name)) return;
             changed = true;
             if (dispatch) tr.setNodeMarkup(pos, undefined, { ...node.attrs, dir });
           });

@@ -40,7 +40,7 @@ function DiagramNodeView({ node, editor, deleteNode, selected }: ReactNodeViewPr
 }
 
 /** Read-only BPMN diagram of a repository process: `<div data-type="bpmn-diagram" data-process-id>`. */
-export const BpmnDiagram = Node.create({
+export const BpmnDiagramSchema = Node.create({
   name: 'bpmnDiagram',
   group: 'block',
   atom: true,
@@ -65,16 +65,24 @@ export const BpmnDiagram = Node.create({
     return ['div', mergeAttributes({ 'data-type': 'bpmn-diagram' }, HTMLAttributes)];
   },
 
-  addNodeView() {
-    return ReactNodeViewRenderer(DiagramNodeView);
-  },
-
   addCommands() {
     return {
+      // A paragraph after the atom keeps the cursor out of it, so the next insert or
+      // keystroke does not replace the diagram.
       insertBpmnDiagram:
         (processId) =>
         ({ commands }) =>
-          commands.insertContent({ type: this.name, attrs: { processId } }),
+          commands.insertContent([
+            { type: this.name, attrs: { processId } },
+            { type: 'paragraph' },
+          ]),
     };
+  },
+});
+
+/** With the React node view that renders the diagram (editor and reader). */
+export const BpmnDiagram = BpmnDiagramSchema.extend({
+  addNodeView() {
+    return ReactNodeViewRenderer(DiagramNodeView);
   },
 });

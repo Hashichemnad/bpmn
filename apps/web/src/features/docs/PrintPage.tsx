@@ -38,28 +38,30 @@ export function PrintPage() {
   const v = pageVersionFor(p, lang);
 
   return (
-    <div className="ph-print" dir={v.dir} lang={lang}>
+    <div className="ph-print">
       <div className="ph-print-toolbar">
         <Button type="primary" icon={<PrinterOutlined />} onClick={() => window.print()}>
           {t('docs:export.printPdf')}
         </Button>
         <Typography.Text type="secondary">{t('docs:export.printHint')}</Typography.Text>
       </div>
-      <header className="ph-print-header">
-        <span>{loc({ nameEn: settings.data?.orgNameEn, nameAr: settings.data?.orgNameAr })}</span>
-        <span>
-          {loc(p.space)} · v{p.version}
-        </span>
-      </header>
-      <h1>{v.title}</h1>
-      <p className="ph-print-meta">
-        {t('docs:pages.versionMeta', {
-          version: p.version,
-          time: formatDate(p.updatedAt),
-          name: loc(p.updatedBy) || p.updatedBy?.email || '—',
-        })}
-      </p>
-      <RichTextView html={v.html} dir={v.dir} lang={lang} />
+      <div dir={v.dir} lang={lang}>
+        <header className="ph-print-header">
+          <span>{loc({ nameEn: settings.data?.orgNameEn, nameAr: settings.data?.orgNameAr })}</span>
+          <span>
+            {loc(p.space)} · v{p.version}
+          </span>
+        </header>
+        <h1>{v.title}</h1>
+        <p className="ph-print-meta">
+          {t('docs:pages.versionMeta', {
+            version: p.version,
+            time: formatDate(p.updatedAt),
+            name: loc(p.updatedBy) || p.updatedBy?.email || '—',
+          })}
+        </p>
+        <RichTextView html={v.html} dir={v.dir} lang={lang} />
+      </div>
     </div>
   );
 }

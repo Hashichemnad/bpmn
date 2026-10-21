@@ -22,12 +22,12 @@ interface Element {
   get(name: string): unknown;
 }
 
-const str = (v: unknown) =>
-  v === undefined || v === null
-    ? ''
-    : typeof v === 'object'
-      ? ((v as { id?: string }).id ?? JSON.stringify(v))
-      : String(v);
+/** Display value of a changed attribute; references come back as "#ref:<id>". */
+const str = (v: unknown): string => {
+  if (v === undefined || v === null) return '';
+  if (typeof v === 'object') return (v as { id?: string }).id ?? JSON.stringify(v);
+  return String(v).replace(/^#ref:/, '');
+};
 
 function labels(el: Element) {
   const en = str(el.get?.('ph:nameEn'));

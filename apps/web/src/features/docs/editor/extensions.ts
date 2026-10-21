@@ -5,11 +5,18 @@ import { TaskItem, TaskList } from '@tiptap/extension-list';
 import { Placeholder } from '@tiptap/extensions';
 import { isAllowedHref } from '@processhub/shared';
 import { Callout } from './Callout';
-import { BpmnDiagram } from './BpmnDiagramNode';
+import { BpmnDiagram, BpmnDiagramSchema } from './BpmnDiagramNode';
 import { BlockDirection } from './BlockDirection';
 
 /** The wiki's TipTap schema, shared by the editor and the read-only renderer. */
-export function wikiExtensions({ placeholder }: { placeholder?: string } = {}) {
+export function wikiExtensions({
+  placeholder,
+  nodeViews = true,
+}: {
+  placeholder?: string;
+  /** False for headless use (tests): the schema without React node views. */
+  nodeViews?: boolean;
+} = {}) {
   return [
     StarterKit.configure({
       heading: { levels: [1, 2, 3, 4] },
@@ -25,7 +32,7 @@ export function wikiExtensions({ placeholder }: { placeholder?: string } = {}) {
     TaskList,
     TaskItem.configure({ nested: true }),
     Callout,
-    BpmnDiagram,
+    nodeViews ? BpmnDiagram : BpmnDiagramSchema,
     BlockDirection,
     ...(placeholder ? [Placeholder.configure({ placeholder })] : []),
   ];

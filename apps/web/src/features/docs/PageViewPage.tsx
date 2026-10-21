@@ -215,7 +215,7 @@ export function PageViewPage() {
         />
       )}
       <Row gutter={[24, 24]}>
-        <Col xs={24} xl={17}>
+        <Col xs={24} xl={16} xxl={17}>
           <Card className="ph-page-card">
             {(lang === 'ar' ? p.contentAr : p.contentEn).trim() ? (
               <RichTextView
@@ -229,7 +229,7 @@ export function PageViewPage() {
             )}
           </Card>
         </Col>
-        <Col xs={24} xl={7}>
+        <Col xs={24} xl={8} xxl={7}>
           <Space direction="vertical" size={16} style={{ inlineSize: '100%' }}>
             <PageLinksPanel pageId={p.id} canEdit={p.canEdit} />
             <AttachmentsPanel pageId={p.id} canEdit={p.canEdit} />
