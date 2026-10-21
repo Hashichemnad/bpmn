@@ -13,6 +13,7 @@
 | Area | Features | Phase |
 |---|---|---|
 | **Platform** | Users, roles & permissions, hierarchical departments, audit log, organisation settings & logo, Arabic/English with RTL | ✅ 1 |
+| **Sign-in** | Single sign-on with Microsoft Entra ID (Azure AD) or any OpenID Connect provider (users created on first sign-in, directory groups → roles and departments, allowed domains), password sign-in can be limited to a break-glass admin, optional two-step verification with an authenticator app (required per role, recovery codes, admin reset) | ✅ 6 |
 | **Process House & Repository** | Management / Core / Support process house, drag-and-drop process tree, owners, departments | ✅ 1 |
 | **Process Modeler** | BPMN 2.0 editor with bilingual labels, validation, versions, drill-down, import/export (BPMN XML, SVG, PNG) | ✅ 1 |
 | **Object Repository** | Reusable roles and IT systems linked to process steps, "where used" report (documents, risks, controls, KPIs later) | ✅ 1 |
@@ -122,6 +123,7 @@ Every variable is documented in [`.env.example`](./.env.example). The ones that 
 - `SCHEDULER_INTERVAL_MINUTES`: how often review reminders are checked (default 60; `0` turns them off).
 - `WEB_PORT`, `CORS_ORIGINS`: the port and URL users open.
 - `OUTBOUND_ALLOWED_HOSTS`: internal hosts (names, IPs or CIDR ranges) the Git and SMTP integrations may reach. All other internal addresses are blocked to prevent SSRF. Docker Compose defaults to `mailpit`; add your own GitLab or SMTP server if it runs in a private network.
+- `AUTH_FORCE_LOCAL_LOGIN`: emergency switch — `true` allows password sign-in for everyone even when Settings → Authentication turned it off. Keep `false`.
 - `COOKIE_SECURE`: keep `true`. It needs HTTPS (or `localhost`). Put a TLS reverse proxy in front for real use.
 - `SEED_DEMO_DATA=false`: start with an empty repository.
 
@@ -166,6 +168,19 @@ and page views (summarise, documentation, process from a page), version compares
 and marked "AI-generated — review before publishing" until a person edits or approves it. Requests go from the
 server to the provider (never from the browser), are limited and logged (**Administration → AI usage**, audit
 log). A guided demo with sample prompts: [`docs/AI-DEMO.md`](./docs/AI-DEMO.md).
+
+### Single sign-on and two-step verification (optional)
+
+Settings → Authentication (Super Admin): Microsoft Entra ID (tenant ID, client ID, client secret — stored
+encrypted) or any OpenID Connect provider (issuer URL), allowed e-mail domains, default role and department
+for users created at their first sign-in, group mappings (Entra group object ID → roles / department,
+optionally updated at every sign-in), and whether password sign-in stays available (otherwise only a
+break-glass Super Admin). Register `APP_URL/api/v1/auth/sso/callback` as redirect URI at the provider;
+step-by-step guide for Entra ID: [`docs/DEPLOYMENT.md`](./docs/DEPLOYMENT.md) §6.1.
+
+Users with a password can turn on two-step verification under **My profile** (QR code for an authenticator
+app, ten recovery codes). Settings → Authentication can require it per role; administrators can reset it
+(**Administration → Users → ⋮ → Reset 2FA**).
 
 ### Email
 
@@ -260,7 +275,9 @@ scripts/                  generate-secrets, backup, restore, migrate-minio-stora
 
 ## Security highlights
 
-- argon2id password hashing, a configurable password policy, and account lockout after repeated failures.
+- argon2id password hashing, a configurable password policy, and account lockout after repeated failures (wrong passwords and wrong 2FA codes).
+- Single sign-on: OpenID Connect code flow with PKCE, state and nonce (`openid-client`), ID-token signature, issuer, audience and expiry verified; allowed domains; no account takeover by e-mail; tests use a mock identity provider.
+- Optional TOTP two-step verification: secret encrypted, codes cannot be replayed, single-use hashed recovery codes; required per role.
 - Short-lived JWT access tokens and rotating refresh tokens in `httpOnly; Secure; SameSite=Strict` cookies, with reuse detection. Double-submit CSRF protection bound to the request origin.
 - Permissions are checked on the server for every request, and routes are denied by default. The UI only hides what a user cannot do.
 - Rate limiting, request size limits, helmet, strict CORS, and a CSP on the web app.

@@ -6,7 +6,7 @@ Read this together with `CLAUDE.md` at the start of every session.
 
 Parts 1 (security review) and 2 (production deployment) are merged into `main`.
 
-### Part 3 — Single sign-on (OIDC / Entra ID) and TOTP two-factor (in progress)
+### Part 3 — Single sign-on (OIDC / Entra ID) and TOTP two-factor (done, awaiting review)
 
 Design (details in DECISIONS D-055 – D-060 once written):
 
@@ -55,8 +55,41 @@ disable,recovery-codes}`, `POST /users/:id/mfa/reset`. A wrong code counts towar
       `features/profile/TwoFactorCard.tsx`, `features/settings/AuthSettingsCard.tsx` (on the Settings page),
       Users page tags + "Reset 2FA", `api/auth.ts`; `LoginPage.test.tsx` (4 tests); i18n test covers the new
       dynamic keys.
-- [ ] 5. Docs (DECISIONS, SECURITY, DEPLOYMENT/README Entra ID guide, BACKLOG, CLAUDE.md), full verification,
-      push.
+- [x] 5. Docs (DECISIONS, SECURITY, DEPLOYMENT/README Entra ID guide, BACKLOG, CLAUDE.md), full verification,
+      push. **Done:** DECISIONS D-055 – D-060; SECURITY.md SEC-10 / SEC-11 (both found and fixed in this part),
+      A07 controls, rate limits, risks, go-live and pen-test checklists, route table regenerated;
+      DEPLOYMENT.md §6.1 (Entra ID step by step, other providers, secret renewal, emergency switch), §6.2 (2FA),
+      troubleshooting rows; README (features, configuration, security highlights); BACKLOG; CLAUDE.md phase
+      table, §7, §9.
+
+#### Verification (part 3)
+
+| Check                                                 | Result                                                                                                                                                                                                                                    |
+| ----------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `pnpm format:check`, `pnpm lint`, `pnpm typecheck`    | clean                                                                                                                                                                                                                                     |
+| `pnpm test`                                           | **397 tests pass** — shared 73, web 35, API 289 (38 suites; new: `mfa.e2e` 10, `sso.e2e` 26, `totp` + `sso-claims` unit, `LoginPage.test.tsx` 4, schema tests 9; secret-leak test extended with the SSO secret and TOTP secret)           |
+| `pnpm build`                                          | passes; the built API loads the ESM-only `openid-client` through `require(esm)`                                                                                                                                                           |
+| `pnpm audit --prod`                                   | no high/critical; the same 4 moderate as before (`minio` client, SEC-09)                                                                                                                                                                  |
+| Browser walkthrough (built API + Vite + mock OIDC)    | Playwright script: Settings → Authentication filled via the UI, Test connection, save; 2FA enrolment with QR code and recovery codes; Arabic login page with SSO button; Arabic 2FA step; JIT SSO user with mapped role; Arabic SSO error |
+| Playwright smoke suite (`pnpm e2e`, Vite + built API) | 8 pass                                                                                                                                                                                                                                    |
+
+The walkthrough found and fixed three UI bugs before commit: the settings form dropped fields that were not
+shown (tenant ID vs issuer) and was refused by the API; the SSO error on the login page did not follow the
+language toggle; the six 2FA code boxes ran right-to-left in Arabic. Docker was **not** available in this
+session (no daemon), so `docker compose up` from a clean clone was not re-run; the only container-relevant
+changes are two new environment variables passed through in both Compose files (YAML validated) and the
+`openid-client` runtime requirement Node ≥ 20.19 (`node:20-alpine` currently resolves to 20.19+).
+
+### Next (continue here)
+
+1. Review and merge `phase-6-part-3` (new migration `20261021180000_sso_mfa` runs automatically at start).
+   Before relying on it in production: one real sign-in against your Entra ID tenant (DEPLOYMENT.md §6.1) —
+   the tests use a mock provider.
+2. Decisions for the product owner — see the session summary / D-055 – D-060: roles that must use 2FA at
+   go-live; whether password sign-in is switched off after SSO roll-out; whether the directory manages roles
+   ("update roles at every sign-in"); Entra ID Conditional Access MFA for SSO users.
+3. Next Phase 6 parts (suggested order): slim API runtime image and images in a registry (also Node 22 LTS —
+   Node 20 is end-of-life); performance; external penetration test with `docs/SECURITY.md` §8.
 
 ## Phase 6 part 2 — 2026-10-21 (production deployment, merged into `main`)
 
