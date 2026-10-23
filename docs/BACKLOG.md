@@ -21,8 +21,6 @@ Part A (colour theme, renderer, colour picker, fonts, D-067 – D-072) is done. 
 
 Other ideas from Part A:
 
-- Optional: a lighter "draft" rule for "Apply theme to existing diagrams" on published processes (e.g. apply
-  without changing the status, or only to drafts) — product owner decision, D-072.
 - Theme per process category or per department; dark diagram theme for presentations.
 - Colour sequence flows and text annotations (the theme colours shapes only).
 - Compare: list colour-only changes separately from moves ("recoloured").

@@ -699,11 +699,30 @@ the theme colours (deduplicated) and four neutral colours, plus two ProcessHub e
 (theme colour of each selected element's kind) and "No colour". It is part of the editable modeler only, so
 read-only users never see it. The palette follows theme changes without recreating the modeler.
 
-## D-072 — "Apply theme to existing diagrams" creates versions and follows governance
+## D-072 — "Apply theme to existing diagrams": versions, colours-only updates of published processes
 
-**Decision:** The Super Admin action recolours only elements **without** colours, in every working model, and
-saves each changed diagram through the normal "new version" path (change note "Applied colour theme",
-audited, Git sync and notifications as for any version) plus one summary audit entry. Processes in review or
-archived are skipped (they are locked). Approved / published processes get a new draft working copy like any
-other edit — the published version stays in the portal until it is published again (product owner may prefer
-a different rule, see PROGRESS). A dry run returns the counts first and the UI confirms with them.
+**Decision (product owner, 2026-10-23, replaces the first draft of this entry):** The Super Admin action
+recolours only elements **without** colours, in every working model, after a dry run whose counts the UI shows
+for confirmation. Processes in review or archived are skipped (locked).
+
+- **Drafts:** a new version "Applied colour theme" through the normal version path (audited, Git sync).
+- **Approved / published:** the recoloured model is compared with the official version (current publication,
+  or the approving review) on a canonical form without colour attributes. When the change consists of colour
+  attributes alone, the status stays: a new version labelled **"Theme applied (colours only)"** is created,
+  the working model updated, and the current publication (or the approving review) moves to that version, so
+  the portal shows the coloured published version immediately. Audited as a version plus a process update
+  (from / to version, publication or review). If anything else differs (e.g. unpublished edits in the working
+  model), it falls back to a new draft like any other edit.
+- One summary audit entry per run.
+
+## D-073 — Product owner decisions on Part A
+
+- **Hand-picked theme colours** keep the current behaviour (D-067): an element painted with a theme colour in
+  the picker counts as theme-coloured and follows a later type change; no extra attribute.
+- **Defaults** for kinds outside the reference scheme are confirmed: intermediate events, call activities and
+  sub-processes use the human-task colours; receive tasks the system-task colours.
+- **No display-time colouring** (D-067) is confirmed: existing diagrams stay uncoloured until "Apply theme".
+  After the upgrade Super Admins see a one-time notice "Diagrams can now be coloured: run Apply theme"
+  (`GET /settings/diagram-theme/notice`, shown while uncoloured diagrams exist), which disappears when
+  dismissed (audited) or once the theme has been applied (Setting `branding.diagramThemeNotice`). The upgrade
+  step is in `docs/DEPLOYMENT.md` §9.

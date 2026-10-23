@@ -162,7 +162,10 @@ bpmn.io `bioc:` attributes), so other BPMN tools show them too.
   preview, or reset to the default scheme (`docs/samples/README.md`). New elements, type changes and approval
   steps follow the theme; colours a user picked are never overwritten.
 - **Apply theme to existing diagrams** colours the elements that have no colour yet in every working model,
-  after a dry run with the counts; each changed diagram becomes a new version "Applied colour theme".
+  after a dry run with the counts; drafts get a new version "Applied colour theme". Approved and published
+  processes whose change is colours only keep their status (version "Theme applied (colours only)") and the
+  portal shows the colours at once; otherwise they get a new draft. After an upgrade Super Admins see a
+  one-time notice to run it (DEPLOYMENT.md §9).
 - In the modeler, the context-pad brush offers the theme colours, a few neutral colours, **Reset to theme**
   and **No colour**. A user task is an approval step when its English label starts with Review, Approve,
   Endorse or Confirm, or when **Step kind** in the element panel says so.

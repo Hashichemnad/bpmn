@@ -71,22 +71,25 @@ What changed:
 | Docker                                             | both images build from the committed Dockerfiles (sandbox-only CA copy, as before); `docker compose up` from clean volumes: all five services healthy, demo diagrams seeded with colours; Playwright smoke suite 8/8 against it; modeler, SVG/PNG export with fonts, no CSP errors                                                                                          |
 | Browser (Vite dev, Chromium)                       | PMS-01 imported, rendered with its colours, EN ↔ AR, autosave, reload, export SVG/PNG/BPMN (35 colour pairs, 54 Arabic labels kept); append task → human colours, replace → system colours, picker purple kept on replace, reset to theme, rename "Review …" → approval colours; Settings card EN/AR; apply dry-run dialog; compare highlights; portal and print view EN/AR |
 
-### Decisions for the product owner
+### Product owner decisions (2026-10-23) — implemented
 
-1. **Apply theme on published processes** (D-072): today an approved / published process gets a new draft
-   working copy (normal governance; the portal keeps the published version until it is re-approved). Option:
-   recolour without changing the status, or only drafts.
-2. **Theme colours chosen in the picker count as theme colours** (D-067): an element painted "Gateway yellow"
-   by hand follows a later type change. Alternative: remember explicit picks (extra `ph:` attribute).
-3. **Kinds not in the reference scheme** got defaults: intermediate events = human-task blue; call activities /
-   sub-processes = human task; receive task = system task. Adjustable in Settings.
-4. **Existing diagrams stay uncoloured until "Apply theme"** (no display-time colouring, D-067), so what you see
-   is what other tools and exports see. Run the action once after deploying.
+1. **Apply theme on approved / published processes** (D-072): recoloured in place when the change is colour
+   attributes only (verified against the official version on a canonical, colour-free comparison): status
+   kept, new version "Theme applied (colours only)", publication (or approving review) moved to it, audited;
+   the portal shows the colours at once. Anything else → new draft.
+2. Hand-picked theme colours: current behaviour kept (D-073).
+3. Defaults for intermediate events, call activities and sub-processes confirmed (D-073).
+4. No display-time colouring confirmed; one-time Super Admin notice "Diagrams can now be coloured: run Apply
+   theme" (dismiss or apply closes it, audited); upgrade step in DEPLOYMENT.md §9 (D-073).
+
+Verification of this round: API e2e for in-place recolouring (published, approved-then-published), the
+draft fallback and the notice; unit tests for the colour-only comparison; full `pnpm test`, lint, typecheck,
+format, build; browser check of the notice (EN/AR), the confirmation dialog and "apply" on the demo data (5
+published demo processes kept their status, portal versions coloured).
 
 ### Next (continue here)
 
-1. Review and merge `modeler-design-a`; after deploying run Settings → Diagram colours → **Apply theme to
-   existing diagrams** (after the decision above).
+1. Review and merge `modeler-design-a`; after deploying follow DEPLOYMENT.md §9 (run **Apply theme**).
 2. Modeler design — Part B (BACKLOG).
 3. Phase 6 part 4 step 6 scope and Phase 4 as before.
 
