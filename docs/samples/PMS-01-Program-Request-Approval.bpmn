@@ -1,0 +1,487 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bioc="http://bpmn.io/schema/bpmn/biocolor/1.0" xmlns:color="http://www.omg.org/spec/BPMN/non-normative/color/1.0" xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" xmlns:ph="http://processhub.io/schema/bpmn" id="Definitions_PMS01" targetNamespace="http://bpmn.io/schema/bpmn">
+  <bpmn:collaboration id="Collaboration_PMS01">
+    <bpmn:participant id="Participant_PMS01" name="Program / Initiative Request &amp; Approval" ph:nameEn="Program / Initiative Request &amp; Approval" ph:nameAr="طلب البرنامج / المبادرة واعتماده" processRef="Process_PMS01" />
+  </bpmn:collaboration>
+  <bpmn:process id="Process_PMS01" isExecutable="false">
+    <bpmn:laneSet id="LaneSet_PMS01">
+      <bpmn:lane id="Lane_Requester" name="Requester (Employee)" ph:nameEn="Requester (Employee)" ph:nameAr="مقدم الطلب (الموظف)">
+        <bpmn:flowNodeRef>Start_Need</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_CreateRequest</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_Screening</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Gw_CostFile</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_UploadCost</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_UploadScope</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_Submit</bpmn:flowNodeRef>
+      </bpmn:lane>
+      <bpmn:lane id="Lane_Admin" name="Administration Department" ph:nameEn="Administration Department" ph:nameAr="إدارة الشؤون الإدارية">
+        <bpmn:flowNodeRef>Task_Quotations</bpmn:flowNodeRef>
+      </bpmn:lane>
+      <bpmn:lane id="Lane_SectionMgr" name="Section Manager" ph:nameEn="Section Manager" ph:nameAr="رئيس القسم">
+        <bpmn:flowNodeRef>Task_SMReview</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Gw_SM</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>End_Rejected_SM</bpmn:flowNodeRef>
+      </bpmn:lane>
+      <bpmn:lane id="Lane_DeptDir" name="Department Director" ph:nameEn="Department Director" ph:nameAr="مدير الإدارة">
+        <bpmn:flowNodeRef>Task_DDReview</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Gw_DD</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>End_Rejected_DD</bpmn:flowNodeRef>
+      </bpmn:lane>
+      <bpmn:lane id="Lane_PMO" name="PM Office (Strategy Office)" ph:nameEn="PM Office (Strategy Office)" ph:nameAr="مكتب الاستراتيجية وإدارة المشاريع">
+        <bpmn:flowNodeRef>Task_PMOReview</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Gw_PMO</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>End_Rejected_PMO</bpmn:flowNodeRef>
+      </bpmn:lane>
+      <bpmn:lane id="Lane_DGO" name="DG Office" ph:nameEn="DG Office" ph:nameAr="مكتب المدير العام">
+        <bpmn:flowNodeRef>Task_DGOReview</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Gw_DGO</bpmn:flowNodeRef>
+      </bpmn:lane>
+      <bpmn:lane id="Lane_Budget" name="Budget Section" ph:nameEn="Budget Section" ph:nameAr="قسم الموازنة">
+        <bpmn:flowNodeRef>Task_BudgetReview</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Gw_BudgetDecision</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>End_Rejected_BudgetDecision</bpmn:flowNodeRef>
+      </bpmn:lane>
+      <bpmn:lane id="Lane_System" name="PMS (Salesforce)" ph:nameEn="PMS (Salesforce)" ph:nameAr="نظام إدارة المحافظ (Salesforce)">
+        <bpmn:flowNodeRef>Service_Classify</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Gw_Budget</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Service_CreateProject</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Send_NotifyRequester</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>End_Created</bpmn:flowNodeRef>
+      </bpmn:lane>
+    </bpmn:laneSet>
+    <bpmn:startEvent id="Start_Need" name="Need for a new program identified" ph:nameEn="Need for a new program identified" ph:nameAr="تحديد الحاجة إلى برنامج جديد" ph:descriptionEn="An idea, benchmark, report, global practice, questionnaire, meeting output or leadership guidance suggests a new program." ph:descriptionAr="تنشأ فكرة برنامج جديد من مقترح أو مقارنة معيارية أو تقرير أو ممارسة عالمية أو استبيان أو مخرجات اجتماع أو توجيه قيادي.">
+      <bpmn:outgoing>Flow_1_PMS01</bpmn:outgoing>
+    </bpmn:startEvent>
+    <bpmn:userTask id="Task_CreateRequest" name="Create program request (draft)" ph:nameEn="Create program request (draft)" ph:nameAr="إنشاء طلب البرنامج (مسودة)" ph:descriptionEn="In Program Requests &gt; New: program name, description, justifications, strategic objective, program type (digital / non-digital), source of suggestion, nature (new / continuation), delivery options with advantages and disadvantages, link to internal operations or services, and the four 1–5 priority criteria." ph:descriptionAr="من طلبات البرامج &gt; جديد: اسم البرنامج، الوصف، المبررات، الهدف الاستراتيجي، نوع البرنامج (رقمي / غير رقمي)، مصدر الاقتراح، طبيعة البرنامج (جديد / استمرار)، خيارات التنفيذ مع المزايا والعيوب، الربط بالعمليات أو الخدمات الداخلية، ومعايير الأولوية الأربعة (1–5).">
+      <bpmn:incoming>Flow_1_PMS01</bpmn:incoming>
+      <bpmn:outgoing>Flow_2_PMS01</bpmn:outgoing>
+    </bpmn:userTask>
+    <bpmn:userTask id="Task_Screening" name="Answer screening questions" ph:nameEn="Answer screening questions" ph:nameAr="الإجابة على أسئلة الفرز" ph:descriptionEn="Core to the unit? One-off without repetition? Specific time period? Unique outputs? Requires at least the threshold budget? Operational costs?" ph:descriptionAr="هل العمل جوهري للوحدة؟ هل يُنفذ مرة واحدة دون تكرار؟ هل له فترة زمنية محددة؟ هل له مخرجات فريدة؟ هل يتطلب ميزانية لا تقل عن الحد المعتمد؟ هل توجد تكاليف تشغيلية؟">
+      <bpmn:incoming>Flow_2_PMS01</bpmn:incoming>
+      <bpmn:outgoing>Flow_3_PMS01</bpmn:outgoing>
+    </bpmn:userTask>
+    <bpmn:serviceTask id="Service_Classify" name="Classify as Project or Initiative and score priority" ph:nameEn="Classify as Project or Initiative and score priority" ph:nameAr="التصنيف إلى مشروع أو مبادرة واحتساب الأولوية" ph:descriptionEn="Project when all screening answers are Yes and the approximate budget is at least AED 50,000 (threshold maintained by PM Office); otherwise Initiative. Evaluation Score and priority band are calculated from the four criteria." ph:descriptionAr="يُصنف الطلب مشروعًا إذا كانت جميع إجابات الفرز نعم والميزانية التقريبية 50,000 درهم أو أكثر (حد يحدده مكتب إدارة المشاريع)، وإلا يُصنف مبادرة. تُحتسب درجة التقييم وفئة الأولوية من المعايير الأربعة.">
+      <bpmn:incoming>Flow_3_PMS01</bpmn:incoming>
+      <bpmn:outgoing>Flow_4_PMS01</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:exclusiveGateway id="Gw_CostFile" name="Cost estimation available?" ph:nameEn="Cost estimation available?" ph:nameAr="هل يتوفر تقدير للتكلفة؟">
+      <bpmn:incoming>Flow_4_PMS01</bpmn:incoming>
+      <bpmn:outgoing>Flow_5_PMS01</bpmn:outgoing>
+      <bpmn:outgoing>Flow_6_PMS01</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:userTask id="Task_UploadCost" name="Upload cost estimation file" ph:nameEn="Upload cost estimation file" ph:nameAr="رفع ملف تقدير التكلفة" ph:descriptionEn="Cost Estimation File action: upload the available quotation and enter the estimated budget with Year 1–4 costs (must equal the estimated budget) and expected start and end dates (within 3 years)." ph:descriptionAr="من إجراء ملف تقدير التكلفة: رفع عرض السعر المتوفر وإدخال الميزانية التقديرية مع تكاليف السنوات 1–4 (يجب أن يساوي مجموعها الميزانية) وتاريخي البدء والانتهاء المتوقعين (خلال 3 سنوات).">
+      <bpmn:incoming>Flow_5_PMS01</bpmn:incoming>
+      <bpmn:outgoing>Flow_9_PMS01</bpmn:outgoing>
+    </bpmn:userTask>
+    <bpmn:userTask id="Task_UploadScope" name="Upload project scope (template)" ph:nameEn="Upload project scope (template)" ph:nameAr="رفع نطاق المشروع (النموذج)" ph:descriptionEn="Download the Project Scope template, complete it and upload it. The Administration Department is notified by email to collect quotations." ph:descriptionAr="تنزيل نموذج نطاق المشروع وتعبئته ورفعه، ويتم إشعار إدارة الشؤون الإدارية بالبريد الإلكتروني لجمع عروض الأسعار.">
+      <bpmn:incoming>Flow_6_PMS01</bpmn:incoming>
+      <bpmn:outgoing>Flow_7_PMS01</bpmn:outgoing>
+    </bpmn:userTask>
+    <bpmn:userTask id="Task_Quotations" name="Collect and upload supplier quotations" ph:nameEn="Collect and upload supplier quotations" ph:nameAr="جمع عروض أسعار الموردين ورفعها" ph:descriptionEn="Open the request from the email link, use Upload Quotations to attach all quotations with a comment. Status becomes Quotations Uploaded and the request returns to the requester." ph:descriptionAr="فتح الطلب من رابط البريد الإلكتروني واستخدام إجراء رفع عروض الأسعار لإرفاق جميع العروض مع تعليق. تتغير الحالة إلى تم رفع العروض ويعود الطلب إلى مقدم الطلب.">
+      <bpmn:incoming>Flow_7_PMS01</bpmn:incoming>
+      <bpmn:outgoing>Flow_8_PMS01</bpmn:outgoing>
+    </bpmn:userTask>
+    <bpmn:userTask id="Task_Submit" name="Complete budget details and submit for approval" ph:nameEn="Complete budget details and submit for approval" ph:nameAr="استكمال تفاصيل الميزانية والإرسال للاعتماد" ph:descriptionEn="Fill the budget breakdown, cost sharing, operating costs and expected financial return, then Submit for Approval with a comment. Also used to resubmit after a return for correction." ph:descriptionAr="تعبئة تفاصيل الميزانية والتكاليف المشتركة والتكاليف التشغيلية والعائد المالي المتوقع، ثم الإرسال للاعتماد مع تعليق. تُستخدم أيضًا لإعادة الإرسال بعد الإرجاع للتصحيح.">
+      <bpmn:incoming>Flow_8_PMS01</bpmn:incoming>
+      <bpmn:incoming>Flow_9_PMS01</bpmn:incoming>
+      <bpmn:incoming>Flow_13_PMS01</bpmn:incoming>
+      <bpmn:incoming>Flow_17_PMS01</bpmn:incoming>
+      <bpmn:incoming>Flow_21_PMS01</bpmn:incoming>
+      <bpmn:incoming>Flow_28_PMS01</bpmn:incoming>
+      <bpmn:outgoing>Flow_10_PMS01</bpmn:outgoing>
+    </bpmn:userTask>
+    <bpmn:userTask id="Task_SMReview" name="Review request (Section Manager)" ph:nameEn="Review request (Section Manager)" ph:nameAr="مراجعة الطلب (رئيس القسم)" ph:descriptionEn="Check section-level alignment and completeness. Approve, Reject or Return for Correction (comment required)." ph:descriptionAr="التحقق من التوافق على مستوى القسم واكتمال البيانات. اعتماد أو رفض أو إرجاع للتصحيح (التعليق إلزامي).">
+      <bpmn:incoming>Flow_10_PMS01</bpmn:incoming>
+      <bpmn:outgoing>Flow_11_PMS01</bpmn:outgoing>
+    </bpmn:userTask>
+    <bpmn:exclusiveGateway id="Gw_SM" name="Decision?" ph:nameEn="Decision?" ph:nameAr="القرار؟">
+      <bpmn:incoming>Flow_11_PMS01</bpmn:incoming>
+      <bpmn:outgoing>Flow_12_PMS01</bpmn:outgoing>
+      <bpmn:outgoing>Flow_13_PMS01</bpmn:outgoing>
+      <bpmn:outgoing>Flow_14_PMS01</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:userTask id="Task_DDReview" name="Review request (Department Director)" ph:nameEn="Review request (Department Director)" ph:nameAr="مراجعة الطلب (مدير الإدارة)" ph:descriptionEn="Validate departmental priority and resource alignment. Approve, Reject or Return for Correction." ph:descriptionAr="التحقق من أولوية الإدارة وتوافق الموارد. اعتماد أو رفض أو إرجاع للتصحيح.">
+      <bpmn:incoming>Flow_12_PMS01</bpmn:incoming>
+      <bpmn:outgoing>Flow_15_PMS01</bpmn:outgoing>
+    </bpmn:userTask>
+    <bpmn:exclusiveGateway id="Gw_DD" name="Decision?" ph:nameEn="Decision?" ph:nameAr="القرار؟">
+      <bpmn:incoming>Flow_15_PMS01</bpmn:incoming>
+      <bpmn:outgoing>Flow_16_PMS01</bpmn:outgoing>
+      <bpmn:outgoing>Flow_17_PMS01</bpmn:outgoing>
+      <bpmn:outgoing>Flow_18_PMS01</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:userTask id="Task_PMOReview" name="Review request (PM Office)" ph:nameEn="Review request (PM Office)" ph:nameAr="مراجعة الطلب (مكتب إدارة المشاريع)" ph:descriptionEn="Check methodology adherence, classification, evaluation score and strategic alignment. Approve, Reject or Return for Correction." ph:descriptionAr="التحقق من الالتزام بالمنهجية والتصنيف ودرجة التقييم والتوافق الاستراتيجي. اعتماد أو رفض أو إرجاع للتصحيح.">
+      <bpmn:incoming>Flow_16_PMS01</bpmn:incoming>
+      <bpmn:outgoing>Flow_19_PMS01</bpmn:outgoing>
+    </bpmn:userTask>
+    <bpmn:exclusiveGateway id="Gw_PMO" name="Decision?" ph:nameEn="Decision?" ph:nameAr="القرار؟">
+      <bpmn:incoming>Flow_19_PMS01</bpmn:incoming>
+      <bpmn:outgoing>Flow_20_PMS01</bpmn:outgoing>
+      <bpmn:outgoing>Flow_21_PMS01</bpmn:outgoing>
+      <bpmn:outgoing>Flow_22_PMS01</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:exclusiveGateway id="Gw_Budget" name="Route by budget" ph:nameEn="Route by budget" ph:nameAr="التوجيه حسب الميزانية" ph:descriptionEn="Routing after PM Office approval: no budget → project created; up to AED 50,000 → Budget Section; above AED 50,000 → DG Office, then Budget Section." ph:descriptionAr="التوجيه بعد اعتماد مكتب إدارة المشاريع: دون ميزانية ← إنشاء المشروع؛ حتى 50,000 درهم ← قسم الموازنة؛ أكثر من 50,000 درهم ← مكتب المدير العام ثم قسم الموازنة.">
+      <bpmn:incoming>Flow_20_PMS01</bpmn:incoming>
+      <bpmn:outgoing>Flow_23_PMS01</bpmn:outgoing>
+      <bpmn:outgoing>Flow_24_PMS01</bpmn:outgoing>
+      <bpmn:outgoing>Flow_25_PMS01</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:userTask id="Task_DGOReview" name="Endorse program (DG Office)" ph:nameEn="Endorse program (DG Office)" ph:nameAr="اعتماد البرنامج (مكتب المدير العام)" ph:descriptionEn="Strategic endorsement of programs above AED 50,000. Approve, or return for correction." ph:descriptionAr="الاعتماد الاستراتيجي للبرامج التي تزيد عن 50,000 درهم. اعتماد أو إرجاع للتصحيح.">
+      <bpmn:incoming>Flow_25_PMS01</bpmn:incoming>
+      <bpmn:outgoing>Flow_26_PMS01</bpmn:outgoing>
+    </bpmn:userTask>
+    <bpmn:exclusiveGateway id="Gw_DGO" name="Decision?" ph:nameEn="Decision?" ph:nameAr="القرار؟">
+      <bpmn:incoming>Flow_26_PMS01</bpmn:incoming>
+      <bpmn:outgoing>Flow_27_PMS01</bpmn:outgoing>
+      <bpmn:outgoing>Flow_28_PMS01</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:userTask id="Task_BudgetReview" name="Confirm budget availability" ph:nameEn="Confirm budget availability" ph:nameAr="تأكيد توفر الميزانية" ph:descriptionEn="Validate financial feasibility and record the Approved Budget. Approve or Reject." ph:descriptionAr="التحقق من الجدوى المالية وتسجيل الميزانية المعتمدة. اعتماد أو رفض.">
+      <bpmn:incoming>Flow_24_PMS01</bpmn:incoming>
+      <bpmn:incoming>Flow_27_PMS01</bpmn:incoming>
+      <bpmn:outgoing>Flow_29_PMS01</bpmn:outgoing>
+    </bpmn:userTask>
+    <bpmn:exclusiveGateway id="Gw_BudgetDecision" name="Decision?" ph:nameEn="Decision?" ph:nameAr="القرار؟">
+      <bpmn:incoming>Flow_29_PMS01</bpmn:incoming>
+      <bpmn:outgoing>Flow_30_PMS01</bpmn:outgoing>
+      <bpmn:outgoing>Flow_31_PMS01</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:serviceTask id="Service_CreateProject" name="Create Project / Initiative record" ph:nameEn="Create Project / Initiative record" ph:nameAr="إنشاء سجل المشروع / المبادرة" ph:descriptionEn="PMS Project created automatically (ID PROJ-SPMO-YYYY-NNN), stage Initiation, linked to the request." ph:descriptionAr="يُنشأ المشروع تلقائيًا (الرقم PROJ-SPMO-YYYY-NNN) في مرحلة البدء ومرتبطًا بالطلب.">
+      <bpmn:incoming>Flow_23_PMS01</bpmn:incoming>
+      <bpmn:incoming>Flow_30_PMS01</bpmn:incoming>
+      <bpmn:outgoing>Flow_32_PMS01</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:sendTask id="Send_NotifyRequester" name="Notify requester (bilingual email)" ph:nameEn="Notify requester (bilingual email)" ph:nameAr="إشعار مقدم الطلب (بريد ثنائي اللغة)" ph:descriptionEn="Approval outcome and link to the new project, in English and Arabic." ph:descriptionAr="نتيجة الاعتماد ورابط المشروع الجديد باللغتين العربية والإنجليزية.">
+      <bpmn:incoming>Flow_32_PMS01</bpmn:incoming>
+      <bpmn:outgoing>Flow_33_PMS01</bpmn:outgoing>
+    </bpmn:sendTask>
+    <bpmn:endEvent id="End_Created" name="Project / Initiative created" ph:nameEn="Project / Initiative created" ph:nameAr="تم إنشاء المشروع / المبادرة" ph:descriptionEn="Continues in Project Initiation (Charter)." ph:descriptionAr="يستمر في مرحلة بدء المشروع (الميثاق).">
+      <bpmn:incoming>Flow_33_PMS01</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:endEvent id="End_Rejected_SM" name="Request rejected" ph:nameEn="Request rejected" ph:nameAr="رفض الطلب" ph:descriptionEn="Request is closed as Rejected; the requester is notified with the reason." ph:descriptionAr="يُغلق الطلب بحالة مرفوض ويتم إشعار مقدم الطلب بالسبب.">
+      <bpmn:incoming>Flow_14_PMS01</bpmn:incoming>
+      <bpmn:terminateEventDefinition id="End_Rejected_SM_ed" />
+    </bpmn:endEvent>
+    <bpmn:endEvent id="End_Rejected_DD" name="Request rejected" ph:nameEn="Request rejected" ph:nameAr="رفض الطلب" ph:descriptionEn="Request is closed as Rejected; the requester is notified with the reason." ph:descriptionAr="يُغلق الطلب بحالة مرفوض ويتم إشعار مقدم الطلب بالسبب.">
+      <bpmn:incoming>Flow_18_PMS01</bpmn:incoming>
+      <bpmn:terminateEventDefinition id="End_Rejected_DD_ed" />
+    </bpmn:endEvent>
+    <bpmn:endEvent id="End_Rejected_PMO" name="Request rejected" ph:nameEn="Request rejected" ph:nameAr="رفض الطلب" ph:descriptionEn="Request is closed as Rejected; the requester is notified with the reason." ph:descriptionAr="يُغلق الطلب بحالة مرفوض ويتم إشعار مقدم الطلب بالسبب.">
+      <bpmn:incoming>Flow_22_PMS01</bpmn:incoming>
+      <bpmn:terminateEventDefinition id="End_Rejected_PMO_ed" />
+    </bpmn:endEvent>
+    <bpmn:endEvent id="End_Rejected_BudgetDecision" name="Request rejected" ph:nameEn="Request rejected" ph:nameAr="رفض الطلب" ph:descriptionEn="Request is closed as Rejected; the requester is notified with the reason." ph:descriptionAr="يُغلق الطلب بحالة مرفوض ويتم إشعار مقدم الطلب بالسبب.">
+      <bpmn:incoming>Flow_31_PMS01</bpmn:incoming>
+      <bpmn:terminateEventDefinition id="End_Rejected_BudgetDecision_ed" />
+    </bpmn:endEvent>
+    <bpmn:sequenceFlow id="Flow_1_PMS01" sourceRef="Start_Need" targetRef="Task_CreateRequest" />
+    <bpmn:sequenceFlow id="Flow_2_PMS01" sourceRef="Task_CreateRequest" targetRef="Task_Screening" />
+    <bpmn:sequenceFlow id="Flow_3_PMS01" sourceRef="Task_Screening" targetRef="Service_Classify" />
+    <bpmn:sequenceFlow id="Flow_4_PMS01" sourceRef="Service_Classify" targetRef="Gw_CostFile" />
+    <bpmn:sequenceFlow id="Flow_5_PMS01" sourceRef="Gw_CostFile" targetRef="Task_UploadCost" name="Yes" ph:nameEn="Yes" ph:nameAr="نعم" />
+    <bpmn:sequenceFlow id="Flow_6_PMS01" sourceRef="Gw_CostFile" targetRef="Task_UploadScope" name="No" ph:nameEn="No" ph:nameAr="لا" />
+    <bpmn:sequenceFlow id="Flow_7_PMS01" sourceRef="Task_UploadScope" targetRef="Task_Quotations" />
+    <bpmn:sequenceFlow id="Flow_8_PMS01" sourceRef="Task_Quotations" targetRef="Task_Submit" />
+    <bpmn:sequenceFlow id="Flow_9_PMS01" sourceRef="Task_UploadCost" targetRef="Task_Submit" />
+    <bpmn:sequenceFlow id="Flow_10_PMS01" sourceRef="Task_Submit" targetRef="Task_SMReview" />
+    <bpmn:sequenceFlow id="Flow_11_PMS01" sourceRef="Task_SMReview" targetRef="Gw_SM" />
+    <bpmn:sequenceFlow id="Flow_12_PMS01" sourceRef="Gw_SM" targetRef="Task_DDReview" name="Approved" ph:nameEn="Approved" ph:nameAr="معتمد" />
+    <bpmn:sequenceFlow id="Flow_13_PMS01" sourceRef="Gw_SM" targetRef="Task_Submit" name="Return for correction" ph:nameEn="Return for correction" ph:nameAr="إرجاع للتصحيح" />
+    <bpmn:sequenceFlow id="Flow_14_PMS01" sourceRef="Gw_SM" targetRef="End_Rejected_SM" name="Rejected" ph:nameEn="Rejected" ph:nameAr="مرفوض" />
+    <bpmn:sequenceFlow id="Flow_15_PMS01" sourceRef="Task_DDReview" targetRef="Gw_DD" />
+    <bpmn:sequenceFlow id="Flow_16_PMS01" sourceRef="Gw_DD" targetRef="Task_PMOReview" name="Approved" ph:nameEn="Approved" ph:nameAr="معتمد" />
+    <bpmn:sequenceFlow id="Flow_17_PMS01" sourceRef="Gw_DD" targetRef="Task_Submit" name="Return for correction" ph:nameEn="Return for correction" ph:nameAr="إرجاع للتصحيح" />
+    <bpmn:sequenceFlow id="Flow_18_PMS01" sourceRef="Gw_DD" targetRef="End_Rejected_DD" name="Rejected" ph:nameEn="Rejected" ph:nameAr="مرفوض" />
+    <bpmn:sequenceFlow id="Flow_19_PMS01" sourceRef="Task_PMOReview" targetRef="Gw_PMO" />
+    <bpmn:sequenceFlow id="Flow_20_PMS01" sourceRef="Gw_PMO" targetRef="Gw_Budget" name="Approved" ph:nameEn="Approved" ph:nameAr="معتمد" />
+    <bpmn:sequenceFlow id="Flow_21_PMS01" sourceRef="Gw_PMO" targetRef="Task_Submit" name="Return for correction" ph:nameEn="Return for correction" ph:nameAr="إرجاع للتصحيح" />
+    <bpmn:sequenceFlow id="Flow_22_PMS01" sourceRef="Gw_PMO" targetRef="End_Rejected_PMO" name="Rejected" ph:nameEn="Rejected" ph:nameAr="مرفوض" />
+    <bpmn:sequenceFlow id="Flow_23_PMS01" sourceRef="Gw_Budget" targetRef="Service_CreateProject" name="Budget not required" ph:nameEn="Budget not required" ph:nameAr="لا تتطلب ميزانية" />
+    <bpmn:sequenceFlow id="Flow_24_PMS01" sourceRef="Gw_Budget" targetRef="Task_BudgetReview" name="≤ AED 50,000" ph:nameEn="≤ AED 50,000" ph:nameAr="≤ 50,000 درهم" />
+    <bpmn:sequenceFlow id="Flow_25_PMS01" sourceRef="Gw_Budget" targetRef="Task_DGOReview" name="&gt; AED 50,000" ph:nameEn="&gt; AED 50,000" ph:nameAr="&gt; 50,000 درهم" />
+    <bpmn:sequenceFlow id="Flow_26_PMS01" sourceRef="Task_DGOReview" targetRef="Gw_DGO" />
+    <bpmn:sequenceFlow id="Flow_27_PMS01" sourceRef="Gw_DGO" targetRef="Task_BudgetReview" name="Approved" ph:nameEn="Approved" ph:nameAr="معتمد" />
+    <bpmn:sequenceFlow id="Flow_28_PMS01" sourceRef="Gw_DGO" targetRef="Task_Submit" name="Return for correction" ph:nameEn="Return for correction" ph:nameAr="إرجاع للتصحيح" />
+    <bpmn:sequenceFlow id="Flow_29_PMS01" sourceRef="Task_BudgetReview" targetRef="Gw_BudgetDecision" />
+    <bpmn:sequenceFlow id="Flow_30_PMS01" sourceRef="Gw_BudgetDecision" targetRef="Service_CreateProject" name="Approved" ph:nameEn="Approved" ph:nameAr="معتمد" />
+    <bpmn:sequenceFlow id="Flow_31_PMS01" sourceRef="Gw_BudgetDecision" targetRef="End_Rejected_BudgetDecision" name="Rejected" ph:nameEn="Rejected" ph:nameAr="مرفوض" />
+    <bpmn:sequenceFlow id="Flow_32_PMS01" sourceRef="Service_CreateProject" targetRef="Send_NotifyRequester" />
+    <bpmn:sequenceFlow id="Flow_33_PMS01" sourceRef="Send_NotifyRequester" targetRef="End_Created" />
+  </bpmn:process>
+  <bpmndi:BPMNDiagram id="Diagram_PMS01">
+    <bpmndi:BPMNPlane id="Plane_PMS01" bpmnElement="Collaboration_PMS01">
+      <bpmndi:BPMNShape id="Participant_PMS01_di" bpmnElement="Participant_PMS01" isHorizontal="true">
+        <dc:Bounds x="160" y="80" width="3550" height="1240" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Lane_Requester_di" bpmnElement="Lane_Requester" bioc:fill="#FFFFFF" bioc:stroke="#59636E" color:background-color="#FFFFFF" color:border-color="#59636E" isHorizontal="true">
+        <dc:Bounds x="190" y="80" width="3520" height="260" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Lane_Admin_di" bpmnElement="Lane_Admin" bioc:fill="#FAFBFC" bioc:stroke="#59636E" color:background-color="#FAFBFC" color:border-color="#59636E" isHorizontal="true">
+        <dc:Bounds x="190" y="340" width="3520" height="140" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Lane_SectionMgr_di" bpmnElement="Lane_SectionMgr" bioc:fill="#FFFFFF" bioc:stroke="#59636E" color:background-color="#FFFFFF" color:border-color="#59636E" isHorizontal="true">
+        <dc:Bounds x="190" y="480" width="3520" height="140" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Lane_DeptDir_di" bpmnElement="Lane_DeptDir" bioc:fill="#FAFBFC" bioc:stroke="#59636E" color:background-color="#FAFBFC" color:border-color="#59636E" isHorizontal="true">
+        <dc:Bounds x="190" y="620" width="3520" height="140" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Lane_PMO_di" bpmnElement="Lane_PMO" bioc:fill="#FFFFFF" bioc:stroke="#59636E" color:background-color="#FFFFFF" color:border-color="#59636E" isHorizontal="true">
+        <dc:Bounds x="190" y="760" width="3520" height="140" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Lane_DGO_di" bpmnElement="Lane_DGO" bioc:fill="#FAFBFC" bioc:stroke="#59636E" color:background-color="#FAFBFC" color:border-color="#59636E" isHorizontal="true">
+        <dc:Bounds x="190" y="900" width="3520" height="140" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Lane_Budget_di" bpmnElement="Lane_Budget" bioc:fill="#FFFFFF" bioc:stroke="#59636E" color:background-color="#FFFFFF" color:border-color="#59636E" isHorizontal="true">
+        <dc:Bounds x="190" y="1040" width="3520" height="140" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Lane_System_di" bpmnElement="Lane_System" bioc:fill="#FAFBFC" bioc:stroke="#59636E" color:background-color="#FAFBFC" color:border-color="#59636E" isHorizontal="true">
+        <dc:Bounds x="190" y="1180" width="3520" height="140" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Start_Need_di" bpmnElement="Start_Need" bioc:fill="#E6F4EA" bioc:stroke="#2E7D32" color:background-color="#E6F4EA" color:border-color="#2E7D32">
+        <dc:Bounds x="242" y="132" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_CreateRequest_di" bpmnElement="Task_CreateRequest" bioc:fill="#E8F1FB" bioc:stroke="#1F5FA8" color:background-color="#E8F1FB" color:border-color="#1F5FA8">
+        <dc:Bounds x="370" y="110" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_Screening_di" bpmnElement="Task_Screening" bioc:fill="#E8F1FB" bioc:stroke="#1F5FA8" color:background-color="#E8F1FB" color:border-color="#1F5FA8">
+        <dc:Bounds x="530" y="110" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Service_Classify_di" bpmnElement="Service_Classify" bioc:fill="#EEF0F2" bioc:stroke="#59636E" color:background-color="#EEF0F2" color:border-color="#59636E">
+        <dc:Bounds x="690" y="1210" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Gw_CostFile_di" bpmnElement="Gw_CostFile" bioc:fill="#FFF8E1" bioc:stroke="#B28704" color:background-color="#FFF8E1" color:border-color="#B28704" isMarkerVisible="true">
+        <dc:Bounds x="875" y="125" width="50" height="50" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_UploadCost_di" bpmnElement="Task_UploadCost" bioc:fill="#E8F1FB" bioc:stroke="#1F5FA8" color:background-color="#E8F1FB" color:border-color="#1F5FA8">
+        <dc:Bounds x="1010" y="110" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_UploadScope_di" bpmnElement="Task_UploadScope" bioc:fill="#E8F1FB" bioc:stroke="#1F5FA8" color:background-color="#E8F1FB" color:border-color="#1F5FA8">
+        <dc:Bounds x="1010" y="230" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_Quotations_di" bpmnElement="Task_Quotations" bioc:fill="#E8F1FB" bioc:stroke="#1F5FA8" color:background-color="#E8F1FB" color:border-color="#1F5FA8">
+        <dc:Bounds x="1170" y="370" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_Submit_di" bpmnElement="Task_Submit" bioc:fill="#E8F1FB" bioc:stroke="#1F5FA8" color:background-color="#E8F1FB" color:border-color="#1F5FA8">
+        <dc:Bounds x="1330" y="110" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_SMReview_di" bpmnElement="Task_SMReview" bioc:fill="#FBF3E0" bioc:stroke="#8A6D1E" color:background-color="#FBF3E0" color:border-color="#8A6D1E">
+        <dc:Bounds x="1490" y="510" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Gw_SM_di" bpmnElement="Gw_SM" bioc:fill="#FFF8E1" bioc:stroke="#B28704" color:background-color="#FFF8E1" color:border-color="#B28704" isMarkerVisible="true">
+        <dc:Bounds x="1675" y="525" width="50" height="50" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_DDReview_di" bpmnElement="Task_DDReview" bioc:fill="#FBF3E0" bioc:stroke="#8A6D1E" color:background-color="#FBF3E0" color:border-color="#8A6D1E">
+        <dc:Bounds x="1810" y="650" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Gw_DD_di" bpmnElement="Gw_DD" bioc:fill="#FFF8E1" bioc:stroke="#B28704" color:background-color="#FFF8E1" color:border-color="#B28704" isMarkerVisible="true">
+        <dc:Bounds x="1995" y="665" width="50" height="50" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_PMOReview_di" bpmnElement="Task_PMOReview" bioc:fill="#FBF3E0" bioc:stroke="#8A6D1E" color:background-color="#FBF3E0" color:border-color="#8A6D1E">
+        <dc:Bounds x="2130" y="790" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Gw_PMO_di" bpmnElement="Gw_PMO" bioc:fill="#FFF8E1" bioc:stroke="#B28704" color:background-color="#FFF8E1" color:border-color="#B28704" isMarkerVisible="true">
+        <dc:Bounds x="2315" y="805" width="50" height="50" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Gw_Budget_di" bpmnElement="Gw_Budget" bioc:fill="#FFF8E1" bioc:stroke="#B28704" color:background-color="#FFF8E1" color:border-color="#B28704" isMarkerVisible="true">
+        <dc:Bounds x="2475" y="1225" width="50" height="50" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_DGOReview_di" bpmnElement="Task_DGOReview" bioc:fill="#FBF3E0" bioc:stroke="#8A6D1E" color:background-color="#FBF3E0" color:border-color="#8A6D1E">
+        <dc:Bounds x="2610" y="930" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Gw_DGO_di" bpmnElement="Gw_DGO" bioc:fill="#FFF8E1" bioc:stroke="#B28704" color:background-color="#FFF8E1" color:border-color="#B28704" isMarkerVisible="true">
+        <dc:Bounds x="2795" y="945" width="50" height="50" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_BudgetReview_di" bpmnElement="Task_BudgetReview" bioc:fill="#FBF3E0" bioc:stroke="#8A6D1E" color:background-color="#FBF3E0" color:border-color="#8A6D1E">
+        <dc:Bounds x="2930" y="1070" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Gw_BudgetDecision_di" bpmnElement="Gw_BudgetDecision" bioc:fill="#FFF8E1" bioc:stroke="#B28704" color:background-color="#FFF8E1" color:border-color="#B28704" isMarkerVisible="true">
+        <dc:Bounds x="3115" y="1085" width="50" height="50" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Service_CreateProject_di" bpmnElement="Service_CreateProject" bioc:fill="#EEF0F2" bioc:stroke="#59636E" color:background-color="#EEF0F2" color:border-color="#59636E">
+        <dc:Bounds x="3250" y="1210" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Send_NotifyRequester_di" bpmnElement="Send_NotifyRequester" bioc:fill="#EEF0F2" bioc:stroke="#59636E" color:background-color="#EEF0F2" color:border-color="#59636E">
+        <dc:Bounds x="3410" y="1210" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="End_Created_di" bpmnElement="End_Created" bioc:fill="#E6F4EA" bioc:stroke="#2E7D32" color:background-color="#E6F4EA" color:border-color="#2E7D32">
+        <dc:Bounds x="3602" y="1232" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="End_Rejected_SM_di" bpmnElement="End_Rejected_SM" bioc:fill="#FDECEA" bioc:stroke="#C62828" color:background-color="#FDECEA" color:border-color="#C62828">
+        <dc:Bounds x="1842" y="532" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="End_Rejected_DD_di" bpmnElement="End_Rejected_DD" bioc:fill="#FDECEA" bioc:stroke="#C62828" color:background-color="#FDECEA" color:border-color="#C62828">
+        <dc:Bounds x="2162" y="672" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="End_Rejected_PMO_di" bpmnElement="End_Rejected_PMO" bioc:fill="#FDECEA" bioc:stroke="#C62828" color:background-color="#FDECEA" color:border-color="#C62828">
+        <dc:Bounds x="2482" y="812" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="End_Rejected_BudgetDecision_di" bpmnElement="End_Rejected_BudgetDecision" bioc:fill="#FDECEA" bioc:stroke="#C62828" color:background-color="#FDECEA" color:border-color="#C62828">
+        <dc:Bounds x="3282" y="1092" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="Flow_1_PMS01_di" bpmnElement="Flow_1_PMS01">
+        <di:waypoint x="278" y="150" />
+        <di:waypoint x="370" y="150" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_2_PMS01_di" bpmnElement="Flow_2_PMS01">
+        <di:waypoint x="470" y="150" />
+        <di:waypoint x="530" y="150" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_3_PMS01_di" bpmnElement="Flow_3_PMS01">
+        <di:waypoint x="630" y="150" />
+        <di:waypoint x="660" y="150" />
+        <di:waypoint x="660" y="1250" />
+        <di:waypoint x="690" y="1250" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_4_PMS01_di" bpmnElement="Flow_4_PMS01">
+        <di:waypoint x="790" y="1250" />
+        <di:waypoint x="900" y="1250" />
+        <di:waypoint x="900" y="175" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_5_PMS01_di" bpmnElement="Flow_5_PMS01">
+        <di:waypoint x="925" y="150" />
+        <di:waypoint x="1010" y="150" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_6_PMS01_di" bpmnElement="Flow_6_PMS01">
+        <di:waypoint x="900" y="175" />
+        <di:waypoint x="900" y="270" />
+        <di:waypoint x="1010" y="270" />
+        <bpmndi:BPMNLabel><dc:Bounds x="908" y="248" width="110" height="14" /></bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_7_PMS01_di" bpmnElement="Flow_7_PMS01">
+        <di:waypoint x="1110" y="270" />
+        <di:waypoint x="1140" y="270" />
+        <di:waypoint x="1140" y="410" />
+        <di:waypoint x="1170" y="410" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_8_PMS01_di" bpmnElement="Flow_8_PMS01">
+        <di:waypoint x="1270" y="410" />
+        <di:waypoint x="1300" y="410" />
+        <di:waypoint x="1300" y="150" />
+        <di:waypoint x="1330" y="150" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_9_PMS01_di" bpmnElement="Flow_9_PMS01">
+        <di:waypoint x="1110" y="150" />
+        <di:waypoint x="1330" y="150" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_10_PMS01_di" bpmnElement="Flow_10_PMS01">
+        <di:waypoint x="1430" y="150" />
+        <di:waypoint x="1460" y="150" />
+        <di:waypoint x="1460" y="550" />
+        <di:waypoint x="1490" y="550" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_11_PMS01_di" bpmnElement="Flow_11_PMS01">
+        <di:waypoint x="1590" y="550" />
+        <di:waypoint x="1675" y="550" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_12_PMS01_di" bpmnElement="Flow_12_PMS01">
+        <di:waypoint x="1700" y="575" />
+        <di:waypoint x="1700" y="690" />
+        <di:waypoint x="1810" y="690" />
+        <bpmndi:BPMNLabel><dc:Bounds x="1708" y="668" width="110" height="14" /></bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_13_PMS01_di" bpmnElement="Flow_13_PMS01">
+        <di:waypoint x="1700" y="575" />
+        <di:waypoint x="1700" y="597" />
+        <di:waypoint x="1380" y="597" />
+        <di:waypoint x="1380" y="190" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_14_PMS01_di" bpmnElement="Flow_14_PMS01">
+        <di:waypoint x="1725" y="550" />
+        <di:waypoint x="1842" y="550" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_15_PMS01_di" bpmnElement="Flow_15_PMS01">
+        <di:waypoint x="1910" y="690" />
+        <di:waypoint x="1995" y="690" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_16_PMS01_di" bpmnElement="Flow_16_PMS01">
+        <di:waypoint x="2020" y="715" />
+        <di:waypoint x="2020" y="830" />
+        <di:waypoint x="2130" y="830" />
+        <bpmndi:BPMNLabel><dc:Bounds x="2028" y="808" width="110" height="14" /></bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_17_PMS01_di" bpmnElement="Flow_17_PMS01">
+        <di:waypoint x="2020" y="715" />
+        <di:waypoint x="2020" y="737" />
+        <di:waypoint x="1380" y="737" />
+        <di:waypoint x="1380" y="190" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_18_PMS01_di" bpmnElement="Flow_18_PMS01">
+        <di:waypoint x="2045" y="690" />
+        <di:waypoint x="2162" y="690" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_19_PMS01_di" bpmnElement="Flow_19_PMS01">
+        <di:waypoint x="2230" y="830" />
+        <di:waypoint x="2315" y="830" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_20_PMS01_di" bpmnElement="Flow_20_PMS01">
+        <di:waypoint x="2340" y="855" />
+        <di:waypoint x="2340" y="1250" />
+        <di:waypoint x="2475" y="1250" />
+        <bpmndi:BPMNLabel><dc:Bounds x="2348" y="1228" width="110" height="14" /></bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_21_PMS01_di" bpmnElement="Flow_21_PMS01">
+        <di:waypoint x="2340" y="855" />
+        <di:waypoint x="2340" y="877" />
+        <di:waypoint x="1380" y="877" />
+        <di:waypoint x="1380" y="190" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_22_PMS01_di" bpmnElement="Flow_22_PMS01">
+        <di:waypoint x="2365" y="830" />
+        <di:waypoint x="2482" y="830" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_23_PMS01_di" bpmnElement="Flow_23_PMS01">
+        <di:waypoint x="2525" y="1250" />
+        <di:waypoint x="3250" y="1250" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_24_PMS01_di" bpmnElement="Flow_24_PMS01">
+        <di:waypoint x="2500" y="1225" />
+        <di:waypoint x="2500" y="1110" />
+        <di:waypoint x="2930" y="1110" />
+        <bpmndi:BPMNLabel><dc:Bounds x="2508" y="1088" width="110" height="14" /></bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_25_PMS01_di" bpmnElement="Flow_25_PMS01">
+        <di:waypoint x="2500" y="1225" />
+        <di:waypoint x="2500" y="970" />
+        <di:waypoint x="2610" y="970" />
+        <bpmndi:BPMNLabel><dc:Bounds x="2508" y="948" width="110" height="14" /></bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_26_PMS01_di" bpmnElement="Flow_26_PMS01">
+        <di:waypoint x="2710" y="970" />
+        <di:waypoint x="2795" y="970" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_27_PMS01_di" bpmnElement="Flow_27_PMS01">
+        <di:waypoint x="2820" y="995" />
+        <di:waypoint x="2820" y="1110" />
+        <di:waypoint x="2930" y="1110" />
+        <bpmndi:BPMNLabel><dc:Bounds x="2828" y="1088" width="110" height="14" /></bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_28_PMS01_di" bpmnElement="Flow_28_PMS01">
+        <di:waypoint x="2820" y="995" />
+        <di:waypoint x="2820" y="1017" />
+        <di:waypoint x="1380" y="1017" />
+        <di:waypoint x="1380" y="190" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_29_PMS01_di" bpmnElement="Flow_29_PMS01">
+        <di:waypoint x="3030" y="1110" />
+        <di:waypoint x="3115" y="1110" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_30_PMS01_di" bpmnElement="Flow_30_PMS01">
+        <di:waypoint x="3140" y="1135" />
+        <di:waypoint x="3140" y="1250" />
+        <di:waypoint x="3250" y="1250" />
+        <bpmndi:BPMNLabel><dc:Bounds x="3148" y="1228" width="110" height="14" /></bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_31_PMS01_di" bpmnElement="Flow_31_PMS01">
+        <di:waypoint x="3165" y="1110" />
+        <di:waypoint x="3282" y="1110" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_32_PMS01_di" bpmnElement="Flow_32_PMS01">
+        <di:waypoint x="3350" y="1250" />
+        <di:waypoint x="3410" y="1250" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_33_PMS01_di" bpmnElement="Flow_33_PMS01">
+        <di:waypoint x="3510" y="1250" />
+        <di:waypoint x="3602" y="1250" />
+      </bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</bpmn:definitions>
