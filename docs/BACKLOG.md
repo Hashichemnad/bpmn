@@ -7,6 +7,25 @@ where they belong; move items into the plan when that phase starts.
 
 _(none open — `braces` was accepted, D-054)_
 
+## Modeler design — Part B (look and feel follow-ups)
+
+Part A (colour theme, renderer, colour picker, fonts, D-067 – D-072) is done. Planned for Part B:
+
+- Redesigned palette and toolbar (grouped, labelled, ProcessHub icons; RTL-aware placement).
+- Ready-made step templates (e.g. "Approval step", "System notification", "Manager review") in the palette.
+- Info badges on shapes (linked role / system / document / risk counts, comments) replacing the overlays.
+- Mini-map.
+- Alignment and distribution tools.
+- Auto-layout button (reuse the AI layout builder for any diagram).
+- Print layout with the organisation logo, header and footer (PDF).
+
+Other ideas from Part A:
+
+- Theme per process category or per department; dark diagram theme for presentations.
+- Colour sequence flows and text annotations (the theme colours shapes only).
+- Compare: list colour-only changes separately from moves ("recoloured").
+- Use the actual rendered label size for external labels after a language switch (existing nice-to-have).
+
 ## Phase 2 follow-ups (wiki, version control, Git)
 
 - **Two-way Git sync** (import changes made in the repository; conflict handling). Phase 2 is one-way.

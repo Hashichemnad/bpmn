@@ -1,3 +1,4 @@
+import type { DiagramTheme } from './diagram-theme';
 import type {
   AuditAction,
   GitEntityType,
@@ -117,6 +118,10 @@ export interface PublicSettingsDto {
   hasLogo: boolean;
   /** Changes whenever the logo changes, for cache busting. */
   logoVersion: string | null;
+  /** Colour theme of BPMN diagrams (Settings → Branding); the default when not customised. */
+  diagramTheme: DiagramTheme;
+  /** False while the shipped default theme is in use. */
+  diagramThemeCustomised: boolean;
 }
 
 export interface SettingsDto extends PublicSettingsDto {

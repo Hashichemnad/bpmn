@@ -41,6 +41,7 @@ import { api } from '@/api/client';
 import { usePublicSettings } from '@/api/hooks';
 import { useLocalized } from '@/components/i18n-helpers';
 import { BrandMark } from './BrandMark';
+import { DiagramThemeNotice } from '@/features/settings/DiagramThemeNotice';
 import { GlobalSearch } from '@/features/search/GlobalSearch';
 import { NotificationBell } from '@/features/notifications/NotificationBell';
 import { useMyTasks } from '@/api/governance';
@@ -337,6 +338,7 @@ export function AppLayout() {
           </Flex>
         </Header>
         <Content className="ph-content">
+          <DiagramThemeNotice />
           <Outlet />
         </Content>
       </Layout>

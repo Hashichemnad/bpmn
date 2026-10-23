@@ -569,6 +569,24 @@ settings (`sudo diff .env.example.prod .env`). **Going back** to the previous ve
 previous release, `sudo docker compose up -d --build`, then restore the backup made before the update
 (database changes of a newer version are not undone otherwise).
 
+### Upgrading to the release with diagram colours (Modeler design, Part A)
+
+Diagrams from older releases have no colours; nothing changes for them until a Super Admin applies the colour
+theme once. After the update, Super Admins see a notice "Diagrams can now be coloured: run Apply theme" at the
+top of the workspace:
+
+1. Sign in as a Super Admin and open **Settings → Diagram colours** (or **Open diagram colours** in the notice).
+2. Optionally adjust the colours (the preview shows the result) and **Save**.
+3. Click **Apply theme to existing diagrams**. A dry run shows how many diagrams and elements will be coloured,
+   which approved / published processes change in colours only (they keep their status, get a version
+   "Theme applied (colours only)" and the portal shows the colours at once), which have other unpublished
+   changes (they get a new draft) and which are skipped (in review or archived).
+4. Confirm. Every change is a new version and is written to the audit log; colours that users chose are
+   never changed. Processes skipped because they were in review can be coloured later by running the action
+   again (only uncoloured elements are touched).
+
+The notice disappears once the theme has been applied or **Dismiss** was clicked (recorded in the audit log).
+
 ### Coming from an installation with MinIO
 
 Installations from before the production setup stored files in a MinIO container. After updating, copy

@@ -408,9 +408,100 @@ html[lang='ar'] body {
   border-radius: 8px;
 }
 
+/* Diagram look (D-069): selection and hover stay visible on the coloured fills. */
+.djs-container {
+  --element-selected-outline-stroke-color: #2563eb;
+  --element-hover-outline-fill-color: #60a5fa;
+}
+
+.djs-element.selected .djs-outline {
+  stroke-width: 2px;
+}
+
+.ph-modeler-canvas .djs-shape.hover:not(.selected) .djs-outline {
+  visibility: visible;
+  stroke: #60a5fa;
+  stroke-width: 1.5px;
+  stroke-dasharray: 4 3;
+}
+
+.djs-connection.selected .djs-visual > path {
+  stroke: #2563eb !important;
+}
+
+/* Modelling feedback of diagram-js targets the first child, which is the shadow on our shapes. */
+.djs-shape.connect-ok .djs-visual > .ph-body {
+  fill: var(--shape-connect-allowed-fill-color) !important;
+}
+
+.djs-shape:is(.connect-not-ok, .drop-not-ok) .djs-visual > .ph-body {
+  fill: var(--shape-drop-not-allowed-fill-color) !important;
+}
+
+.djs-shape.new-parent .djs-visual > .ph-body {
+  fill: var(--shape-drop-allowed-fill-color) !important;
+}
+
+.djs-element.attach-ok .djs-visual > .ph-body {
+  stroke-width: 5px !important;
+  stroke: var(--shape-attach-allowed-stroke-color) !important;
+}
+
+.djs-shape:is(.connect-ok, .connect-not-ok, .drop-not-ok, .new-parent, .attach-ok)
+  .djs-visual
+  > .ph-shadow {
+  fill: none !important;
+}
+
+/* Diff and highlight markers also hide the shadow so the highlight colour reads clearly. */
+:is(.ph-diff-added, .ph-diff-removed, .ph-diff-changed) .ph-shadow {
+  display: none;
+}
+
 /* bpmn-js direct editing must follow the text direction of what is typed. */
 .djs-direct-editing-parent {
   unicode-bidi: plaintext;
+  font-family: Inter, 'IBM Plex Sans Arabic', sans-serif !important;
+}
+
+/* Settings → Branding: diagram colours */
+.ph-theme-notice {
+  margin-block-end: 16px;
+}
+
+.ph-theme-table {
+  inline-size: 100%;
+  border-collapse: collapse;
+}
+
+.ph-theme-table th,
+.ph-theme-table td {
+  padding: 6px 8px 6px 0;
+  text-align: start;
+  vertical-align: middle;
+  border-block-end: 1px solid var(--ph-border);
+}
+
+.ph-theme-table thead th {
+  font-weight: 600;
+  color: #475569;
+  font-size: 12px;
+}
+
+.ph-theme-table tbody th {
+  font-weight: 400;
+}
+
+.ph-theme-table .ant-color-picker-trigger {
+  direction: ltr;
+}
+
+.ph-theme-preview {
+  block-size: 300px;
+  margin-block-start: 8px;
+  border: 1px solid var(--ph-border);
+  border-radius: 8px;
+  background: #fff;
 }
 
 /* ---------- Misc ---------- */
@@ -948,25 +1039,51 @@ html[lang='ar'] body {
   background: #fff;
 }
 
-.ph-diff-added .djs-visual > :first-child {
-  stroke: #16a34a !important;
-  fill: #dcfce7 !important;
+/* Diff highlights: saturated fill plus a halo outside the shape, so they stand out from the
+   theme colours of the diagram (D-070). */
+.ph-diff-added .djs-visual > :is(.ph-body, :first-child:not(.ph-shadow)) {
+  stroke: #15803d !important;
+  fill: #bbf7d0 !important;
   stroke-width: 3px !important;
 }
 
-.ph-diff-removed .djs-visual > :first-child {
-  stroke: #dc2626 !important;
-  fill: #fee2e2 !important;
+.djs-shape:is(.ph-diff-added, .ph-diff-removed, .ph-diff-changed, .ph-diff-layout) .djs-outline {
+  visibility: visible;
+  stroke-width: 4px;
+  stroke-opacity: 0.85;
+}
+
+.djs-shape.ph-diff-added .djs-outline {
+  stroke: #16a34a;
+}
+
+.djs-shape.ph-diff-removed .djs-outline {
+  stroke: #dc2626;
+}
+
+.djs-shape.ph-diff-changed .djs-outline {
+  stroke: #ea580c;
+}
+
+.djs-shape.ph-diff-layout .djs-outline {
+  stroke: #2563eb;
+  stroke-width: 3px;
+  stroke-dasharray: 6 4;
+}
+
+.ph-diff-removed .djs-visual > :is(.ph-body, :first-child:not(.ph-shadow)) {
+  stroke: #b91c1c !important;
+  fill: #fecaca !important;
   stroke-width: 3px !important;
 }
 
-.ph-diff-changed .djs-visual > :first-child {
-  stroke: #d97706 !important;
-  fill: #fef3c7 !important;
+.ph-diff-changed .djs-visual > :is(.ph-body, :first-child:not(.ph-shadow)) {
+  stroke: #c2410c !important;
+  fill: #fed7aa !important;
   stroke-width: 3px !important;
 }
 
-.ph-diff-layout .djs-visual > :first-child {
+.ph-diff-layout .djs-visual > :is(.ph-body, :first-child:not(.ph-shadow)) {
   stroke: #2563eb !important;
   stroke-dasharray: 6 3;
 }
@@ -982,7 +1099,8 @@ html[lang='ar'] body {
 }
 
 .djs-connection.ph-diff-changed .djs-visual > path {
-  stroke: #d97706 !important;
+  stroke: #ea580c !important;
+  stroke-width: 3px !important;
 }
 
 .ph-diff-focus .djs-outline {
@@ -1383,18 +1501,24 @@ html[lang='ar'] body {
   background: #fff;
 }
 
-.ph-step-clickable:not(.djs-connection) .djs-visual > :first-child {
+.ph-step-clickable .djs-visual > :is(.ph-body, :first-child:not(.ph-shadow)) {
   cursor: pointer;
 }
 
-.ph-step-linked .djs-visual > rect:first-child {
+.ph-step-linked .djs-visual > rect:is(.ph-body, :first-child:not(.ph-shadow)) {
   stroke: #0f766e !important;
 }
 
-.ph-step-selected .djs-visual > :first-child {
+.ph-step-selected .djs-visual > :is(.ph-body, :first-child:not(.ph-shadow)) {
   stroke: #1d4ed8 !important;
   stroke-width: 3px !important;
-  fill: #eff6ff !important;
+}
+
+/* Portal: the selected step keeps its colour and gets a clear halo. */
+.ph-step-selected .djs-outline {
+  visibility: visible;
+  stroke: #1d4ed8;
+  stroke-width: 3px;
 }
 
 .ph-toc {

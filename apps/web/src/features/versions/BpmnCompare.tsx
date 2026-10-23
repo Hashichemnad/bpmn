@@ -15,7 +15,7 @@ import { diffBpmn, type BpmnChange, type BpmnChangeKind } from './bpmn-diff';
 const KIND_COLOR: Record<BpmnChangeKind, string> = {
   added: 'green',
   removed: 'red',
-  changed: 'gold',
+  changed: 'orange',
   layout: 'blue',
 };
 

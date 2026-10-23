@@ -17,7 +17,10 @@ import {
 import { ExportOutlined, LinkOutlined } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
 import {
+  STEP_KIND_APPROVAL,
+  STEP_KIND_TASK,
   buildTree,
+  isApprovalLabel,
   type ObjectLinkDto,
   type ObjectType,
   type ProcessDto,
@@ -269,6 +272,33 @@ export function ElementPanel({ instance, element, process, links, canEdit }: Pro
               />
             </Form.Item>
           </>
+        )}
+        {element.type === 'bpmn:UserTask' && (
+          <Form.Item label={t('modeler:stepKind.label')} extra={t('modeler:stepKind.hint')}>
+            <Select
+              value={(bo.get('ph:stepKind') as string | undefined) ?? ''}
+              disabled={!canEdit}
+              onChange={(value: string) =>
+                modeling?.updateModdleProperties(element, bo, {
+                  'ph:stepKind': value || undefined,
+                })
+              }
+              options={[
+                {
+                  value: '',
+                  label: t('modeler:stepKind.auto', {
+                    kind: t(
+                      isApprovalLabel(readLabels(bo).nameEn || bo.name)
+                        ? 'modeler:stepKind.approval'
+                        : 'modeler:stepKind.task',
+                    ),
+                  }),
+                },
+                { value: STEP_KIND_APPROVAL, label: t('modeler:stepKind.approval') },
+                { value: STEP_KIND_TASK, label: t('modeler:stepKind.task') },
+              ]}
+            />
+          </Form.Item>
         )}
       </Form>
 

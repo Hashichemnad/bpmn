@@ -111,5 +111,12 @@
   "commentsTab": "Comments",
   "commentsAll": "All comments of the process. Select a step to see and add comments on it.",
   "commentCount_one": "{{count}} open comment",
-  "commentCount_other": "{{count}} open comments"
+  "commentCount_other": "{{count}} open comments",
+  "stepKind": {
+    "label": "Step kind",
+    "auto": "Automatic ({{kind}})",
+    "approval": "Approval step",
+    "task": "Normal step",
+    "hint": "Approval steps are coloured as approvals. Automatic: a user task whose English label starts with Review, Approve, Endorse or Confirm."
+  }
 }

@@ -1,3 +1,4 @@
+import { DEFAULT_DIAGRAM_THEME } from '@processhub/shared';
 import { Client, createApp, createUser, loggedIn, resetDb, type TestContext } from './helpers';
 
 const PNG = Buffer.from(
@@ -30,6 +31,8 @@ describe('Settings (e2e)', () => {
       defaultLocale: 'en',
       hasLogo: false,
       logoVersion: null,
+      diagramTheme: DEFAULT_DIAGRAM_THEME,
+      diagramThemeCustomised: false,
     });
   });
 

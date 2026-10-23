@@ -23,3 +23,9 @@ declare module 'bpmn-moddle' {
     fromXML(xml: string): Promise<{ rootElement: unknown; warnings: unknown[] }>;
   }
 }
+
+declare module 'bpmn-js-color-picker' {
+  /** bpmn-js module: "Set color" context pad entry and the "color-picker" popup menu. */
+  const module: Record<string, unknown>;
+  export default module;
+}

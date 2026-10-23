@@ -15,7 +15,7 @@
 | **Platform** | Users, roles & permissions, hierarchical departments, audit log, organisation settings & logo, Arabic/English with RTL | ✅ 1 |
 | **Sign-in** | Single sign-on with Microsoft Entra ID (Azure AD) or any OpenID Connect provider (users created on first sign-in, directory groups → roles and departments, allowed domains), password sign-in can be limited to a break-glass admin, optional two-step verification with an authenticator app (required per role, recovery codes, admin reset) | ✅ 6 |
 | **Process House & Repository** | Management / Core / Support process house, drag-and-drop process tree, owners, departments | ✅ 1 |
-| **Process Modeler** | BPMN 2.0 editor with bilingual labels, validation, versions, drill-down, import/export (BPMN XML, SVG, PNG) | ✅ 1 |
+| **Process Modeler** | BPMN 2.0 editor with bilingual labels, validation, versions, drill-down, import/export (BPMN XML, SVG, PNG); enterprise look (colour theme by element type, approval steps, rounded shapes, task icons, Inter / IBM Plex Sans Arabic, right-to-left Arabic labels), colour picker, all colours stored as standard BPMN-in-Color | ✅ 1, design A |
 | **Object Repository** | Reusable roles and IT systems linked to process steps, "where used" report (documents, risks, controls, KPIs later) | ✅ 1 |
 | **Documentation Wiki** | Spaces with access rules, page tree, rich-text editor (tables, checklists, callouts, images, attachments, embedded BPMN diagrams, RTL/LTR), English + Arabic versions, templates, trash, full-text search, PDF / Markdown export | ✅ 2 |
 | **Version Control** | Versions with change notes for processes and pages, visual BPMN diff, side-by-side / inline text diff, restore, labels | ✅ 2 |
@@ -151,6 +151,26 @@ Every sync is one commit, authored as the ProcessHub user who made the change, e
 The sync is one-way (ProcessHub → Git). Pages of view-restricted spaces are never exported. With
 **Published versions only**, only the current published version of each process and page is exported. Renames and
 moves are applied with the next version or with **Sync now**, which reconciles everything in a single commit.
+
+### Diagram colours
+
+Diagrams use a colour theme by element type (start/end, rejected end, human task, approval task, system task,
+gateway, lanes). The colours are written into the BPMN file as standard BPMN-in-Color attributes (plus the
+bpmn.io `bioc:` attributes), so other BPMN tools show them too.
+
+- **Settings → Diagram colours** (Super Admin, next to the organisation name and logo): change the colour of each element kind with a live
+  preview, or reset to the default scheme (`docs/samples/README.md`). New elements, type changes and approval
+  steps follow the theme; colours a user picked are never overwritten.
+- **Apply theme to existing diagrams** colours the elements that have no colour yet in every working model,
+  after a dry run with the counts; drafts get a new version "Applied colour theme". Approved and published
+  processes whose change is colours only keep their status (version "Theme applied (colours only)") and the
+  portal shows the colours at once; otherwise they get a new draft. After an upgrade Super Admins see a
+  one-time notice to run it (DEPLOYMENT.md §9).
+- In the modeler, the context-pad brush offers the theme colours, a few neutral colours, **Reset to theme**
+  and **No colour**. A user task is an approval step when its English label starts with Review, Approve,
+  Endorse or Confirm, or when **Step kind** in the element panel says so.
+- SVG and PNG exports and the portal's PDF view contain the colours and the fonts. Sample:
+  `docs/samples/PMS-01-Program-Request-Approval.bpmn`; screenshots in `docs/screenshots/modeler-design-a/`.
 
 ### AI assistant (optional)
 

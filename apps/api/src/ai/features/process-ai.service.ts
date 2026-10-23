@@ -109,7 +109,10 @@ export class ProcessAiService {
   }
 
   private async generate(session: AiSession, input: AiGenerateProcessInput, ch: SseChannel) {
-    const catalog = await this.library.catalog();
+    const [catalog, theme] = await Promise.all([
+      this.library.catalog(),
+      this.context.diagramTheme(),
+    ]);
     const structure = await this.gateway.call(session, {
       feature: 'GENERATE_PROCESS',
       system: GENERATE_PROCESS_SYSTEM,
@@ -131,7 +134,7 @@ export class ProcessAiService {
       onProgress: ch.progress,
       signal: ch.signal,
     });
-    return buildProcessResult(structure, catalog);
+    return buildProcessResult(structure, catalog, { theme });
   }
 
   /** Feature 2: change the diagram on request; the proposal is reviewed before it is applied. */
@@ -145,9 +148,10 @@ export class ProcessAiService {
     const current = this.context.fromXml(input.bpmnXml, p);
     const session = await this.gateway.begin(user, meta);
     return async (ch) => {
-      const [catalog, links] = await Promise.all([
+      const [catalog, links, theme] = await Promise.all([
         this.library.catalog(),
         this.context.links(input.processId),
+        this.context.diagramTheme(),
       ]);
       const structure = await this.gateway.call(session, {
         feature: 'REFINE_PROCESS',
@@ -178,6 +182,7 @@ export class ProcessAiService {
         preserve: current.preserve,
         flowIds: current.flowIds,
         containers: current.containers,
+        theme,
       });
       // Propose links only for new elements; existing links stay attached to kept ids.
       const before = new Set(current.structure.nodes.map((n) => n.id));
@@ -209,7 +214,10 @@ export class ProcessAiService {
     const text = htmlToText(doc.html).slice(0, AI_DOCUMENT_MAX_CHARS);
     const session = await this.gateway.begin(user, meta);
     return async (ch) => {
-      const catalog = await this.library.catalog();
+      const [catalog, theme] = await Promise.all([
+        this.library.catalog(),
+        this.context.diagramTheme(),
+      ]);
       const structure = await this.gateway.call(session, {
         feature: 'DOC_TO_PROCESS',
         system: DOC_TO_PROCESS_SYSTEM,
@@ -235,7 +243,7 @@ export class ProcessAiService {
         onProgress: ch.progress,
         signal: ch.signal,
       });
-      return buildProcessResult(structure, catalog);
+      return buildProcessResult(structure, catalog, { theme });
     };
   }
 }

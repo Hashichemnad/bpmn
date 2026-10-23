@@ -3,13 +3,12 @@ import { Link } from 'react-router-dom';
 import { Alert, Button, Flex, Spin, Typography } from 'antd';
 import { ExportOutlined, PartitionOutlined } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
-import NavigatedViewer from 'bpmn-js/lib/NavigatedViewer';
 import { useProcess, useProcessModel } from '@/api/hooks';
 import { useLocale } from '@/app/LocaleProvider';
 import { useLocalized } from '@/components/i18n-helpers';
 import type { BpmnInstance, Canvas } from '@/features/modeler/bpmn-types';
 import { applyLanguage, normaliseDiagram } from '@/features/modeler/diagram';
-import { phModdleDescriptor } from '@/features/modeler/phModdle';
+import { createDiagram, importDiagram } from '@/features/modeler/create-diagram';
 
 /** Renders BPMN XML read-only (pan/zoom), in the active language. */
 export function DiagramCanvas({
@@ -29,13 +28,9 @@ export function DiagramCanvas({
 
   useEffect(() => {
     if (!ref.current) return;
-    const viewer = new NavigatedViewer({
-      container: ref.current,
-      moddleExtensions: { ph: phModdleDescriptor },
-    }) as unknown as BpmnInstance;
+    const viewer = createDiagram('navigated', { container: ref.current });
     let alive = true;
-    viewer
-      .importXML(xml)
+    importDiagram(viewer, xml)
       .then(() => {
         if (!alive) return;
         normaliseDiagram(viewer);

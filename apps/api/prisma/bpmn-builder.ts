@@ -1,7 +1,11 @@
+import { DEFAULT_DIAGRAM_THEME } from '@processhub/shared';
+import { applyThemeToXml } from '../src/models/diagram-theme-xml';
+
 /**
  * Generates small BPMN 2.0 diagrams (with diagram interchange) for seed data
  * and tests. Labels are stored bilingually in ph:nameEn / ph:nameAr; the
  * standard `name` attribute carries the English label for other BPMN tools.
+ * Shapes get the default colour theme (BPMN-in-Color, D-067).
  */
 export const PH_NAMESPACE = 'http://processhub.io/schema/bpmn';
 
@@ -115,7 +119,7 @@ export function buildBpmn(processKey: string, nodes: DiagramNode[], flows: Diagr
     })
     .join('\n');
 
-  return `<?xml version="1.0" encoding="UTF-8"?>
+  const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" xmlns:ph="${PH_NAMESPACE}" id="Definitions_${processKey}" targetNamespace="http://bpmn.io/schema/bpmn">
   <bpmn:process id="Process_${processKey}" isExecutable="false">
 ${semantic}
@@ -129,4 +133,5 @@ ${edges}
   </bpmndi:BPMNDiagram>
 </bpmn:definitions>
 `;
+  return applyThemeToXml(xml, DEFAULT_DIAGRAM_THEME).xml;
 }

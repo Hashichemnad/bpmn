@@ -3,14 +3,14 @@ import { useParams, useSearchParams } from 'react-router-dom';
 import { Button, Typography } from 'antd';
 import { PrinterOutlined } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
-import Viewer from 'bpmn-js/lib/Viewer';
 import { localized, type Locale, type ObjectType } from '@processhub/shared';
 import { usePortalProcess } from '@/api/portal';
 import { usePublicSettings } from '@/api/hooks';
 import { ErrorState, LoadingState } from '@/components/states';
-import type { BpmnInstance, ElementRegistry } from '@/features/modeler/bpmn-types';
+import type { ElementRegistry } from '@/features/modeler/bpmn-types';
 import { applyLanguage, normaliseDiagram } from '@/features/modeler/diagram';
-import { phModdleDescriptor } from '@/features/modeler/phModdle';
+import { createDiagram, importDiagram } from '@/features/modeler/create-diagram';
+import { embedDiagramFonts } from '@/features/modeler/export-fonts';
 import { stepInfo, type StepInfo } from './step-info';
 
 const STEP =
@@ -25,19 +25,15 @@ function useDiagramSnapshot(xml: string | null | undefined, lang: Locale) {
     host.style.cssText =
       'position:fixed;inset-inline-start:-10000px;inline-size:1600px;block-size:900px';
     document.body.appendChild(host);
-    const viewer = new Viewer({
-      container: host,
-      moddleExtensions: { ph: phModdleDescriptor },
-    }) as unknown as BpmnInstance & {
-      saveSVG(): Promise<{ svg: string }>;
-    };
+    const viewer = createDiagram('viewer', { container: host });
     let alive = true;
     void (async () => {
       try {
-        await viewer.importXML(xml);
+        await importDiagram(viewer, xml);
         normaliseDiagram(viewer);
         applyLanguage(viewer, lang);
-        const { svg } = await viewer.saveSVG();
+        // The diagram is shown as an image, which cannot use the page's fonts.
+        const svg = await embedDiagramFonts((await viewer.saveSVG()).svg);
         const steps = viewer
           .get<ElementRegistry>('elementRegistry')
           .filter((e) => STEP.test(e.type))

@@ -32,13 +32,12 @@ import {
   ZoomOutOutlined,
 } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
-import Modeler from 'bpmn-js/lib/Modeler';
-import NavigatedViewer from 'bpmn-js/lib/NavigatedViewer';
 import 'bpmn-js/dist/assets/diagram-js.css';
 import 'bpmn-js/dist/assets/bpmn-js.css';
 import 'bpmn-js/dist/assets/bpmn-font/css/bpmn-embedded.css';
 import {
   BPMN_MAX_BYTES,
+  DEFAULT_DIAGRAM_THEME,
   isFlowNode,
   validateBpmnGraph,
   type AiGeneratedProcessDto,
@@ -52,6 +51,7 @@ import {
   useCreateVersion,
   useLinks,
   useProcessModel,
+  usePublicSettings,
   useSaveModel,
   useVersions,
 } from '@/api/hooks';
@@ -79,9 +79,13 @@ import {
   normaliseDiagram,
   type LabelState,
 } from './diagram';
-import { EMPTY_DIAGRAM, phModdleDescriptor } from './phModdle';
+import { EMPTY_DIAGRAM } from './phModdle';
 import { translateModule } from './translate';
 import { downloadBlob, exportFileName, svgToPng } from './export';
+import { embedDiagramFonts } from './export-fonts';
+import { createDiagram, importDiagram as importDiagramXml } from './create-diagram';
+import { themeModule, type ThemeState } from './theme';
+import { colourPickerModule, pickerColours, syncPickerColours } from './color-picker';
 import { ElementPanel } from './ElementPanel';
 import { useComments } from '@/api/governance';
 import { CommentsPanel } from '@/features/comments/CommentsPanel';
@@ -154,6 +158,9 @@ export function BpmnEditor({ process, focusElementId }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const instanceRef = useRef<BpmnInstance | null>(null);
   const stateRef = useRef<LabelState>({ locale });
+  const settings = usePublicSettings();
+  const themeRef = useRef<ThemeState>({ theme: DEFAULT_DIAGRAM_THEME });
+  const paletteRef = useRef(pickerColours(DEFAULT_DIAGRAM_THEME));
   const loadedRef = useRef(false);
   const [ready, setReady] = useState(false);
   const [selected, setSelected] = useState<DiagramElement | null>(null);
@@ -238,20 +245,27 @@ export function BpmnEditor({ process, focusElementId }: Props) {
     }
   }, [links.data, comments.data, navigate, t]);
 
+  // The colour theme (Settings → Branding) applies to new elements and the colour picker.
+  const theme = settings.data?.diagramTheme;
+  useEffect(() => {
+    if (!theme) return;
+    themeRef.current.theme = theme;
+    syncPickerColours(paletteRef.current, theme);
+  }, [theme]);
+
   // Create the modeler (editable) or viewer (read-only) once.
   useEffect(() => {
     if (!containerRef.current) return;
-    const options = {
+    const instance = createDiagram(canEdit ? 'modeler' : 'navigated', {
       container: containerRef.current,
-      moddleExtensions: { ph: phModdleDescriptor },
       additionalModules: [
         translateModule(stateRef.current),
-        ...(canEdit ? [bilingualModule(stateRef.current)] : []),
+        ...(canEdit
+          ? [bilingualModule(stateRef.current), themeModule(themeRef.current), colourPickerModule()]
+          : []),
       ],
-    };
-    const instance = (canEdit
-      ? new Modeler(options)
-      : new NavigatedViewer(options)) as unknown as BpmnInstance;
+      config: canEdit ? { colorPicker: { colors: paletteRef.current } } : {},
+    });
     instanceRef.current = instance;
     const eventBus = instance.get<EventBus>('eventBus');
     eventBus.on('selection.changed', (e: { newSelection: DiagramElement[] }) => {
@@ -295,7 +309,7 @@ export function BpmnEditor({ process, focusElementId }: Props) {
       const instance = instanceRef.current;
       if (!instance) return false;
       try {
-        await instance.importXML(xml);
+        await importDiagramXml(instance, xml);
         normaliseDiagram(instance);
         applyLanguage(instance, stateRef.current.locale);
         fitViewport(instance);
@@ -486,7 +500,7 @@ export function BpmnEditor({ process, focusElementId }: Props) {
         );
         return;
       }
-      const { svg } = await instance.saveSVG();
+      const svg = await embedDiagramFonts((await instance.saveSVG()).svg);
       if (kind === 'svg')
         downloadBlob(
           new Blob([svg], { type: 'image/svg+xml' }),

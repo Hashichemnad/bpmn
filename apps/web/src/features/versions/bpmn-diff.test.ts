@@ -46,3 +46,23 @@ describe('diffBpmn', () => {
     expect(await diffBpmn(a, a)).toEqual([]);
   });
 });
+
+describe('diffBpmn colours', () => {
+  it('reports a colour-only change (e.g. "Applied colour theme") as a diagram change', async () => {
+    const { default: sample } =
+      await import('../../../../../docs/samples/PMS-01-Program-Request-Approval.bpmn?raw');
+    const plain = sample.replace(/ (bioc|color):[a-z-]+="#[0-9A-Fa-f]{6}"/g, '');
+    const changes = await diffBpmn(plain, sample);
+    expect(changes).toHaveLength(35);
+    expect(new Set(changes.map((c) => c.kind))).toEqual(new Set(['layout']));
+
+    const recoloured = sample.replace(
+      /(bpmnElement="Task_Quotations" bioc:fill=")#E8F1FB(" bioc:stroke=")#1F5FA8(" color:background-color=")#E8F1FB(" color:border-color=")#1F5FA8"/,
+      '$1#F3E8FD$2#6B3FA0$3#F3E8FD$4#6B3FA0"',
+    );
+    expect(recoloured).not.toBe(sample);
+    expect(await diffBpmn(sample, recoloured)).toMatchObject([
+      { id: 'Task_Quotations', kind: 'layout' },
+    ]);
+  });
+});

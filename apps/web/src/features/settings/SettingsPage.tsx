@@ -26,6 +26,7 @@ import { GitIntegrationCard } from './GitIntegrationCard';
 import { EmailSettingsCard } from './EmailSettingsCard';
 import { AiSettingsCard } from './AiSettingsCard';
 import { AuthSettingsCard } from './AuthSettingsCard';
+import { DiagramThemeCard } from './DiagramThemeCard';
 
 export function SettingsPage() {
   const { t } = useTranslation();
@@ -167,6 +168,9 @@ export function SettingsPage() {
               </Space>
             </Flex>
           </Card>
+        </Col>
+        <Col span={24}>
+          <DiagramThemeCard />
         </Col>
         <Col span={24}>
           <AuthSettingsCard />
