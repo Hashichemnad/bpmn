@@ -646,3 +646,64 @@ request reloads the user). Automatic de-provisioning (SCIM / back-channel logout
 first 22.x with `require(esm)` unflagged, needed for `openid-client`) and `@types/node` 22 move from Node 20,
 which reached end-of-life in April 2026. No code changes were needed; Prisma's musl engine targets are the same.
 CLAUDE.md §4 updated.
+
+## D-067 — Diagram colours are standard BPMN-in-Color, applied by a theme (Modeler design, Part A)
+
+**Decision:** Colours are stored only in the diagram, on the `BPMNShape`, as BPMN-in-Color
+(`color:background-color` / `color:border-color`) **and** the older bpmn.io attributes (`bioc:fill` /
+`bioc:stroke`), so other BPMN tools show them. The theme (default = the reference scheme in
+`docs/samples/README.md`, editable in Settings → Branding, Setting `branding.diagramTheme`, public so every
+viewer has it) only decides which colour an element gets when it is **created**, its **type changes**, or —
+for automatically coloured elements — its label / step kind changes. Rules (shared code,
+`packages/shared/src/diagram-theme.ts`): an element whose fill/stroke pair is a theme pair (current or default
+theme) is "theme-coloured" and follows its kind; any other colour is a user choice and is never overwritten;
+an element without colours is not coloured by edits. The renderer never applies the theme at display time —
+what you see is what is stored and exported. Picking a theme colour in the colour picker counts as a theme
+colour.
+
+## D-068 — Approval steps: first English word or an explicit `ph:stepKind`
+
+**Decision:** A user task is an approval step when its English label **starts with** Review, Approve, Endorse
+or Confirm (whole word; "Submit for approval", "Reviewer assignment", "Approval letter archived" are not), or
+when the element panel marks it `ph:stepKind="approval"`. `ph:stepKind="task"` forces a normal step even with
+such a label. Only user tasks can be approval steps; the Arabic label is not used (the English label is the
+stable key, as for exports). The AI refine flow keeps `ph:stepKind` and explicit colours.
+
+## D-069 — Look by a renderer on top of `BpmnRenderer`, one diagram factory
+
+**Decision:** A higher-priority renderer (`apps/web/src/features/modeler/renderer.ts`) lets bpmn-js draw the
+standard shapes and then adjusts them: 12 px corners on activities, a soft shadow (an offset copy of the shape
+body, so it survives SVG/PNG export without filters), 1.5 px borders and connections, clearer icons for user,
+approval, service, send and receive tasks (script, business rule and manual keep the standard BPMN marker),
+opaque alternating lane fills with a tinted header band and dark semibold names. Fonts: one stack
+`Inter, 'IBM Plex Sans Arabic', …` — Latin glyphs from Inter, Arabic from Plex by per-glyph fallback, so labels
+need no language switch in the renderer; fonts are loaded before import so text is measured with them. Arabic
+labels get `direction="rtl"` with `text-anchor="end"` (bpmn-js positions each line by its left edge, which is
+the "end" of an RTL line). Every diagram (modeler, viewer, portal, print, wiki embed, version preview, compare,
+AI preview, settings preview) is created by `create-diagram.ts`. Exports embed the woff2 fonts as data URLs
+(~200 KB per SVG) so the SVG and the PNG rendered from it show the right fonts anywhere.
+
+## D-070 — Highlights over coloured fills
+
+**Decision:** Because shapes now have coloured fills and a shadow element, every highlight (diff added /
+removed / changed / layout, portal selected step, diagram-js drop feedback) targets the shape body
+(`.ph-body`) instead of `:first-child`, uses saturated colours that do not occur in the theme (changed = orange,
+not the amber of approval tasks) and, for compare, a halo outline outside the shape. The portal's selected
+step keeps its colour and gets a blue halo. Colour-only changes show in compare as "moved, resized or
+recoloured".
+
+## D-071 — Colour picker: `bpmn-js-color-picker` with the theme palette
+
+**Decision:** The context-pad colour picker is `bpmn-js-color-picker` (bpmn.io, MIT, tiny), configured with
+the theme colours (deduplicated) and four neutral colours, plus two ProcessHub entries: "Reset to theme"
+(theme colour of each selected element's kind) and "No colour". It is part of the editable modeler only, so
+read-only users never see it. The palette follows theme changes without recreating the modeler.
+
+## D-072 — "Apply theme to existing diagrams" creates versions and follows governance
+
+**Decision:** The Super Admin action recolours only elements **without** colours, in every working model, and
+saves each changed diagram through the normal "new version" path (change note "Applied colour theme",
+audited, Git sync and notifications as for any version) plus one summary audit entry. Processes in review or
+archived are skipped (they are locked). Approved / published processes get a new draft working copy like any
+other edit — the published version stays in the portal until it is published again (product owner may prefer
+a different rule, see PROGRESS). A dry run returns the counts first and the UI confirms with them.

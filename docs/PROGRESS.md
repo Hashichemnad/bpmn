@@ -7,7 +7,8 @@ Read this together with `CLAUDE.md` at the start of every session.
 Phases 1–3, the AI Assistant and Phase 6 parts 1–4 are merged into `main`. This branch makes diagrams look like
 an enterprise BPM product while staying 100 % standard BPMN 2.0 (colours stored as BPMN-in-Color +
 `bioc:`). Reference: `docs/samples/README.md` (colour scheme) and `docs/samples/PMS-01-Program-Request-Approval.bpmn`.
-Decisions: DECISIONS D-067 – D-07x.
+Decisions: DECISIONS D-067 – D-072. Part B (palette/toolbar, templates, badges, mini-map, alignment, auto-layout,
+print layout with logo) is in BACKLOG.
 
 Steps (tick as they are committed; a new session continues at the first unticked one):
 
@@ -28,8 +29,66 @@ Steps (tick as they are committed; a new session continues at the first unticked
 - [x] 6. Web: Settings → Branding diagram theme card (live preview, reset, apply to existing diagrams with dry run).
 - [x] 7. Round-trip test of the PMS-01 sample (import → save → compare colours and `ph:` attributes), compare
       highlights, EN/AR checks; "after" screenshots.
-- [ ] 8. Docs (PROGRESS, DECISIONS, BACKLOG Part B items, README), verification (format, lint, typecheck, tests,
-      build, audit), push, pull request.
+- [x] 8. Docs (PROGRESS, DECISIONS, BACKLOG Part B items, README, CLAUDE.md, SECURITY route list),
+      verification (format, lint, typecheck, tests, build, audit, Docker), push, pull request.
+
+What changed:
+
+- **Theme** (`packages/shared/src/diagram-theme.ts`): default = reference scheme; kinds start, successful end,
+  rejected/terminate end (terminate / error / cancel / escalation definition or a "rejected / declined /
+  cancelled" label), human task (user, manual, plain task, call activity, sub-process), approval task, system
+  task (service, send, receive, script, business rule), gateway, intermediate event, lanes (alternating).
+  Approval = user task whose English label starts with Review / Approve / Endorse / Confirm, or
+  `ph:stepKind="approval"` (element panel "Step kind": automatic / approval / normal).
+- **Stored as BPMN-in-Color + bioc** everywhere: modeler (theme behaviour on create, type change, label /
+  step-kind change; never over explicit colours; one undo step), AI generate / refine / document-to-process,
+  "Apply theme to existing diagrams", seed demo diagrams (`prisma/bpmn-builder.ts`).
+- **Renderer** (`apps/web/src/features/modeler/renderer.ts`) and one factory (`create-diagram.ts`) for every
+  diagram: rounded activities, soft shadow, 1.5 px borders, user / approval / service / send / receive icons,
+  lane header band, dark semibold lane names, opaque alternating lane fills, Inter + IBM Plex Sans Arabic,
+  Arabic labels right-to-left. Fonts load before import; SVG/PNG exports and the portal print view embed them.
+- **Colour picker** (`bpmn-js-color-picker`) in the editable modeler's context pad: theme palette, neutrals,
+  "Reset to theme", "No colour"; Arabic labels.
+- **Settings → Diagram colours** (Super Admin): colour per kind with live preview (EN/AR), save, discard, reset
+  (`PUT/DELETE /settings/diagram-theme`, audited); **Apply theme to existing diagrams**
+  (`POST /settings/diagram-theme/apply`, dry run → confirmation with counts → new versions "Applied colour
+  theme"; locked processes skipped; audited).
+- **AI layout**: gateway branch labels at the start of their own branch (`BPMNLabel` bounds), others above the
+  longest horizontal segment.
+- **Highlights**: diff (saturated + halo, orange for "changed"), portal selected step (halo), drop feedback and
+  hover all target the shape body; compare reports colour-only changes as "moved, resized or recoloured".
+- Screenshots: `docs/screenshots/modeler-design-a/` — `before-*` / `after-*` for the modeler, portal and
+  100 % details (EN/AR), plus `after-compare-en.png`.
+
+#### Verification (design A)
+
+| Check                                              | Result                                                                                                                                                                                                                                                                                                                                                                      |
+| -------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `pnpm format:check`, `pnpm lint`, `pnpm typecheck` | clean                                                                                                                                                                                                                                                                                                                                                                       |
+| `pnpm test`                                        | **435 tests pass** — shared 93, web 39, API 303 (new: theme classification ×19, XML recolouring ×4, theme settings / apply e2e ×3, AI colours / refine / branch labels ×4, PMS-01 round trip through the real modeler, modeler theme behaviour, colour diff, font embedding)                                                                                                |
+| `pnpm build`                                       | passes                                                                                                                                                                                                                                                                                                                                                                      |
+| `pnpm audit --prod --audit-level high`             | no high/critical; the same 4 moderate as before (`minio` client, SEC-09)                                                                                                                                                                                                                                                                                                    |
+| Docker                                             | both images build from the committed Dockerfiles (sandbox-only CA copy, as before); `docker compose up` from clean volumes: all five services healthy, demo diagrams seeded with colours; Playwright smoke suite 8/8 against it; modeler, SVG/PNG export with fonts, no CSP errors                                                                                          |
+| Browser (Vite dev, Chromium)                       | PMS-01 imported, rendered with its colours, EN ↔ AR, autosave, reload, export SVG/PNG/BPMN (35 colour pairs, 54 Arabic labels kept); append task → human colours, replace → system colours, picker purple kept on replace, reset to theme, rename "Review …" → approval colours; Settings card EN/AR; apply dry-run dialog; compare highlights; portal and print view EN/AR |
+
+### Decisions for the product owner
+
+1. **Apply theme on published processes** (D-072): today an approved / published process gets a new draft
+   working copy (normal governance; the portal keeps the published version until it is re-approved). Option:
+   recolour without changing the status, or only drafts.
+2. **Theme colours chosen in the picker count as theme colours** (D-067): an element painted "Gateway yellow"
+   by hand follows a later type change. Alternative: remember explicit picks (extra `ph:` attribute).
+3. **Kinds not in the reference scheme** got defaults: intermediate events = human-task blue; call activities /
+   sub-processes = human task; receive task = system task. Adjustable in Settings.
+4. **Existing diagrams stay uncoloured until "Apply theme"** (no display-time colouring, D-067), so what you see
+   is what other tools and exports see. Run the action once after deploying.
+
+### Next (continue here)
+
+1. Review and merge `modeler-design-a`; after deploying run Settings → Diagram colours → **Apply theme to
+   existing diagrams** (after the decision above).
+2. Modeler design — Part B (BACKLOG).
+3. Phase 6 part 4 step 6 scope and Phase 4 as before.
 
 ## Previous state — 2026-10-21 (Phase 6 — Hardening, branch `phase-6-part-4`)
 

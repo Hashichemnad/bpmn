@@ -302,6 +302,9 @@ zod / UUID pipe; file uploads are checked in the service (allow-list, content sn
 | GET    | `/settings/auth`                             | `settings.manage`                                         | —                                   | default    |
 | PUT    | `/settings/auth`                             | `settings.manage`                                         | body                                | default    |
 | POST   | `/settings/auth/test`                        | `settings.manage`                                         | body                                | default    |
+| DELETE | `/settings/diagram-theme`                    | `settings.manage`                                         | —                                   | default    |
+| PUT    | `/settings/diagram-theme`                    | `settings.manage`                                         | body                                | default    |
+| POST   | `/settings/diagram-theme/apply`              | `settings.manage`                                         | body                                | default    |
 | GET    | `/settings/email`                            | `settings.manage`                                         | —                                   | default    |
 | PUT    | `/settings/email`                            | `settings.manage`                                         | body                                | default    |
 | POST   | `/settings/email/test`                       | `settings.manage`                                         | body                                | default    |
