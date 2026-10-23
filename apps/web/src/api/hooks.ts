@@ -1,5 +1,7 @@
 import { useMutation, useQuery, useQueryClient, keepPreviousData } from '@tanstack/react-query';
 import type {
+  ApplyThemeResultDto,
+  DiagramThemeInput,
   AuditListQuery,
   AuditLogDto,
   CreateDepartmentInput,
@@ -81,6 +83,38 @@ export function useUploadLogo() {
       return api<SettingsDto>('/settings/logo', { method: 'POST', body });
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ['settings'] }),
+  });
+}
+
+export function useSetDiagramTheme() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (body: DiagramThemeInput) =>
+      api<SettingsDto>('/settings/diagram-theme', { method: 'PUT', body }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['settings'] }),
+  });
+}
+
+export function useResetDiagramTheme() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: () => api<SettingsDto>('/settings/diagram-theme', { method: 'DELETE' }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['settings'] }),
+  });
+}
+
+/** "Apply theme to existing diagrams": dry run (counts only) or apply. */
+export function useApplyDiagramTheme() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (dryRun: boolean) =>
+      api<ApplyThemeResultDto>('/settings/diagram-theme/apply', {
+        method: 'POST',
+        body: { dryRun },
+      }),
+    onSuccess: (res) => {
+      if (!res.dryRun) void qc.invalidateQueries({ queryKey: ['processes'] });
+    },
   });
 }
 

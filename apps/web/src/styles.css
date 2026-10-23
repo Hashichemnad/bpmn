@@ -464,6 +464,42 @@ html[lang='ar'] body {
   font-family: Inter, 'IBM Plex Sans Arabic', sans-serif !important;
 }
 
+/* Settings → Branding: diagram colours */
+.ph-theme-table {
+  inline-size: 100%;
+  border-collapse: collapse;
+}
+
+.ph-theme-table th,
+.ph-theme-table td {
+  padding: 6px 8px 6px 0;
+  text-align: start;
+  vertical-align: middle;
+  border-block-end: 1px solid var(--ph-border);
+}
+
+.ph-theme-table thead th {
+  font-weight: 600;
+  color: #475569;
+  font-size: 12px;
+}
+
+.ph-theme-table tbody th {
+  font-weight: 400;
+}
+
+.ph-theme-table .ant-color-picker-trigger {
+  direction: ltr;
+}
+
+.ph-theme-preview {
+  block-size: 300px;
+  margin-block-start: 8px;
+  border: 1px solid var(--ph-border);
+  border-radius: 8px;
+  background: #fff;
+}
+
 /* ---------- Misc ---------- */
 .ph-json {
   margin: 0;
