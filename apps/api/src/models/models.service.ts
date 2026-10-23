@@ -7,6 +7,7 @@ import {
   resolveDiagramTheme,
   type ApplyThemeResultDto,
   type ContentStatus,
+  type DiagramThemeNoticeDto,
   extractBpmnLabels,
   type CreateLinkInput,
   type CreateVersionInput,
@@ -26,10 +27,12 @@ import type { AuthUser, RequestMeta } from '../common/auth-user';
 import { DomainEvents } from '../events/domain-events';
 import { assertSafeBpmnXml, countFlowElements, elementLabel } from './bpmn-xml';
 import { assertEditable, markEdited } from '../governance/edit-guard';
-import { applyThemeToXml } from './diagram-theme-xml';
+import { applyThemeToXml, differsOnlyInColours } from './diagram-theme-xml';
 
 /** Change note of the versions created by "Apply theme to existing diagrams". */
 export const APPLY_THEME_CHANGE_NOTE = 'Applied colour theme';
+/** Label of the version created when a published / approved diagram is recoloured in place. */
+export const THEME_ONLY_VERSION_LABEL = 'Theme applied (colours only)';
 
 const userRef = { select: { id: true, email: true, nameEn: true, nameAr: true } } as const;
 
@@ -374,11 +377,126 @@ export class ModelsService {
   // ---------- Colour theme ----------
 
   /**
-   * "Apply theme to existing diagrams" (Settings → Branding): gives elements without colours the
-   * theme colour in every working model, saved as a new version. Elements with colours are never
-   * changed. Processes in review or archived are skipped (they are locked); approved / published
-   * ones get a new draft working copy like any other edit, the published version stays live.
-   * With `dryRun` nothing is written and only the counts are returned.
+   * The official (approved or published) version of a process and the records pointing to it:
+   * the current publication for PUBLISHED, the approving review for APPROVED (D-072).
+   */
+  private async officialVersion(processId: string, status: ContentStatus) {
+    if (status === 'PUBLISHED') {
+      const pub = await this.prisma.publication.findFirst({
+        where: { entityType: 'PROCESS', entityId: processId, current: true },
+        select: { id: true, versionNumber: true },
+      });
+      if (!pub) return null;
+      const v = await this.prisma.processVersion.findUnique({
+        where: { processId_versionNumber: { processId, versionNumber: pub.versionNumber } },
+        select: { bpmnXml: true },
+      });
+      return v ? { versionNumber: pub.versionNumber, xml: v.bpmnXml, publicationId: pub.id } : null;
+    }
+    const review = await this.prisma.review.findFirst({
+      where: { entityType: 'PROCESS', entityId: processId, status: 'APPROVED' },
+      orderBy: { completedAt: 'desc' },
+      select: { id: true, versionNumber: true },
+    });
+    if (!review) return null;
+    const v = await this.prisma.processVersion.findUnique({
+      where: { processId_versionNumber: { processId, versionNumber: review.versionNumber } },
+      select: { bpmnXml: true },
+    });
+    return v ? { versionNumber: review.versionNumber, xml: v.bpmnXml, reviewId: review.id } : null;
+  }
+
+  /**
+   * Colours-only update of an approved / published process (D-072): new version labelled
+   * "Theme applied (colours only)", working model updated, the publication (or the approving
+   * review) moves to that version so the portal shows the colours; the status does not change.
+   */
+  private async applyThemeInPlace(
+    processId: string,
+    xml: string,
+    official: NonNullable<Awaited<ReturnType<ModelsService['officialVersion']>>>,
+    actor: AuthUser,
+    meta: RequestMeta,
+  ) {
+    const version = await this.prisma.$transaction(async (tx) => {
+      const last = await tx.processVersion.aggregate({
+        where: { processId },
+        _max: { versionNumber: true },
+      });
+      const v = await tx.processVersion.create({
+        data: {
+          processId,
+          versionNumber: (last._max.versionNumber ?? 0) + 1,
+          bpmnXml: xml,
+          changeNote: APPLY_THEME_CHANGE_NOTE,
+          label: THEME_ONLY_VERSION_LABEL,
+          createdById: actor.id,
+        },
+      });
+      await tx.processModel.update({
+        where: { processId },
+        data: { bpmnXml: xml, updatedById: actor.id },
+      });
+      if (official.publicationId)
+        await tx.publication.update({
+          where: { id: official.publicationId },
+          data: { versionNumber: v.versionNumber },
+        });
+      if (official.reviewId)
+        await tx.review.update({
+          where: { id: official.reviewId },
+          data: { versionNumber: v.versionNumber },
+        });
+      await this.audit.log(
+        {
+          action: 'VERSION',
+          entityType: 'ProcessVersion',
+          entityId: v.id,
+          userId: actor.id,
+          summary: {
+            processId,
+            versionNumber: v.versionNumber,
+            changeNote: v.changeNote,
+            label: v.label,
+          },
+          meta,
+        },
+        tx,
+      );
+      await this.audit.log(
+        {
+          action: 'UPDATE',
+          entityType: 'Process',
+          entityId: processId,
+          userId: actor.id,
+          summary: {
+            themeApplied: 'colours only',
+            fromVersion: official.versionNumber,
+            toVersion: v.versionNumber,
+            ...(official.publicationId ? { publicationId: official.publicationId } : {}),
+            ...(official.reviewId ? { reviewId: official.reviewId } : {}),
+          },
+          meta,
+        },
+        tx,
+      );
+      return v;
+    });
+    this.events.emit({
+      type: 'process.versioned',
+      processId,
+      versionNumber: version.versionNumber,
+      actorId: actor.id,
+    });
+  }
+
+  /**
+   * "Apply theme to existing diagrams" (Settings → Diagram colours): gives elements without colours
+   * the theme colour in every working model. Elements with colours are never changed. Processes in
+   * review or archived are skipped (they are locked). Drafts get a new version. Approved /
+   * published processes whose recoloured model differs from the official version in colours only
+   * are recoloured in place (status kept, portal updated); otherwise they get a new draft like any
+   * other edit (D-072). With `dryRun` nothing is written and only the counts are returned.
    */
   async applyTheme(
     dryRun: boolean,
@@ -398,6 +516,7 @@ export class ModelsService {
       dryRun,
       models: 0,
       elements: 0,
+      inPlace: 0,
       published: 0,
       skipped: 0,
     };
@@ -412,16 +531,23 @@ export class ModelsService {
       }
       result.models++;
       result.elements += changed;
-      if (status === 'APPROVED' || status === 'PUBLISHED') result.published++;
-      if (!dryRun) {
+      const official =
+        status === 'APPROVED' || status === 'PUBLISHED'
+          ? await this.officialVersion(row.processId, status)
+          : null;
+      const inPlace = !!official && differsOnlyInColours(official.xml, xml);
+      if (inPlace) result.inPlace++;
+      else if (status === 'APPROVED' || status === 'PUBLISHED') result.published++;
+      if (dryRun) continue;
+      if (inPlace) await this.applyThemeInPlace(row.processId, xml, official, actor, meta);
+      else
         await this.createVersion(
           row.processId,
           { bpmnXml: xml, changeNote: APPLY_THEME_CHANGE_NOTE },
           actor,
           meta,
         );
-        recoloured.push(row.processId);
-      }
+      recoloured.push(row.processId);
     }
     if (!dryRun) {
       await this.audit.log({
@@ -432,7 +558,44 @@ export class ModelsService {
         summary: { appliedToDiagrams: { ...result, processIds: recoloured } },
         meta,
       });
+      await this.closeThemeNotice('applied', actor);
     }
     return result;
+  }
+
+  /**
+   * After the upgrade Super Admins see a notice "Diagrams can now be coloured: run Apply theme"
+   * until it is dismissed or the theme is applied, and only while uncoloured diagrams exist.
+   */
+  async themeNotice(actor: AuthUser, meta: RequestMeta): Promise<DiagramThemeNoticeDto> {
+    const done = await this.prisma.setting.findUnique({
+      where: { key: SETTING_KEYS.DIAGRAM_THEME_NOTICE },
+    });
+    if (done) return { show: false, models: 0 };
+    const { models } = await this.applyTheme(true, actor, meta);
+    return { show: models > 0, models };
+  }
+
+  async dismissThemeNotice(actor: AuthUser, meta: RequestMeta): Promise<DiagramThemeNoticeDto> {
+    await this.closeThemeNotice('dismissed', actor);
+    await this.audit.log({
+      action: 'UPDATE',
+      entityType: 'Setting',
+      entityId: SETTING_KEYS.DIAGRAM_THEME_NOTICE,
+      userId: actor.id,
+      summary: { notice: 'dismissed' },
+      meta,
+    });
+    return { show: false, models: 0 };
+  }
+
+  private async closeThemeNotice(reason: 'applied' | 'dismissed', actor: AuthUser) {
+    const key = SETTING_KEYS.DIAGRAM_THEME_NOTICE;
+    const value = { reason, at: new Date().toISOString(), userId: actor.id };
+    await this.prisma.setting.upsert({
+      where: { key },
+      create: { key, value, updatedById: actor.id },
+      update: { value, updatedById: actor.id },
+    });
   }
 }

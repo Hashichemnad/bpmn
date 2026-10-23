@@ -95,3 +95,45 @@ export function applyThemeToXml(
   const prolog = /^\uFEFF?\s*<\?xml[^>]*\?>/.exec(xml)?.[0].trimStart();
   return { xml: prolog && !body.startsWith('<?xml') ? `${prolog}\n${body}` : body, changed };
 }
+
+const COLOUR_NAMESPACES = new Set([BPMN_COLOR_NS, BPMN_BIOC_NS]);
+
+/**
+ * Canonical form of a BPMN document without any colour information: elements with their
+ * attributes sorted, colour attributes (BPMN-in-Color, bpmn.io) and namespace declarations
+ * dropped, whitespace-only text ignored. Null when the XML does not parse.
+ */
+function canonicalWithoutColours(xml: string): string | null {
+  const doc = new (window().DOMParser)().parseFromString(xml, 'application/xml');
+  if (doc.getElementsByTagName('parsererror').length) return null;
+  const walk = (node: Node): string => {
+    if (node.nodeType === 3 || node.nodeType === 4) {
+      const text = node.nodeValue ?? '';
+      return text.trim() ? JSON.stringify(text) : '';
+    }
+    if (node.nodeType !== 1) return '';
+    const el = node as Element;
+    const attrs = Array.from(el.attributes)
+      .filter(
+        (a) =>
+          a.namespaceURI !== XMLNS_NS &&
+          a.name !== 'xmlns' &&
+          !COLOUR_NAMESPACES.has(a.namespaceURI ?? ''),
+      )
+      .map((a) => `${a.namespaceURI ?? ''}|${a.localName}=${JSON.stringify(a.value)}`)
+      .sort();
+    return `<${el.namespaceURI}|${el.localName} ${attrs.join(' ')}>${Array.from(el.childNodes)
+      .map(walk)
+      .join('')}</>`;
+  };
+  return walk(doc.documentElement);
+}
+
+/**
+ * True when two BPMN documents differ in colour attributes only (D-072): same elements,
+ * attributes, labels and layout. Used before recolouring a published diagram in place.
+ */
+export function differsOnlyInColours(a: string, b: string): boolean {
+  const ca = canonicalWithoutColours(a);
+  return ca !== null && ca === canonicalWithoutColours(b);
+}

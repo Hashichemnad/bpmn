@@ -259,6 +259,8 @@ export const SETTING_KEYS = {
   AI: 'ai',
   AUTH: 'auth',
   DIAGRAM_THEME: 'branding.diagramTheme',
+  /** Set when the post-upgrade "run Apply theme" notice was dismissed or the theme applied. */
+  DIAGRAM_THEME_NOTICE: 'branding.diagramThemeNotice',
 } as const;
 
 /** Logo upload limits. */

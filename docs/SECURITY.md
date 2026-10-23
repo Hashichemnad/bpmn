@@ -305,6 +305,8 @@ zod / UUID pipe; file uploads are checked in the service (allow-list, content sn
 | DELETE | `/settings/diagram-theme`                    | `settings.manage`                                         | —                                   | default    |
 | PUT    | `/settings/diagram-theme`                    | `settings.manage`                                         | body                                | default    |
 | POST   | `/settings/diagram-theme/apply`              | `settings.manage`                                         | body                                | default    |
+| GET    | `/settings/diagram-theme/notice`             | `settings.manage`                                         | —                                   | default    |
+| POST   | `/settings/diagram-theme/notice/dismiss`     | `settings.manage`                                         | —                                   | default    |
 | GET    | `/settings/email`                            | `settings.manage`                                         | —                                   | default    |
 | PUT    | `/settings/email`                            | `settings.manage`                                         | body                                | default    |
 | POST   | `/settings/email/test`                       | `settings.manage`                                         | body                                | default    |

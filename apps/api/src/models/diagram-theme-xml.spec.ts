@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { DEFAULT_DIAGRAM_THEME } from '@processhub/shared';
-import { applyThemeToXml } from './diagram-theme-xml';
+import { applyThemeToXml, differsOnlyInColours } from './diagram-theme-xml';
 
 const SAMPLE = readFileSync(
   join(__dirname, '../../../../docs/samples/PMS-01-Program-Request-Approval.bpmn'),
@@ -82,5 +82,31 @@ describe('applyThemeToXml', () => {
       xml: '<bpmn:definitions',
       changed: 0,
     });
+  });
+});
+
+describe('differsOnlyInColours', () => {
+  it('accepts a pure recolouring and rejects any other change', () => {
+    const coloured = applyThemeToXml(UNCOLOURED, DEFAULT_DIAGRAM_THEME).xml;
+    expect(differsOnlyInColours(UNCOLOURED, coloured)).toBe(true);
+    expect(differsOnlyInColours(SAMPLE, UNCOLOURED)).toBe(true);
+    expect(differsOnlyInColours(SAMPLE, SAMPLE.replace(/\n {6}/g, '\n'))).toBe(true);
+    // Label, layout and attribute changes are not colour-only.
+    expect(
+      differsOnlyInColours(
+        coloured,
+        coloured.replace('ph:nameEn="Answer screening questions"', 'ph:nameEn="Answer questions"'),
+      ),
+    ).toBe(false);
+    expect(differsOnlyInColours(SAMPLE, SAMPLE.replace('x="242" y="132"', 'x="250" y="132"'))).toBe(
+      false,
+    );
+    expect(
+      differsOnlyInColours(
+        SAMPLE,
+        SAMPLE.replace('id="Task_Screening" ', 'id="Task_Screening" ph:stepKind="approval" '),
+      ),
+    ).toBe(false);
+    expect(differsOnlyInColours('<bpmn:definitions', SAMPLE)).toBe(false);
   });
 });

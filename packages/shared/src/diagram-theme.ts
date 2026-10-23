@@ -94,10 +94,22 @@ export interface ApplyThemeResultDto {
   models: number;
   /** Elements that get (or would get) theme colours. */
   elements: number;
-  /** Of `models`: approved / published processes that get a new draft working copy. */
+  /**
+   * Of `models`: approved / published processes recoloured in place — the change is colours only,
+   * so the status stays and the portal shows the colours at once (D-072).
+   */
+  inPlace: number;
+  /** Of `models`: approved / published processes with other changes; they get a new draft. */
   published: number;
   /** Processes skipped because they are in review or archived (locked for edits). */
   skipped: number;
+}
+
+/** One-time notice for Super Admins after the upgrade: diagrams without colours exist (D-072). */
+export interface DiagramThemeNoticeDto {
+  show: boolean;
+  /** Working models that "Apply theme" would colour. */
+  models: number;
 }
 
 /** Stored setting → full theme (missing or invalid values fall back to the default). */

@@ -74,7 +74,14 @@ describe('Diagram colour theme (e2e)', () => {
     await root.post('/settings/diagram-theme/apply').send({}).expect(400);
 
     const dry = await root.post('/settings/diagram-theme/apply').send({ dryRun: true }).expect(200);
-    expect(dry.body).toEqual({ dryRun: true, models: 1, elements: 35, published: 0, skipped: 0 });
+    expect(dry.body).toEqual({
+      dryRun: true,
+      models: 1,
+      elements: 35,
+      inPlace: 0,
+      published: 0,
+      skipped: 0,
+    });
     expect(await ctx.prisma.processVersion.count()).toBe(0);
 
     const res = await root
@@ -106,6 +113,29 @@ describe('Diagram colour theme (e2e)', () => {
     expect(again.body.models).toBe(0);
   });
 
+  it('shows Super Admins a one-time notice until it is dismissed or the theme is applied', async () => {
+    await modeler.get('/settings/diagram-theme/notice').expect(403);
+    expect((await root.get('/settings/diagram-theme/notice').expect(200)).body).toEqual({
+      show: false,
+      models: 0,
+    });
+    await process('C.20', UNCOLOURED);
+    expect((await root.get('/settings/diagram-theme/notice').expect(200)).body).toEqual({
+      show: true,
+      models: 1,
+    });
+    await root.post('/settings/diagram-theme/notice/dismiss').expect(200);
+    expect((await root.get('/settings/diagram-theme/notice').expect(200)).body.show).toBe(false);
+    expect(
+      await ctx.prisma.auditLog.count({ where: { entityId: 'branding.diagramThemeNotice' } }),
+    ).toBe(1);
+
+    // Applying the theme also closes it.
+    await ctx.prisma.setting.delete({ where: { key: 'branding.diagramThemeNotice' } });
+    await root.post('/settings/diagram-theme/apply').send({ dryRun: false }).expect(200);
+    expect((await root.get('/settings/diagram-theme/notice').expect(200)).body.show).toBe(false);
+  });
+
   it('skips processes locked by governance', async () => {
     const id = await process('C.03', UNCOLOURED);
     await ctx.prisma.process.update({ where: { id }, data: { status: 'IN_REVIEW' } });
@@ -115,5 +145,141 @@ describe('Diagram colour theme (e2e)', () => {
       .expect(200);
     expect(res.body).toMatchObject({ models: 0, skipped: 1 });
     expect(await ctx.prisma.processVersion.count()).toBe(0);
+  });
+
+  describe('approved and published processes (D-072)', () => {
+    let reviewer: Client;
+    let ownerId: string;
+
+    beforeEach(async () => {
+      await createUser(ctx.prisma, 'reviewer@test.local', ['REVIEWER']);
+      ownerId = (await createUser(ctx.prisma, 'owner@test.local', ['PROCESS_OWNER'])).id;
+      reviewer = await loggedIn(ctx.app, 'reviewer@test.local');
+      const wf = (
+        await root
+          .post('/workflows')
+          .send({
+            nameEn: 'Review',
+            steps: [{ nameEn: 'Review', assignees: [{ type: 'ROLE', roleKey: 'REVIEWER' }] }],
+          })
+          .expect(201)
+      ).body.id;
+      await root
+        .put('/governance/settings')
+        .send({
+          reviewIntervalMonths: 12,
+          reminderDays: 14,
+          reviewDueDays: 5,
+          defaultWorkflowId: wf,
+          categoryWorkflows: { MANAGEMENT: null, CORE: null, SUPPORT: null },
+        })
+        .expect(200);
+    });
+
+    /** A process whose version 1 (uncoloured) is approved, and published unless `publish` is false. */
+    const official = async (code: string, publish = true) => {
+      const id = (
+        await root
+          .post('/processes')
+          .send({ code, nameEn: code, category: 'CORE', ownerId })
+          .expect(201)
+      ).body.id as string;
+      await modeler
+        .post(`/processes/${id}/versions`)
+        .send({ bpmnXml: UNCOLOURED, changeNote: 'v1' })
+        .expect(201);
+      await modeler.post(`/governance/processes/${id}/submit`).send({}).expect(200);
+      const review = (await reviewer.get('/tasks').expect(200)).body.reviews.find(
+        (r: { item: { entityId: string } }) => r.item.entityId === id,
+      );
+      await reviewer
+        .post(`/reviews/${review.id}/decision`)
+        .send({ decision: 'APPROVE' })
+        .expect(200);
+      if (publish) await modeler.post(`/governance/processes/${id}/publish`).send({}).expect(200);
+      return id;
+    };
+
+    it('recolours a published process in place when only colours change', async () => {
+      const id = await official('C.10');
+      const dry = await root
+        .post('/settings/diagram-theme/apply')
+        .send({ dryRun: true })
+        .expect(200);
+      expect(dry.body).toMatchObject({ models: 1, inPlace: 1, published: 0 });
+
+      await root.post('/settings/diagram-theme/apply').send({ dryRun: false }).expect(200);
+      const p = await ctx.prisma.process.findUniqueOrThrow({ where: { id } });
+      expect(p.status).toBe('PUBLISHED');
+      const v2 = await ctx.prisma.processVersion.findUniqueOrThrow({
+        where: { processId_versionNumber: { processId: id, versionNumber: 2 } },
+      });
+      expect(v2).toMatchObject({
+        changeNote: 'Applied colour theme',
+        label: 'Theme applied (colours only)',
+      });
+      expect(v2.bpmnXml).toContain('color:background-color="#FBF3E0"');
+      const pub = await ctx.prisma.publication.findFirstOrThrow({
+        where: { entityId: id, current: true },
+      });
+      expect(pub.versionNumber).toBe(2);
+      const model = await ctx.prisma.processModel.findUniqueOrThrow({ where: { processId: id } });
+      expect(model.bpmnXml).toBe(v2.bpmnXml);
+      // The portal serves the coloured published version.
+      const portal = await root.get(`/portal/processes/${id}`).expect(200);
+      expect(portal.body.bpmnXml).toContain('color:background-color="#FBF3E0"');
+      const audit = await ctx.prisma.auditLog.findFirstOrThrow({
+        where: { entityType: 'Process', entityId: id, action: 'UPDATE' },
+        orderBy: { createdAt: 'desc' },
+      });
+      expect(audit.summary).toMatchObject({
+        themeApplied: 'colours only',
+        fromVersion: 1,
+        toVersion: 2,
+        publicationId: pub.id,
+      });
+    });
+
+    it('moves the approval of an approved (unpublished) process to the coloured version', async () => {
+      const id = await official('C.11', false);
+      await root.post('/settings/diagram-theme/apply').send({ dryRun: false }).expect(200);
+      expect((await ctx.prisma.process.findUniqueOrThrow({ where: { id } })).status).toBe(
+        'APPROVED',
+      );
+      await modeler.post(`/governance/processes/${id}/publish`).send({}).expect(200);
+      const pub = await ctx.prisma.publication.findFirstOrThrow({
+        where: { entityId: id, current: true },
+      });
+      expect(pub.versionNumber).toBe(2);
+    });
+
+    it('falls back to a new draft when the model differs from the published version', async () => {
+      const id = await official('C.12');
+      // A working model that differs from the published version in more than colours.
+      await ctx.prisma.processModel.update({
+        where: { processId: id },
+        data: {
+          bpmnXml: UNCOLOURED.replace(
+            'ph:nameEn="Answer screening questions"',
+            'ph:nameEn="Answer the questionnaire"',
+          ),
+        },
+      });
+      const dry = await root
+        .post('/settings/diagram-theme/apply')
+        .send({ dryRun: true })
+        .expect(200);
+      expect(dry.body).toMatchObject({ models: 1, inPlace: 0, published: 1 });
+      await root.post('/settings/diagram-theme/apply').send({ dryRun: false }).expect(200);
+      expect((await ctx.prisma.process.findUniqueOrThrow({ where: { id } })).status).toBe('DRAFT');
+      const pub = await ctx.prisma.publication.findFirstOrThrow({
+        where: { entityId: id, current: true },
+      });
+      expect(pub.versionNumber).toBe(1);
+      const v2 = await ctx.prisma.processVersion.findUniqueOrThrow({
+        where: { processId_versionNumber: { processId: id, versionNumber: 2 } },
+      });
+      expect(v2.label).toBeNull();
+    });
   });
 });
