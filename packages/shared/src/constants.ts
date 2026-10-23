@@ -258,6 +258,7 @@ export const SETTING_KEYS = {
   EMAIL: 'email',
   AI: 'ai',
   AUTH: 'auth',
+  DIAGRAM_THEME: 'branding.diagramTheme',
 } as const;
 
 /** Logo upload limits. */

@@ -2,7 +2,36 @@
 
 Read this together with `CLAUDE.md` at the start of every session.
 
-## Current state — 2026-10-21 (Phase 6 — Hardening, branch `phase-6-part-4`)
+## Current state — 2026-10-23 (Modeler design upgrade — Part A: look and feel, branch `modeler-design-a`)
+
+Phases 1–3, the AI Assistant and Phase 6 parts 1–4 are merged into `main`. This branch makes diagrams look like
+an enterprise BPM product while staying 100 % standard BPMN 2.0 (colours stored as BPMN-in-Color +
+`bioc:`). Reference: `docs/samples/README.md` (colour scheme) and `docs/samples/PMS-01-Program-Request-Approval.bpmn`.
+Decisions: DECISIONS D-067 – D-07x.
+
+Steps (tick as they are committed; a new session continues at the first unticked one):
+
+- [x] 0. "Before" screenshots of PMS-01 (modeler, portal, 100 % detail; EN/AR) in `docs/screenshots/modeler-design-a/`.
+- [x] 1. Shared: `packages/shared/src/diagram-theme.ts` — theme type, default (reference scheme), zod schema,
+      element-kind classification (approval tasks by first English word or `ph:stepKind`), theme-colour detection;
+      Setting key `branding.diagramTheme`, public settings carry the theme. Unit tests.
+- [ ] 2. API: theme in public settings, `PUT/DELETE /settings/diagram-theme` (Super Admin, audited),
+      `POST /settings/diagram-theme/apply` (dry run + apply: recolours uncoloured elements in all working models as a
+      new version "Applied colour theme", audited); server-side XML recolouring with tests.
+- [ ] 3. API: AI generator / refine (`structure-to-bpmn.ts`) writes theme colours and places gateway branch labels
+      on their own branch (`BPMNLabel` bounds); refine keeps existing explicit colours. Tests.
+- [ ] 4. Web: bpmn-js modules — theme on `shape.create` / `shape.replace` / label or step-kind change (never over
+      user colours), custom renderer (rounded corners, shadow, 1.5 px borders, task icons, lane header band,
+      fonts, Arabic RTL labels), one diagram factory used by modeler, viewers, portal, print, compare.
+- [ ] 5. Web: colour picker (`bpmn-js-color-picker`, theme palette + neutrals + "reset to theme"), approval-step
+      setting in the element panel (`ph:stepKind`), exports with colours and embedded fonts.
+- [ ] 6. Web: Settings → Branding diagram theme card (live preview, reset, apply to existing diagrams with dry run).
+- [ ] 7. Round-trip test of the PMS-01 sample (import → save → compare colours and `ph:` attributes), compare
+      highlights, EN/AR checks; "after" screenshots.
+- [ ] 8. Docs (PROGRESS, DECISIONS, BACKLOG Part B items, README), verification (format, lint, typecheck, tests,
+      build, audit), push, pull request.
+
+## Previous state — 2026-10-21 (Phase 6 — Hardening, branch `phase-6-part-4`)
 
 Parts 1 (security review), 2 (production deployment) and 3 (SSO + two-factor) are merged into `main`.
 

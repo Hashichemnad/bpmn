@@ -9,3 +9,4 @@ export * from './git-export';
 export * from './governance';
 export * from './ai';
 export * from './auth';
+export * from './diagram-theme';
