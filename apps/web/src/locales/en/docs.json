@@ -250,7 +250,7 @@
       "added": "Added",
       "removed": "Removed",
       "changed": "Changed",
-      "layout": "Moved / resized"
+      "layout": "Moved, resized or recoloured"
     },
     "attr": {
       "name": "Label"

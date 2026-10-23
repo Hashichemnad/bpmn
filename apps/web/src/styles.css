@@ -454,7 +454,7 @@ html[lang='ar'] body {
 }
 
 /* Diff and highlight markers also hide the shadow so the highlight colour reads clearly. */
-:is(.ph-diff-added, .ph-diff-removed, .ph-diff-changed, .ph-step-selected) .ph-shadow {
+:is(.ph-diff-added, .ph-diff-removed, .ph-diff-changed) .ph-shadow {
   display: none;
 }
 
@@ -1035,21 +1035,47 @@ html[lang='ar'] body {
   background: #fff;
 }
 
+/* Diff highlights: saturated fill plus a halo outside the shape, so they stand out from the
+   theme colours of the diagram (D-070). */
 .ph-diff-added .djs-visual > :is(.ph-body, :first-child:not(.ph-shadow)) {
-  stroke: #16a34a !important;
-  fill: #dcfce7 !important;
+  stroke: #15803d !important;
+  fill: #bbf7d0 !important;
   stroke-width: 3px !important;
 }
 
+.djs-shape:is(.ph-diff-added, .ph-diff-removed, .ph-diff-changed, .ph-diff-layout) .djs-outline {
+  visibility: visible;
+  stroke-width: 4px;
+  stroke-opacity: 0.85;
+}
+
+.djs-shape.ph-diff-added .djs-outline {
+  stroke: #16a34a;
+}
+
+.djs-shape.ph-diff-removed .djs-outline {
+  stroke: #dc2626;
+}
+
+.djs-shape.ph-diff-changed .djs-outline {
+  stroke: #ea580c;
+}
+
+.djs-shape.ph-diff-layout .djs-outline {
+  stroke: #2563eb;
+  stroke-width: 3px;
+  stroke-dasharray: 6 4;
+}
+
 .ph-diff-removed .djs-visual > :is(.ph-body, :first-child:not(.ph-shadow)) {
-  stroke: #dc2626 !important;
-  fill: #fee2e2 !important;
+  stroke: #b91c1c !important;
+  fill: #fecaca !important;
   stroke-width: 3px !important;
 }
 
 .ph-diff-changed .djs-visual > :is(.ph-body, :first-child:not(.ph-shadow)) {
-  stroke: #d97706 !important;
-  fill: #fef3c7 !important;
+  stroke: #c2410c !important;
+  fill: #fed7aa !important;
   stroke-width: 3px !important;
 }
 
@@ -1069,7 +1095,8 @@ html[lang='ar'] body {
 }
 
 .djs-connection.ph-diff-changed .djs-visual > path {
-  stroke: #d97706 !important;
+  stroke: #ea580c !important;
+  stroke-width: 3px !important;
 }
 
 .ph-diff-focus .djs-outline {
@@ -1481,7 +1508,13 @@ html[lang='ar'] body {
 .ph-step-selected .djs-visual > :is(.ph-body, :first-child:not(.ph-shadow)) {
   stroke: #1d4ed8 !important;
   stroke-width: 3px !important;
-  fill: #eff6ff !important;
+}
+
+/* Portal: the selected step keeps its colour and gets a clear halo. */
+.ph-step-selected .djs-outline {
+  visibility: visible;
+  stroke: #1d4ed8;
+  stroke-width: 3px;
 }
 
 .ph-toc {
