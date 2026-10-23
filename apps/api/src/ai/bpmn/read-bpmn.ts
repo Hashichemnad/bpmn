@@ -1,5 +1,10 @@
 import { JSDOM } from 'jsdom';
-import { validateBpmnGraph, type BpmnGraphElement } from '@processhub/shared';
+import {
+  BPMN_BIOC_NS,
+  BPMN_COLOR_NS,
+  validateBpmnGraph,
+  type BpmnGraphElement,
+} from '@processhub/shared';
 import { assertSafeBpmnXml } from '../../models/bpmn-xml';
 import { AiError } from '../providers/types';
 import {
@@ -13,6 +18,7 @@ import {
 import type { ContainerIds, PreservedElement } from './structure-to-bpmn';
 
 const BPMN_NS = 'http://www.omg.org/spec/BPMN/20100524/MODEL';
+const BPMNDI_NS = 'http://www.omg.org/spec/BPMN/20100524/DI';
 const PH_NS = 'http://processhub.io/schema/bpmn';
 
 export interface ReadBpmn {
@@ -123,6 +129,8 @@ export function readBpmn(xml: string): ReadBpmn {
       structure.nodes.push(node);
       const linked = ph(el, 'linkedProcessId');
       if (linked) preserve.set(id, { linkedProcessId: linked });
+      const stepKind = ph(el, 'stepKind');
+      if (stepKind) preserve.set(id, { ...preserve.get(id), stepKind });
       const children = Array.from(el.children);
       graph.push({
         id,
@@ -144,6 +152,22 @@ export function readBpmn(xml: string): ReadBpmn {
     g.outgoing = Math.max(g.outgoing, structure.flows.filter((f) => f.from === g.id).length);
   }
   dropped += doc.getElementsByTagNameNS(BPMN_NS, 'messageFlow').length;
+  // Colours of shapes (BPMN-in-Color first, then bpmn.io), kept when the diagram is rebuilt.
+  for (const shape of Array.from(doc.getElementsByTagNameNS(BPMNDI_NS, 'BPMNShape'))) {
+    const id = shape.getAttribute('bpmnElement') ?? '';
+    const fill =
+      shape.getAttributeNS(BPMN_COLOR_NS, 'background-color') ||
+      shape.getAttributeNS(BPMN_BIOC_NS, 'fill');
+    const stroke =
+      shape.getAttributeNS(BPMN_COLOR_NS, 'border-color') ||
+      shape.getAttributeNS(BPMN_BIOC_NS, 'stroke');
+    if (fill || stroke)
+      preserve.set(id, {
+        ...preserve.get(id),
+        ...(fill ? { fill } : {}),
+        ...(stroke ? { stroke } : {}),
+      });
+  }
   const idOf = (el: Element | undefined) => el?.getAttribute('id') || undefined;
   const containers: ContainerIds = {
     definitions: idOf(doc.documentElement),

@@ -1,4 +1,13 @@
 import {
+  BPMN_BIOC_NS,
+  BPMN_COLOR_NS,
+  DEFAULT_DIAGRAM_THEME,
+  isThemeColour,
+  themeColour,
+  themeKindOf,
+  type DiagramTheme,
+} from '@processhub/shared';
+import {
   isActivity,
   isGateway,
   type NodeType,
@@ -11,6 +20,11 @@ export const PH_NAMESPACE = 'http://processhub.io/schema/bpmn';
 /** Attributes of existing elements the structure does not carry (kept when refining). */
 export interface PreservedElement {
   linkedProcessId?: string;
+  /** `ph:stepKind` of a user task (approval step marked in the element panel). */
+  stepKind?: string;
+  /** Colours of the shape; explicit (non-theme) colours are kept when refining. */
+  fill?: string;
+  stroke?: string;
 }
 
 export interface BuildOptions {
@@ -21,6 +35,8 @@ export interface BuildOptions {
   flowIds?: Map<string, string>;
   /** Ids of the existing definitions / process / pool, kept so a refinement diffs cleanly. */
   containers?: ContainerIds;
+  /** Colour theme for elements without explicit colours (Settings → Branding). */
+  theme?: DiagramTheme;
 }
 
 export interface ContainerIds {
@@ -58,6 +74,50 @@ const esc = (s: string) =>
 
 const labelAttrs = (en: string, ar: string) =>
   en || ar ? ` name="${esc(en || ar)}" ph:nameEn="${esc(en)}" ph:nameAr="${esc(ar)}"` : '';
+
+/** Sequence-flow labels: at most this wide (bpmn-js wraps longer text), one line high per row. */
+const LABEL_MAX_W = 110;
+const LABEL_LINE_H = 14;
+
+export interface Bounds {
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+}
+
+/**
+ * Label bounds of a sequence flow. A branch leaving a gateway gets its label at the start of its
+ * own horizontal segment (never on the vertical trunk shared with the other branches); other
+ * flows get it centred above their longest horizontal segment.
+ */
+export function flowLabelBounds(
+  points: { x: number; y: number }[],
+  text: string,
+  fromGateway: boolean,
+): Bounds {
+  const textW = Math.round(text.length * 6.2) + 4;
+  const w = Math.max(24, Math.min(LABEL_MAX_W, textW));
+  const h = LABEL_LINE_H * Math.max(1, Math.ceil(textW / LABEL_MAX_W));
+  const segments = points.slice(1).map((p, i) => ({ a: points[i], b: p }));
+  const horizontal = segments.filter((sg) => sg.a.y === sg.b.y && sg.a.x !== sg.b.x);
+  const seg = fromGateway
+    ? horizontal[0]
+    : [...horizontal].sort((m, n) => Math.abs(n.b.x - n.a.x) - Math.abs(m.b.x - m.a.x))[0];
+  if (!seg) {
+    // Only vertical segments: next to the middle of the first one.
+    const a = points[0];
+    const b = points[1] ?? a;
+    return { x: Math.round(a.x + 6), y: Math.round((a.y + b.y) / 2 - h / 2), w, h };
+  }
+  const rightwards = seg.b.x > seg.a.x;
+  const x = fromGateway
+    ? rightwards
+      ? seg.a.x + 8
+      : seg.a.x - 8 - w
+    : (seg.a.x + seg.b.x) / 2 - w / 2;
+  return { x: Math.round(x), y: Math.round(seg.a.y - h - 3), w, h };
+}
 
 interface Placed {
   node: StructureNode;
@@ -217,7 +277,10 @@ export function layoutStructure(s: ProcessStructure) {
         { x: b.x, y: bcy },
       ];
     }
-    return { flow: f, points: points.map((p) => ({ x: Math.round(p.x), y: Math.round(p.y) })) };
+    const rounded = points.map((p) => ({ x: Math.round(p.x), y: Math.round(p.y) }));
+    const text = [f.nameEn, f.nameAr].sort((m, n) => n.length - m.length)[0] ?? '';
+    const label = text.trim() ? flowLabelBounds(rounded, text, isGateway(a.node.type)) : undefined;
+    return { flow: f, points: rounded, label };
   });
 
   const lanes = s.lanes.map((l) => ({
@@ -278,7 +341,10 @@ export function structureToBpmn(s: ProcessStructure, opts: BuildOptions): string
         keep?.linkedProcessId && (n.type === 'callActivity' || n.type === 'subProcess')
           ? ` ph:linkedProcessId="${esc(keep.linkedProcessId)}"`
           : '';
+      const stepKind =
+        keep?.stepKind && n.type === 'userTask' ? ` ph:stepKind="${esc(keep.stepKind)}"` : '';
       const desc =
+        stepKind +
         (n.descriptionEn ? ` ph:descriptionEn="${esc(n.descriptionEn)}"` : '') +
         (n.descriptionAr ? ` ph:descriptionAr="${esc(n.descriptionAr)}"` : '');
       return `    <bpmn:${n.type} id="${n.id}"${labelAttrs(n.nameEn, n.nameAr)}${link}${desc}>${refs}${eventDefinitionXml(n, n.id)}\n    </bpmn:${n.type}>`;
@@ -306,15 +372,50 @@ export function structureToBpmn(s: ProcessStructure, opts: BuildOptions): string
       `\n    </bpmn:laneSet>\n`
     : '';
 
+  const theme = opts.theme ?? DEFAULT_DIAGRAM_THEME;
+  /** Theme colour of the element, or its explicit colour from the refined diagram. */
+  const colourAttrs = (
+    id: string,
+    info: Parameters<typeof themeKindOf>[0],
+    laneIndex = 0,
+  ): string => {
+    const keep = opts.preserve?.get(id);
+    let fill = keep?.fill;
+    let stroke = keep?.stroke;
+    if (!(fill || stroke) || isThemeColour(theme, fill, stroke)) {
+      const kind = themeKindOf(info);
+      if (!kind) return '';
+      ({ fill, stroke } = themeColour(theme, kind, laneIndex));
+    }
+    return (
+      (stroke ? ` bioc:stroke="${esc(stroke)}"` : '') +
+      (fill ? ` bioc:fill="${esc(fill)}"` : '') +
+      (fill ? ` color:background-color="${esc(fill)}"` : '') +
+      (stroke ? ` color:border-color="${esc(stroke)}"` : '')
+    );
+  };
+  const nodeColours = (n: StructureNode) =>
+    colourAttrs(n.id, {
+      type: n.type,
+      nameEn: n.nameEn,
+      stepKind: opts.preserve?.get(n.id)?.stepKind,
+      eventDefinitions: n.eventDefinition === 'none' ? [] : [n.eventDefinition],
+    });
   const shape = (id: string, b: { x: number; y: number; w: number; h: number }, extra = '') =>
     `      <bpmndi:BPMNShape id="${id}_di" bpmnElement="${id}"${extra}>\n        <dc:Bounds x="${b.x}" y="${b.y}" width="${b.w}" height="${b.h}" />\n      </bpmndi:BPMNShape>`;
   const pooled = s.lanes.length > 0;
   const participantId = ids.participant;
   const shapes = [
     ...(pooled ? [shape(participantId, layout.pool, ' isHorizontal="true"')] : []),
-    ...layout.lanes.map((l) => shape(l.lane.id, l, ' isHorizontal="true"')),
+    ...layout.lanes.map((l, i) =>
+      shape(l.lane.id, l, `${colourAttrs(l.lane.id, { type: 'lane' }, i)} isHorizontal="true"`),
+    ),
     ...[...layout.placed.values()].map((p) =>
-      shape(p.node.id, p, p.node.type === 'exclusiveGateway' ? ' isMarkerVisible="true"' : ''),
+      shape(
+        p.node.id,
+        p,
+        nodeColours(p.node) + (p.node.type === 'exclusiveGateway' ? ' isMarkerVisible="true"' : ''),
+      ),
     ),
   ].join('\n');
   const edges = layout.edges
@@ -322,6 +423,9 @@ export function structureToBpmn(s: ProcessStructure, opts: BuildOptions): string
       (e) =>
         `      <bpmndi:BPMNEdge id="${fid(e.flow)}_di" bpmnElement="${fid(e.flow)}">\n` +
         e.points.map((p) => `        <di:waypoint x="${p.x}" y="${p.y}" />`).join('\n') +
+        (e.label
+          ? `\n        <bpmndi:BPMNLabel>\n          <dc:Bounds x="${e.label.x}" y="${e.label.y}" width="${e.label.w}" height="${e.label.h}" />\n        </bpmndi:BPMNLabel>`
+          : '') +
         `\n      </bpmndi:BPMNEdge>`,
     )
     .join('\n');
@@ -331,7 +435,7 @@ export function structureToBpmn(s: ProcessStructure, opts: BuildOptions): string
   const planeElement = pooled ? ids.collaboration : processId;
 
   return `<?xml version="1.0" encoding="UTF-8"?>
-<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" xmlns:ph="${PH_NAMESPACE}" id="${ids.definitions}" targetNamespace="http://bpmn.io/schema/bpmn">
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" xmlns:bioc="${BPMN_BIOC_NS}" xmlns:color="${BPMN_COLOR_NS}" xmlns:ph="${PH_NAMESPACE}" id="${ids.definitions}" targetNamespace="http://bpmn.io/schema/bpmn">
 ${collaboration}  <bpmn:process id="${processId}" isExecutable="false">
 ${laneSetXml}${nodesXml}
 ${flowsXml}

@@ -18,7 +18,7 @@ Steps (tick as they are committed; a new session continues at the first unticked
 - [x] 2. API: theme in public settings, `PUT/DELETE /settings/diagram-theme` (Super Admin, audited),
       `POST /settings/diagram-theme/apply` (dry run + apply: recolours uncoloured elements in all working models as a
       new version "Applied colour theme", audited); server-side XML recolouring with tests.
-- [ ] 3. API: AI generator / refine (`structure-to-bpmn.ts`) writes theme colours and places gateway branch labels
+- [x] 3. API: AI generator / refine (`structure-to-bpmn.ts`) writes theme colours and places gateway branch labels
       on their own branch (`BPMNLabel` bounds); refine keeps existing explicit colours. Tests.
 - [ ] 4. Web: bpmn-js modules — theme on `shape.create` / `shape.replace` / label or step-kind change (never over
       user colours), custom renderer (rounded corners, shadow, 1.5 px borders, task icons, lane header band,

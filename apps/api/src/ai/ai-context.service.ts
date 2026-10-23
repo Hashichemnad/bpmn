@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { SETTING_KEYS, resolveDiagramTheme, type DiagramTheme } from '@processhub/shared';
 import { PrismaService } from '../prisma/prisma.service';
 import { badRequest, notFound } from '../common/app-exception';
 import { readBpmn, type ReadBpmn } from './bpmn/read-bpmn';
@@ -15,6 +16,14 @@ export type ProcessSource = { kind: 'working' } | { kind: 'version'; versionNumb
 @Injectable()
 export class AiContextService {
   constructor(private readonly prisma: PrismaService) {}
+
+  /** Colour theme for generated diagrams (Settings → Branding). */
+  async diagramTheme(): Promise<DiagramTheme> {
+    const row = await this.prisma.setting.findUnique({
+      where: { key: SETTING_KEYS.DIAGRAM_THEME },
+    });
+    return resolveDiagramTheme(row?.value);
+  }
 
   private async record(processId: string) {
     const p = await this.prisma.process.findFirst({
