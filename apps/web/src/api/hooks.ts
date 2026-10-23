@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient, keepPreviousData } from '@tanstack/react-query';
 import type {
   ApplyThemeResultDto,
+  DiagramThemeNoticeDto,
   DiagramThemeInput,
   AuditListQuery,
   AuditLogDto,
@@ -113,8 +114,28 @@ export function useApplyDiagramTheme() {
         body: { dryRun },
       }),
     onSuccess: (res) => {
-      if (!res.dryRun) void qc.invalidateQueries({ queryKey: ['processes'] });
+      if (res.dryRun) return;
+      for (const key of ['processes', 'portal', 'diagramThemeNotice'])
+        void qc.invalidateQueries({ queryKey: [key] });
     },
+  });
+}
+
+/** One-time "run Apply theme" notice for Super Admins after the upgrade (D-072). */
+export const useDiagramThemeNotice = (enabled: boolean) =>
+  useQuery({
+    queryKey: ['diagramThemeNotice'],
+    queryFn: () => api<DiagramThemeNoticeDto>('/settings/diagram-theme/notice'),
+    enabled,
+    staleTime: Infinity,
+  });
+
+export function useDismissDiagramThemeNotice() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: () =>
+      api<DiagramThemeNoticeDto>('/settings/diagram-theme/notice/dismiss', { method: 'POST' }),
+    onSuccess: (res) => qc.setQueryData(['diagramThemeNotice'], res),
   });
 }
 

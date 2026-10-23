@@ -308,16 +308,23 @@
     "resetDone": "Default colours restored",
     "unsaved": "Save the colours before applying them to existing diagrams.",
     "apply": "Apply theme to existing diagrams",
-    "applyHint": "“Apply theme to existing diagrams” colours the elements that have no colour in every working model and saves each changed diagram as a new version “Applied colour theme”. Colours chosen by users are never changed. Processes in review or archived are skipped.",
+    "applyHint": "“Apply theme to existing diagrams” colours the elements that have no colour in every working model. Drafts get a new version “Applied colour theme”. Approved and published processes keep their status when only colours change (version “Theme applied (colours only)”, the portal shows the colours at once). Colours chosen by users are never changed. Processes in review or archived are skipped.",
     "applyTitle": "Apply the colour theme to existing diagrams?",
     "applyText": "{{elements}} elements without a colour in {{models}} diagrams will be coloured. Each changed diagram is saved as a new version.",
-    "applyPublished_one": "{{count}} approved or published process gets a new draft. The published version stays in the portal until it is published again.",
-    "applyPublished_other": "{{count}} approved or published processes get a new draft. The published versions stay in the portal until they are published again.",
+    "applyPublished_one": "{{count}} approved or published process has other unpublished changes and gets a new draft. The published version stays in the portal until it is published again.",
+    "applyPublished_other": "{{count}} approved or published processes have other unpublished changes and get a new draft. The published versions stay in the portal until they are published again.",
     "applySkipped_one": "{{count}} process in review or archived is skipped.",
     "applySkipped_other": "{{count}} processes in review or archived are skipped.",
     "applyNothing": "All diagrams already have colours.",
     "applyOk": "Apply",
     "applyDone_one": "Colour theme applied to {{count}} diagram.",
-    "applyDone_other": "Colour theme applied to {{count}} diagrams."
+    "applyDone_other": "Colour theme applied to {{count}} diagrams.",
+    "applyInPlace_one": "{{count}} approved or published process changes in colours only: it keeps its status, gets a version “Theme applied (colours only)” and the portal shows the colours at once.",
+    "applyInPlace_other": "{{count}} approved or published processes change in colours only: they keep their status, get a version “Theme applied (colours only)” and the portal shows the colours at once.",
+    "notice": "Diagrams can now be coloured: run Apply theme.",
+    "noticeDetail_one": "{{count}} existing diagram has no colours yet. Settings → Diagram colours → “Apply theme to existing diagrams” colours it (with a preview of what changes).",
+    "noticeDetail_other": "{{count}} existing diagrams have no colours yet. Settings → Diagram colours → “Apply theme to existing diagrams” colours them (with a preview of what changes).",
+    "noticeOpen": "Open diagram colours",
+    "noticeDismiss": "Dismiss"
   }
 }

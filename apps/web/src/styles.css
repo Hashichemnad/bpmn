@@ -465,6 +465,10 @@ html[lang='ar'] body {
 }
 
 /* Settings → Branding: diagram colours */
+.ph-theme-notice {
+  margin-block-end: 16px;
+}
+
 .ph-theme-table {
   inline-size: 100%;
   border-collapse: collapse;

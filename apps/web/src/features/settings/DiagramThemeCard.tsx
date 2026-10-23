@@ -146,6 +146,11 @@ export function DiagramThemeCard() {
             <Typography.Text>
               {t('admin:theme.applyText', { models: dry.models, elements: dry.elements })}
             </Typography.Text>
+            {dry.inPlace > 0 && (
+              <Typography.Text>
+                {t('admin:theme.applyInPlace', { count: dry.inPlace })}
+              </Typography.Text>
+            )}
             {dry.published > 0 && (
               <Typography.Text type="warning">
                 {t('admin:theme.applyPublished', { count: dry.published })}
