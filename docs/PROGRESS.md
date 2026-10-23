@@ -15,7 +15,7 @@ Steps (tick as they are committed; a new session continues at the first unticked
 - [x] 1. Shared: `packages/shared/src/diagram-theme.ts` — theme type, default (reference scheme), zod schema,
       element-kind classification (approval tasks by first English word or `ph:stepKind`), theme-colour detection;
       Setting key `branding.diagramTheme`, public settings carry the theme. Unit tests.
-- [ ] 2. API: theme in public settings, `PUT/DELETE /settings/diagram-theme` (Super Admin, audited),
+- [x] 2. API: theme in public settings, `PUT/DELETE /settings/diagram-theme` (Super Admin, audited),
       `POST /settings/diagram-theme/apply` (dry run + apply: recolours uncoloured elements in all working models as a
       new version "Applied colour theme", audited); server-side XML recolouring with tests.
 - [ ] 3. API: AI generator / refine (`structure-to-bpmn.ts`) writes theme colours and places gateway branch labels

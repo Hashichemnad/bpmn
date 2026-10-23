@@ -151,13 +151,20 @@ export function themeKindOf(el: ThemeElementInfo): ThemeKind | null {
   if (type === 'StartEvent') return 'start';
   if (type === 'EndEvent') {
     const defs = (el.eventDefinitions ?? []).map((d) =>
-      d.replace(/^bpmn:/, '').replace(/EventDefinition$/, '').toLowerCase(),
+      d
+        .replace(/^bpmn:/, '')
+        .replace(/EventDefinition$/, '')
+        .toLowerCase(),
     );
     return defs.some((d) => REJECTED_DEFINITIONS.has(d)) || REJECTED_LABEL.test(el.nameEn ?? '')
       ? 'endRejected'
       : 'end';
   }
-  if (type === 'IntermediateCatchEvent' || type === 'IntermediateThrowEvent' || type === 'BoundaryEvent')
+  if (
+    type === 'IntermediateCatchEvent' ||
+    type === 'IntermediateThrowEvent' ||
+    type === 'BoundaryEvent'
+  )
     return 'intermediateEvent';
   if (type.endsWith('Gateway')) return 'gateway';
   if (SYSTEM_TASKS.has(type)) return 'systemTask';
@@ -174,7 +181,10 @@ export function themeKindOf(el: ThemeElementInfo): ThemeKind | null {
 /** Fill and stroke of a kind; lanes alternate by their position (0-based) in the lane set. */
 export function themeColour(theme: DiagramTheme, kind: ThemeKind, laneIndex = 0): ThemeColour {
   if (kind === 'lane')
-    return { fill: laneIndex % 2 ? theme.lane.fillAlt : theme.lane.fill, stroke: theme.lane.stroke };
+    return {
+      fill: laneIndex % 2 ? theme.lane.fillAlt : theme.lane.fill,
+      stroke: theme.lane.stroke,
+    };
   return theme[kind];
 }
 
@@ -185,7 +195,8 @@ export function themePairs(theme: DiagramTheme): ThemeColour[] {
   );
 }
 
-const same = (a: string | null | undefined, b: string) => !!a && a.toUpperCase() === b.toUpperCase();
+const same = (a: string | null | undefined, b: string) =>
+  !!a && a.toUpperCase() === b.toUpperCase();
 
 /**
  * True when fill and stroke are a pair assigned by the current or the default theme, i.e. the

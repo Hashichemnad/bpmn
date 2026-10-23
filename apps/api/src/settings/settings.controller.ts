@@ -5,6 +5,7 @@ import {
   Get,
   Patch,
   Post,
+  Put,
   Res,
   StreamableFile,
   UploadedFile,
@@ -16,7 +17,9 @@ import type { Response } from 'express';
 import {
   LOGO_MAX_BYTES,
   PERMISSIONS,
+  diagramThemeSchema,
   updateSettingsSchema,
+  type DiagramThemeInput,
   type UpdateSettingsInput,
 } from '@processhub/shared';
 import { CurrentUser, Public, ReqMeta, RequirePermissions } from '../common/decorators';
@@ -80,5 +83,21 @@ export class SettingsController {
   @RequirePermissions(PERMISSIONS.SETTINGS_MANAGE)
   removeLogo(@CurrentUser() user: AuthUser, @ReqMeta() meta: RequestMeta) {
     return this.settings.removeLogo(user, meta);
+  }
+
+  @Put('diagram-theme')
+  @RequirePermissions(PERMISSIONS.SETTINGS_MANAGE)
+  setDiagramTheme(
+    @Body(new ZodPipe(diagramThemeSchema)) body: DiagramThemeInput,
+    @CurrentUser() user: AuthUser,
+    @ReqMeta() meta: RequestMeta,
+  ) {
+    return this.settings.setDiagramTheme(body, user, meta);
+  }
+
+  @Delete('diagram-theme')
+  @RequirePermissions(PERMISSIONS.SETTINGS_MANAGE)
+  resetDiagramTheme(@CurrentUser() user: AuthUser, @ReqMeta() meta: RequestMeta) {
+    return this.settings.resetDiagramTheme(user, meta);
   }
 }

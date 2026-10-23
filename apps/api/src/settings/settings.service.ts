@@ -3,7 +3,9 @@ import { Prisma } from '@prisma/client';
 import {
   DEFAULT_LOCALE,
   LOGO_MAX_BYTES,
+  resolveDiagramTheme,
   SETTING_KEYS,
+  type DiagramThemeInput,
   type Locale,
   type PublicSettingsDto,
   type SettingsDto,
@@ -46,7 +48,57 @@ export class SettingsService {
       defaultLocale: locale === 'ar' || locale === 'en' ? (locale as Locale) : DEFAULT_LOCALE,
       hasLogo: !!logo,
       logoVersion: logo?.version ?? null,
+      diagramTheme: resolveDiagramTheme(v.get(SETTING_KEYS.DIAGRAM_THEME)),
+      diagramThemeCustomised: v.has(SETTING_KEYS.DIAGRAM_THEME),
     };
+  }
+
+  /** Colour theme of BPMN diagrams (Settings → Branding). */
+  async setDiagramTheme(input: DiagramThemeInput, actor: AuthUser, meta: RequestMeta) {
+    const key = SETTING_KEYS.DIAGRAM_THEME;
+    const before = (await this.getPublic()).diagramTheme;
+    await this.prisma.$transaction(async (tx) => {
+      await tx.setting.upsert({
+        where: { key },
+        create: { key, value: { ...input }, updatedById: actor.id },
+        update: { value: { ...input }, updatedById: actor.id },
+      });
+      await this.audit.log(
+        {
+          action: 'UPDATE',
+          entityType: 'Setting',
+          entityId: key,
+          userId: actor.id,
+          summary: { before, after: input },
+          meta,
+        },
+        tx,
+      );
+    });
+    return this.getAll();
+  }
+
+  /** Back to the shipped default theme. */
+  async resetDiagramTheme(actor: AuthUser, meta: RequestMeta) {
+    const key = SETTING_KEYS.DIAGRAM_THEME;
+    const row = await this.prisma.setting.findUnique({ where: { key } });
+    if (row) {
+      await this.prisma.$transaction(async (tx) => {
+        await tx.setting.delete({ where: { key } });
+        await this.audit.log(
+          {
+            action: 'DELETE',
+            entityType: 'Setting',
+            entityId: key,
+            userId: actor.id,
+            summary: { before: row.value, after: 'default' },
+            meta,
+          },
+          tx,
+        );
+      });
+    }
+    return this.getAll();
   }
 
   async getAll(): Promise<SettingsDto> {

@@ -1,7 +1,12 @@
 import { Injectable } from '@nestjs/common';
 import {
   DEFAULT_RELATION_FOR_TYPE,
+  SETTING_KEYS,
+  editBlockedReason,
   extractBpmnElementIds,
+  resolveDiagramTheme,
+  type ApplyThemeResultDto,
+  type ContentStatus,
   extractBpmnLabels,
   type CreateLinkInput,
   type CreateVersionInput,
@@ -21,6 +26,10 @@ import type { AuthUser, RequestMeta } from '../common/auth-user';
 import { DomainEvents } from '../events/domain-events';
 import { assertSafeBpmnXml, countFlowElements, elementLabel } from './bpmn-xml';
 import { assertEditable, markEdited } from '../governance/edit-guard';
+import { applyThemeToXml } from './diagram-theme-xml';
+
+/** Change note of the versions created by "Apply theme to existing diagrams". */
+export const APPLY_THEME_CHANGE_NOTE = 'Applied colour theme';
 
 const userRef = { select: { id: true, email: true, nameEn: true, nameAr: true } } as const;
 
@@ -360,5 +369,70 @@ export class ModelsService {
       );
     });
     return this.listLinks(processId);
+  }
+
+  // ---------- Colour theme ----------
+
+  /**
+   * "Apply theme to existing diagrams" (Settings → Branding): gives elements without colours the
+   * theme colour in every working model, saved as a new version. Elements with colours are never
+   * changed. Processes in review or archived are skipped (they are locked); approved / published
+   * ones get a new draft working copy like any other edit, the published version stays live.
+   * With `dryRun` nothing is written and only the counts are returned.
+   */
+  async applyTheme(
+    dryRun: boolean,
+    actor: AuthUser,
+    meta: RequestMeta,
+  ): Promise<ApplyThemeResultDto> {
+    const setting = await this.prisma.setting.findUnique({
+      where: { key: SETTING_KEYS.DIAGRAM_THEME },
+    });
+    const theme = resolveDiagramTheme(setting?.value);
+    const rows = await this.prisma.processModel.findMany({
+      where: { process: { deletedAt: null } },
+      select: { processId: true, bpmnXml: true, process: { select: { status: true } } },
+      orderBy: { processId: 'asc' },
+    });
+    const result: ApplyThemeResultDto = {
+      dryRun,
+      models: 0,
+      elements: 0,
+      published: 0,
+      skipped: 0,
+    };
+    const recoloured: string[] = [];
+    for (const row of rows) {
+      const { xml, changed } = applyThemeToXml(row.bpmnXml, theme);
+      if (!changed) continue;
+      const status = row.process.status as ContentStatus;
+      if (editBlockedReason(status)) {
+        result.skipped++;
+        continue;
+      }
+      result.models++;
+      result.elements += changed;
+      if (status === 'APPROVED' || status === 'PUBLISHED') result.published++;
+      if (!dryRun) {
+        await this.createVersion(
+          row.processId,
+          { bpmnXml: xml, changeNote: APPLY_THEME_CHANGE_NOTE },
+          actor,
+          meta,
+        );
+        recoloured.push(row.processId);
+      }
+    }
+    if (!dryRun) {
+      await this.audit.log({
+        action: 'UPDATE',
+        entityType: 'Setting',
+        entityId: SETTING_KEYS.DIAGRAM_THEME,
+        userId: actor.id,
+        summary: { appliedToDiagrams: { ...result, processIds: recoloured } },
+        meta,
+      });
+    }
+    return result;
   }
 }
