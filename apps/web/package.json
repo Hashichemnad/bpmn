@@ -27,6 +27,7 @@
     "@tiptap/starter-kit": "^3.32.0",
     "antd": "~5.29.3",
     "bpmn-js": "^18.6.0",
+    "bpmn-js-color-picker": "0.7.2",
     "bpmn-js-differ": "^3.2.0",
     "bpmn-moddle": "^10.3.1",
     "dayjs": "^1.11.13",

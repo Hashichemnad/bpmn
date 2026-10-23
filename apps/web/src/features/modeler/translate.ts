@@ -35,6 +35,22 @@ const AR: Record<string, string> = {
   'Divide into three lanes': 'تقسيم إلى ثلاثة مسارات',
   'Divide into two lanes': 'تقسيم إلى مسارين',
   'Search in diagram': 'البحث في المخطط',
+  'Set color': 'تعيين اللون',
+  'Reset to theme': 'إعادة ألوان النمط',
+  'No colour': 'بدون لون',
+  'Start / end event': 'حدث البداية / النهاية',
+  'Successful end': 'نهاية ناجحة',
+  'Rejected end': 'نهاية مرفوضة',
+  'Human task': 'مهمة بشرية',
+  'Approval task': 'مهمة اعتماد',
+  'System task': 'مهمة نظام',
+  Gateway: 'بوابة',
+  'Intermediate event': 'حدث وسيط',
+  Lane: 'مسار',
+  White: 'أبيض',
+  'Light grey': 'رمادي فاتح',
+  Grey: 'رمادي',
+  Purple: 'بنفسجي',
 };
 
 export const translations = { ar: AR };

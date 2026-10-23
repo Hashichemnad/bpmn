@@ -3,6 +3,8 @@
  *   ph:nameEn / ph:nameAr       — bilingual labels (the standard `name` mirrors the active language)
  *   ph:linkedProcessId          — repository process a call activity / sub-process drills down into
  *   ph:descriptionEn / Ar       — step description shown in the Knowledge Portal
+ *   ph:stepKind                 — "approval" marks a user task as an approval step ("task": a
+ *                                 normal step even when its label starts with Review / Approve …)
  */
 export const PH_NAMESPACE = 'http://processhub.io/schema/bpmn';
 
@@ -22,6 +24,7 @@ export const phModdleDescriptor = {
         { name: 'linkedProcessId', isAttr: true, type: 'String' },
         { name: 'descriptionEn', isAttr: true, type: 'String' },
         { name: 'descriptionAr', isAttr: true, type: 'String' },
+        { name: 'stepKind', isAttr: true, type: 'String' },
       ],
     },
   ],
