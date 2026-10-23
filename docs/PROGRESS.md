@@ -26,7 +26,7 @@ Steps (tick as they are committed; a new session continues at the first unticked
 - [x] 5. Web: colour picker (`bpmn-js-color-picker`, theme palette + neutrals + "reset to theme"), approval-step
       setting in the element panel (`ph:stepKind`), exports with colours and embedded fonts.
 - [x] 6. Web: Settings → Branding diagram theme card (live preview, reset, apply to existing diagrams with dry run).
-- [ ] 7. Round-trip test of the PMS-01 sample (import → save → compare colours and `ph:` attributes), compare
+- [x] 7. Round-trip test of the PMS-01 sample (import → save → compare colours and `ph:` attributes), compare
       highlights, EN/AR checks; "after" screenshots.
 - [ ] 8. Docs (PROGRESS, DECISIONS, BACKLOG Part B items, README), verification (format, lint, typecheck, tests,
       build, audit), push, pull request.
