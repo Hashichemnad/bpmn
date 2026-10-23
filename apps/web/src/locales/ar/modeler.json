@@ -119,5 +119,12 @@
   "commentCount_two": "تعليقان مفتوحان",
   "commentCount_few": "{{count}} تعليقات مفتوحة",
   "commentCount_many": "{{count}} تعليقًا مفتوحًا",
-  "commentCount_other": "{{count}} تعليق مفتوح"
+  "commentCount_other": "{{count}} تعليق مفتوح",
+  "stepKind": {
+    "label": "نوع الخطوة",
+    "auto": "تلقائي ({{kind}})",
+    "approval": "خطوة اعتماد",
+    "task": "خطوة عادية",
+    "hint": "تُلوَّن خطوات الاعتماد بلون الاعتماد. تلقائي: مهمة مستخدم تبدأ تسميتها الإنجليزية بـ Review أو Approve أو Endorse أو Confirm."
+  }
 }
