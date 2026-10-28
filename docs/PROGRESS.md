@@ -22,7 +22,17 @@ Steps (tick as they are committed; a new session continues at the first unticked
       workspace → import PMS-01 → ready-made "Approval step" → Save version, submit → reviewer and owner
       approve → owner publishes, viewer opens it in the portal, Arabic workspace RTL (palette on the right).
       17 tests, ≈ 40 s locally.
-- [ ] 1. Dictionary (glossary with autocomplete).
+- [x] 1. Dictionary (D-083, D-084): library type `TERM` with definition, synonyms EN/AR, category, owner,
+      status (draft / approved); Dictionary page (Library → Dictionary: approved terms, proposals with approve /
+      reject), term fields in the object form, term details on the object page; label autocomplete on the
+      canvas (direct editing, ↑ ↓ Enter Esc) and in the panel's name fields — approved terms, roles and IT
+      systems, both languages and synonyms, Arabic spelling variants; choosing one fills both labels and sets
+      `ph:labelRef` (lanes: role); book marker on linked shapes; "Propose as dictionary term" from the panel;
+      Rename with preview (affected processes / labels, skipped ones and why, one version per process,
+      audited) for terms, roles and systems; API keeps NAMED links in sync on save; demo terms in the seed;
+      approved terms only as AI translation terminology. Fixes: a click keeps the selected shape selected and
+      the diagram stays still when the Arabic panel opens (double-click label editing hit the wrong shape);
+      Ant Design's Arabic "(optional)". Tests: shared 9, API e2e 6 (+ seed), web 6, Playwright 4.
 - [ ] 2. Quick Model (table entry).
 - [ ] 3. Step attributes and "colour by" views.
 - [ ] 4. Reports and exports (handbook .docx, RACI .xlsx, object reports).
@@ -31,7 +41,7 @@ Steps (tick as they are committed; a new session continues at the first unticked
 
 ### Next (continue here)
 
-1. Part 1 — Dictionary.
+1. Part 2 — Quick Model (table entry).
 
 ## Previous state — 2026-10-28 (dependency upgrade: zod 3 → 4, branch `deps-zod-4`)
 

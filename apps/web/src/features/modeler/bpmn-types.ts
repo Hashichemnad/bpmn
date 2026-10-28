@@ -64,6 +64,8 @@ export interface Canvas {
   viewbox(box?: { x: number; y: number; width: number; height: number }): Viewbox;
   scrollToElement(element: DiagramElement): void;
   resized(): void;
+  /** Moves the diagram by a delta in screen pixels. */
+  scroll(delta: { dx: number; dy: number }): void;
   addMarker(element: DiagramElement | string, marker: string): void;
   removeMarker(element: DiagramElement | string, marker: string): void;
 }

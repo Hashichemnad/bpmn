@@ -17,6 +17,7 @@ import { onboardingXml, requisitionXml } from './demo-diagrams';
 import { ensureSystemTemplates, seedDocsDemo } from './seed-docs';
 import { ensureDemoEmailSettings, seedGovernanceDemo } from './seed-governance';
 import { seedAiDemo, seedAiDemoContent } from './seed-ai';
+import { seedDictionaryDemo } from './seed-dictionary';
 
 const prisma = new PrismaClient();
 
@@ -419,6 +420,7 @@ export async function main() {
     await ensureDemoEmailSettings(prisma);
     await seedAiDemo(prisma);
     await seedAiDemoContent(prisma, adminId);
+    await seedDictionaryDemo(prisma, adminId);
   }
 }
 

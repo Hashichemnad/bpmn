@@ -1,26 +1,37 @@
 import { useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { Button, Card, Col, Descriptions, Row, Table, Tag, Typography } from 'antd';
-import { DeleteOutlined, EditOutlined } from '@ant-design/icons';
+import { App, Button, Card, Col, Descriptions, Flex, Row, Table, Tag, Typography } from 'antd';
+import { CheckOutlined, DeleteOutlined, EditOutlined, FormOutlined } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
-import { PERMISSIONS, type ObjectUsageDto } from '@processhub/shared';
+import type { ObjectUsageDto } from '@processhub/shared';
 import { useObject, useObjectUsage } from '@/api/hooks';
-import { useAuth } from '@/auth/AuthProvider';
+import { useApproveTerm } from '@/api/dictionary';
 import { PageHeader } from '@/components/PageHeader';
 import { CategoryTag } from '@/components/tags';
 import { EmptyState, ErrorState, LoadingState } from '@/components/states';
-import { useFormatDate, useLocalized } from '@/components/i18n-helpers';
+import { useErrorMessage, useFormatDate, useLocalized } from '@/components/i18n-helpers';
 import { RelatedDocsCard } from '@/features/docs/RelatedDocsCard';
 import { ObjectFormModal } from './ObjectFormModal';
 import { useConfirmDeleteObject } from './useConfirmDeleteObject';
+import { useObjectAccess } from './term-access';
+import { RenameModal } from './RenameModal';
 
-const LIBRARY_PATH: Record<string, string> = { ROLE: '/library/roles', SYSTEM: '/library/systems' };
+const LIBRARY_PATH: Record<string, string> = {
+  ROLE: '/library/roles',
+  SYSTEM: '/library/systems',
+  DOCUMENT: '/library/documents',
+  TERM: '/library/dictionary',
+};
 
 export function ObjectDetailPage() {
   const { id } = useParams<{ id: string }>();
   const { t } = useTranslation();
-  const { can } = useAuth();
+  const access = useObjectAccess();
   const loc = useLocalized();
+  const errorMessage = useErrorMessage();
+  const { message } = App.useApp();
+  const approve = useApproveTerm();
+  const [renaming, setRenaming] = useState(false);
   const formatDate = useFormatDate();
   const navigate = useNavigate();
   const object = useObject(id);
@@ -34,6 +45,8 @@ export function ObjectDetailPage() {
   const o = object.data;
   const libraryPath = LIBRARY_PATH[o.type];
   const attributes = Object.entries(o.attributes);
+  const isTerm = o.type === 'TERM';
+  const person = (u: typeof o.owner) => (u ? loc(u) || u.email : '—');
 
   return (
     <>
@@ -52,15 +65,42 @@ export function ObjectDetailPage() {
         subtitle={
           <>
             <Tag>{t(`objects:types.${o.type}`)}</Tag>
+            {isTerm && (
+              <Tag color={o.status === 'DRAFT' ? 'orange' : 'green'}>
+                {t(`objects:dictionary.status.${o.status}`)}
+              </Tag>
+            )}
             {o.code && <span dir="ltr">{o.code}</span>}
           </>
         }
         extra={
-          can(PERMISSIONS.OBJECTS_MANAGE) && (
-            <>
+          <Flex gap={8} wrap="wrap">
+            {isTerm && o.status === 'DRAFT' && access.canApprove && (
+              <Button
+                type="primary"
+                icon={<CheckOutlined />}
+                loading={approve.isPending}
+                onClick={() =>
+                  approve.mutate(o.id, {
+                    onSuccess: () => message.success(t('objects:dictionary.approved')),
+                    onError: (err) => message.error(errorMessage(err)),
+                  })
+                }
+              >
+                {t('objects:dictionary.approve')}
+              </Button>
+            )}
+            {access.canEdit(o) && (
               <Button icon={<EditOutlined />} onClick={() => setEditing(true)}>
                 {t('edit')}
               </Button>
+            )}
+            {access.canRename(o) && (
+              <Button icon={<FormOutlined />} onClick={() => setRenaming(true)}>
+                {t('objects:rename.button')}
+              </Button>
+            )}
+            {access.canDelete(o) && (
               <Button
                 danger
                 icon={<DeleteOutlined />}
@@ -68,8 +108,8 @@ export function ObjectDetailPage() {
               >
                 {t('delete')}
               </Button>
-            </>
-          )
+            )}
+          </Flex>
         }
       />
       <Row gutter={[24, 24]}>
@@ -82,16 +122,44 @@ export function ObjectDetailPage() {
               <Descriptions.Item label={t('fields.nameAr')}>
                 <span dir="rtl">{o.nameAr || '—'}</span>
               </Descriptions.Item>
-              <Descriptions.Item label={t('fields.descriptionEn')}>
+              <Descriptions.Item
+                label={isTerm ? t('objects:dictionary.definitionEn') : t('fields.descriptionEn')}
+              >
                 <span dir="ltr" className="ph-prewrap">
                   {o.descriptionEn || '—'}
                 </span>
               </Descriptions.Item>
-              <Descriptions.Item label={t('fields.descriptionAr')}>
+              <Descriptions.Item
+                label={isTerm ? t('objects:dictionary.definitionAr') : t('fields.descriptionAr')}
+              >
                 <span dir="rtl" className="ph-prewrap">
                   {o.descriptionAr || '—'}
                 </span>
               </Descriptions.Item>
+              {isTerm && (
+                <>
+                  <Descriptions.Item label={t('objects:dictionary.synonymsEn')}>
+                    <span dir="ltr">{o.synonymsEn.join(' · ') || '—'}</span>
+                  </Descriptions.Item>
+                  <Descriptions.Item label={t('objects:dictionary.synonymsAr')}>
+                    <span dir="rtl">{o.synonymsAr.join(' · ') || '—'}</span>
+                  </Descriptions.Item>
+                  <Descriptions.Item label={t('objects:dictionary.category')}>
+                    {o.category || '—'}
+                  </Descriptions.Item>
+                  <Descriptions.Item label={t('objects:dictionary.owner')}>
+                    {person(o.owner)}
+                  </Descriptions.Item>
+                  <Descriptions.Item label={t('objects:dictionary.proposedBy')}>
+                    {person(o.createdBy)}
+                  </Descriptions.Item>
+                  {o.approvedAt && (
+                    <Descriptions.Item label={t('objects:dictionary.approvedBy')}>
+                      {person(o.approvedBy)} · {formatDate(o.approvedAt)}
+                    </Descriptions.Item>
+                  )}
+                </>
+              )}
               <Descriptions.Item label={t('fields.updatedAt')}>
                 {formatDate(o.updatedAt)}
               </Descriptions.Item>
@@ -175,6 +243,7 @@ export function ObjectDetailPage() {
       {editing && (
         <ObjectFormModal open type={o.type} object={o} onClose={() => setEditing(false)} />
       )}
+      {renaming && <RenameModal object={o} onClose={() => setRenaming(false)} />}
     </>
   );
 }

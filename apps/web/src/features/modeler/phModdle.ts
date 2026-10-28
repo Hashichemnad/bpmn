@@ -6,6 +6,8 @@
  *   ph:stepKind                 — "approval" marks a user task as an approval step ("task": a
  *                                 normal step even when its label starts with Review / Approve …)
  *   ph:roleId                   — lane linked to a Role of the object library (label = role name)
+ *   ph:labelRef                 — label chosen from the library (dictionary term, role or IT system);
+ *                                 a manual label edit removes it (D-083)
  */
 export const PH_NAMESPACE = 'http://processhub.io/schema/bpmn';
 
@@ -27,6 +29,7 @@ export const phModdleDescriptor = {
         { name: 'descriptionAr', isAttr: true, type: 'String' },
         { name: 'stepKind', isAttr: true, type: 'String' },
         { name: 'roleId', isAttr: true, type: 'String' },
+        { name: 'labelRef', isAttr: true, type: 'String' },
       ],
     },
   ],

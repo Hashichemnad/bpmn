@@ -827,3 +827,38 @@ in the start-up error for a bad environment and in the AI structured-output feed
 (e.g. "Too small: expected number to be >=1"). Verified by a differential run of every shared schema, the
 environment schema and the AI process-structure schema on the same ~1,500 inputs under zod 3 and zod 4: same
 accept / reject, same parsed data, same custom messages.
+
+## D-083 — Dictionary: terms as library objects, labels linked with `ph:labelRef` (Modeler design B2, 2026-10-28)
+
+The Dictionary is a new library object type `TERM` (same table as roles and systems), so terms get "where
+used", related documentation, soft delete and the audit trail for free. `RepoObject` gained `status`
+(`DRAFT` | `APPROVED`, every non-term object is `APPROVED`), `category`, `synonymsEn` / `synonymsAr` (text
+arrays, ≤ 20 each), `ownerId`, `approvedAt` / `approvedById`; the definition is the bilingual description.
+
+- **Proposals:** permission `dictionary.propose` (Modeler, Process Owner, Admins) creates terms as drafts
+  (`POST /dictionary/terms`); `dictionary.approve` (Process Owner, Admins) approves or rejects them (reject =
+  soft delete, reason in the audit log) and is required to change, rename or delete an approved term. Drafts
+  are never suggested and are not used as AI translation terminology.
+- **Autocomplete:** `GET /dictionary/suggest` ranks approved terms, roles and IT systems in memory with the
+  shared `rankSuggestions` (exact > prefix > word prefix > contains; active language, then the other, then
+  synonyms; terms before roles before systems). Matching folds case and Arabic variants (hamza forms of alef,
+  ة/ه, ى/ي, ؤ/و, ئ/ي, tashkeel, tatweel). Lanes only get roles (a lane is a role, D-079).
+- **Linked labels:** choosing a suggestion fills `ph:nameEn` / `ph:nameAr` and sets `ph:labelRef` (lanes:
+  `ph:roleId`). Any label typed by hand (canvas or panel) removes the reference. On save the API keeps a
+  `NAMED` object link per term reference exactly in sync and adds the default PERFORMS / SUPPORTS link for a
+  role / system reference (never removed by the sync, the modeler may keep it). Linked shapes show a book
+  marker.
+- **Rename:** `POST /dictionary/objects/:id/rename-preview` lists every process whose working model has
+  linked labels, old → new labels, and whether the user may update it (edit right, not in review /
+  archived); `…/rename` renames the object and creates one version per updatable process (change note
+  "Dictionary: “old” renamed to “new”" in both languages, approved / published processes get a new draft like
+  any edit), audited on the object with the updated and skipped processes. Works for terms, roles and systems.
+
+## D-084 — Workspace: a click keeps the selected shape selected; the diagram stays still when the canvas moves (2026-10-28)
+
+diagram-js deselects the only selected shape when it is clicked again. In the workspace the side panel opens
+on selection, so a double-click (edit label) closed and reopened the panel between the two clicks; in Arabic
+the panel sits on the left, the canvas moved and the second click hit another element (e.g. the lane). Now a
+plain click on the selected shape keeps it (`keep-selection.ts`; Esc, an empty-canvas click and Shift+click
+still deselect), and when the canvas's left edge moves (panel on the left in Arabic) the diagram is scrolled
+back so it stays where it was on screen.

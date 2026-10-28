@@ -115,5 +115,9 @@
   "SSO_DOMAIN_NOT_ALLOWED": "Your e-mail domain is not allowed to sign in to ProcessHub.",
   "SSO_USER_NOT_FOUND": "You do not have a ProcessHub account yet. Ask an administrator to create one.",
   "SSO_USER_INACTIVE": "Your ProcessHub account is deactivated. Contact an administrator.",
-  "SSO_ACCOUNT_CONFLICT": "This e-mail address is already linked to another sign-in. Contact an administrator."
+  "SSO_ACCOUNT_CONFLICT": "This e-mail address is already linked to another sign-in. Contact an administrator.",
+  "NOT_A_TERM": "This object is not a dictionary term.",
+  "TERM_ALREADY_APPROVED": "The term is already approved.",
+  "TERM_NOT_PROPOSED": "Only proposed (draft) terms can be rejected.",
+  "INVALID_OWNER": "The selected owner does not exist."
 }

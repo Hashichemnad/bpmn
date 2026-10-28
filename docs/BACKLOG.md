@@ -8,13 +8,20 @@ where they belong; move items into the plan when that phase starts.
 Part A (colours, D-067 – D-073) and Part B1 (full-screen workspace and productivity, D-074 – D-081) are done.
 Planned for Part B2:
 
-- Glossary / dictionary with label autocomplete linked to repository objects (like SAP Signavio "Dictionary").
 - Table-based "Quick Model" entry (rows → BPMN with the shared layout).
 - Attribute-based shape colouring and step attributes (duration, cost, frequency).
 - Process handbook / Word report generation.
 - Excel export of the steps (RACI).
 - Modeling conventions per diagram type (allowed elements, naming rules).
 - Real-time co-editing.
+
+B2 follow-ups noted during the work:
+
+- Dictionary: notify the proposer when a term is approved or rejected; import / export the dictionary (Excel);
+  term relations ("see also", broader / narrower); show term definitions as tooltips in the portal.
+- Autocomplete for the description fields (insert a term inside a sentence); several terms in one label.
+- Rename: offer the update for published processes as a colours-only style "in place" change (today a new
+  draft that needs approval again, like any other edit).
 
 B1 follow-ups noted during the work:
 

@@ -38,6 +38,13 @@ enum ObjectType {
   RISK
   CONTROL
   KPI
+  TERM
+}
+
+/// Dictionary terms are proposed as DRAFT and approved; other library objects are APPROVED.
+enum ObjectStatus {
+  DRAFT
+  APPROVED
 }
 
 enum SpaceAccessLevel {
@@ -113,6 +120,7 @@ enum LinkRelation {
   OUTPUT
   MITIGATES
   MEASURES
+  NAMED
 }
 
 model User {
@@ -156,6 +164,7 @@ model User {
   notifications  Notification[]
   aiUsage        AiUsage[]
   recoveryCodes  MfaRecoveryCode[]
+  ownedObjects   RepoObject[]      @relation("ObjectOwner")
 
   @@unique([ssoIssuer, ssoSubject])
   @@index([departmentId])
@@ -319,18 +328,27 @@ model ProcessVersion {
 }
 
 model RepoObject {
-  id            String     @id @default(uuid()) @db.Uuid
+  id            String       @id @default(uuid()) @db.Uuid
   type          ObjectType
   code          String?
-  nameEn        String     @default("")
-  nameAr        String     @default("")
-  descriptionEn String     @default("")
-  descriptionAr String     @default("")
-  attributes    Json       @default("{}")
-  createdAt     DateTime   @default(now())
-  updatedAt     DateTime   @updatedAt
-  createdById   String?    @db.Uuid
-  updatedById   String?    @db.Uuid
+  nameEn        String       @default("")
+  nameAr        String       @default("")
+  descriptionEn String       @default("")
+  descriptionAr String       @default("")
+  attributes    Json         @default("{}")
+  /// Dictionary (B2): status, category, synonyms and owner of a term (D-083).
+  status        ObjectStatus @default(APPROVED)
+  category      String?
+  synonymsEn    String[]     @default([])
+  synonymsAr    String[]     @default([])
+  ownerId       String?      @db.Uuid
+  owner         User?        @relation("ObjectOwner", fields: [ownerId], references: [id], onDelete: SetNull)
+  approvedAt    DateTime?
+  approvedById  String?      @db.Uuid
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+  createdById   String?      @db.Uuid
+  updatedById   String?      @db.Uuid
   deletedAt     DateTime?
 
   links     ObjectLink[]
@@ -338,7 +356,7 @@ model RepoObject {
   users     UserJobRole[]
   published PublishedLink[]
 
-  @@index([type])
+  @@index([type, status])
 }
 
 model ObjectLink {

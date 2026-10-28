@@ -125,7 +125,8 @@ export interface BpmnElementLabel {
   descriptionAr: string;
 }
 
-const decodeXml = (s: string) =>
+/** Decodes the XML entities of an attribute value. */
+export const decodeXml = (s: string) =>
   s
     .replace(/&lt;/g, '<')
     .replace(/&gt;/g, '>')

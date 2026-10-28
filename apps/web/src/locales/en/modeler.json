@@ -46,7 +46,8 @@
   "linked": {
     "ROLE": "Performed by (roles)",
     "SYSTEM": "Supported by (IT systems)",
-    "DOCUMENT": "Documents (input / output)"
+    "DOCUMENT": "Documents (input / output)",
+    "TERM": "Dictionary terms"
   },
   "severity": {
     "warning": "Warning",
@@ -297,5 +298,14 @@
     "suggestion": "Suggested: “{{role}}” performs this step (lane “{{lane}}”).",
     "suggestionLink": "Link",
     "suggestionDismiss": "Not now"
+  },
+  "dictionary": {
+    "suggestions": "From the dictionary and library",
+    "keysHint": "↑ ↓ choose · Enter use · Esc close",
+    "linked": "Label from the library ({{type}}):",
+    "missing": "object not found",
+    "unlink": "Unlink",
+    "propose": "Propose as dictionary term",
+    "marker": "Label from the dictionary / library — renaming the object updates it"
   }
 }

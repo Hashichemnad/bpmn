@@ -114,6 +114,9 @@ import { autoLayoutModule, runAutoLayout } from './auto-layout';
 import { commentBadgeItems, linkBadgeItems, useDiagramOverlays } from './useDiagramOverlays';
 import type { ReadyStep } from './palette-entries';
 import { workspaceShortcut } from './keys';
+import { applyLabelSource, syncLabelRefMarkers } from './label-source';
+import { LabelAutocomplete } from './LabelAutocomplete';
+import { keepSelectionModule } from './keep-selection';
 
 type PanelTab = 'properties' | 'issues' | 'comments' | 'ai';
 
@@ -240,6 +243,12 @@ export function BpmnEditor({ process, focusElementId, readOnly = false, onClose 
     drill: { open: (target) => navigate(`/processes/${target}/model`) },
   });
 
+  // Labels from the library (dictionary terms, roles, systems) carry a small book marker.
+  useEffect(() => {
+    if (!instance || !loaded) return;
+    return syncLabelRefMarkers(instance, t('modeler:dictionary.marker'));
+  }, [instance, loaded, t]);
+
   // The colour theme (Settings → Branding) applies to new elements and the colour picker.
   const theme = settings.data?.diagramTheme;
   useEffect(() => {
@@ -262,6 +271,7 @@ export function BpmnEditor({ process, focusElementId, readOnly = false, onClose 
               themeModule(themeRef.current),
               colourPickerModule(),
               autoLayoutModule,
+              keepSelectionModule,
             ]
           : []),
       ],
@@ -310,8 +320,19 @@ export function BpmnEditor({ process, focusElementId, readOnly = false, onClose 
         .get<{ setActive(active: boolean): void }>('gridSnapping')
         .setActive(prefsRef.current.grid);
     }
-    const observer = new ResizeObserver(() => inst.get<Canvas>('canvas').resized());
-    observer.observe(containerRef.current);
+    // Keep the diagram still on screen when the canvas's left edge moves: in Arabic the side panel
+    // opens on the left, and a click that selects (or deselects) a shape would otherwise shift the
+    // diagram under the pointer, so a double-click to edit a label hit the wrong element.
+    const container = containerRef.current;
+    let left = container.getBoundingClientRect().left;
+    const observer = new ResizeObserver(() => {
+      const canvas = inst.get<Canvas>('canvas');
+      canvas.resized();
+      const now = container.getBoundingClientRect().left;
+      if (now !== left && loadedRef.current) canvas.scroll({ dx: left - now, dy: 0 });
+      left = now;
+    });
+    observer.observe(container);
     setInstance(inst);
     return () => {
       clearTimeout(autosaveTimer.current);
@@ -1001,6 +1022,15 @@ export function BpmnEditor({ process, focusElementId, readOnly = false, onClose 
             aria-label={t('modeler:canvas')}
           />
           {canEdit && instance && <LayoutToolbar instance={instance} selection={selection} />}
+          {canEdit && (
+            <LabelAutocomplete
+              instance={instance}
+              onPick={(el, s) =>
+                instanceRef.current &&
+                applyLabelSource(instanceRef.current, el, s, stateRef.current.locale)
+              }
+            />
+          )}
           {focusMode && (
             <div className="ph-ws-focus-hint" role="status">
               {t('modeler:workspace.focusHint')}

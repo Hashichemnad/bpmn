@@ -5,6 +5,7 @@ import {
   SETTING_KEYS,
   editBlockedReason,
   extractBpmnElementIds,
+  extractLabelRefs,
   extractLaneRoles,
   resolveDiagramTheme,
   type ApplyThemeResultDto,
@@ -110,6 +111,7 @@ export class ModelsService {
         where: { processId, bpmnElementId: { notIn: ids } },
       });
       const laneRoles = await this.syncLaneRoleLinks(tx, processId, bpmnXml, actor.id);
+      const labelRefs = await this.syncLabelRefLinks(tx, processId, bpmnXml, actor.id);
       await this.audit.log(
         {
           action: existing ? 'UPDATE' : 'CREATE',
@@ -121,6 +123,7 @@ export class ModelsService {
             bytes: bpmnXml.length,
             prunedLinks: pruned.count,
             ...(laneRoles.added.length || laneRoles.removed.length ? { laneRoles } : {}),
+            ...(labelRefs.added.length || labelRefs.removed.length ? { labelRefs } : {}),
             ...(aiGenerated ? { aiGenerated: true } : {}),
           },
           meta,
@@ -182,6 +185,63 @@ export class ModelsService {
         },
       });
       result.added.push(`${laneId}:${roleId}`);
+    }
+    return result;
+  }
+
+  /**
+   * Elements whose label was chosen from the library (`ph:labelRef`, D-083) are linked to that
+   * object: a dictionary term with a NAMED link (kept exactly in sync: replaced or removed with the
+   * reference), a role or IT system with its default PERFORMS / SUPPORTS link (added when missing,
+   * never removed here — the modeler may keep the link after editing the label). Unknown, deleted
+   * or other object types are ignored; the save itself never fails because of them.
+   */
+  private async syncLabelRefLinks(
+    tx: Prisma.TransactionClient,
+    processId: string,
+    bpmnXml: string,
+    actorId: string,
+  ) {
+    const refs = extractLabelRefs(bpmnXml);
+    const result = { added: [] as string[], removed: [] as string[] };
+    const wanted = [...new Set(refs.values())].filter((id) => UUID_RE.test(id));
+    const objects = wanted.length
+      ? await tx.repoObject.findMany({
+          where: { id: { in: wanted }, type: { in: ['TERM', 'ROLE', 'SYSTEM'] }, deletedAt: null },
+          select: { id: true, type: true },
+        })
+      : [];
+    const typeOf = new Map(objects.map((o) => [o.id, o.type as ObjectType]));
+    const current = await tx.objectLink.findMany({
+      where: { processId },
+      select: { id: true, bpmnElementId: true, repoObjectId: true, relation: true },
+    });
+    const stale = current.filter(
+      (l) => l.relation === 'NAMED' && refs.get(l.bpmnElementId) !== l.repoObjectId,
+    );
+    if (stale.length) {
+      await tx.objectLink.deleteMany({ where: { id: { in: stale.map((l) => l.id) } } });
+      result.removed = stale.map((l) => `${l.bpmnElementId}:${l.repoObjectId}`);
+    }
+    for (const [elementId, objectId] of refs) {
+      const type = typeOf.get(objectId);
+      if (!type) continue;
+      const relation = DEFAULT_RELATION_FOR_TYPE[type];
+      const exists = current.some(
+        (l) =>
+          l.bpmnElementId === elementId && l.repoObjectId === objectId && l.relation === relation,
+      );
+      if (exists) continue;
+      await tx.objectLink.create({
+        data: {
+          processId,
+          bpmnElementId: elementId,
+          repoObjectId: objectId,
+          relation,
+          createdById: actorId,
+        },
+      });
+      result.added.push(`${elementId}:${objectId}`);
     }
     return result;
   }

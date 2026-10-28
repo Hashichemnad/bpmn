@@ -69,6 +69,8 @@ export async function setLocale(page: Page, locale: 'en' | 'ar') {
 
 /** Signs in through the login form and makes sure the UI is in the requested language. */
 export async function login(page: Page, email: string, locale: 'en' | 'ar' = 'en') {
+  // Signs out a previous user of the same page.
+  await page.context().clearCookies();
   await page.goto('/login');
   await page.locator('input[autocomplete=username], input[type=email]').first().fill(email);
   await page.locator('input[type=password]').fill(PASSWORD);
@@ -113,3 +115,29 @@ export function apiCall<T = unknown>(
 
 /** Absolute path of a file in docs/samples. */
 export const sample = (name: string) => join(__dirname, '..', '..', '..', 'docs', 'samples', name);
+
+/** Creates a process owned by `ownerEmail` with the PMS-01 sample as its working model. */
+export async function createSampleProcess(
+  page: Page,
+  code: string,
+  names: { nameEn: string; nameAr: string },
+  ownerEmail = DEMO.owner,
+) {
+  const owners = await apiCall<{ id: string; email: string }[]>(
+    page,
+    'GET',
+    `/users/directory?q=${encodeURIComponent(ownerEmail)}`,
+  );
+  const ownerId = owners.data.find((u) => u.email === ownerEmail)?.id;
+  const created = await apiCall<{ id: string }>(page, 'POST', '/processes', {
+    code,
+    ...names,
+    category: 'CORE',
+    ownerId,
+  });
+  expect(created.status).toBe(201);
+  const xml = readFileSync(sample('PMS-01-Program-Request-Approval.bpmn'), 'utf8');
+  const saved = await apiCall(page, 'PUT', `/processes/${created.data.id}/model`, { bpmnXml: xml });
+  expect(saved.status).toBe(200);
+  return created.data.id;
+}

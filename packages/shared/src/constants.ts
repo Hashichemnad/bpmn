@@ -47,6 +47,10 @@ export const PERMISSIONS = {
   PORTAL_MANAGE: 'portal.manage',
   /** See the AI usage report (requests and tokens per user, feature and month). */
   AI_USAGE_READ: 'ai.usage.read',
+  /** Propose new dictionary terms (created as drafts). */
+  DICTIONARY_PROPOSE: 'dictionary.propose',
+  /** Approve or reject proposed terms and change approved ones. */
+  DICTIONARY_APPROVE: 'dictionary.approve',
 } as const;
 export type Permission = (typeof PERMISSIONS)[keyof typeof PERMISSIONS];
 export const ALL_PERMISSIONS: Permission[] = Object.values(PERMISSIONS);
@@ -101,6 +105,8 @@ export const SYSTEM_ROLES: Record<
       P.MODELS_EDIT_OWN,
       P.DOCS_EDIT,
       P.GOVERNANCE_DASHBOARD,
+      P.DICTIONARY_PROPOSE,
+      P.DICTIONARY_APPROVE,
     ],
   },
   MODELER: {
@@ -114,6 +120,7 @@ export const SYSTEM_ROLES: Record<
       P.MODELS_EDIT,
       P.OBJECTS_MANAGE,
       P.DOCS_EDIT,
+      P.DICTIONARY_PROPOSE,
     ],
   },
   REVIEWER: {
@@ -158,10 +165,30 @@ export const PROCESS_STATUSES = [
 ] as const;
 export type ProcessStatus = (typeof PROCESS_STATUSES)[number];
 
-export const OBJECT_TYPES = ['ROLE', 'SYSTEM', 'DOCUMENT', 'RISK', 'CONTROL', 'KPI'] as const;
+export const OBJECT_TYPES = [
+  'ROLE',
+  'SYSTEM',
+  'DOCUMENT',
+  'RISK',
+  'CONTROL',
+  'KPI',
+  'TERM',
+] as const;
 export type ObjectType = (typeof OBJECT_TYPES)[number];
-/** Object types that have a library UI (documents since Phase 3: linked to steps in the portal). */
-export const PHASE1_OBJECT_TYPES: ObjectType[] = ['ROLE', 'SYSTEM', 'DOCUMENT'];
+/** Object types that have a library UI (documents since Phase 3, dictionary terms since B2). */
+export const PHASE1_OBJECT_TYPES: ObjectType[] = ['ROLE', 'SYSTEM', 'DOCUMENT', 'TERM'];
+
+/** Dictionary terms are proposed as DRAFT and approved; other objects are always APPROVED. */
+export const OBJECT_STATUSES = ['DRAFT', 'APPROVED'] as const;
+export type ObjectStatus = (typeof OBJECT_STATUSES)[number];
+
+/** Object types the label autocomplete in the modeler suggests. */
+export const LABEL_SOURCE_TYPES = [
+  'TERM',
+  'ROLE',
+  'SYSTEM',
+] as const satisfies readonly ObjectType[];
+export type LabelSourceType = (typeof LABEL_SOURCE_TYPES)[number];
 
 export const LINK_RELATIONS = [
   'PERFORMS',
@@ -170,6 +197,8 @@ export const LINK_RELATIONS = [
   'OUTPUT',
   'MITIGATES',
   'MEASURES',
+  /** The element's label comes from a dictionary term (ph:labelRef). */
+  'NAMED',
 ] as const;
 export type LinkRelation = (typeof LINK_RELATIONS)[number];
 
@@ -181,6 +210,7 @@ export const DEFAULT_RELATION_FOR_TYPE: Record<ObjectType, LinkRelation> = {
   RISK: 'MITIGATES',
   CONTROL: 'MITIGATES',
   KPI: 'MEASURES',
+  TERM: 'NAMED',
 };
 
 export const USER_STATUSES = ['ACTIVE', 'INACTIVE'] as const;

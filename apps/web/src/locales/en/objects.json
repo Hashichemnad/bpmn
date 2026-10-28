@@ -5,7 +5,8 @@
     "DOCUMENT": "Document",
     "RISK": "Risk",
     "CONTROL": "Control",
-    "KPI": "KPI"
+    "KPI": "KPI",
+    "TERM": "Dictionary term"
   },
   "relations": {
     "PERFORMS": "Performs",
@@ -13,7 +14,8 @@
     "INPUT": "Input",
     "OUTPUT": "Output",
     "MITIGATES": "Mitigates",
-    "MEASURES": "Measures"
+    "MEASURES": "Measures",
+    "NAMED": "Label (dictionary)"
   },
   "library": {
     "ROLE": {
@@ -30,6 +32,11 @@
       "title": "Documents",
       "subtitle": "Forms, templates and reference documents used or produced by process steps.",
       "empty": "No documents in the library yet"
+    },
+    "TERM": {
+      "title": "Dictionary",
+      "subtitle": "Approved business terms with definitions and synonyms. The modeler suggests them while you type a label.",
+      "empty": "No terms in the dictionary yet"
     }
   },
   "new": {
@@ -38,7 +45,8 @@
     "DOCUMENT": "New document",
     "RISK": "New risk",
     "CONTROL": "New control",
-    "KPI": "New KPI"
+    "KPI": "New KPI",
+    "TERM": "New term"
   },
   "edit": {
     "ROLE": "Edit role",
@@ -46,7 +54,8 @@
     "DOCUMENT": "Edit document",
     "RISK": "Edit risk",
     "CONTROL": "Edit control",
-    "KPI": "Edit KPI"
+    "KPI": "Edit KPI",
+    "TERM": "Edit term"
   },
   "search": "Search by name or code",
   "usage": "Usage",
@@ -72,5 +81,65 @@
   "deleteTitle": "Delete {{name}}?",
   "deleteText": "The object will be removed from the library.",
   "deleteInUse_one": "It is linked to {{count}} process step. The link will be removed.",
-  "deleteInUse_other": "It is linked to {{count}} process steps. These links will be removed."
+  "deleteInUse_other": "It is linked to {{count}} process steps. These links will be removed.",
+  "dictionary": {
+    "propose": "Propose a term",
+    "proposeHint": "Your proposal is a draft until an Admin or Process Owner approves it.",
+    "approvedTab": "Approved terms",
+    "proposalsTab": "Proposals",
+    "definition": "Definition",
+    "definitionEn": "Definition (English)",
+    "definitionAr": "Definition (Arabic)",
+    "synonyms": "Synonyms",
+    "synonymsEn": "Synonyms (English)",
+    "synonymsAr": "Synonyms (Arabic)",
+    "synonymsHint": "Other words people use for this term. Press Enter after each one.",
+    "category": "Category",
+    "categoryHint": "For example: Programs, Finance, Procurement.",
+    "owner": "Term owner",
+    "status": {
+      "DRAFT": "Proposed",
+      "APPROVED": "Approved"
+    },
+    "proposedBy": "Proposed by",
+    "approvedBy": "Approved by",
+    "approve": "Approve",
+    "approved": "Term approved — it is now suggested in the modeler",
+    "reject": "Reject",
+    "rejectTitle": "Reject the proposal “{{name}}”?",
+    "rejectText": "The proposed term is removed. Labels linked to it keep their text.",
+    "rejectReason": "Reason (optional)",
+    "rejected": "Proposal rejected",
+    "proposed": "Term proposed — an approver will review it",
+    "noProposals": "No proposals waiting for approval",
+    "lockedHint": "Approved terms can only be changed by an Admin or a Process Owner.",
+    "searchHint": "Search by name or code"
+  },
+  "rename": {
+    "button": "Rename",
+    "title": "Rename “{{name}}”",
+    "intro": "Rename the object and update the labels linked to it in the diagrams.",
+    "updateLabels": "Update linked labels in the diagrams",
+    "updateLabelsHint": "Each process you may edit gets a new version with the new labels.",
+    "preview": "Show affected diagrams",
+    "previewEmpty": "No diagram labels are linked to this object.",
+    "labels_one": "{{count}} label",
+    "labels_other": "{{count}} labels",
+    "willUpdate": "New version",
+    "newDraft": "New draft version (needs approval again)",
+    "skipped": "Skipped",
+    "reasons": {
+      "NO_PERMISSION": "You may not edit this process",
+      "ITEM_IN_REVIEW": "In review — locked",
+      "ITEM_ARCHIVED": "Archived — locked"
+    },
+    "summary": "Processes: {{processes}} · Labels: {{labels}} · Skipped: {{skipped}}",
+    "changeNote": "Change note",
+    "changeNoteHint": "Default: “Dictionary: old name renamed to new name”.",
+    "run": "Rename",
+    "done_one": "Renamed — {{count}} process updated",
+    "done_other": "Renamed — {{count}} processes updated",
+    "doneSkipped": "{{count}} could not be updated (see the list).",
+    "nameChanged": "The name changed. Review the diagrams that use it before renaming."
+  }
 }

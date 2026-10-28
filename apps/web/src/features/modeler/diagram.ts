@@ -28,6 +28,7 @@ export const linkedProcessOf = (bo: BusinessObject) =>
 /**
  * Keeps ph:nameEn / ph:nameAr in sync when a label is edited on the canvas:
  * the edited text is stored under the active language, in the same undoable command.
+ * A label typed by hand is no longer the library object's name: the link (ph:labelRef) goes.
  */
 class BilingualLabelBehavior extends CommandInterceptor {
   static override $inject = ['eventBus', 'modeling', 'phLabelState'];
@@ -44,6 +45,8 @@ class BilingualLabelBehavior extends CommandInterceptor {
         const value = newLabel?.trim() ? newLabel : undefined;
         if ((bo.get(attr) ?? undefined) !== value)
           modeling.updateModdleProperties(target, bo, { [attr]: value });
+        if (bo.get('ph:labelRef'))
+          modeling.updateModdleProperties(target, bo, { 'ph:labelRef': undefined });
       },
     );
   }

@@ -2293,3 +2293,78 @@ button.ph-badge:focus-visible {
   box-shadow: 0 8px 24px rgb(15 23 42 / 16%);
   z-index: 5;
 }
+
+/* ---------- Modeler design B2: dictionary ---------- */
+[dir='rtl'] .ph-flip-rtl {
+  transform: scaleX(-1);
+}
+.ph-rename-labels {
+  margin: 0;
+  padding-inline-start: 16px;
+}
+.ph-synonyms {
+  font-size: 12px;
+  color: var(--ph-text-secondary, #64748b);
+}
+.ph-labelref-marker {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  inline-size: 18px;
+  block-size: 18px;
+  border-radius: 50%;
+  background: #fff;
+  color: #7c3aed;
+  border: 1px solid #c4b5fd;
+  box-shadow: 0 1px 2px rgb(15 23 42 / 0.15);
+  pointer-events: auto;
+  cursor: help;
+}
+.ph-label-suggest {
+  z-index: 1100;
+  background: var(--ph-surface, #fff);
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgb(15 23 42 / 0.16);
+  padding-block: 4px;
+  max-block-size: 320px;
+  overflow-y: auto;
+}
+.ph-label-suggest-head,
+.ph-label-suggest-foot {
+  padding: 4px 10px;
+  font-size: 11px;
+  color: #64748b;
+}
+.ph-label-suggest-item {
+  padding: 6px 10px;
+  cursor: pointer;
+}
+.ph-label-suggest-item.is-active {
+  background: #eef2ff;
+}
+.ph-suggestion {
+  display: flex;
+  flex-direction: column;
+  min-inline-size: 0;
+}
+.ph-suggestion-main {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-inline-size: 0;
+}
+.ph-suggestion-type {
+  margin-inline-end: 0;
+  font-size: 11px;
+  line-height: 18px;
+}
+.ph-suggestion-sub {
+  display: flex;
+  gap: 8px;
+  font-size: 12px;
+  color: #64748b;
+}
+.ph-panel-labelref {
+  margin-block-end: 12px;
+}

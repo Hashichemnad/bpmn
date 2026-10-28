@@ -14,6 +14,7 @@ import { ProcessListPage } from '@/features/processes/ProcessListPage';
 import { ProcessDetailPage } from '@/features/processes/ProcessDetailPage';
 import { ModelerWorkspacePage } from '@/features/modeler/ModelerWorkspacePage';
 import { ObjectLibraryPage } from '@/features/objects/ObjectLibraryPage';
+import { DictionaryPage } from '@/features/objects/DictionaryPage';
 import { ObjectDetailPage } from '@/features/objects/ObjectDetailPage';
 import { SpacesPage } from '@/features/docs/SpacesPage';
 import { SpaceLayout } from '@/features/docs/SpaceLayout';
@@ -185,6 +186,14 @@ export const routes: RouteObject[] = [
                     element: (
                       <RequirePermission all={[P.OBJECTS_READ]}>
                         <ObjectLibraryPage key="SYSTEM" type="SYSTEM" />
+                      </RequirePermission>
+                    ),
+                  },
+                  {
+                    path: 'library/dictionary',
+                    element: (
+                      <RequirePermission all={[P.OBJECTS_READ]}>
+                        <DictionaryPage />
                       </RequirePermission>
                     ),
                   },

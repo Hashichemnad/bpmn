@@ -4,7 +4,9 @@ import {
   LINK_RELATIONS,
   LOCALES,
   MAX_PAGE_SIZE,
+  OBJECT_STATUSES,
   OBJECT_TYPES,
+  LABEL_SOURCE_TYPES,
   PROCESS_CATEGORIES,
   PROCESS_STATUSES,
   READ_ONLY_ROLE_KEYS,
@@ -270,12 +272,29 @@ export const objectAttributesSchema = z
   )
   .refine((v) => Object.keys(v).length <= 50, 'TOO_MANY_ATTRIBUTES');
 
+/** Synonyms of a dictionary term in one language (matched by the label autocomplete). */
+const synonymsSchema = z
+  .array(trimmed(200).min(1))
+  .max(20)
+  .transform((list) => [...new Set(list)]);
+
+/** Dictionary fields (terms); stored on every library object but only used for terms. */
+const dictionaryFields = {
+  category: trimmed(100).nullable().optional(),
+  synonymsEn: synonymsSchema.optional(),
+  synonymsAr: synonymsSchema.optional(),
+  ownerId: uuidSchema.nullable().optional(),
+};
+
 export const createObjectSchema = z
   .object({
     type: z.enum(OBJECT_TYPES),
     code: trimmed(50).optional().nullable(),
     ...bilingualFields,
     attributes: objectAttributesSchema.default({}),
+    ...dictionaryFields,
+    /** Terms only: DRAFT proposes the term; APPROVED needs the approve permission. */
+    status: z.enum(OBJECT_STATUSES).optional(),
   })
   .superRefine(requireOneName);
 export type CreateObjectInput = z.infer<typeof createObjectSchema>;
@@ -284,13 +303,56 @@ export const updateObjectSchema = z.object({
   code: trimmed(50).optional().nullable(),
   ...bilingualFields,
   attributes: objectAttributesSchema.optional(),
+  ...dictionaryFields,
 });
 export type UpdateObjectInput = z.infer<typeof updateObjectSchema>;
 
 export const objectListQuerySchema = paginationQuerySchema.extend({
   type: z.enum(OBJECT_TYPES).optional(),
+  status: z.enum(OBJECT_STATUSES).optional(),
 });
 export type ObjectListQuery = z.infer<typeof objectListQuerySchema>;
+
+// ---------- Dictionary (label autocomplete, proposals, rename) ----------
+export const dictionarySuggestQuerySchema = z.object({
+  q: trimmed(200).min(1),
+  /** Comma-separated subset of TERM,ROLE,SYSTEM (default: all three). */
+  types: z
+    .string()
+    .trim()
+    .max(50)
+    .optional()
+    .transform((v, ctx) => {
+      if (!v) return [...LABEL_SOURCE_TYPES];
+      const list = [...new Set(v.split(',').map((t) => t.trim()))];
+      if (!list.every((t) => (LABEL_SOURCE_TYPES as readonly string[]).includes(t))) {
+        ctx.addIssue({ code: 'custom', message: 'INVALID_TYPES' });
+        return z.NEVER;
+      }
+      return list as (typeof LABEL_SOURCE_TYPES)[number][];
+    }),
+  limit: z.coerce.number().int().min(1).max(20).default(8),
+});
+export type DictionarySuggestQuery = z.infer<typeof dictionarySuggestQuerySchema>;
+
+export const renameObjectSchema = z
+  .object({
+    nameEn: optionalText(200),
+    nameAr: optionalText(200),
+    /** Also update the labels of every diagram element linked to the object (ph:labelRef). */
+    updateLabels: z.boolean().default(true),
+    changeNote: trimmed(1000).optional(),
+  })
+  .superRefine(requireOneName);
+export type RenameObjectInput = z.infer<typeof renameObjectSchema>;
+
+export const renamePreviewSchema = z
+  .object({ nameEn: optionalText(200), nameAr: optionalText(200) })
+  .superRefine(requireOneName);
+export type RenamePreviewInput = z.infer<typeof renamePreviewSchema>;
+
+export const rejectTermSchema = z.object({ reason: trimmed(1000).optional() });
+export type RejectTermInput = z.infer<typeof rejectTermSchema>;
 
 export const createLinkSchema = z.object({
   bpmnElementId: z

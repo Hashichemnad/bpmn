@@ -8,8 +8,11 @@ export function BilingualFields({
   description = false,
   required = true,
   translate = true,
+  descriptionLabels,
 }: {
   description?: boolean;
+  /** Labels of the description fields (e.g. "Definition" for dictionary terms). */
+  descriptionLabels?: { en: string; ar: string };
   required?: boolean;
   /** Offer "✨ Translate" (AI) to fill the empty language; off for people's names. */
   translate?: boolean;
@@ -54,12 +57,18 @@ export function BilingualFields({
       {description && (
         <Row gutter={16}>
           <Col xs={24} md={12}>
-            <Form.Item name="descriptionEn" label={t('fields.descriptionEn')}>
+            <Form.Item
+              name="descriptionEn"
+              label={descriptionLabels?.en ?? t('fields.descriptionEn')}
+            >
               <Input.TextArea dir="ltr" lang="en" rows={4} maxLength={5000} showCount />
             </Form.Item>
           </Col>
           <Col xs={24} md={12}>
-            <Form.Item name="descriptionAr" label={t('fields.descriptionAr')}>
+            <Form.Item
+              name="descriptionAr"
+              label={descriptionLabels?.ar ?? t('fields.descriptionAr')}
+            >
               <Input.TextArea dir="rtl" lang="ar" rows={4} maxLength={5000} showCount />
             </Form.Item>
           </Col>

@@ -206,6 +206,13 @@ zod / UUID pipe; file uploads are checked in the service (allow-list, content sn
 | POST   | `/departments`                               | `departments.manage`                                      | body                                | default    |
 | DELETE | `/departments/:id`                           | `departments.manage`                                      | param `id`                          | default    |
 | PATCH  | `/departments/:id`                           | `departments.manage`                                      | body, param `id`                    | default    |
+| POST   | `/dictionary/objects/:id/rename`             | `objects.read` + `processes.read`                         | body, param `id`                    | default    |
+| POST   | `/dictionary/objects/:id/rename-preview`     | `objects.read` + `processes.read`                         | body, param `id`                    | default    |
+| GET    | `/dictionary/suggest`                        | `objects.read`                                            | query                               | default    |
+| POST   | `/dictionary/terms`                          | `dictionary.propose`                                      | body                                | default    |
+| PATCH  | `/dictionary/terms/:id`                      | `dictionary.propose`                                      | body, param `id`                    | default    |
+| POST   | `/dictionary/terms/:id/approve`              | `dictionary.approve`                                      | param `id`                          | default    |
+| POST   | `/dictionary/terms/:id/reject`               | `dictionary.approve`                                      | body, param `id`                    | default    |
 | GET    | `/feedback`                                  | authenticated                                             | query                               | default    |
 | POST   | `/feedback`                                  | `portal.read`                                             | body                                | default    |
 | PATCH  | `/feedback/:id`                              | authenticated                                             | body, param `id`                    | default    |

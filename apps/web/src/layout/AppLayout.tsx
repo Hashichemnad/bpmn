@@ -16,6 +16,7 @@ import {
   ApartmentOutlined,
   AppstoreOutlined,
   AuditOutlined,
+  BookOutlined,
   BranchesOutlined,
   CheckSquareOutlined,
   DashboardOutlined,
@@ -171,6 +172,11 @@ export function AppLayout() {
             icon: <FileOutlined />,
             label: <Link to="/library/documents">{t('nav.documents')}</Link>,
           },
+          {
+            key: '/library/dictionary',
+            icon: <BookOutlined />,
+            label: <Link to="/library/dictionary">{t('nav.dictionary')}</Link>,
+          },
         ],
       });
     }
@@ -242,6 +248,7 @@ export function AppLayout() {
       '/library/roles',
       '/library/systems',
       '/library/documents',
+      '/library/dictionary',
       '/admin/users',
       '/admin/departments',
       '/admin/audit',
