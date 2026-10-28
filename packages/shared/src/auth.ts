@@ -45,7 +45,7 @@ export const ssoGroupMappingSchema = z.object({
   /** Value of the groups claim: Entra ID group object ID, or a group name for other providers. */
   group: z.string().trim().min(1).max(256),
   roles: z.array(z.enum(SYSTEM_ROLE_KEYS)).max(SYSTEM_ROLE_KEYS.length),
-  departmentId: z.string().uuid().nullable(),
+  departmentId: z.guid().nullable(),
 });
 export type SsoGroupMapping = z.infer<typeof ssoGroupMappingSchema>;
 
@@ -71,7 +71,7 @@ export const authSettingsSchema = z
     /** Create unknown users on their first sign-in (just in time). */
     autoCreateUsers: z.boolean(),
     defaultRole: z.enum(SYSTEM_ROLE_KEYS),
-    defaultDepartmentId: z.string().uuid().nullable(),
+    defaultDepartmentId: z.guid().nullable(),
     /** Claim that holds the user's groups (Entra ID: `groups`). */
     groupsClaim: z
       .string()
@@ -84,7 +84,7 @@ export const authSettingsSchema = z
     syncRolesOnLogin: z.boolean(),
     /** Password sign-in; when off only the break-glass account may use it. */
     localLoginEnabled: z.boolean(),
-    breakGlassUserId: z.string().uuid().nullable(),
+    breakGlassUserId: z.guid().nullable(),
     /** Roles whose members must use two-factor authentication for password sign-in. */
     mfaRequiredRoles: z.array(z.enum(SYSTEM_ROLE_KEYS)).max(SYSTEM_ROLE_KEYS.length),
   })
@@ -163,8 +163,8 @@ const recoveryCode = z
   .transform((c) => normaliseRecoveryCode(c));
 
 export const mfaVerifySchema = z.union([
-  z.object({ code: totpCode }).strict(),
-  z.object({ recoveryCode }).strict(),
+  z.strictObject({ code: totpCode }),
+  z.strictObject({ recoveryCode }),
 ]);
 export type MfaVerifyInput = z.infer<typeof mfaVerifySchema>;
 

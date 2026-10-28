@@ -76,7 +76,7 @@ const bilingualText = (max: number) =>
   z.object({ en: z.string().trim().max(max), ar: z.string().trim().max(max) });
 
 export const aiSuggestionSchema = bilingualText(300).refine((s) => !!(s.en || s.ar), {
-  message: 'Empty suggestion',
+  error: 'Empty suggestion',
 });
 export type AiSuggestion = z.infer<typeof aiSuggestionSchema>;
 
@@ -98,11 +98,8 @@ export const aiSettingsSchema = z.object({
   suggestions: z
     .object(
       Object.fromEntries(
-        AI_SUGGESTION_FEATURES.map((f) => [
-          f,
-          z.array(aiSuggestionSchema).max(AI_MAX_SUGGESTIONS).default([]),
-        ]),
-      ) as Record<AiSuggestionFeature, z.ZodDefault<z.ZodArray<typeof aiSuggestionSchema>>>,
+        AI_SUGGESTION_FEATURES.map((f) => [f, z.array(aiSuggestionSchema).max(AI_MAX_SUGGESTIONS)]),
+      ) as Record<AiSuggestionFeature, z.ZodArray<typeof aiSuggestionSchema>>,
     )
     .partial()
     .default({}),
@@ -191,7 +188,7 @@ export const aiGenerateProcessSchema = z.object({
   /** Language the user wrote in (labels are produced in both). */
   language: localeInput,
   /** Existing process the result is for (modeler); omitted in the "New process" dialog. */
-  processId: z.string().uuid().optional(),
+  processId: z.guid().optional(),
 });
 export type AiGenerateProcessInput = z.infer<typeof aiGenerateProcessSchema>;
 
@@ -217,7 +214,7 @@ export type AiTranslateInput = z.infer<typeof aiTranslateSchema>;
 
 /** Feature 2: refine the diagram with a chat instruction. */
 export const aiRefineProcessSchema = z.object({
-  processId: z.string().uuid(),
+  processId: z.guid(),
   bpmnXml: bpmnXmlInput,
   instruction: prompt,
   language: localeInput,
@@ -234,7 +231,7 @@ export type AiDocTemplate = (typeof AI_DOC_TEMPLATES)[number];
 
 /** Feature 3a: documentation page from a process. */
 export const aiGenerateDocSchema = z.object({
-  processId: z.string().uuid(),
+  processId: z.guid(),
   template: z.enum(AI_DOC_TEMPLATES),
   instructions: optionalPrompt,
 });
@@ -242,7 +239,7 @@ export type AiGenerateDocInput = z.infer<typeof aiGenerateDocSchema>;
 
 /** Feature 3b: process draft from a wiki page. */
 export const aiDocToProcessSchema = z.object({
-  pageId: z.string().uuid(),
+  pageId: z.guid(),
   language: localeInput,
   instructions: optionalPrompt,
 });
@@ -250,7 +247,7 @@ export type AiDocToProcessInput = z.infer<typeof aiDocToProcessSchema>;
 
 /** Feature 5: analyse a process. */
 export const aiAnalyseSchema = z.object({
-  processId: z.string().uuid(),
+  processId: z.guid(),
   /** The diagram as shown in the modeler (may contain unsaved changes). */
   bpmnXml: bpmnXmlInput.optional(),
   language: localeInput,
@@ -272,12 +269,12 @@ export type AiAnalyseInput = z.infer<typeof aiAnalyseSchema>;
 /** Feature 6: summarise an item, or what changed between two versions. */
 export const aiSummariseSchema = z.object({
   type: z.enum(['PROCESS', 'PAGE']),
-  id: z.string().uuid(),
+  id: z.guid(),
   language: localeInput,
   /** Compare two saved versions (version numbers); omitted = summarise the current content. */
   compare: z.object({ from: z.number().int().min(0), to: z.number().int().min(1) }).optional(),
   /** Review screen: summarise the changes of this review against the published version. */
-  reviewId: z.string().uuid().optional(),
+  reviewId: z.guid().optional(),
   instructions: optionalPrompt,
 });
 export type AiSummariseInput = z.infer<typeof aiSummariseSchema>;

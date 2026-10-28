@@ -55,7 +55,6 @@ const envSchema = z.object({
 
   /** Public URL users open (links in notification emails). */
   APP_URL: z
-    .string()
     .url()
     .default('http://localhost:8080')
     .transform((v) => v.replace(/\/+$/, '')),

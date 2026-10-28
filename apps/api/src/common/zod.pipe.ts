@@ -1,9 +1,9 @@
 import { HttpStatus, type PipeTransform } from '@nestjs/common';
-import type { ZodTypeAny, z } from 'zod';
+import type { z } from 'zod';
 import { AppException } from './app-exception';
 
 /** Validates and transforms request input using a shared zod schema. */
-export class ZodPipe<S extends ZodTypeAny> implements PipeTransform<unknown, z.infer<S>> {
+export class ZodPipe<S extends z.ZodType> implements PipeTransform<unknown, z.infer<S>> {
   constructor(private readonly schema: S) {}
 
   transform(value: unknown): z.infer<S> {
