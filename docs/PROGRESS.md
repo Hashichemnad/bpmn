@@ -2,7 +2,39 @@
 
 Read this together with `CLAUDE.md` at the start of every session.
 
-## Current state — 2026-10-23 (Modeler design upgrade — Part A: look and feel, branch `modeler-design-a`)
+## Current state — 2026-10-28 (Modeler design — Part B1: full-screen workspace and productivity, branch `modeler-design-b1`)
+
+Everything up to Modeler design Part A is merged into `main`. This branch turns the modeler into a full-screen
+workspace (like ARIS / BIC / Signavio) and adds modeling productivity tools. Main test diagram:
+`docs/samples/PMS-01-Program-Request-Approval.bpmn` (8 lanes, 27 elements). Part B2 items are in BACKLOG.
+
+Local dev setup used by this session (no Docker daemon in the sandbox): PostgreSQL 16 cluster, role
+`processhub` / `devpassword`, databases `processhub` and `processhub_test`; API from `apps/api/dist` with a
+dev `.env`; Vite on 5173; a script creates the published process C.09 from the PMS-01 sample (links, a comment,
+job roles) for screenshots.
+
+Steps (tick as they are committed; a new session continues at the first unticked one):
+
+- [x] 0. "Before" screenshots of PMS-01 (modeler tab, portal, print; EN/AR) in `docs/screenshots/modeler-design-b1/`;
+      `diagram-js-minimap` added.
+- [ ] 1. Shared: layered layout builder moved to `packages/shared/src/bpmn-layout.ts` (also variable shape sizes);
+      the AI builder uses it; tests.
+- [ ] 2. Web: route `/processes/:id/model` (workspace without app chrome): top bar, canvas, collapsible /
+      resizable side panel (state per user in localStorage), focus mode, browser full screen; Model tab =
+      read-only preview + Open modeler / Edit diagram; deep links `?element=`; autosave and unsaved guard.
+- [ ] 3. Web: navigation — fit width on open (max 100 %), zoom menu with presets, Ctrl+wheel, space+drag,
+      mini-map toggle (RTL), keyboard on the canvas only, Ctrl+F search, shortcuts dialog, grid snapping toggle.
+- [ ] 4. Web: grouped searchable palette on the inline-start side (collapsible) + ready-made steps.
+- [ ] 5. Web: align / distribute toolbar; auto-layout command (one undo step, confirmation); lanes: role link
+      (`ph:roleId`), label from the role, PERFORMS suggestion for tasks in the lane.
+- [ ] 6. Web: info badges (roles, systems, documents, risks, controls, comments) in modeler, preview and portal;
+      toggle.
+- [ ] 7. Portal: taller diagram, fit width, mini-map, full screen, "highlight my steps"; print layout (A4/A3
+      landscape, logo header, legend, scaled / multi-page diagram, page numbers, RTL).
+- [ ] 8. 200+ element performance test, "after" screenshots, docs (PROGRESS, DECISIONS, BACKLOG B2, README,
+      CLAUDE.md), verification, push, pull request.
+
+## Previous state — 2026-10-23 (Modeler design upgrade — Part A: look and feel, branch `modeler-design-a`)
 
 Phases 1–3, the AI Assistant and Phase 6 parts 1–4 are merged into `main`. This branch makes diagrams look like
 an enterprise BPM product while staying 100 % standard BPMN 2.0 (colours stored as BPMN-in-Color +
