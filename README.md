@@ -15,7 +15,7 @@
 | **Platform** | Users, roles & permissions, hierarchical departments, audit log, organisation settings & logo, Arabic/English with RTL | ✅ 1 |
 | **Sign-in** | Single sign-on with Microsoft Entra ID (Azure AD) or any OpenID Connect provider (users created on first sign-in, directory groups → roles and departments, allowed domains), password sign-in can be limited to a break-glass admin, optional two-step verification with an authenticator app (required per role, recovery codes, admin reset) | ✅ 6 |
 | **Process House & Repository** | Management / Core / Support process house, drag-and-drop process tree, owners, departments | ✅ 1 |
-| **Process Modeler** | BPMN 2.0 editor with bilingual labels, validation, versions, drill-down, import/export (BPMN XML, SVG, PNG); enterprise look (colour theme by element type, approval steps, rounded shapes, task icons, Inter / IBM Plex Sans Arabic, right-to-left Arabic labels), colour picker, all colours stored as standard BPMN-in-Color | ✅ 1, design A |
+| **Process Modeler** | BPMN 2.0 editor with bilingual labels, validation, versions, drill-down, import/export (BPMN XML, SVG, PNG); enterprise look (colour theme by element type, approval steps, rounded shapes, task icons, Inter / IBM Plex Sans Arabic, right-to-left Arabic labels), colour picker, all colours stored as standard BPMN-in-Color | ✅ 1, design A, B1 |
 | **Object Repository** | Reusable roles and IT systems linked to process steps, "where used" report (documents, risks, controls, KPIs later) | ✅ 1 |
 | **Documentation Wiki** | Spaces with access rules, page tree, rich-text editor (tables, checklists, callouts, images, attachments, embedded BPMN diagrams, RTL/LTR), English + Arabic versions, templates, trash, full-text search, PDF / Markdown export | ✅ 2 |
 | **Version Control** | Versions with change notes for processes and pages, visual BPMN diff, side-by-side / inline text diff, restore, labels | ✅ 2 |
@@ -171,6 +171,24 @@ bpmn.io `bioc:` attributes), so other BPMN tools show them too.
   Endorse or Confirm, or when **Step kind** in the element panel says so.
 - SVG and PNG exports and the portal's PDF view contain the colours and the fonts. Sample:
   `docs/samples/PMS-01-Program-Request-Approval.bpmn`; screenshots in `docs/screenshots/modeler-design-a/`.
+
+### Modeler workspace (design B1)
+
+- **Edit diagram** / **Open modeler** on a process's Model tab opens the modeler full screen at
+  `/processes/:id/model` (`?view=1` read-only, `?element=<id>` selects a step). Top bar: save state, Save
+  version, undo / redo, zoom menu (Fit width, Fit page, 100 %, presets), find (Ctrl+F), Auto-layout, View
+  (mini-map, badges, grid snapping), focus mode (**F**, Esc leaves), browser full screen, shortcuts (**?**),
+  Validation, Versions, Comments, AI, import / export, side panel, Close.
+- The side panel opens when you select something, can be closed and resized, and remembers this per user.
+- Palette: grouped, searchable (English or Arabic), icons only on demand; **Ready-made steps** (approval step,
+  manager review, system step, notification, waiting time, link to sub-process) come labelled in both languages.
+- Several shapes selected → align / distribute toolbar. **Auto-layout** re-arranges the diagram (one undo step).
+- A lane can be linked to a library Role (Properties of the lane): it shows in Linked objects, the role's
+  usage and the portal's "My processes"; steps in the lane get a "performs" suggestion.
+- Badges on steps show linked roles, systems, documents, risks, controls and open comments (hover lists them).
+- Knowledge Portal: full-width diagram, zoom, mini-map, full screen, badges and **Highlight my steps**; the PDF
+  view offers A4 or A3 landscape, logo header, colour legend, page-wide diagram parts and page numbers.
+- Screenshots: `docs/screenshots/modeler-design-b1/` (before / after, EN and AR).
 
 ### AI assistant (optional)
 

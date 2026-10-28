@@ -390,6 +390,29 @@ describe('Knowledge Portal (e2e)', () => {
     expect(my.pages.map((x: { id: string }) => x.id)).toEqual([pages.published]);
   });
 
+  it('a lane linked to the reader\'s job role puts the process in "My processes"', async () => {
+    const id = await process('C.09', 'Lane Role Process');
+    const xml = sampleBpmn(['Task_1'])
+      .replace(
+        '<bpmn:definitions ',
+        '<bpmn:definitions xmlns:ph="http://processhub.io/schema/bpmn" ',
+      )
+      .replace(
+        '<bpmn:process id="Process_1">',
+        `<bpmn:process id="Process_1"><bpmn:laneSet id="LS"><bpmn:lane id="Lane_Buyers" name="Buyers" ph:roleId="${jobRole}"><bpmn:flowNodeRef>Task_1</bpmn:flowNodeRef></bpmn:lane></bpmn:laneSet>`,
+      );
+    await version(id, xml);
+    await approveAndPublish('processes', id);
+    const my = (await viewer.get('/portal/my').expect(200)).body;
+    const item = my.processes.find((x: { id: string }) => x.id === id);
+    expect(item.reasons).toContain('ROLE');
+    expect(item.steps).toEqual([{ bpmnElementId: 'Lane_Buyers', nameEn: 'Buyers', nameAr: '' }]);
+    const published = (await viewer.get(`/portal/processes/${id}`).expect(200)).body;
+    expect(published.links).toEqual([
+      expect.objectContaining({ bpmnElementId: 'Lane_Buyers', relation: 'PERFORMS' }),
+    ]);
+  });
+
   it('portal access can be limited to departments or roles', async () => {
     await admin
       .put('/portal/settings')

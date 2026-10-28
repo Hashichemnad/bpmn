@@ -1,6 +1,7 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
+  Alert,
   App,
   Button,
   Divider,
@@ -14,25 +15,37 @@ import {
   TreeSelect,
   Typography,
 } from 'antd';
-import { ExportOutlined, LinkOutlined } from '@ant-design/icons';
+import { DisconnectOutlined, ExportOutlined, LinkOutlined, SyncOutlined } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
 import {
   STEP_KIND_APPROVAL,
   STEP_KIND_TASK,
-  buildTree,
   isApprovalLabel,
   type ObjectLinkDto,
   type ObjectType,
   type ProcessDto,
-  type ProcessSummaryDto,
-  type TreeNode,
+  type RepoObjectDto,
 } from '@processhub/shared';
-import { useCreateLink, useDeleteLink, useObjects, useProcessTree } from '@/api/hooks';
+import { useCreateLink, useDeleteLink, useObject, useObjects, useProcessTree } from '@/api/hooks';
 import { useLocale } from '@/app/LocaleProvider';
 import { useErrorMessage, useLocalized } from '@/components/i18n-helpers';
-import type { BpmnInstance, DiagramElement, EventBus, Modeling } from './bpmn-types';
-import { canDrillDown, isActivityElement, linkedProcessOf, readLabels } from './diagram';
-import { labelAttr } from './labels';
+import type {
+  BpmnInstance,
+  DiagramElement,
+  ElementRegistry,
+  EventBus,
+  Modeling,
+} from './bpmn-types';
+import {
+  canDrillDown,
+  isActivityElement,
+  laneOf,
+  laneRoleOf,
+  linkedProcessOf,
+  readLabels,
+} from './diagram';
+import { labelAttr, pickLabel } from './labels';
+import { useProcessTreeOptions } from './process-tree-options';
 
 interface Props {
   instance: BpmnInstance | null;
@@ -66,7 +79,7 @@ function ObjectPicker({
 }: {
   type: ObjectType;
   exclude: Set<string>;
-  onPick: (id: string) => void;
+  onPick: (object: RepoObjectDto) => void;
   disabled?: boolean;
 }) {
   const { t } = useTranslation();
@@ -88,7 +101,10 @@ function ObjectPicker({
       options={(objects.data?.items ?? [])
         .filter((o) => !exclude.has(o.id))
         .map((o) => ({ value: o.id, label: `${o.code ? `${o.code} · ` : ''}${loc(o)}` }))}
-      onChange={(id: string) => id && onPick(id)}
+      onChange={(id: string) => {
+        const o = objects.data?.items.find((x) => x.id === id);
+        if (o) onPick(o);
+      }}
     />
   );
 }
@@ -104,6 +120,8 @@ export function ElementPanel({ instance, element, process, links, canEdit }: Pro
   const createLink = useCreateLink(process.id);
   const deleteLink = useDeleteLink(process.id);
   const tree = useProcessTree();
+  const { options: processTree } = useProcessTreeOptions(process.id);
+  const [dismissed, setDismissed] = useState<Set<string>>(() => new Set());
   const [names, setNames] = useState({ nameEn: '', nameAr: '' });
   const [desc, setDesc] = useState({ descriptionEn: '', descriptionAr: '' });
 
@@ -118,17 +136,12 @@ export function ElementPanel({ instance, element, process, links, canEdit }: Pro
     });
   }, [bo, version]);
 
-  const processTree = useMemo(() => {
-    type Node = { title: string; value: string; disabled: boolean; children: Node[] };
-    const map = (nodes: TreeNode<ProcessSummaryDto>[]): Node[] =>
-      nodes.map((p) => ({
-        title: `${p.code} ${loc(p)}`,
-        value: p.id,
-        disabled: p.id === process.id,
-        children: map(p.children),
-      }));
-    return map(buildTree(tree.data ?? []));
-  }, [tree.data, loc, process.id]);
+  // Lane of the element and the role linked to it (lanes linked to a library role).
+  const registry = instance?.get<ElementRegistry>('elementRegistry');
+  const lane =
+    element && registry && element.type !== 'bpmn:Lane' ? laneOf(registry, element) : null;
+  const laneRoleId = element?.type === 'bpmn:Lane' ? laneRoleOf(element) : laneRoleOf(lane);
+  const laneRole = useObject(laneRoleId ?? undefined);
 
   if (!element || !bo || element.type === 'bpmn:Process' || element.type === 'bpmn:Collaboration') {
     return (
@@ -196,9 +209,9 @@ export function ElementPanel({ instance, element, process, links, canEdit }: Pro
             type={type}
             exclude={new Set(items.map((i) => i.repoObject.id))}
             disabled={createLink.isPending}
-            onPick={(repoObjectId) =>
+            onPick={(o) =>
               createLink.mutate(
-                { bpmnElementId: element.id, repoObjectId },
+                { bpmnElementId: element.id, repoObjectId: o.id },
                 { onError: (err) => message.error(errorMessage(err)) },
               )
             }
@@ -207,6 +220,118 @@ export function ElementPanel({ instance, element, process, links, canEdit }: Pro
       </div>
     );
   };
+
+  /** Lane label = role name in both languages (the shown one in the active language). */
+  const setLaneRole = (role: { id: string; nameEn: string; nameAr: string } | null) => {
+    if (!modeling) return;
+    if (!role) {
+      modeling.updateModdleProperties(element, bo, { 'ph:roleId': undefined });
+      return;
+    }
+    modeling.updateModdleProperties(element, bo, {
+      'ph:roleId': role.id,
+      'ph:nameEn': role.nameEn || role.nameAr,
+      'ph:nameAr': role.nameAr || role.nameEn,
+    });
+    const display = pickLabel({ nameEn: role.nameEn, nameAr: role.nameAr }, locale);
+    if ((bo.name ?? '') !== display) modeling.updateLabel(element, display || null);
+  };
+  const role = laneRole.data;
+  const labels = readLabels(bo);
+  const roleLabelDiffers =
+    element.type === 'bpmn:Lane' &&
+    !!role &&
+    ((role.nameEn || role.nameAr) !== (labels.nameEn ?? '') ||
+      (role.nameAr || role.nameEn) !== (labels.nameAr ?? ''));
+  const laneSection = element.type === 'bpmn:Lane' && (
+    <>
+      <Divider style={{ margin: '12px 0' }} />
+      <div className="ph-panel-section">
+        <Typography.Text strong>{t('modeler:lane.role')}</Typography.Text>
+        <Typography.Paragraph type="secondary" style={{ fontSize: 12, margin: '4px 0 8px' }}>
+          {t('modeler:lane.roleHint')}
+        </Typography.Paragraph>
+        {laneRoleId ? (
+          <Flex wrap="wrap" gap={4} align="center">
+            <Tag color="purple">
+              <Link to={`/library/objects/${laneRoleId}`}>
+                {role ? loc(role) : laneRole.isError ? t('modeler:lane.roleMissing') : '…'}
+              </Link>
+            </Tag>
+            {canEdit && roleLabelDiffers && (
+              <Button
+                size="small"
+                icon={<SyncOutlined />}
+                onClick={() => role && setLaneRole(role)}
+              >
+                {t('modeler:lane.updateLabel')}
+              </Button>
+            )}
+            {canEdit && (
+              <Button
+                size="small"
+                type="text"
+                icon={<DisconnectOutlined />}
+                onClick={() => setLaneRole(null)}
+              >
+                {t('modeler:lane.unlink')}
+              </Button>
+            )}
+          </Flex>
+        ) : canEdit ? (
+          <ObjectPicker type="ROLE" exclude={new Set()} onPick={setLaneRole} />
+        ) : (
+          <Typography.Text type="secondary">{t('none')}</Typography.Text>
+        )}
+      </div>
+    </>
+  );
+
+  // Tasks placed in a lane linked to a role: suggest "role performs this step" (confirm here).
+  const suggestedRole =
+    canEdit &&
+    isActivityElement(element) &&
+    laneRoleId &&
+    role &&
+    !elementLinks.some((l) => l.repoObject.id === laneRoleId) &&
+    !dismissed.has(`${element.id}/${laneRoleId}`)
+      ? role
+      : null;
+  const suggestion = suggestedRole && (
+    <Alert
+      type="info"
+      showIcon
+      className="ph-panel-suggestion"
+      message={t('modeler:lane.suggestion', {
+        role: loc(suggestedRole),
+        lane: lane ? pickLabel(readLabels(lane.businessObject), locale) : '',
+      })}
+      description={
+        <Space size={4} style={{ marginBlockStart: 4 }}>
+          <Button
+            size="small"
+            type="primary"
+            loading={createLink.isPending}
+            onClick={() =>
+              createLink.mutate(
+                { bpmnElementId: element.id, repoObjectId: suggestedRole.id, relation: 'PERFORMS' },
+                { onError: (err) => message.error(errorMessage(err)) },
+              )
+            }
+          >
+            {t('modeler:lane.suggestionLink')}
+          </Button>
+          <Button
+            size="small"
+            type="text"
+            onClick={() => setDismissed((d) => new Set(d).add(`${element.id}/${suggestedRole.id}`))}
+          >
+            {t('modeler:lane.suggestionDismiss')}
+          </Button>
+        </Space>
+      }
+    />
+  );
 
   const linkedProcessId = linkedProcessOf(bo);
   const linkedProcess = tree.data?.find((p) => p.id === linkedProcessId);
@@ -339,7 +464,7 @@ export function ElementPanel({ instance, element, process, links, canEdit }: Pro
                 size="small"
                 icon={<ExportOutlined />}
                 style={{ paddingInline: 0, marginTop: 4 }}
-                onClick={() => navigate(`/processes/${linkedProcessId}?tab=model`)}
+                onClick={() => navigate(`/processes/${linkedProcessId}/model`)}
               >
                 {t('modeler:openLinkedProcess')}
               </Button>
@@ -348,9 +473,12 @@ export function ElementPanel({ instance, element, process, links, canEdit }: Pro
         </>
       )}
 
+      {laneSection}
+
       {isActivityElement(element) && (
         <>
           <Divider style={{ margin: '12px 0' }} />
+          {suggestion}
           {linkSection('ROLE')}
           {linkSection('SYSTEM')}
           {linkSection('DOCUMENT')}

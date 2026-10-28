@@ -5,6 +5,7 @@
  *   ph:descriptionEn / Ar       — step description shown in the Knowledge Portal
  *   ph:stepKind                 — "approval" marks a user task as an approval step ("task": a
  *                                 normal step even when its label starts with Review / Approve …)
+ *   ph:roleId                   — lane linked to a Role of the object library (label = role name)
  */
 export const PH_NAMESPACE = 'http://processhub.io/schema/bpmn';
 
@@ -25,6 +26,7 @@ export const phModdleDescriptor = {
         { name: 'descriptionEn', isAttr: true, type: 'String' },
         { name: 'descriptionAr', isAttr: true, type: 'String' },
         { name: 'stepKind', isAttr: true, type: 'String' },
+        { name: 'roleId', isAttr: true, type: 'String' },
       ],
     },
   ],

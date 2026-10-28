@@ -88,26 +88,24 @@ export function PortalProcessPage() {
           {loc(p, 'description')}
         </Typography.Paragraph>
       )}
-      <Row gutter={[16, 16]}>
-        <Col xs={24} xl={17}>
-          <Card
-            size="small"
-            title={t('portal:process.diagram')}
-            extra={
-              <Typography.Text type="secondary">{t('portal:process.clickHint')}</Typography.Text>
-            }
-          >
-            {p.bpmnXml ? (
-              <PortalDiagram process={p} selectedId={selectedId} onSelect={select} />
-            ) : (
-              <Typography.Text type="secondary">{t('portal:process.noDiagram')}</Typography.Text>
+      <Card
+        size="small"
+        title={t('portal:process.diagram')}
+        extra={<Typography.Text type="secondary">{t('portal:process.clickHint')}</Typography.Text>}
+      >
+        {p.bpmnXml ? (
+          <div className="ph-portal-diagram-wrap">
+            <PortalDiagram process={p} selectedId={selectedId} onSelect={select} />
+            {step && (
+              <div className="ph-portal-step-panel">
+                <StepDetails step={step} process={p} onClose={() => select(null)} />
+              </div>
             )}
-          </Card>
-        </Col>
-        <Col xs={24} xl={7}>
-          <StepDetails step={step} process={p} onClose={() => select(null)} />
-        </Col>
-      </Row>
+          </div>
+        ) : (
+          <Typography.Text type="secondary">{t('portal:process.noDiagram')}</Typography.Text>
+        )}
+      </Card>
       <Row gutter={[16, 16]} style={{ marginBlockStart: 16 }}>
         <Col xs={24} md={12}>
           <Card

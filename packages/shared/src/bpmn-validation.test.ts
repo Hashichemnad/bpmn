@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   extractBpmnElementIds,
   extractBpmnLabels,
+  extractLaneRoles,
   validateBpmnGraph,
   type BpmnGraphElement,
 } from './bpmn-validation';
@@ -94,5 +95,23 @@ describe('extractBpmnLabels', () => {
     });
     expect(labels.get('T2')).toMatchObject({ name: 'Plain', nameEn: '', nameAr: '' });
     expect(labels.has('P1')).toBe(false);
+  });
+});
+
+describe('extractLaneRoles', () => {
+  it('lists every lane with its linked role (or null)', () => {
+    const xml = `<bpmn:laneSet id="LS">
+      <bpmn:lane id="Lane_A" name="A" ph:roleId="5b1d7a52-6c1e-4c7f-9a33-2f8f3d0e9a11">
+        <bpmn:flowNodeRef>T1</bpmn:flowNodeRef>
+      </bpmn:lane>
+      <bpmn:lane id="Lane_B" name="B" />
+      <lane id="Lane_C" ph:roleId="" />
+      <bpmn:laneSet id="Nested" />
+    </bpmn:laneSet>`;
+    expect([...extractLaneRoles(xml)]).toEqual([
+      ['Lane_A', '5b1d7a52-6c1e-4c7f-9a33-2f8f3d0e9a11'],
+      ['Lane_B', null],
+      ['Lane_C', null],
+    ]);
   });
 });

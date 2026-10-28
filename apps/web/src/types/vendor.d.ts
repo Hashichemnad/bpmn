@@ -29,3 +29,9 @@ declare module 'bpmn-js-color-picker' {
   const module: Record<string, unknown>;
   export default module;
 }
+
+declare module 'diagram-js-minimap' {
+  /** diagram-js module: mini-map (`minimap` service with open / close / toggle). */
+  const module: Record<string, unknown>;
+  export default module;
+}

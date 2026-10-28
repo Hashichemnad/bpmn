@@ -1,9 +1,11 @@
 import { Injectable } from '@nestjs/common';
+import type { Prisma } from '@prisma/client';
 import {
   DEFAULT_RELATION_FOR_TYPE,
   SETTING_KEYS,
   editBlockedReason,
   extractBpmnElementIds,
+  extractLaneRoles,
   resolveDiagramTheme,
   type ApplyThemeResultDto,
   type ContentStatus,
@@ -33,6 +35,8 @@ import { applyThemeToXml, differsOnlyInColours } from './diagram-theme-xml';
 export const APPLY_THEME_CHANGE_NOTE = 'Applied colour theme';
 /** Label of the version created when a published / approved diagram is recoloured in place. */
 export const THEME_ONLY_VERSION_LABEL = 'Theme applied (colours only)';
+
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 const userRef = { select: { id: true, email: true, nameEn: true, nameAr: true } } as const;
 
@@ -105,6 +109,7 @@ export class ModelsService {
       const pruned = await tx.objectLink.deleteMany({
         where: { processId, bpmnElementId: { notIn: ids } },
       });
+      const laneRoles = await this.syncLaneRoleLinks(tx, processId, bpmnXml, actor.id);
       await this.audit.log(
         {
           action: existing ? 'UPDATE' : 'CREATE',
@@ -115,6 +120,7 @@ export class ModelsService {
             elements: countFlowElements(bpmnXml),
             bytes: bpmnXml.length,
             prunedLinks: pruned.count,
+            ...(laneRoles.added.length || laneRoles.removed.length ? { laneRoles } : {}),
             ...(aiGenerated ? { aiGenerated: true } : {}),
           },
           meta,
@@ -123,6 +129,61 @@ export class ModelsService {
       );
     });
     return this.getModel(processId);
+  }
+
+  /**
+   * Lanes linked to a library Role (`ph:roleId`) have one PERFORMS object link from the lane to
+   * that role, so the role shows in Linked objects, the object's usage and the portal (D-081).
+   * Changing a lane's role replaces the link, removing it deletes the link. Role ids that are not
+   * an existing Role are ignored (no link, the save itself never fails because of them).
+   */
+  private async syncLaneRoleLinks(
+    tx: Prisma.TransactionClient,
+    processId: string,
+    bpmnXml: string,
+    actorId: string,
+  ) {
+    const lanes = extractLaneRoles(bpmnXml);
+    const result = { added: [] as string[], removed: [] as string[] };
+    if (!lanes.size) return result;
+    const wanted = [...new Set([...lanes.values()].filter((v): v is string => !!v))];
+    const roles = await tx.repoObject.findMany({
+      where: { id: { in: wanted.filter((id) => UUID_RE.test(id)) }, type: 'ROLE', deletedAt: null },
+      select: { id: true },
+    });
+    const valid = new Set(roles.map((r) => r.id));
+    const current = await tx.objectLink.findMany({
+      where: {
+        processId,
+        relation: 'PERFORMS',
+        bpmnElementId: { in: [...lanes.keys()] },
+        repoObject: { type: 'ROLE' },
+      },
+      select: { id: true, bpmnElementId: true, repoObjectId: true },
+    });
+    const stale = current.filter((l) => {
+      const role = lanes.get(l.bpmnElementId);
+      return !role || !valid.has(role) || role !== l.repoObjectId;
+    });
+    if (stale.length) {
+      await tx.objectLink.deleteMany({ where: { id: { in: stale.map((l) => l.id) } } });
+      result.removed = stale.map((l) => `${l.bpmnElementId}:${l.repoObjectId}`);
+    }
+    for (const [laneId, roleId] of lanes) {
+      if (!roleId || !valid.has(roleId)) continue;
+      if (current.some((l) => l.bpmnElementId === laneId && l.repoObjectId === roleId)) continue;
+      await tx.objectLink.create({
+        data: {
+          processId,
+          bpmnElementId: laneId,
+          repoObjectId: roleId,
+          relation: 'PERFORMS',
+          createdById: actorId,
+        },
+      });
+      result.added.push(`${laneId}:${roleId}`);
+    }
+    return result;
   }
 
   async listVersions(processId: string): Promise<ProcessVersionDto[]> {

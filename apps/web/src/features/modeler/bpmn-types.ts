@@ -86,6 +86,14 @@ export interface BpmnInstance {
   importXML(xml: string): Promise<{ warnings: unknown[] }>;
   saveXML(opts?: { format?: boolean }): Promise<{ xml?: string }>;
   saveSVG(): Promise<{ svg: string }>;
-  get<T = unknown>(service: string): T;
+  get<T = unknown>(service: string, strict?: boolean): T;
   destroy(): void;
+}
+
+/** Shape geometry (diagram coordinates). */
+export interface ShapeElement extends DiagramElement {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
 }

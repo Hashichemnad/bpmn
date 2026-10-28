@@ -726,3 +726,77 @@ for confirmation. Processes in review or archived are skipped (locked).
   (`GET /settings/diagram-theme/notice`, shown while uncoloured diagrams exist), which disappears when
   dismissed (audited) or once the theme has been applied (Setting `branding.diagramThemeNotice`). The upgrade
   step is in `docs/DEPLOYMENT.md` §9.
+
+## D-074 — Modeler as a full-screen workspace route
+
+The modeler is a route of its own, `/processes/:id/model`, outside the app layout (no sidebar, process tree or
+page header): a slim top bar, the ProcessHub palette on the inline-start side, the canvas and a collapsible,
+resizable side panel (Properties / Issues / Comments / AI). The process page's Model tab shows a read-only
+preview with **Open modeler** (read-only, `?view=1`) and **Edit diagram**; `?tab=model&element=` deep links
+keep working (highlight in the preview, passed on to the workspace). Autosave and the unsaved-changes guard are
+the same code as before. Browser full screen is requested on the whole page so dialogs and menus (rendered in
+`<body>`) stay visible. The same route permission as the process page (`processes.read`); editing is still
+decided by `canEditModel` on the server.
+
+## D-075 — Workspace preferences in localStorage, per user and browser
+
+Side panel (opens on selection unless the user closed it; width), mini-map, badges, grid snapping and the
+palette's icons-only mode are remembered under `ph.modeler.prefs.<userId>` in localStorage, every access in
+try/catch with the defaults as fallback. They are conveniences of one browser, not settings, so they are not
+stored on the server. The portal diagram shares the mini-map and badge preferences.
+
+## D-076 — Opening view: fit to width, never above 100 %
+
+Diagrams open fitted to the canvas width (never enlarged above 100 %), top of the diagram first. Fit page,
+100 % and presets are in the zoom menu; Ctrl + wheel zooms and space + drag pans (bpmn-js). Keyboard shortcuts
+are bpmn-js's, which since diagram-js 15 are bound to the focusable canvas only, so typing in fields is never
+intercepted; the workspace's own keys (F focus mode, ? help, Esc) ignore fields and dialogs (`keys.ts`).
+
+## D-077 — Palette of our own; ready-made steps are ordinary typed elements
+
+The bpmn-js palette is hidden and replaced by a React palette (grouped, labelled, searchable in both
+languages, icons-only mode, inline-start side) that starts the same bpmn-js create / tool interactions.
+Ready-made steps create standard BPMN elements with both labels set (and `ph:stepKind="approval"` for the
+approval steps), so the theme colours them on creation and no new element types appear in the XML: Approval
+step and Manager review (user tasks), System step (service task), Notification (send task), Waiting time (timer
+intermediate catch event), Link to sub-process (call activity + repository picker → `ph:linkedProcessId` and
+the process name as label).
+
+## D-078 — Auto-layout reuses the shared layered layout as one command
+
+The AI builder's layout moved to `packages/shared/src/bpmn-layout.ts` (now also handles larger shapes such as
+expanded sub-processes; AI output is unchanged byte for byte). The modeler's **Auto-layout** builds the layout
+input from the diagram (flow nodes, leaf lanes, sequence flows, current sizes) and applies it with a custom
+command `ph.autoLayout` that sets bounds and waypoints directly (DI updated through `bpmnUpdater`), so undo /
+redo is one step and only geometry changes. Contents of expanded sub-processes and boundary events move with
+their parent; other connections (message flows, associations) are re-routed by the bpmn-js layouter.
+Diagrams with several pools or vertical lanes are refused with a message. A confirmation comes first.
+
+## D-079 — Lane ↔ role link stored in the diagram (`ph:roleId`)
+
+A lane can be linked to a Role of the object library; the link is stored on the lane as `ph:roleId` and the
+lane label takes the role's English and Arabic names (a button re-applies them when the role was renamed).
+Tasks in such a lane show a suggestion "<role> performs this step" in the element panel; only a click creates
+the PERFORMS object link for the task (no automatic task links). The AI refine path keeps `ph:roleId`.
+The XML is the source of truth (versions, compare, Git export); the server mirrors it as an object link
+(D-081).
+
+## D-080 — Badges as HTML overlays; print layout with page-wide parts
+
+Info badges (roles, IT systems, documents, risks, controls, open comments) are diagram-js overlays built with
+DOM APIs — names only go into `title` / `aria-label`, never into markup. The portal shows published links only
+and adds "Highlight my steps" (published ROLE links to the reader's job roles). The print view (still browser
+print, D-024) lets the reader pick A4 or A3 landscape; the diagram is scaled to the page width and, when it
+would be shown below 55 %, cut into overlapping page-wide parts (one per page). Header with logo, version,
+owner and approval date, a colour legend from the active theme, page numbers via `@page` margin boxes
+("Page n of m" / "صفحة n من m").
+
+## D-081 — Lane roles mirrored as PERFORMS object links (product owner, 2026-10-28)
+
+Every save of the working model (autosave, Save version, restore — all go through `saveModel`) syncs each
+lane's `ph:roleId` to an `ObjectLink` (element = lane id, relation PERFORMS) in the same transaction: a new
+role adds the link, a changed role replaces it, a removed role (or removed lane) deletes it. Ids that are not
+an existing, non-deleted Role are ignored and never fail the save. The role then shows in Linked objects, the
+object's usage list, the published links and the portal's "My processes" (the lane is listed as the step).
+Changes are part of the model's audit entry (`laneRoles: { added, removed }`). Links between a role and a
+lane are owned by the diagram: one removed by hand comes back on the next save while the lane keeps the role.

@@ -114,7 +114,16 @@
     "step": "Step",
     "description": "Description",
     "footer": "Printed from the Knowledge Portal on {{date}}. Only the online version is authoritative.",
-    "pageMeta": "Approved {{approved}} · Owner {{owner}} · Next review {{next}}"
+    "pageMeta": "Approved {{approved}} · Owner {{owner}} · Next review {{next}}",
+    "page": "Page {{page}} of {{pages}}",
+    "paper": {
+      "a4": "A4 landscape",
+      "a3": "A3 landscape"
+    },
+    "paperLabel": "Paper size",
+    "version": "Version",
+    "legend": "Colour legend",
+    "part": "Diagram, part {{part}} of {{parts}}"
   },
   "settings": {
     "title": "Knowledge Portal",
@@ -138,5 +147,10 @@
     "linkTitleAr": "Title (Arabic)",
     "urlInvalid": "Use an https:// address or an in-app path starting with /",
     "addLink": "Add link"
+  },
+  "diagram": {
+    "tools": "Diagram tools",
+    "highlightMine": "Highlight my steps",
+    "noMySteps": "No step of this process is linked to your job roles."
   }
 }
