@@ -33,6 +33,9 @@ export default defineConfig({
     environment: 'jsdom',
     globals: true,
     setupFiles: ['./src/test/setup.ts'],
+    // The mini-map's CommonJS build does not load in Node; use its ES module build.
+    alias: [{ find: /^diagram-js-minimap$/, replacement: 'diagram-js-minimap/dist/index.esm.js' }],
+    server: { deps: { inline: ['diagram-js-minimap'] } },
     css: false,
   },
 });

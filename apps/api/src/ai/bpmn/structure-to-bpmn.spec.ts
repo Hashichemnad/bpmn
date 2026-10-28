@@ -53,6 +53,19 @@ describe('structure → BPMN', () => {
     expect(xml).not.toContain('ignored-for-tasks');
   });
 
+  it('keeps the role a lane is linked to (ph:roleId) when rebuilding', () => {
+    const first = structureToBpmn(ONBOARDING, { key: 'a' }).replace(
+      '<bpmn:lane id="Lane_HR"',
+      '<bpmn:lane id="Lane_HR" ph:roleId="11111111-2222-3333-4444-555555555555"',
+    );
+    const read = readBpmn(first);
+    expect(read.preserve.get('Lane_HR')?.roleId).toBe('11111111-2222-3333-4444-555555555555');
+    const again = structureToBpmn(ONBOARDING_REFINED, { key: 'b', preserve: read.preserve });
+    expect(again).toMatch(
+      /<bpmn:lane id="Lane_HR"[^>]*ph:roleId="11111111-2222-3333-4444-555555555555"/,
+    );
+  });
+
   it('escapes labels and descriptions', () => {
     const s: ProcessStructure = {
       ...ONBOARDING,

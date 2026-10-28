@@ -20,6 +20,8 @@ export interface PreservedElement {
   linkedProcessId?: string;
   /** `ph:stepKind` of a user task (approval step marked in the element panel). */
   stepKind?: string;
+  /** `ph:roleId` of a lane linked to a library role. */
+  roleId?: string;
   /** Colours of the shape; explicit (non-theme) colours are kept when refining. */
   fill?: string;
   stroke?: string;
@@ -119,12 +121,16 @@ export function structureToBpmn(s: ProcessStructure, opts: BuildOptions): string
         `    <bpmn:sequenceFlow id="${fid(f)}" sourceRef="${f.from}" targetRef="${f.to}"${labelAttrs(f.nameEn, f.nameAr)} />`,
     )
     .join('\n');
+  const laneRole = (id: string) => {
+    const roleId = opts.preserve?.get(id)?.roleId;
+    return roleId ? ` ph:roleId="${esc(roleId)}"` : '';
+  };
   const laneSetXml = s.lanes.length
     ? `    <bpmn:laneSet id="${ids.laneSet}">\n` +
       s.lanes
         .map(
           (l) =>
-            `      <bpmn:lane id="${l.id}"${labelAttrs(l.nameEn, l.nameAr)}>\n` +
+            `      <bpmn:lane id="${l.id}"${labelAttrs(l.nameEn, l.nameAr)}${laneRole(l.id)}>\n` +
             s.nodes
               .filter((n) => n.lane === l.id)
               .map((n) => `        <bpmn:flowNodeRef>${n.id}</bpmn:flowNodeRef>`)

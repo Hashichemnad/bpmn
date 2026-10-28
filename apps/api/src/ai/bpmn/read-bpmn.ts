@@ -81,6 +81,8 @@ export function readBpmn(xml: string): ReadBpmn {
         nameEn: ph(lane, 'nameEn') || (lane.getAttribute('name') ?? ''),
         nameAr: ph(lane, 'nameAr'),
       });
+      const roleId = ph(lane, 'roleId');
+      if (roleId) preserve.set(id, { ...preserve.get(id), roleId });
       for (const ref of Array.from(lane.getElementsByTagNameNS(BPMN_NS, 'flowNodeRef')))
         laneOf.set((ref.textContent ?? '').trim(), id);
     }
