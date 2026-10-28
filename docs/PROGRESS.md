@@ -2,7 +2,38 @@
 
 Read this together with `CLAUDE.md` at the start of every session.
 
-## Current state — 2026-10-28 (dependency upgrade: zod 3 → 4, branch `deps-zod-4`)
+## Current state — 2026-10-28 (Modeler design — Part B2: smarter modeling and reports, branch `modeler-design-b2`)
+
+Everything up to Modeler design Part B1 and the zod 4 upgrade is merged into `main`. Part B2 adds browser
+tests in CI, a Dictionary with label autocomplete, Quick Model (table entry), step attributes with "colour by"
+views, reports (handbook .docx, RACI .xlsx, object reports) and modeling conventions as a quality gate. Main
+test diagram: `docs/samples/PMS-01-Program-Request-Approval.bpmn`.
+
+Local setup used by this session: PostgreSQL 16 (role `processhub` / `devpassword`, databases `processhub`,
+`processhub_test`); the Docker daemon works in this sandbox, so the e2e suite ran against
+`docker compose up` (images built with the sandbox proxy CA through a scratch Dockerfile copy — the
+repository Dockerfiles are unchanged); `.env` with `LOGIN_RATE_LIMIT_MAX=1000`.
+
+Steps (tick as they are committed; a new session continues at the first unticked one):
+
+- [x] 0. Playwright smoke tests in CI (job "End-to-end": `docker compose up --build --wait`, Chromium,
+      artifacts on failure): sign-in incl. wrong password and the Super Admin's first 2FA enrolment (TOTP from
+      the shown key, recovery codes kept in `apps/e2e/.auth/` for re-runs), process house → new process,
+      workspace → import PMS-01 → ready-made "Approval step" → Save version, submit → reviewer and owner
+      approve → owner publishes, viewer opens it in the portal, Arabic workspace RTL (palette on the right).
+      17 tests, ≈ 40 s locally.
+- [ ] 1. Dictionary (glossary with autocomplete).
+- [ ] 2. Quick Model (table entry).
+- [ ] 3. Step attributes and "colour by" views.
+- [ ] 4. Reports and exports (handbook .docx, RACI .xlsx, object reports).
+- [ ] 5. Modeling conventions (quality gate).
+- [ ] 6. Screenshots EN/AR, sample handbook / RACI from PMS-01, docs, verification, push, pull request.
+
+### Next (continue here)
+
+1. Part 1 — Dictionary.
+
+## Previous state — 2026-10-28 (dependency upgrade: zod 3 → 4, branch `deps-zod-4`)
 
 Modeler design Part B1 is merged into `main`. This branch only upgrades zod (product owner decision 1 of
 2026-10-28) and closes the high advisory GHSA-mrhx-c7xc-m3w5 that has no zod 3 fix. Decision: DECISIONS D-082.

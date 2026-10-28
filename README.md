@@ -267,7 +267,13 @@ pnpm e2e            # Playwright smoke tests against a running, seeded stack (E2
 ```
 
 The Playwright tests (`apps/e2e`) need a Chromium for Playwright 1.56 (`pnpm --filter @processhub/e2e exec
-playwright install chromium` once) and only read data or add feedback, so they can be re-run.
+playwright install chromium` once, or `E2E_CHROMIUM_PATH` pointing at an installed Chromium). They cover
+sign-in with the Super Admin's first 2FA enrolment, the process house, the full-screen modeler (import of
+the PMS-01 sample, a ready-made step, Save version), submit → approve → publish, the Knowledge Portal as
+Viewer and Arabic RTL. Each run creates a new process, so the suite can be re-run on the same database; the
+admin's 2FA secret and unused recovery codes are kept in `apps/e2e/.auth/` (git-ignored). Every test signs
+in from the same address: raise `LOGIN_RATE_LIMIT_MAX` in `.env` (e.g. 1000) on a test stack. CI runs the
+suite against `docker compose up` (job "End-to-end").
 
 The API end-to-end tests run against `TEST_DATABASE_URL`, which defaults to
 `postgresql://processhub:devpassword@localhost:5432/processhub_test`. They **empty every table** in that

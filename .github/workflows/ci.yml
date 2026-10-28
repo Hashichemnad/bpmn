@@ -62,3 +62,44 @@ jobs:
           docker compose config --quiet
       - name: Shell scripts (shellcheck)
         run: shellcheck -x -s sh scripts/*.sh
+
+  e2e:
+    name: End-to-end (Docker Compose + Playwright)
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      CI: 'true'
+      E2E_BASE_URL: http://localhost:8080
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - name: Environment for the test stack
+        # Defaults from docker-compose.yml (demo data, admin and demo users); the login rate limit
+        # is raised because every test signs in from the same address.
+        run: |
+          printf 'LOGIN_RATE_LIMIT_MAX=1000\nRATE_LIMIT_MAX=5000\n' > .env
+      - name: Start the stack
+        run: docker compose up -d --build --wait --wait-timeout 300
+      - run: pnpm install --frozen-lockfile --filter @processhub/e2e
+      - name: Cache Playwright browsers
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
+      - name: Install Chromium
+        run: pnpm --filter @processhub/e2e exec playwright install --with-deps chromium
+      - name: Playwright smoke tests
+        run: pnpm e2e
+      - name: Stack logs
+        if: failure()
+        run: docker compose logs --no-color --tail 300 api web
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-results
+          path: apps/e2e/test-results
+          retention-days: 7
