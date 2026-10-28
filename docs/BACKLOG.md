@@ -13,7 +13,7 @@ where they belong; move items into the plan when that phase starts.
 
 ## Modeler design — Part B2 (after B1)
 
-Part A (colours, D-067 – D-073) and Part B1 (full-screen workspace and productivity, D-074 – D-080) are done.
+Part A (colours, D-067 – D-073) and Part B1 (full-screen workspace and productivity, D-074 – D-081) are done.
 Planned for Part B2:
 
 - Glossary / dictionary with label autocomplete linked to repository objects (like SAP Signavio "Dictionary").

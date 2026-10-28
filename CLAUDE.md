@@ -44,7 +44,7 @@ with no per-user licensing. Target: 50–500 users on a single server.
 | 5 | M13 Mining, M14 Execution, simulation | ⬜ |
 | 6 | Hardening: SSO, performance, security review fixes, deployment guide | 🟡 In progress — part 1 (security review, `docs/SECURITY.md`) and part 2 (production stack, backups, `docs/DEPLOYMENT.md`) merged; part 3 (SSO with Entra ID / OIDC, TOTP two-factor) merged; part 4 (product owner decisions: 2FA for admins, break-glass, roles in ProcessHub, 24 h sessions, Node 22) done on branch `phase-6-part-4` |
 | Design A | Modeler design upgrade — Part A: look and feel (colour theme as BPMN-in-Color, renderer, colour picker, fonts/RTL, apply theme) | ✅ Done (merged into `main`, D-067 – D-073) |
-| Design B1 | Modeler design — Part B1: full-screen workspace and modeling productivity (palette, ready-made steps, zoom/mini-map, align, auto-layout, lane roles, badges, portal diagram, print layout) | 🟡 Done on branch `modeler-design-b1`, awaiting review (D-074 – D-080); Part B2 in BACKLOG |
+| Design B1 | Modeler design — Part B1: full-screen workspace and modeling productivity (palette, ready-made steps, zoom/mini-map, align, auto-layout, lane roles, badges, portal diagram, print layout) | 🟡 Done on branch `modeler-design-b1`, awaiting review (D-074 – D-081); Part B2 in BACKLOG |
 | — | M15 Migration of existing documentation (after system is ready) | ⬜ |
 
 Update this table and `docs/PROGRESS.md` at the end of every session.
@@ -164,9 +164,10 @@ Modeler design Part A additions (DECISIONS D-067 – D-072):
   `ph:stepKind` (`approval` | `task`) on user tasks
 - Setting `branding.diagramTheme` (colour of each element kind; part of the public settings)
 
-Modeler design Part B1 additions (DECISIONS D-074 – D-080):
+Modeler design Part B1 additions (DECISIONS D-074 – D-081):
 
-- BPMN XML: `ph:roleId` on lanes (lane linked to a library Role); no database changes
+- BPMN XML: `ph:roleId` on lanes (lane linked to a library Role), mirrored on save as a PERFORMS `ObjectLink`
+  from the lane (D-081); no database changes
 - Shared layered layout `packages/shared/src/bpmn-layout.ts` (AI builder and modeler auto-layout)
 
 ## 10. Definition of Done (every phase)

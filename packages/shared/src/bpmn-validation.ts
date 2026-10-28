@@ -157,3 +157,20 @@ export function extractBpmnLabels(xml: string): Map<string, BpmnElementLabel> {
   }
   return labels;
 }
+
+/**
+ * Lanes of BPMN XML and the library Role each is linked to (`ph:roleId`, D-079); lanes without a
+ * role map to null. The API keeps a PERFORMS object link per linked lane in sync with this.
+ */
+export function extractLaneRoles(xml: string): Map<string, string | null> {
+  const lanes = new Map<string, string | null>();
+  const tagRe = /<(?:[\w-]+:)?lane\s([^>]*?)\/?>/g;
+  let tag: RegExpExecArray | null;
+  while ((tag = tagRe.exec(xml))) {
+    const id = /(?:^|\s)id="([^"]+)"/.exec(tag[1])?.[1];
+    if (!id) continue;
+    const role = /(?:^|\s)[\w-]+:roleId="([^"]*)"/.exec(tag[1])?.[1]?.trim();
+    lanes.set(decodeXml(id), role ? decodeXml(role) : null);
+  }
+  return lanes;
+}

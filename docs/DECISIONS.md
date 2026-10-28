@@ -777,8 +777,9 @@ Diagrams with several pools or vertical lanes are refused with a message. A conf
 A lane can be linked to a Role of the object library; the link is stored on the lane as `ph:roleId` and the
 lane label takes the role's English and Arabic names (a button re-applies them when the role was renamed).
 Tasks in such a lane show a suggestion "<role> performs this step" in the element panel; only a click creates
-the PERFORMS object link (no automatic links). The AI refine path keeps `ph:roleId`. Storing it in the XML
-(instead of an object link on the lane) keeps it in versions, compare and Git export without API changes.
+the PERFORMS object link for the task (no automatic task links). The AI refine path keeps `ph:roleId`.
+The XML is the source of truth (versions, compare, Git export); the server mirrors it as an object link
+(D-081).
 
 ## D-080 — Badges as HTML overlays; print layout with page-wide parts
 
@@ -789,3 +790,13 @@ print, D-024) lets the reader pick A4 or A3 landscape; the diagram is scaled to 
 would be shown below 55 %, cut into overlapping page-wide parts (one per page). Header with logo, version,
 owner and approval date, a colour legend from the active theme, page numbers via `@page` margin boxes
 ("Page n of m" / "صفحة n من m").
+
+## D-081 — Lane roles mirrored as PERFORMS object links (product owner, 2026-10-28)
+
+Every save of the working model (autosave, Save version, restore — all go through `saveModel`) syncs each
+lane's `ph:roleId` to an `ObjectLink` (element = lane id, relation PERFORMS) in the same transaction: a new
+role adds the link, a changed role replaces it, a removed role (or removed lane) deletes it. Ids that are not
+an existing, non-deleted Role are ignored and never fail the save. The role then shows in Linked objects, the
+object's usage list, the published links and the portal's "My processes" (the lane is listed as the step).
+Changes are part of the model's audit entry (`laneRoles: { added, removed }`). Links between a role and a
+lane are owned by the diagram: one removed by hand comes back on the next save while the lane keeps the role.

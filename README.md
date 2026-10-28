@@ -183,7 +183,8 @@ bpmn.io `bioc:` attributes), so other BPMN tools show them too.
 - Palette: grouped, searchable (English or Arabic), icons only on demand; **Ready-made steps** (approval step,
   manager review, system step, notification, waiting time, link to sub-process) come labelled in both languages.
 - Several shapes selected → align / distribute toolbar. **Auto-layout** re-arranges the diagram (one undo step).
-- A lane can be linked to a library Role (Properties of the lane); steps in it get a "performs" suggestion.
+- A lane can be linked to a library Role (Properties of the lane): it shows in Linked objects, the role's
+  usage and the portal's "My processes"; steps in the lane get a "performs" suggestion.
 - Badges on steps show linked roles, systems, documents, risks, controls and open comments (hover lists them).
 - Knowledge Portal: full-width diagram, zoom, mini-map, full screen, badges and **Highlight my steps**; the PDF
   view offers A4 or A3 landscape, logo header, colour legend, page-wide diagram parts and page numbers.

@@ -188,6 +188,111 @@ describe('Models, versions, objects and links (e2e)', () => {
     expect((await modeler.get(`/objects/${clerk.id}/usage`)).body).toEqual([]);
   });
 
+  /** Two lanes (with optional ph:roleId) holding Task_1 and Task_2. */
+  const lanedBpmn = (roleA: string | null, roleB: string | null) =>
+    sampleBpmn(['Task_1', 'Task_2'])
+      .replace(
+        '<bpmn:definitions ',
+        '<bpmn:definitions xmlns:ph="http://processhub.io/schema/bpmn" ',
+      )
+      .replace(
+        '<bpmn:process id="Process_1">',
+        `<bpmn:process id="Process_1"><bpmn:laneSet id="LS">` +
+          `<bpmn:lane id="Lane_A" name="Clerks"${roleA ? ` ph:roleId="${roleA}"` : ''}><bpmn:flowNodeRef>Task_1</bpmn:flowNodeRef></bpmn:lane>` +
+          `<bpmn:lane id="Lane_B" name="Managers"${roleB ? ` ph:roleId="${roleB}"` : ''}><bpmn:flowNodeRef>Task_2</bpmn:flowNodeRef></bpmn:lane>` +
+          `</bpmn:laneSet>`,
+      );
+
+  it('keeps a PERFORMS link per lane linked to a role (ph:roleId) in sync on save', async () => {
+    const clerk = (await role(modeler, 'Clerk')).body;
+    const manager = (await role(modeler, 'Manager')).body;
+    const erp = (await modeler.post('/objects').send({ type: 'SYSTEM', nameEn: 'ERP' })).body;
+    const laneLinks = async () =>
+      (
+        (await modeler.get(`/processes/${processId}/links`).expect(200)).body as {
+          bpmnElementId: string;
+          relation: string;
+          repoObject: { id: string };
+          element: { nameEn: string };
+        }[]
+      )
+        .filter((l) => l.bpmnElementId.startsWith('Lane_'))
+        .map((l) => `${l.bpmnElementId}:${l.repoObject.id}:${l.relation}:${l.element?.nameEn}`)
+        .sort();
+
+    // Linking a lane to a role creates the link (the version path saves the model too).
+    await modeler
+      .post(`/processes/${processId}/versions`)
+      .send({ bpmnXml: lanedBpmn(clerk.id, null), changeNote: 'lanes' })
+      .expect(201);
+    expect(await laneLinks()).toEqual([`Lane_A:${clerk.id}:PERFORMS:Clerks`]);
+    const usage = (await modeler.get(`/objects/${clerk.id}/usage`).expect(200)).body;
+    expect(usage).toEqual([
+      expect.objectContaining({ bpmnElementId: 'Lane_A', relation: 'PERFORMS' }),
+    ]);
+    // A task link next to it is not touched; saving again is idempotent.
+    await modeler
+      .post(`/processes/${processId}/links`)
+      .send({ bpmnElementId: 'Task_1', repoObjectId: clerk.id })
+      .expect(201);
+    await modeler
+      .put(`/processes/${processId}/model`)
+      .send({ bpmnXml: lanedBpmn(clerk.id, null) })
+      .expect(200);
+    expect(await laneLinks()).toEqual([`Lane_A:${clerk.id}:PERFORMS:Clerks`]);
+
+    // Changing a lane's role replaces its link; a second lane gets its own.
+    await modeler
+      .put(`/processes/${processId}/model`)
+      .send({ bpmnXml: lanedBpmn(manager.id, clerk.id) })
+      .expect(200);
+    expect(await laneLinks()).toEqual(
+      [`Lane_A:${manager.id}:PERFORMS:Clerks`, `Lane_B:${clerk.id}:PERFORMS:Managers`].sort(),
+    );
+    const audit = await ctx.prisma.auditLog.findFirst({
+      where: { entityType: 'ProcessModel', entityId: processId },
+      orderBy: { createdAt: 'desc' },
+    });
+    expect(audit?.summary).toMatchObject({
+      laneRoles: {
+        added: expect.arrayContaining([`Lane_A:${manager.id}`, `Lane_B:${clerk.id}`]),
+        removed: [`Lane_A:${clerk.id}`],
+      },
+    });
+
+    // Not a role, unknown or malformed ids: ignored, the save still works.
+    await modeler
+      .put(`/processes/${processId}/model`)
+      .send({ bpmnXml: lanedBpmn(erp.id, '"><x') })
+      .expect(200);
+    expect(await laneLinks()).toEqual([]);
+
+    // Removing the role removes the link; the manual task link stays.
+    await modeler
+      .put(`/processes/${processId}/model`)
+      .send({ bpmnXml: lanedBpmn(clerk.id, null) })
+      .expect(200);
+    await modeler
+      .put(`/processes/${processId}/model`)
+      .send({ bpmnXml: lanedBpmn(null, null) })
+      .expect(200);
+    expect(await laneLinks()).toEqual([]);
+    const all = (await modeler.get(`/processes/${processId}/links`)).body;
+    expect(all.map((l: { bpmnElementId: string }) => l.bpmnElementId)).toEqual(['Task_1']);
+
+    // A role deleted from the library is not linked again.
+    await modeler
+      .put(`/processes/${processId}/model`)
+      .send({ bpmnXml: lanedBpmn(manager.id, null) })
+      .expect(200);
+    await modeler.delete(`/objects/${manager.id}`).expect(204);
+    await modeler
+      .put(`/processes/${processId}/model`)
+      .send({ bpmnXml: lanedBpmn(manager.id, null) })
+      .expect(200);
+    expect(await laneLinks()).toEqual([]);
+  });
+
   it('deleting an object removes its links; deleted processes disappear from usage', async () => {
     await modeler.put(`/processes/${processId}/model`).send({ bpmnXml: sampleBpmn() });
     const clerk = (await role(modeler, 'Clerk')).body;
