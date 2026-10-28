@@ -339,7 +339,7 @@ export function ElementPanel({ instance, element, process, links, canEdit }: Pro
                 size="small"
                 icon={<ExportOutlined />}
                 style={{ paddingInline: 0, marginTop: 4 }}
-                onClick={() => navigate(`/processes/${linkedProcessId}?tab=model`)}
+                onClick={() => navigate(`/processes/${linkedProcessId}/model`)}
               >
                 {t('modeler:openLinkedProcess')}
               </Button>

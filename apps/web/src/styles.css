@@ -271,28 +271,172 @@ html[lang='ar'] body {
 }
 
 /* ---------- Modeler ---------- */
-.ph-modeler-card {
-  overflow: hidden;
+/* Full-screen modeler workspace (route /processes/:id/model) */
+.ph-ws {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--ph-bg);
+  z-index: 10;
 }
 
-.ph-modeler-toolbar {
-  padding: 10px 12px;
+.ph-ws-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-block-size: 48px;
+  padding: 6px 10px;
+  background: var(--ph-surface);
   border-block-end: 1px solid var(--ph-border);
-  background: #f8fafc;
+  flex-wrap: wrap;
 }
 
-.ph-modeler-status {
-  padding: 6px 12px;
-  border-block-start: 1px solid var(--ph-border);
-  background: #f8fafc;
-  font-size: 12px;
+.ph-ws-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-inline-size: 0;
+  flex: 1 1 280px;
 }
 
-.ph-modeler-canvas-wrap {
+.ph-ws-title .ant-tag {
+  margin-inline-end: 0;
+}
+
+.ph-ws-name {
+  max-inline-size: 36vw;
+  font-size: 15px;
+}
+
+.ph-ws-tools {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  flex-wrap: wrap;
+}
+
+.ph-ws-sep {
+  inline-size: 1px;
+  block-size: 20px;
+  margin-inline: 6px;
+  background: var(--ph-border);
+}
+
+@media (max-width: 1440px) {
+  .ph-ws-label {
+    display: none;
+  }
+}
+
+.ph-ws-body {
+  flex: 1;
+  display: flex;
+  min-block-size: 0;
+}
+
+.ph-ws-canvas-wrap {
   flex: 1;
   position: relative;
   min-inline-size: 0;
   display: flex;
+}
+
+.ph-ws-canvas {
+  flex: 1;
+  position: relative;
+  min-inline-size: 0;
+  background: #fff;
+}
+
+.ph-ws.ph-grid-on .ph-ws-canvas {
+  background:
+    linear-gradient(90deg, rgb(148 163 184 / 9%) 1px, transparent 1px) 0 0 / 20px 20px,
+    linear-gradient(rgb(148 163 184 / 9%) 1px, transparent 1px) 0 0 / 20px 20px,
+    #fff;
+}
+
+/* The ProcessHub palette replaces the bpmn-js one. */
+.ph-ws .djs-palette {
+  display: none;
+}
+
+.ph-ws-splitter {
+  inline-size: 6px;
+  margin-inline-start: -3px;
+  cursor: col-resize;
+  flex-shrink: 0;
+  position: relative;
+  z-index: 2;
+}
+
+.ph-ws-splitter::after {
+  content: '';
+  position: absolute;
+  inset-block: 0;
+  inset-inline-start: 2px;
+  inline-size: 1px;
+  background: var(--ph-border);
+}
+
+.ph-ws-splitter:hover::after,
+.ph-ws-splitter:focus-visible::after {
+  inline-size: 3px;
+  inset-inline-start: 1px;
+  background: #93c5fd;
+}
+
+.ph-ws-panel {
+  flex-shrink: 0;
+  padding: 0 14px 16px;
+  overflow: auto;
+  background: var(--ph-surface);
+}
+
+.ph-ws-panel > .ant-tabs > .ant-tabs-nav {
+  position: sticky;
+  inset-block-start: 0;
+  z-index: 1;
+  background: var(--ph-surface);
+}
+
+.ph-ws-focus-hint {
+  position: absolute;
+  inset-block-start: 10px;
+  inset-inline-start: 50%;
+  transform: translateX(-50%);
+  padding: 4px 12px;
+  border-radius: 999px;
+  background: rgb(15 23 42 / 70%);
+  color: #fff;
+  font-size: 12px;
+  pointer-events: none;
+  animation: ph-fade-out 4s forwards;
+}
+
+[dir='rtl'] .ph-ws-focus-hint {
+  transform: translateX(50%);
+}
+
+@keyframes ph-fade-out {
+  0%,
+  70% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+.ph-zoom-value {
+  min-inline-size: 76px;
+  font-variant-numeric: tabular-nums;
+}
+
+.ph-menu-blank {
+  display: inline-block;
+  inline-size: 14px;
 }
 
 .ph-modeler-loading {
@@ -303,45 +447,297 @@ html[lang='ar'] body {
   background: rgb(255 255 255 / 80%);
 }
 
-.ph-modeler-body {
-  display: flex;
-  block-size: calc(100vh - 290px);
-  min-block-size: 520px;
-}
-
-.ph-modeler-canvas {
-  flex: 1;
-  position: relative;
-  min-inline-size: 0;
-  background:
-    linear-gradient(90deg, rgb(148 163 184 / 8%) 1px, transparent 1px) 0 0 / 20px 20px,
-    linear-gradient(rgb(148 163 184 / 8%) 1px, transparent 1px) 0 0 / 20px 20px,
-    #fff;
-}
-
-.ph-modeler-panel {
-  inline-size: 320px;
+/* Palette (inline-start side: right in Arabic) */
+.ph-palette {
+  inline-size: 208px;
   flex-shrink: 0;
-  border-inline-start: 1px solid var(--ph-border);
-  padding: 4px 16px 16px;
-  overflow: auto;
+  display: flex;
+  flex-direction: column;
   background: var(--ph-surface);
+  border-inline-end: 1px solid var(--ph-border);
+  min-block-size: 0;
+}
+
+.ph-palette.is-collapsed {
+  inline-size: 52px;
+}
+
+.ph-palette-head {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+  padding: 8px;
+  border-block-end: 1px solid var(--ph-border);
+}
+
+.ph-palette.is-collapsed .ph-palette-head {
+  justify-content: center;
+}
+
+.ph-palette-body {
+  flex: 1;
+  overflow: auto;
+  padding: 4px 6px 12px;
+}
+
+.ph-palette-group h3 {
+  margin: 10px 6px 4px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--ph-muted);
+}
+
+.ph-palette-group ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.ph-palette.is-collapsed .ph-palette-group + .ph-palette-group {
+  border-block-start: 1px solid var(--ph-border);
+  margin-block-start: 4px;
+  padding-block-start: 4px;
+}
+
+.ph-palette-entry {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  inline-size: 100%;
+  padding: 3px 6px;
+  border: 0;
+  border-radius: 6px;
+  background: none;
+  color: #1e293b;
+  font: inherit;
+  font-size: 13px;
+  text-align: start;
+  cursor: grab;
+}
+
+.ph-palette.is-collapsed .ph-palette-entry {
+  justify-content: center;
+  padding: 3px 0;
+}
+
+.ph-palette-entry:hover,
+.ph-palette-entry:focus-visible {
+  background: #eff6ff;
+  outline: none;
+}
+
+.ph-palette-entry.is-ready .ph-palette-icon {
+  color: #1d4ed8;
+}
+
+.ph-palette-icon {
+  font-size: 24px;
+  line-height: 1;
+  inline-size: 28px;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.ph-palette-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ph-palette-empty {
+  padding: 8px;
+  color: var(--ph-muted);
+  font-size: 12px;
+}
+
+/* Align / distribute toolbar while several shapes are selected */
+.ph-layout-toolbar {
+  position: absolute;
+  inset-block-start: 10px;
+  inset-inline-start: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 3px 6px;
+  border: 1px solid var(--ph-border);
+  border-radius: 8px;
+  background: var(--ph-surface);
+  box-shadow: 0 4px 14px rgb(15 23 42 / 12%);
+  z-index: 3;
+}
+
+[dir='rtl'] .ph-layout-toolbar {
+  transform: translateX(50%);
+}
+
+.ph-layout-icon {
+  display: inline-flex;
+  inline-size: 16px;
+  block-size: 16px;
+}
+
+.ph-layout-icon svg {
+  inline-size: 16px;
+  block-size: 16px;
+}
+
+.ph-layout-sep {
+  inline-size: 1px;
+  block-size: 16px;
+  margin-inline: 4px;
+  background: var(--ph-border);
+}
+
+/* Shortcuts dialog */
+.ph-shortcuts {
+  inline-size: 100%;
+  border-collapse: collapse;
+}
+
+.ph-shortcuts th,
+.ph-shortcuts td {
+  padding: 5px 0;
+  border-block-end: 1px solid var(--ph-border);
+  font-weight: 400;
+  text-align: start;
+}
+
+.ph-shortcuts td {
+  text-align: end;
+}
+
+.ph-shortcuts kbd {
+  display: inline-block;
+  margin-inline-start: 4px;
+  padding: 0 6px;
+  border: 1px solid #cbd5e1;
+  border-block-end-width: 2px;
+  border-radius: 4px;
+  background: #f8fafc;
+  font: 12px/20px var(--ph-font-en);
+}
+
+/* Mini-map: bottom inline-end corner of the canvas (left in Arabic), above the bpmn.io mark. */
+.djs-container .djs-minimap {
+  --minimap-viewport-border-color: #2563eb;
+  top: auto !important;
+  bottom: 44px;
+  right: 16px !important;
+  border-radius: 8px !important;
+  border-color: var(--ph-border) !important;
+  box-shadow: 0 4px 14px rgb(15 23 42 / 10%);
+}
+
+[dir='rtl'] .djs-container .djs-minimap {
+  right: auto !important;
+  left: 16px;
+}
+
+.djs-container .djs-minimap .map {
+  width: 240px;
+  height: 135px;
+}
+
+.djs-minimap .toggle {
+  display: none !important;
+}
+
+.djs-minimap:not(.open) {
+  display: none;
+}
+
+/* Model tab preview */
+.ph-model-preview-canvas {
+  block-size: calc(100vh - 330px);
+  min-block-size: 420px;
+  border: 1px solid var(--ph-border);
+  border-radius: 8px;
+  background: #fff;
 }
 
 @media (max-width: 992px) {
-  .ph-modeler-body {
-    flex-direction: column;
-    block-size: auto;
+  .ph-ws-name {
+    max-inline-size: 50vw;
   }
-  .ph-modeler-canvas-wrap {
-    block-size: 520px;
-    flex: none;
+  .ph-palette {
+    inline-size: 52px;
   }
-  .ph-modeler-panel {
-    inline-size: 100%;
-    border-inline-start: 0;
-    border-block-start: 1px solid var(--ph-border);
+  .ph-palette .ph-palette-label,
+  .ph-palette .ph-palette-group h3,
+  .ph-palette .ph-palette-head .ant-input-affix-wrapper {
+    display: none;
   }
+}
+
+/* Information badges on shapes */
+.ph-badges {
+  display: flex;
+  gap: 3px;
+  white-space: nowrap;
+}
+
+.ph-badges-off .ph-badges {
+  display: none;
+}
+
+.ph-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  block-size: 18px;
+  padding: 0 5px 0 3px;
+  border: 1px solid currentColor;
+  border-radius: 9px;
+  background: #fff;
+  font: 600 11px/16px var(--ph-font-en);
+  box-shadow: 0 1px 2px rgb(15 23 42 / 15%);
+}
+
+button.ph-badge {
+  cursor: pointer;
+}
+
+button.ph-badge:hover,
+button.ph-badge:focus-visible {
+  background: #f1f5f9;
+  outline: none;
+}
+
+.ph-badge svg {
+  inline-size: 12px;
+  block-size: 12px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.ph-badge-role {
+  color: #7c3aed;
+}
+
+.ph-badge-system {
+  color: #0e7490;
+}
+
+.ph-badge-document {
+  color: #a16207;
+}
+
+.ph-badge-risk {
+  color: #dc2626;
+}
+
+.ph-badge-control {
+  color: #15803d;
+}
+
+.ph-badge-comment {
+  color: #1d4ed8;
 }
 
 .ph-panel-section {
@@ -378,18 +774,6 @@ html[lang='ar'] body {
   font-size: 11px;
 }
 
-.ph-overlay-badge {
-  min-inline-size: 18px;
-  block-size: 18px;
-  padding: 0 5px;
-  border-radius: 9px;
-  background: var(--ph-primary);
-  color: #fff;
-  font: 600 11px/18px var(--ph-font-en);
-  text-align: center;
-  box-shadow: 0 1px 3px rgb(0 0 0 / 20%);
-}
-
 .ph-overlay-drill {
   inline-size: 22px;
   block-size: 22px;
@@ -418,7 +802,7 @@ html[lang='ar'] body {
   stroke-width: 2px;
 }
 
-.ph-modeler-canvas .djs-shape.hover:not(.selected) .djs-outline {
+.ph-ws-canvas .djs-shape.hover:not(.selected) .djs-outline {
   visibility: visible;
   stroke: #60a5fa;
   stroke-width: 1.5px;
@@ -528,11 +912,11 @@ html[lang='ar'] body {
 }
 
 /* Subtle focus indicator for the keyboard-focusable diagram canvas. */
-.ph-modeler-canvas :focus {
+.ph-ws-canvas :focus {
   outline: none;
 }
 
-.ph-modeler-canvas:focus-within {
+.ph-ws-canvas:focus-within {
   box-shadow: inset 0 0 0 2px #bfdbfe;
 }
 
@@ -1323,18 +1707,6 @@ html[lang='ar'] body {
   block-size: 420px;
   border: 1px solid var(--ph-border);
   border-radius: 6px;
-}
-
-.ph-overlay-comments {
-  border: 1px solid #93c5fd;
-  background: #eff6ff;
-  color: #1d4ed8;
-  border-radius: 10px;
-  font-size: 11px;
-  line-height: 16px;
-  padding: 0 6px;
-  cursor: pointer;
-  white-space: nowrap;
 }
 
 /* ---------- Knowledge Portal ---------- */

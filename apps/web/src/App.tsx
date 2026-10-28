@@ -12,6 +12,7 @@ import { SettingsPage } from '@/features/settings/SettingsPage';
 import { RepositoryLayout } from '@/features/processes/RepositoryLayout';
 import { ProcessListPage } from '@/features/processes/ProcessListPage';
 import { ProcessDetailPage } from '@/features/processes/ProcessDetailPage';
+import { ModelerWorkspacePage } from '@/features/modeler/ModelerWorkspacePage';
 import { ObjectLibraryPage } from '@/features/objects/ObjectLibraryPage';
 import { ObjectDetailPage } from '@/features/objects/ObjectDetailPage';
 import { SpacesPage } from '@/features/docs/SpacesPage';
@@ -104,6 +105,15 @@ export const routes: RouteObject[] = [
           {
             element: <WorkspaceOnly />,
             children: [
+              {
+                // Full-screen modeler workspace: no app sidebar, process tree or page header.
+                path: 'processes/:id/model',
+                element: (
+                  <RequirePermission all={[P.PROCESSES_READ]}>
+                    <ModelerWorkspacePage />
+                  </RequirePermission>
+                ),
+              },
               {
                 element: <AppLayout />,
                 children: [

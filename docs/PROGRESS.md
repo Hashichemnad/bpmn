@@ -19,12 +19,12 @@ Steps (tick as they are committed; a new session continues at the first unticked
       `diagram-js-minimap` added.
 - [x] 1. Shared: layered layout builder moved to `packages/shared/src/bpmn-layout.ts` (also variable shape sizes);
       the AI builder uses it; tests.
-- [ ] 2. Web: route `/processes/:id/model` (workspace without app chrome): top bar, canvas, collapsible /
+- [x] 2. Web: route `/processes/:id/model` (workspace without app chrome): top bar, canvas, collapsible /
       resizable side panel (state per user in localStorage), focus mode, browser full screen; Model tab =
       read-only preview + Open modeler / Edit diagram; deep links `?element=`; autosave and unsaved guard.
-- [ ] 3. Web: navigation — fit width on open (max 100 %), zoom menu with presets, Ctrl+wheel, space+drag,
+- [x] 3. Web: navigation — fit width on open (max 100 %), zoom menu with presets, Ctrl+wheel, space+drag,
       mini-map toggle (RTL), keyboard on the canvas only, Ctrl+F search, shortcuts dialog, grid snapping toggle.
-- [ ] 4. Web: grouped searchable palette on the inline-start side (collapsible) + ready-made steps.
+- [x] 4. Web: grouped searchable palette on the inline-start side (collapsible) + ready-made steps.
 - [ ] 5. Web: align / distribute toolbar; auto-layout command (one undo step, confirmation); lanes: role link
       (`ph:roleId`), label from the role, PERFORMS suggestion for tasks in the lane.
 - [ ] 6. Web: info badges (roles, systems, documents, risks, controls, comments) in modeler, preview and portal;

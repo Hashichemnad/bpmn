@@ -12,7 +12,6 @@
   "redo": "إعادة",
   "zoomIn": "تكبير",
   "zoomOut": "تصغير",
-  "fit": "ملاءمة الشاشة",
   "unsaved": "تغييرات غير محفوظة",
   "neverSaved": "لم يُحفظ بعد",
   "validation": "التحقق",
@@ -34,12 +33,6 @@
   "stay": "البقاء",
   "selectElement": "اختر عنصرًا لعرض خصائصه.",
   "labelsHint": "تُحفظ التسميات بالعربية والإنجليزية. التعديل على اللوحة يغيّر تسمية اللغة الحالية.",
-  "linkedObjectsCount_zero": "لا توجد كائنات مرتبطة",
-  "linkedObjectsCount_one": "كائن مرتبط واحد",
-  "linkedObjectsCount_two": "كائنان مرتبطان",
-  "linkedObjectsCount_few": "{{count}} كائنات مرتبطة",
-  "linkedObjectsCount_many": "{{count}} كائنًا مرتبطًا",
-  "linkedObjectsCount_other": "{{count}} كائن مرتبط",
   "linkedProcess": "العملية المرتبطة",
   "linkedProcessHint": "الانتقال من هذه الخطوة إلى عملية أخرى في المستودع.",
   "chooseProcess": "اختر عملية",
@@ -114,17 +107,209 @@
   },
   "commentsTab": "التعليقات",
   "commentsAll": "جميع تعليقات العملية. اختر خطوة لعرض تعليقاتها وإضافة تعليق عليها.",
-  "commentCount_zero": "{{count}} تعليق مفتوح",
-  "commentCount_one": "تعليق مفتوح واحد",
-  "commentCount_two": "تعليقان مفتوحان",
-  "commentCount_few": "{{count}} تعليقات مفتوحة",
-  "commentCount_many": "{{count}} تعليقًا مفتوحًا",
-  "commentCount_other": "{{count}} تعليق مفتوح",
   "stepKind": {
     "label": "نوع الخطوة",
     "auto": "تلقائي ({{kind}})",
     "approval": "خطوة اعتماد",
     "task": "خطوة عادية",
     "hint": "تُلوَّن خطوات الاعتماد بلون الاعتماد. تلقائي: مهمة مستخدم تبدأ تسميتها الإنجليزية بـ Review أو Approve أو Endorse أو Confirm."
+  },
+  "saved": "تم الحفظ",
+  "saveVersion": "حفظ إصدار",
+  "search": "البحث عن عنصر (Ctrl+F)",
+  "importExport": "استيراد / تصدير",
+  "workspace": {
+    "title": "المصمم",
+    "toolbar": "أدوات المصمم",
+    "close": "إغلاق",
+    "focus": "وضع التركيز (F)",
+    "focusLeave": "الخروج من وضع التركيز (Esc)",
+    "focusHint": "وضع التركيز — اضغط Esc للخروج",
+    "fullscreen": "ملء الشاشة",
+    "fullscreenLeave": "الخروج من ملء الشاشة",
+    "panelShow": "إظهار اللوحة الجانبية",
+    "panelHide": "إخفاء اللوحة الجانبية",
+    "resize": "تغيير عرض اللوحة الجانبية"
+  },
+  "zoom": {
+    "menu": "التكبير",
+    "fitWidth": "ملاءمة العرض",
+    "fitPage": "ملاءمة الصفحة"
+  },
+  "view": {
+    "title": "العرض",
+    "minimap": "الخريطة المصغرة",
+    "badges": "الشارات على الأشكال",
+    "grid": "المحاذاة إلى الشبكة"
+  },
+  "autoLayout": {
+    "button": "ترتيب تلقائي",
+    "title": "إعادة ترتيب المخطط بالكامل؟",
+    "text": "تُنقل جميع العناصر إلى ترتيب منظم من البداية إلى النهاية، مسارًا تلو الآخر. تبقى التسميات والألوان والروابط والتعليقات كما هي، ويمكن التراجع عن ذلك بخطوة واحدة.",
+    "run": "إعادة الترتيب",
+    "done": "تمت إعادة ترتيب المخطط. يعيد التراجع (Ctrl+Z) الترتيب السابق.",
+    "problems": {
+      "SEVERAL_POOLS": "يعمل الترتيب التلقائي على المخططات ذات المسبح الواحد، وهذا المخطط يحتوي على أكثر من مسبح.",
+      "VERTICAL_LANES": "يدعم الترتيب التلقائي المسارات الأفقية فقط.",
+      "NOTHING_TO_LAYOUT": "لا يوجد ما يمكن ترتيبه بعد."
+    }
+  },
+  "shortcuts": {
+    "title": "اختصارات لوحة المفاتيح",
+    "hint": "انقر على مساحة الرسم أولًا: تعمل الاختصارات على المخطط فقط، ولا تعمل أثناء الكتابة في حقل.",
+    "actions": {
+      "undo": "تراجع",
+      "redo": "إعادة",
+      "copy": "نسخ",
+      "paste": "لصق",
+      "delete": "حذف",
+      "selectAll": "تحديد الكل",
+      "move": "تحريك التحديد (Shift: أسرع)",
+      "search": "البحث عن عنصر",
+      "editLabel": "تعديل التسمية",
+      "hand": "أداة اليد",
+      "lasso": "التحديد الحر",
+      "space": "إضافة / إزالة مساحة",
+      "connect": "ربط العناصر",
+      "saveVersion": "حفظ إصدار",
+      "zoom": "التكبير والتصغير",
+      "pan": "تحريك المخطط",
+      "focus": "وضع التركيز",
+      "escape": "إلغاء / الخروج من وضع التركيز",
+      "help": "هذه القائمة"
+    }
+  },
+  "palette": {
+    "title": "لوحة العناصر",
+    "search": "البحث في العناصر",
+    "expand": "إظهار التسميات",
+    "collapse": "الأيقونات فقط",
+    "noMatch": "لا يوجد عنصر مطابق.",
+    "groups": {
+      "ready": "خطوات جاهزة",
+      "events": "الأحداث",
+      "activities": "الأنشطة",
+      "gateways": "البوابات",
+      "data": "البيانات",
+      "swimlanes": "المسابح والمسارات",
+      "tools": "الأدوات"
+    },
+    "entries": {
+      "startEvent": "حدث بداية",
+      "intermediateEvent": "حدث وسيط",
+      "timerEvent": "حدث مؤقت",
+      "messageEvent": "حدث رسالة",
+      "endEvent": "حدث نهاية",
+      "task": "مهمة",
+      "userTask": "مهمة مستخدم",
+      "serviceTask": "مهمة خدمة",
+      "manualTask": "مهمة يدوية",
+      "callActivity": "نشاط استدعاء",
+      "subProcess": "عملية فرعية (موسعة)",
+      "exclusiveGateway": "بوابة حصرية (XOR)",
+      "parallelGateway": "بوابة متوازية (AND)",
+      "inclusiveGateway": "بوابة شاملة (OR)",
+      "eventGateway": "بوابة قائمة على الأحداث",
+      "dataObject": "كائن بيانات",
+      "dataStore": "مخزن بيانات",
+      "annotation": "ملاحظة نصية",
+      "group": "مجموعة",
+      "participant": "مسبح (أضف المسارات من قائمته)",
+      "hand": "أداة اليد (H)",
+      "lasso": "التحديد الحر (L)",
+      "space": "إضافة / إزالة مساحة (S)",
+      "connect": "ربط (C)"
+    },
+    "ready": {
+      "approval": {
+        "label": "خطوة اعتماد",
+        "name": "اعتماد الطلب"
+      },
+      "managerReview": {
+        "label": "مراجعة المدير",
+        "name": "مراجعة المدير"
+      },
+      "systemStep": {
+        "label": "خطوة آلية",
+        "name": "يعالج النظام الطلب"
+      },
+      "notification": {
+        "label": "إشعار",
+        "name": "إرسال إشعار"
+      },
+      "waitingTime": {
+        "label": "وقت انتظار",
+        "name": "انتظار"
+      },
+      "subProcessLink": {
+        "label": "ربط بعملية فرعية",
+        "name": "عملية فرعية",
+        "pickTitle": "ما العملية التي تستدعيها هذه الخطوة؟",
+        "pickHint": "تفتح الخطوة العملية المختارة من المخطط وتعرض اسمها باللغتين.",
+        "pick": "ربط",
+        "later": "لاحقًا"
+      }
+    }
+  },
+  "layout": {
+    "toolbar": "المحاذاة والتوزيع",
+    "align": {
+      "left": "محاذاة لليسار",
+      "center": "توسيط أفقي",
+      "right": "محاذاة لليمين",
+      "top": "محاذاة للأعلى",
+      "middle": "توسيط عمودي",
+      "bottom": "محاذاة للأسفل"
+    },
+    "distribute": {
+      "horizontal": "توزيع أفقي",
+      "vertical": "توزيع عمودي"
+    }
+  },
+  "badges": {
+    "ROLE_zero": "لا أدوار",
+    "ROLE_one": "دور واحد",
+    "ROLE_two": "دوران",
+    "ROLE_few": "{{count}} أدوار",
+    "ROLE_many": "{{count}} دورًا",
+    "ROLE_other": "{{count}} دور",
+    "SYSTEM_zero": "لا أنظمة",
+    "SYSTEM_one": "نظام تقني واحد",
+    "SYSTEM_two": "نظامان تقنيان",
+    "SYSTEM_few": "{{count}} أنظمة تقنية",
+    "SYSTEM_many": "{{count}} نظامًا تقنيًا",
+    "SYSTEM_other": "{{count}} نظام تقني",
+    "DOCUMENT_zero": "لا وثائق",
+    "DOCUMENT_one": "وثيقة واحدة",
+    "DOCUMENT_two": "وثيقتان",
+    "DOCUMENT_few": "{{count}} وثائق",
+    "DOCUMENT_many": "{{count}} وثيقة",
+    "DOCUMENT_other": "{{count}} وثيقة",
+    "RISK_zero": "لا مخاطر",
+    "RISK_one": "خطر واحد",
+    "RISK_two": "خطران",
+    "RISK_few": "{{count}} مخاطر",
+    "RISK_many": "{{count}} خطرًا",
+    "RISK_other": "{{count}} خطر",
+    "CONTROL_zero": "لا ضوابط",
+    "CONTROL_one": "ضابط رقابي واحد",
+    "CONTROL_two": "ضابطان رقابيان",
+    "CONTROL_few": "{{count}} ضوابط رقابية",
+    "CONTROL_many": "{{count}} ضابطًا رقابيًا",
+    "CONTROL_other": "{{count}} ضابط رقابي",
+    "COMMENT_zero": "لا تعليقات مفتوحة",
+    "COMMENT_one": "تعليق مفتوح واحد",
+    "COMMENT_two": "تعليقان مفتوحان",
+    "COMMENT_few": "{{count}} تعليقات مفتوحة",
+    "COMMENT_many": "{{count}} تعليقًا مفتوحًا",
+    "COMMENT_other": "{{count}} تعليق مفتوح"
+  },
+  "preview": {
+    "title": "المخطط",
+    "hint": "معاينة للقراءة فقط — انقر نقرًا مزدوجًا على خطوة لفتحها في المصمم.",
+    "open": "فتح المصمم",
+    "edit": "تعديل المخطط",
+    "empty": "لا يوجد مخطط بعد.",
+    "create": "إنشاء مخطط"
   }
 }

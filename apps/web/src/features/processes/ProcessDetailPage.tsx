@@ -35,7 +35,7 @@ import { SummaryButton } from '@/features/ai/SummaryModal';
 import { EmptyState, ErrorState, LoadingState } from '@/components/states';
 import { useErrorMessage, useFormatDate, useLocalized } from '@/components/i18n-helpers';
 import { ProcessFormModal } from './ProcessFormModal';
-import { BpmnEditor } from '@/features/modeler/BpmnEditor';
+import { ModelPreview } from '@/features/modeler/ModelPreview';
 import { RelatedDocsCard } from '@/features/docs/RelatedDocsCard';
 import { useRelatedPages } from '@/api/docs';
 import { useComments, useGovernance } from '@/api/governance';
@@ -353,11 +353,7 @@ export function ProcessDetailPage() {
             key: 'model',
             label: t('processes:tabs.model'),
             children: tab === 'model' && (
-              <BpmnEditor
-                key={p.id}
-                process={p}
-                focusElementId={params.get('element') ?? undefined}
-              />
+              <ModelPreview key={p.id} process={p} elementId={params.get('element') ?? undefined} />
             ),
           },
         ]}

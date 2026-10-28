@@ -12,7 +12,6 @@
   "redo": "Redo",
   "zoomIn": "Zoom in",
   "zoomOut": "Zoom out",
-  "fit": "Fit to screen",
   "unsaved": "Unsaved changes",
   "neverSaved": "Not saved yet",
   "validation": "Validation",
@@ -34,8 +33,6 @@
   "stay": "Stay",
   "selectElement": "Select an element to see its properties.",
   "labelsHint": "Labels are stored in English and Arabic. Editing on the canvas changes the label of the current language.",
-  "linkedObjectsCount_one": "{{count}} linked object",
-  "linkedObjectsCount_other": "{{count}} linked objects",
   "linkedProcess": "Linked process",
   "linkedProcessHint": "Drill down from this step into another process of the repository.",
   "chooseProcess": "Choose a process",
@@ -110,13 +107,185 @@
   },
   "commentsTab": "Comments",
   "commentsAll": "All comments of the process. Select a step to see and add comments on it.",
-  "commentCount_one": "{{count}} open comment",
-  "commentCount_other": "{{count}} open comments",
   "stepKind": {
     "label": "Step kind",
     "auto": "Automatic ({{kind}})",
     "approval": "Approval step",
     "task": "Normal step",
     "hint": "Approval steps are coloured as approvals. Automatic: a user task whose English label starts with Review, Approve, Endorse or Confirm."
+  },
+  "saved": "Saved",
+  "saveVersion": "Save version",
+  "search": "Find element (Ctrl+F)",
+  "importExport": "Import / export",
+  "workspace": {
+    "title": "Modeler",
+    "toolbar": "Modeler tools",
+    "close": "Close",
+    "focus": "Focus mode (F)",
+    "focusLeave": "Leave focus mode (Esc)",
+    "focusHint": "Focus mode — press Esc to leave",
+    "fullscreen": "Full screen",
+    "fullscreenLeave": "Leave full screen",
+    "panelShow": "Show side panel",
+    "panelHide": "Hide side panel",
+    "resize": "Resize side panel"
+  },
+  "zoom": {
+    "menu": "Zoom",
+    "fitWidth": "Fit width",
+    "fitPage": "Fit page"
+  },
+  "view": {
+    "title": "View",
+    "minimap": "Mini-map",
+    "badges": "Badges on shapes",
+    "grid": "Snap to grid"
+  },
+  "autoLayout": {
+    "button": "Auto-layout",
+    "title": "Re-arrange the whole diagram?",
+    "text": "All elements are moved into a clean left-to-right layout, lane by lane. Labels, colours, links and comments stay. You can undo this in one step.",
+    "run": "Re-arrange",
+    "done": "Diagram re-arranged. Undo (Ctrl+Z) restores the previous layout.",
+    "problems": {
+      "SEVERAL_POOLS": "Auto-layout works on diagrams with one pool. This diagram has several.",
+      "VERTICAL_LANES": "Auto-layout supports horizontal lanes only.",
+      "NOTHING_TO_LAYOUT": "There is nothing to arrange yet."
+    }
+  },
+  "shortcuts": {
+    "title": "Keyboard shortcuts",
+    "hint": "Click the canvas first: shortcuts work on the diagram, never while typing in a field.",
+    "actions": {
+      "undo": "Undo",
+      "redo": "Redo",
+      "copy": "Copy",
+      "paste": "Paste",
+      "delete": "Delete",
+      "selectAll": "Select all",
+      "move": "Move selection (Shift: faster)",
+      "search": "Find element",
+      "editLabel": "Edit label",
+      "hand": "Hand tool",
+      "lasso": "Lasso selection",
+      "space": "Create / remove space",
+      "connect": "Connect elements",
+      "saveVersion": "Save version",
+      "zoom": "Zoom",
+      "pan": "Pan the diagram",
+      "focus": "Focus mode",
+      "escape": "Cancel / leave focus mode",
+      "help": "This list"
+    }
+  },
+  "palette": {
+    "title": "Palette",
+    "search": "Search elements",
+    "expand": "Show labels",
+    "collapse": "Icons only",
+    "noMatch": "No element matches.",
+    "groups": {
+      "ready": "Ready-made steps",
+      "events": "Events",
+      "activities": "Activities",
+      "gateways": "Gateways",
+      "data": "Data",
+      "swimlanes": "Swimlanes",
+      "tools": "Tools"
+    },
+    "entries": {
+      "startEvent": "Start event",
+      "intermediateEvent": "Intermediate event",
+      "timerEvent": "Timer event",
+      "messageEvent": "Message event",
+      "endEvent": "End event",
+      "task": "Task",
+      "userTask": "User task",
+      "serviceTask": "Service task",
+      "manualTask": "Manual task",
+      "callActivity": "Call activity",
+      "subProcess": "Sub-process (expanded)",
+      "exclusiveGateway": "Exclusive gateway (XOR)",
+      "parallelGateway": "Parallel gateway (AND)",
+      "inclusiveGateway": "Inclusive gateway (OR)",
+      "eventGateway": "Event-based gateway",
+      "dataObject": "Data object",
+      "dataStore": "Data store",
+      "annotation": "Text annotation",
+      "group": "Group",
+      "participant": "Pool (add lanes from its menu)",
+      "hand": "Hand tool (H)",
+      "lasso": "Lasso selection (L)",
+      "space": "Create / remove space (S)",
+      "connect": "Connect (C)"
+    },
+    "ready": {
+      "approval": {
+        "label": "Approval step",
+        "name": "Approve request"
+      },
+      "managerReview": {
+        "label": "Manager review",
+        "name": "Manager review"
+      },
+      "systemStep": {
+        "label": "System step",
+        "name": "System processes the request"
+      },
+      "notification": {
+        "label": "Notification",
+        "name": "Send notification"
+      },
+      "waitingTime": {
+        "label": "Waiting time",
+        "name": "Wait"
+      },
+      "subProcessLink": {
+        "label": "Link to sub-process",
+        "name": "Sub-process",
+        "pickTitle": "Which process does this step call?",
+        "pickHint": "The step opens the chosen process from the diagram and shows its name in both languages.",
+        "pick": "Link",
+        "later": "Later"
+      }
+    }
+  },
+  "layout": {
+    "toolbar": "Align and distribute",
+    "align": {
+      "left": "Align left",
+      "center": "Align centre",
+      "right": "Align right",
+      "top": "Align top",
+      "middle": "Align middle",
+      "bottom": "Align bottom"
+    },
+    "distribute": {
+      "horizontal": "Distribute horizontally",
+      "vertical": "Distribute vertically"
+    }
+  },
+  "badges": {
+    "ROLE_one": "{{count}} role",
+    "ROLE_other": "{{count}} roles",
+    "SYSTEM_one": "{{count}} IT system",
+    "SYSTEM_other": "{{count}} IT systems",
+    "DOCUMENT_one": "{{count}} document",
+    "DOCUMENT_other": "{{count}} documents",
+    "RISK_one": "{{count}} risk",
+    "RISK_other": "{{count}} risks",
+    "CONTROL_one": "{{count}} control",
+    "CONTROL_other": "{{count}} controls",
+    "COMMENT_one": "{{count}} open comment",
+    "COMMENT_other": "{{count}} open comments"
+  },
+  "preview": {
+    "title": "Diagram",
+    "hint": "Read-only preview — double-click a step to open it in the modeler.",
+    "open": "Open modeler",
+    "edit": "Edit diagram",
+    "empty": "No diagram yet.",
+    "create": "Create diagram"
   }
 }
