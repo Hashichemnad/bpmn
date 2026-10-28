@@ -43,5 +43,11 @@ describe('AI terminology helpers', () => {
       aiSettingsSchema.safeParse({ ...base, suggestions: { PORTAL_QA: [{ en: '', ar: '' }] } })
         .success,
     ).toBe(false);
+    // Only the features that were sent are stored (no empty lists added for the others).
+    expect(aiSettingsSchema.parse(base).suggestions).toEqual({});
+    expect(
+      aiSettingsSchema.parse({ ...base, suggestions: { PORTAL_QA: [{ en: ' a ', ar: '' }] } })
+        .suggestions,
+    ).toEqual({ PORTAL_QA: [{ en: 'a', ar: '' }] });
   });
 });

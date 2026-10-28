@@ -8,6 +8,12 @@ import {
   gitSettingsSchema,
   savePageSchema,
   spaceGrantSchema,
+  uuidSchema,
+  loginSchema,
+  emailSettingsSchema,
+  updateProcessSchema,
+  notificationPrefsSchema,
+  notificationListQuerySchema,
 } from './schemas';
 import { SYSTEM_ROLES, PERMISSIONS } from './constants';
 
@@ -131,5 +137,43 @@ describe('phase 2 schemas', () => {
     ).toBe('https://gitlab.example.com');
     expect(gitSettingsSchema.safeParse({ enabled: true, provider: 'github' }).success).toBe(false);
     expect(gitSettingsSchema.safeParse({ enabled: false, provider: 'github' }).success).toBe(true);
+  });
+});
+
+// zod 4 migration (D-082): behaviour kept from zod 3.
+describe('zod 4 compatibility', () => {
+  it('accepts any 8-4-4-4-12 hex id (not only RFC 9562 UUIDs)', () => {
+    expect(uuidSchema.safeParse('11111111-1111-1111-1111-111111111111').success).toBe(true);
+    expect(uuidSchema.safeParse('3F1C2A9E-1B2C-4D3E-8F4A-5B6C7D8E9F00').success).toBe(true);
+    expect(uuidSchema.safeParse('not-a-uuid').success).toBe(false);
+  });
+
+  it('trims and lower-cases e-mail addresses before the format check', () => {
+    const r = loginSchema.safeParse({ email: '  A.B@Example.COM  ', password: 'x' });
+    expect(r.success && r.data.email).toBe('a.b@example.com');
+    expect(loginSchema.safeParse({ email: 'a..b@x.com', password: 'x' }).success).toBe(false);
+    const e = emailSettingsSchema.safeParse({ enabled: false, fromAddress: ' Ops@X.org ' });
+    expect(e.success && e.data.fromAddress).toBe('Ops@X.org');
+  });
+
+  it('keeps a missing optional text missing and turns null into an empty string', () => {
+    const missing = updateProcessSchema.parse({});
+    expect('nameEn' in missing).toBe(false);
+    expect(updateProcessSchema.parse({ nameEn: null }).nameEn).toBe('');
+    expect(updateProcessSchema.parse({ nameEn: ' A ' }).nameEn).toBe('A');
+  });
+
+  it('accepts notification preferences for some types only', () => {
+    expect(notificationPrefsSchema.safeParse({ prefs: {} }).success).toBe(true);
+    expect(
+      notificationPrefsSchema.safeParse({ prefs: { MENTIONED: { inApp: true, email: false } } })
+        .success,
+    ).toBe(true);
+    expect(notificationPrefsSchema.safeParse({ prefs: { NOPE: {} } }).success).toBe(false);
+  });
+
+  it('parses the unread flag of the notification list', () => {
+    expect(notificationListQuerySchema.parse({}).unread).toBe(false);
+    expect(notificationListQuerySchema.parse({ unread: 'true' }).unread).toBe(true);
   });
 });
