@@ -25,7 +25,7 @@ Steps (tick as they are committed; a new session continues at the first unticked
 - [x] 3. Web: navigation — fit width on open (max 100 %), zoom menu with presets, Ctrl+wheel, space+drag,
       mini-map toggle (RTL), keyboard on the canvas only, Ctrl+F search, shortcuts dialog, grid snapping toggle.
 - [x] 4. Web: grouped searchable palette on the inline-start side (collapsible) + ready-made steps.
-- [ ] 5. Web: align / distribute toolbar; auto-layout command (one undo step, confirmation); lanes: role link
+- [x] 5. Web: align / distribute toolbar; auto-layout command (one undo step, confirmation); lanes: role link
       (`ph:roleId`), label from the role, PERFORMS suggestion for tasks in the lane.
 - [ ] 6. Web: info badges (roles, systems, documents, risks, controls, comments) in modeler, preview and portal;
       toggle.

@@ -287,5 +287,15 @@
     "edit": "Edit diagram",
     "empty": "No diagram yet.",
     "create": "Create diagram"
+  },
+  "lane": {
+    "role": "Role of this lane",
+    "roleHint": "Link the lane to a role of the object library: the lane shows the role's name in both languages, and steps placed in the lane are suggested as performed by this role.",
+    "roleMissing": "Role not found",
+    "updateLabel": "Use the role's name",
+    "unlink": "Unlink",
+    "suggestion": "Suggested: “{{role}}” performs this step (lane “{{lane}}”).",
+    "suggestionLink": "Link",
+    "suggestionDismiss": "Not now"
   }
 }

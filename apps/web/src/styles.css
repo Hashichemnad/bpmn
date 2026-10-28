@@ -2172,3 +2172,7 @@ button.ph-badge:focus-visible {
     display: none;
   }
 }
+
+.ph-panel-suggestion {
+  margin-block-end: 12px;
+}

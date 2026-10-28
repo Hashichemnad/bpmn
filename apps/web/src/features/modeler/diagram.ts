@@ -130,3 +130,18 @@ const ACTIVITY =
 export const isActivityElement = (el: DiagramElement) => ACTIVITY.test(el.type);
 export const canDrillDown = (el: DiagramElement) =>
   el.type === 'bpmn:CallActivity' || el.type === 'bpmn:SubProcess';
+
+/** The lane an element is placed in (its innermost lane), or null. */
+export function laneOf(registry: ElementRegistry, el: DiagramElement): DiagramElement | null {
+  const lanes = registry.filter((l) => {
+    if (l.type !== 'bpmn:Lane') return false;
+    const refs = (l.businessObject as unknown as { flowNodeRef?: unknown[] }).flowNodeRef;
+    return !!refs?.includes(el.businessObject);
+  });
+  // Nested lanes: the innermost one has no child lanes holding the element.
+  return lanes.find((l) => !lanes.some((o) => o !== l && o.parent === l)) ?? lanes[0] ?? null;
+}
+
+/** Role object (library) a lane is linked to. */
+export const laneRoleOf = (lane: DiagramElement | null) =>
+  (lane?.businessObject.get('ph:roleId') as string | undefined) || null;
