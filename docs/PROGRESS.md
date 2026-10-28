@@ -27,9 +27,9 @@ Steps (tick as they are committed; a new session continues at the first unticked
 - [x] 4. Web: grouped searchable palette on the inline-start side (collapsible) + ready-made steps.
 - [x] 5. Web: align / distribute toolbar; auto-layout command (one undo step, confirmation); lanes: role link
       (`ph:roleId`), label from the role, PERFORMS suggestion for tasks in the lane.
-- [ ] 6. Web: info badges (roles, systems, documents, risks, controls, comments) in modeler, preview and portal;
+- [x] 6. Web: info badges (roles, systems, documents, risks, controls, comments) in modeler, preview and portal;
       toggle.
-- [ ] 7. Portal: taller diagram, fit width, mini-map, full screen, "highlight my steps"; print layout (A4/A3
+- [x] 7. Portal: taller diagram, fit width, mini-map, full screen, "highlight my steps"; print layout (A4/A3
       landscape, logo header, legend, scaled / multi-page diagram, page numbers, RTL).
 - [ ] 8. 200+ element performance test, "after" screenshots, docs (PROGRESS, DECISIONS, BACKLOG B2, README,
       CLAUDE.md), verification, push, pull request.

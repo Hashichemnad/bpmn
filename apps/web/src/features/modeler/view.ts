@@ -11,16 +11,16 @@ const clamp = (z: number) => Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, z));
 /**
  * Fits the diagram to the width of the canvas, never above `maxZoom` (100 %): wide diagrams are
  * readable instead of shrinking to fit their height as well. The top of the diagram is shown;
- * a diagram lower than the canvas is centred vertically.
+ * a diagram lower than the canvas is centred vertically (`align: 'top'`: kept at the top).
  */
-export function fitWidth(canvas: Canvas, maxZoom = 1): void {
+export function fitWidth(canvas: Canvas, maxZoom = 1, align: 'center' | 'top' = 'center'): void {
   canvas.resized();
   const { inner, outer } = canvas.viewbox();
   if (!inner.width || !inner.height || !outer.width || !outer.height) return;
   const zoom = clamp(Math.min(maxZoom, (outer.width - 2 * MARGIN) / inner.width));
   const width = outer.width / zoom;
   const height = outer.height / zoom;
-  const fitsHeight = inner.height * zoom + 2 * MARGIN <= outer.height;
+  const fitsHeight = align === 'center' && inner.height * zoom + 2 * MARGIN <= outer.height;
   canvas.viewbox({
     x: inner.x + inner.width / 2 - width / 2,
     y: fitsHeight ? inner.y + inner.height / 2 - height / 2 : inner.y - MARGIN / zoom,

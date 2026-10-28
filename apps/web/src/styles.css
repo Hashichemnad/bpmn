@@ -1867,18 +1867,47 @@ button.ph-badge:focus-visible {
 }
 
 .ph-portal-canvas {
-  block-size: 480px;
+  block-size: calc(100vh - 240px);
+  min-block-size: 560px;
   border: 1px solid var(--ph-border);
   border-radius: 8px;
   background: #fff;
 }
 
-.ph-step-clickable .djs-visual > :is(.ph-body, :first-child:not(.ph-shadow)) {
-  cursor: pointer;
+.ph-portal-diagram-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-block-end: 8px;
 }
 
-.ph-step-linked .djs-visual > rect:is(.ph-body, :first-child:not(.ph-shadow)) {
-  stroke: #0f766e !important;
+.ph-portal-diagram.is-fullscreen {
+  display: flex;
+  flex-direction: column;
+  padding: 12px;
+  background: #fff;
+}
+
+.ph-portal-diagram.is-fullscreen .ph-portal-canvas {
+  flex: 1;
+  block-size: auto;
+}
+
+/* Portal: "highlight my steps" */
+.ph-step-mine .djs-outline {
+  visibility: visible;
+  stroke: #7c3aed;
+  stroke-width: 3px;
+}
+
+.ph-step-faded .djs-visual {
+  opacity: 0.35;
+}
+
+.ph-step-clickable .djs-visual > :is(.ph-body, :first-child:not(.ph-shadow)) {
+  cursor: pointer;
 }
 
 .ph-step-selected .djs-visual > :is(.ph-body, :first-child:not(.ph-shadow)) {
@@ -2175,4 +2204,92 @@ button.ph-badge:focus-visible {
 
 .ph-panel-suggestion {
   margin-block-end: 12px;
+}
+
+/* Print layout of a published process (landscape A4 / A3) */
+.ph-print-process.ph-paper-a4 {
+  max-inline-size: calc(277mm + 64px);
+}
+
+.ph-print-process.ph-paper-a3 {
+  max-inline-size: calc(400mm + 64px);
+}
+
+.ph-print-org {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.ph-print-process .ph-print-header {
+  align-items: center;
+}
+
+.ph-print-legend h2 {
+  font-size: 14px;
+  margin: 12px 0 6px;
+}
+
+.ph-print-legend ul {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 18px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 12px;
+}
+
+.ph-print-legend li {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.ph-print-process .ph-print-diagram img {
+  max-block-size: 175mm;
+  object-fit: contain;
+}
+
+.ph-print-process.ph-paper-a3 .ph-print-diagram img {
+  max-block-size: 260mm;
+}
+
+.ph-print-diagram figcaption {
+  font-size: 11px;
+  color: var(--ph-muted);
+  text-align: center;
+}
+
+@media print {
+  .ph-print-process .ph-print-diagram {
+    break-inside: avoid;
+  }
+  .ph-print-process .ph-print-diagram + .ph-print-diagram {
+    break-before: page;
+  }
+  .ph-print-legend {
+    break-inside: avoid;
+  }
+}
+
+/* Portal: the diagram uses the full width; step details open over its right side (the diagram
+   itself always reads left to right, so its start stays visible in both languages). */
+.ph-portal-diagram-wrap {
+  position: relative;
+}
+
+.ph-portal-step-panel {
+  position: absolute;
+  inset-block-start: 44px;
+  right: 12px;
+  inline-size: min(380px, 90%);
+  max-block-size: calc(100% - 56px);
+  overflow: auto;
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgb(15 23 42 / 16%);
+  z-index: 5;
 }

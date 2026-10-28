@@ -9,33 +9,45 @@ import { useLocalized } from '@/components/i18n-helpers';
 import type { BpmnInstance, Canvas } from '@/features/modeler/bpmn-types';
 import { applyLanguage, normaliseDiagram } from '@/features/modeler/diagram';
 import { createDiagram, importDiagram } from '@/features/modeler/create-diagram';
+import { fitWidth } from '@/features/modeler/view';
 
 /** Renders BPMN XML read-only (pan/zoom), in the active language. */
 export function DiagramCanvas({
   xml,
   className = 'ph-embed-canvas',
   onReady,
+  modules,
+  fit = 'page',
 }: {
   xml: string;
   className?: string;
   onReady?: (viewer: BpmnInstance) => void;
+  /** Extra bpmn-js modules (e.g. the mini-map); read once when the diagram is created. */
+  modules?: unknown[];
+  /** `width`: fit to the width (never above 100 %, top of the diagram), for wide diagrams. */
+  fit?: 'page' | 'width';
 }) {
   const ref = useRef<HTMLDivElement>(null);
   const { locale } = useLocale();
   const [error, setError] = useState(false);
   const readyRef = useRef(onReady);
   readyRef.current = onReady;
+  const modulesRef = useRef(modules);
 
   useEffect(() => {
     if (!ref.current) return;
-    const viewer = createDiagram('navigated', { container: ref.current });
+    const viewer = createDiagram('navigated', {
+      container: ref.current,
+      additionalModules: modulesRef.current,
+    });
     let alive = true;
     importDiagram(viewer, xml)
       .then(() => {
         if (!alive) return;
         normaliseDiagram(viewer);
         applyLanguage(viewer, locale);
-        viewer.get<Canvas>('canvas').zoom('fit-viewport', 'auto');
+        if (fit === 'width') fitWidth(viewer.get<Canvas>('canvas'), 1, 'top');
+        else viewer.get<Canvas>('canvas').zoom('fit-viewport', 'auto');
         readyRef.current?.(viewer);
       })
       .catch(() => alive && setError(true));
@@ -43,7 +55,7 @@ export function DiagramCanvas({
       alive = false;
       viewer.destroy();
     };
-  }, [xml, locale]);
+  }, [xml, locale, fit]);
 
   const { t } = useTranslation();
   if (error) return <Alert type="warning" showIcon message={t('docs:diagram.invalid')} />;
