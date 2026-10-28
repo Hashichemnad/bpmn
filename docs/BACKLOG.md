@@ -5,19 +5,33 @@ where they belong; move items into the plan when that phase starts.
 
 ## Needs a decision
 
-_(none open — `braces` was accepted, D-054)_
+- **zod 3 → zod 4** (found 2026-10-28 in Part B1's audit): GHSA-mrhx-c7xc-m3w5 (high, published 2026-10-01) —
+  zod through 4.6.5 can exhaust memory when a very large array fails validation element by element. There is no
+  zod 3 fix; the fix is zod ≥ 4.6.6, a major upgrade of every shared schema (web and API). Exposure today:
+  authenticated requests only, bodies capped by `BODY_LIMIT` (6 MB). Options: (a) migrate to zod 4 as its own
+  change (recommended), (b) accept until then with a smaller body limit on JSON routes.
 
-## Modeler design — Part B (look and feel follow-ups)
+## Modeler design — Part B2 (after B1)
 
-Part A (colour theme, renderer, colour picker, fonts, D-067 – D-072) is done. Planned for Part B:
+Part A (colours, D-067 – D-073) and Part B1 (full-screen workspace and productivity, D-074 – D-080) are done.
+Planned for Part B2:
 
-- Redesigned palette and toolbar (grouped, labelled, ProcessHub icons; RTL-aware placement).
-- Ready-made step templates (e.g. "Approval step", "System notification", "Manager review") in the palette.
-- Info badges on shapes (linked role / system / document / risk counts, comments) replacing the overlays.
-- Mini-map.
-- Alignment and distribution tools.
-- Auto-layout button (reuse the AI layout builder for any diagram).
-- Print layout with the organisation logo, header and footer (PDF).
+- Glossary / dictionary with label autocomplete linked to repository objects (like SAP Signavio "Dictionary").
+- Table-based "Quick Model" entry (rows → BPMN with the shared layout).
+- Attribute-based shape colouring and step attributes (duration, cost, frequency).
+- Process handbook / Word report generation.
+- Excel export of the steps (RACI).
+- Modeling conventions per diagram type (allowed elements, naming rules).
+- Real-time co-editing.
+
+B1 follow-ups noted during the work:
+
+- Auto-layout for diagrams with several pools or vertical lanes; keep the user's manual label positions.
+- Search pad (Ctrl+F) in the read-only workspace (bpmn-js offers it in the modeler only).
+- Lane label follows a role rename automatically (today: a button in the panel); several roles per lane.
+- Portal: step details as a docked panel in full screen; badges for KPIs once M12 exists.
+- Print: choose the parts manually (e.g. one part per lane group); portrait option.
+- Workspace preferences on the server (follow the user across browsers).
 
 Other ideas from Part A:
 

@@ -31,8 +31,51 @@ Steps (tick as they are committed; a new session continues at the first unticked
       toggle.
 - [x] 7. Portal: taller diagram, fit width, mini-map, full screen, "highlight my steps"; print layout (A4/A3
       landscape, logo header, legend, scaled / multi-page diagram, page numbers, RTL).
-- [ ] 8. 200+ element performance test, "after" screenshots, docs (PROGRESS, DECISIONS, BACKLOG B2, README,
+- [x] 8. 200+ element performance test, "after" screenshots, docs (PROGRESS, DECISIONS, BACKLOG B2, README,
       CLAUDE.md), verification, push, pull request.
+
+What changed:
+
+- **Workspace** `/processes/:id/model` (`ModelerWorkspacePage`, `BpmnEditor`): no app chrome; top bar with code,
+  name, status, save state, Save version, undo / redo, zoom menu, find, auto-layout, View (mini-map, badges,
+  grid snapping), focus mode, full screen, shortcuts, Validation, Versions, Comments, AI, import / export,
+  panel toggle, Close. Side panel (Properties / Issues / Comments / AI) closed until something is selected,
+  closable, resizable (mouse and arrow keys); state per user in localStorage (`workspace-prefs.ts`,
+  `panel-state.ts`). Model tab = read-only preview (`ModelPreview`) with Open modeler / Edit diagram; deep
+  links `?tab=model&element=` highlight in the preview and are passed on. Autosave + unsaved guard unchanged.
+- **View**: fit width on open (≤ 100 %, `view.ts`), presets, Ctrl+wheel, space+drag, mini-map
+  (`diagram-js-minimap` 5.6.0, bottom inline-end, above the bpmn.io mark), Ctrl+F search, shortcuts dialog,
+  F / ? / Esc ignored in fields (`keys.ts`); bpmn-js keys are bound to the canvas (diagram-js 15).
+- **Palette** (`Palette.tsx`, `palette-entries.ts`): grouped, searchable EN/AR, icons-only, inline-start;
+  ready-made steps incl. "Link to sub-process" with a process picker.
+- **Layout**: align / distribute toolbar for ≥ 2 shapes; auto-layout command `ph.autoLayout`
+  (`auto-layout.ts`, shared `bpmn-layout.ts`), confirmation, one undo step.
+- **Lanes**: link to a library Role (`ph:roleId`, label from the role, "Use the role's name"), PERFORMS
+  suggestion for tasks in the lane; kept by AI refine.
+- **Badges** (`badges.ts`, `useDiagramOverlays.ts`): roles, systems, documents, risks, controls, open comments;
+  hover list, click → panel; toggle; also in the preview and the portal (published links).
+- **Portal**: full-width diagram with zoom menu, mini-map, full screen, badges, "Highlight my steps"; step
+  details over the diagram. **Print**: A4 / A3 landscape, logo header, version / owner / approval, colour
+  legend, page-wide parts when the diagram would be < 55 % (`print-layout.ts`), "Page n of m" (EN/AR).
+- Screenshots `docs/screenshots/modeler-design-b1/`: before (modeler tab, portal, print) and after
+  (workspace, selected + panel, focus mode, model tab, portal, print page, PDF pages 1–2), EN and AR.
+
+#### Verification (design B1)
+
+| Check                                                   | Result                                                                                                                                                                                                                                                                 |
+| ------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `pnpm format:check`, `pnpm lint`, `pnpm typecheck`      | clean                                                                                                                                                                                                                                                                  |
+| `pnpm test`                                             | **465 tests pass** — shared 97, web 59, API 309 (new: shared layout ×4, auto-layout on PMS-01 incl. undo/redo ×3, keyboard scope on the canvas, workspace keys, panel state / prefs ×7, badges ×2, print layout ×5, 250-step performance, lane role kept by AI refine) |
+| `pnpm build` (web)                                      | passes                                                                                                                                                                                                                                                                 |
+| `pnpm audit --prod --audit-level high`                  | body-parser (2.4.0) and multer (2.5.0) advisories of 2026-10-23 fixed via overrides; **zod 3 high advisory remains** (no 3.x fix; decision in BACKLOG)                                                                                                                 |
+| Performance, Chromium, 250 steps (584 diagram elements) | workspace open 1.2 s incl. login redirect, Ctrl+wheel zoom ≈ 50 ms per two frames, auto-layout 0.4 s, undo 60 ms; jsdom test as regression guard                                                                                                                       |
+| Browser                                                 | PMS-01 EN/AR: workspace, selection → panel, focus mode, ready-made step + process picker, search, auto-layout, lane role + suggestion, preview with deep link, portal with highlight, print + PDF A4 (5 pages, 2 diagram parts)                                        |
+| Docker                                                  | not run in this session: the sandbox has no Docker daemon. Dockerfiles unchanged; the only new runtime dependency is the web package `diagram-js-minimap` (bundled by Vite, build passes)                                                                              |
+
+### Next (continue here)
+
+1. Review and merge `modeler-design-b1`; decide on the zod 4 migration (BACKLOG "Needs a decision").
+2. Modeler design Part B2 (BACKLOG). Phase 6 part 4 step 6 and Phase 4 as before.
 
 ## Previous state — 2026-10-23 (Modeler design upgrade — Part A: look and feel, branch `modeler-design-a`)
 

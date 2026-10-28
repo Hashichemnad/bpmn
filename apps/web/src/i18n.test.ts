@@ -35,7 +35,11 @@ import {
   SSO_ERROR_CODES,
   SSO_PROVIDERS,
 } from '@processhub/shared';
+import { THEME_KINDS } from '@processhub/shared';
 import { resources } from './i18n';
+import { BADGE_KINDS } from './features/modeler/badges';
+import { PALETTE_ENTRIES, PALETTE_GROUPS, READY_STEPS } from './features/modeler/palette-entries';
+import { PAPERS } from './features/portal/print-layout';
 
 type Tree = { [k: string]: string | Tree };
 const PLURAL = /_(zero|one|two|few|many|other)$/;
@@ -132,6 +136,20 @@ describe('translations', () => {
       ...['added', 'removed', 'changed', 'layout'].map((k) => `docs:compare.kind.${k}`),
       ...['p', 'h1', 'h2', 'h3', 'h4'].map((b) => `docs:editor.blocks.${b}`),
       ...SEARCH_TYPES.map((s) => `search:types.${s}`),
+      // Modeler workspace (Part B1)
+      ...PALETTE_ENTRIES.map((e) => `modeler:${e.labelKey}`),
+      ...PALETTE_GROUPS.map((g) => `modeler:palette.groups.${g}`),
+      ...READY_STEPS.map((r) => `modeler:palette.ready.${r.key}.name`),
+      ...BADGE_KINDS.map((k) => `modeler:badges.${k}`),
+      ...['left', 'center', 'right', 'top', 'middle', 'bottom'].map(
+        (a) => `modeler:layout.align.${a}`,
+      ),
+      ...['horizontal', 'vertical'].map((d) => `modeler:layout.distribute.${d}`),
+      ...['SEVERAL_POOLS', 'VERTICAL_LANES', 'NOTHING_TO_LAYOUT'].map(
+        (p) => `modeler:autoLayout.problems.${p}`,
+      ),
+      ...PAPERS.map((p) => `portal:print.paper.${p}`),
+      ...THEME_KINDS.map((k) => `admin:theme.kind.${k}`),
       // Governance and Knowledge Portal
       ...APPROVAL_RULES.map((r) => `governance:rule.${r}`),
       ...ASSIGNEE_TYPES.map((a) => `governance:assignee.${a}`),
