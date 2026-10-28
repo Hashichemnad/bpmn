@@ -800,3 +800,30 @@ an existing, non-deleted Role are ignored and never fail the save. The role then
 object's usage list, the published links and the portal's "My processes" (the lane is listed as the step).
 Changes are part of the model's audit entry (`laneRoles: { added, removed }`). Links between a role and a
 lane are owned by the diagram: one removed by hand comes back on the next save while the lane keeps the role.
+
+## D-082 — zod 4 (2026-10-28)
+
+zod 3 has a high advisory with no 3.x fix (GHSA-mrhx-c7xc-m3w5, memory exhaustion when a very large array fails
+validation element by element); `packages/shared` and `apps/api` now use zod `^4.6.7` (fixed from 4.6.6).
+The schemas were migrated to the zod 4 API without changing what they accept or return:
+
+- `z.guid()` for ids (`uuidSchema` and the AI / SSO schemas): any 8-4-4-4-12 hex id, as zod 3's `uuid()`;
+  zod 4's `z.uuid()` would also demand RFC 9562 version and variant bits.
+- E-mail: `z.string().trim()[.toLowerCase()].pipe(z.email().max(254))` — in zod 4 `z.email().trim()` would
+  check the format before trimming. The default e-mail pattern is equivalent to zod 3's.
+- Optional bilingual text: `.nullable().transform(v => v ?? '').optional()` (zod 4 only keeps a key optional in
+  the output type when the outermost schema is optional; null still clears the field, a missing key stays
+  missing).
+- `z.partialRecord` for notification preferences (zod 4's `z.record` with an enum key requires every key);
+  `z.strictObject` for the 2FA verify union; `code: 'custom'` instead of `ZodIssueCode.custom`;
+  `{ error }` instead of `{ message }`; `z.url()` for `APP_URL`; `z.ZodType` in `ZodPipe`.
+- AI suggestions: the per-feature `.default([])` inside `.partial()` was dropped — in zod 3 it never applied
+  (partial made the key optional first); in zod 4 it would add empty lists for every feature.
+
+Errors: the API still answers `400 VALIDATION_ERROR` with `details: [{ path, message }]`; the web shows the
+translated message for the error code (EN/AR), so nothing users read changes. Our own messages
+(`NAME_REQUIRED`, `TITLE_REQUIRED`, `INVALID_CODE`, …) are unchanged; zod's built-in English texts in `details`,
+in the start-up error for a bad environment and in the AI structured-output feedback to the model are zod 4's
+(e.g. "Too small: expected number to be >=1"). Verified by a differential run of every shared schema, the
+environment schema and the AI process-structure schema on the same ~1,500 inputs under zod 3 and zod 4: same
+accept / reject, same parsed data, same custom messages.
