@@ -18,3 +18,6 @@ playwright-report/
 
 # Certificates for the production reverse proxy (deploy/certs/README.md)
 deploy/certs/*.pem
+
+# Stray Python wheels (tool downloads)
+*.whl

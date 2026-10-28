@@ -44,7 +44,8 @@ with no per-user licensing. Target: 50–500 users on a single server.
 | 5 | M13 Mining, M14 Execution, simulation | ⬜ |
 | 6 | Hardening: SSO, performance, security review fixes, deployment guide | 🟡 In progress — part 1 (security review, `docs/SECURITY.md`) and part 2 (production stack, backups, `docs/DEPLOYMENT.md`) merged; part 3 (SSO with Entra ID / OIDC, TOTP two-factor) merged; part 4 (product owner decisions: 2FA for admins, break-glass, roles in ProcessHub, 24 h sessions, Node 22) done on branch `phase-6-part-4` |
 | Design A | Modeler design upgrade — Part A: look and feel (colour theme as BPMN-in-Color, renderer, colour picker, fonts/RTL, apply theme) | ✅ Done (merged into `main`, D-067 – D-073) |
-| Design B1 | Modeler design — Part B1: full-screen workspace and modeling productivity (palette, ready-made steps, zoom/mini-map, align, auto-layout, lane roles, badges, portal diagram, print layout) | 🟡 Done on branch `modeler-design-b1`, awaiting review (D-074 – D-081); Part B2 in BACKLOG |
+| Design B1 | Modeler design — Part B1: full-screen workspace and modeling productivity (palette, ready-made steps, zoom/mini-map, align, auto-layout, lane roles, badges, portal diagram, print layout) | ✅ Done (merged into `main`, D-074 – D-081); Part B2 in BACKLOG |
+| Deps | zod 3 → 4 (high advisory GHSA-mrhx-c7xc-m3w5, D-082) | 🟡 Done on branch `deps-zod-4`, awaiting review |
 | — | M15 Migration of existing documentation (after system is ready) | ⬜ |
 
 Update this table and `docs/PROGRESS.md` at the end of every session.

@@ -2,7 +2,39 @@
 
 Read this together with `CLAUDE.md` at the start of every session.
 
-## Current state — 2026-10-28 (Modeler design — Part B1: full-screen workspace and productivity, branch `modeler-design-b1`)
+## Current state — 2026-10-28 (dependency upgrade: zod 3 → 4, branch `deps-zod-4`)
+
+Modeler design Part B1 is merged into `main`. This branch only upgrades zod (product owner decision 1 of
+2026-10-28) and closes the high advisory GHSA-mrhx-c7xc-m3w5 that has no zod 3 fix. Decision: DECISIONS D-082.
+
+What changed:
+
+- `packages/shared` and `apps/api`: zod `^3.25.76` → `^4.6.7` (the web uses zod only through `@processhub/shared`;
+  `@anthropic-ai/sdk` accepts zod 3 or 4 as peer).
+- Schemas migrated to the zod 4 API with the same behaviour: `z.guid()` for ids, e-mail as
+  `trim[/toLowerCase] → z.email()`, optional bilingual text `.nullable().transform().optional()`,
+  `z.partialRecord` (notification preferences), `z.strictObject` (2FA verify), `code: 'custom'`, `{ error }`,
+  `z.url()` (`APP_URL`), `z.ZodType` in `ZodPipe`; AI suggestion lists no longer carry a never-applied default.
+- API error responses unchanged (`400 VALIDATION_ERROR`, `details: [{ path, message }]`; the web translates the
+  code in EN/AR). Our own codes in `details` are unchanged; zod's built-in English texts (in `details`, the
+  start-up config error and the AI output feedback to the model) are now zod 4's.
+- Removed the stray `shellcheck_py-*.whl` from the repository root; `*.whl` added to `.gitignore`.
+
+#### Verification (zod 4)
+
+| Check                                              | Result                                                                                                                                                                              |
+| -------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Differential run zod 3 (main) vs zod 4 (branch)    | ~1,500 inputs through every shared schema, the environment schema and the AI process-structure schema: same accept / reject, same parsed data, same custom error codes in all cases |
+| `pnpm format:check`, `pnpm lint`, `pnpm typecheck` | clean                                                                                                                                                                               |
+| `pnpm test`                                        | **473 tests pass** — shared 103 (5 new zod 4 compatibility tests), web 59, API 311                                                                                                  |
+| `pnpm audit --audit-level high`                    | clean (7 moderate, 1 low remain; no high / critical)                                                                                                                                |
+
+### Next (continue here)
+
+1. Review and merge `deps-zod-4`.
+2. Modeler design Part B2 (BACKLOG). Phase 6 part 4 step 6 and Phase 4 as before.
+
+## Previous state — 2026-10-28 (Modeler design — Part B1: full-screen workspace and productivity, merged into `main`)
 
 Everything up to Modeler design Part A is merged into `main`. This branch turns the modeler into a full-screen
 workspace (like ARIS / BIC / Signavio) and adds modeling productivity tools. Main test diagram:

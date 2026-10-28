@@ -3,14 +3,6 @@
 Ideas and follow-ups noted during development, outside the current phase scope. Group by the phase
 where they belong; move items into the plan when that phase starts.
 
-## Needs a decision
-
-- **zod 3 → zod 4** (found 2026-10-28 in Part B1's audit): GHSA-mrhx-c7xc-m3w5 (high, published 2026-10-01) —
-  zod through 4.6.5 can exhaust memory when a very large array fails validation element by element. There is no
-  zod 3 fix; the fix is zod ≥ 4.6.6, a major upgrade of every shared schema (web and API). Exposure today:
-  authenticated requests only, bodies capped by `BODY_LIMIT` (6 MB). Options: (a) migrate to zod 4 as its own
-  change (recommended), (b) accept until then with a smaller body limit on JSON routes.
-
 ## Modeler design — Part B2 (after B1)
 
 Part A (colours, D-067 – D-073) and Part B1 (full-screen workspace and productivity, D-074 – D-081) are done.

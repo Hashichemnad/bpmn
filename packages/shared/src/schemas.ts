@@ -35,13 +35,23 @@ import {
 } from './constants';
 
 const trimmed = (max: number) => z.string().trim().max(max);
+/** Optional text: null becomes '' (clears the field), a missing value stays undefined. */
 const optionalText = (max: number) =>
   trimmed(max)
-    .optional()
     .nullable()
-    .transform((v) => (v === undefined ? undefined : (v ?? '')));
+    .transform((v) => v ?? '')
+    .optional();
 
-export const uuidSchema = z.string().uuid();
+/**
+ * Any 8-4-4-4-12 hex id. `z.guid()` keeps zod 3's `uuid()` behaviour; zod 4's `z.uuid()` would
+ * also require RFC 9562 version and variant bits (D-082).
+ */
+export const uuidSchema = z.guid();
+
+/** E-mail address, trimmed (and lower-cased) before the format check as in zod 3 (D-082). */
+const emailAddress = (lowerCase: boolean) =>
+  (lowerCase ? z.string().trim().toLowerCase() : z.string().trim()).pipe(z.email().max(254));
+const emailSchema = emailAddress(true);
 export const localeSchema = z.enum(LOCALES);
 
 /** Bilingual name/description fields; at least one name must be provided (fallback rule). */
@@ -54,7 +64,7 @@ export const bilingualFields = {
 
 function requireOneName(v: { nameEn?: string; nameAr?: string }, ctx: z.RefinementCtx) {
   if (!v.nameEn && !v.nameAr) {
-    ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['nameEn'], message: 'NAME_REQUIRED' });
+    ctx.addIssue({ code: 'custom', path: ['nameEn'], message: 'NAME_REQUIRED' });
   }
 }
 
@@ -77,7 +87,7 @@ export interface Paginated<T> {
 
 // ---------- Auth ----------
 export const loginSchema = z.object({
-  email: z.string().trim().toLowerCase().email().max(254),
+  email: emailSchema,
   password: z.string().min(1).max(256),
 });
 export type LoginInput = z.infer<typeof loginSchema>;
@@ -100,7 +110,7 @@ export type UpdateProfileInput = z.infer<typeof updateProfileSchema>;
 // ---------- Users ----------
 export const createUserSchema = z
   .object({
-    email: z.string().trim().toLowerCase().email().max(254),
+    email: emailSchema,
     nameEn: optionalText(200),
     nameAr: optionalText(200),
     password: passwordSchema,
@@ -113,7 +123,7 @@ export const createUserSchema = z
 export type CreateUserInput = z.infer<typeof createUserSchema>;
 
 export const updateUserSchema = z.object({
-  email: z.string().trim().toLowerCase().email().max(254).optional(),
+  email: emailSchema.optional(),
   nameEn: optionalText(200),
   nameAr: optionalText(200),
   locale: localeSchema.optional(),
@@ -195,7 +205,7 @@ export const createProcessSchema = z
     requireOneName(v, ctx);
     if (!v.parentId && !v.category) {
       ctx.addIssue({
-        code: z.ZodIssueCode.custom,
+        code: 'custom',
         path: ['category'],
         message: 'CATEGORY_REQUIRED',
       });
@@ -342,7 +352,7 @@ export const spaceGrantSchema = z
         : uuidSchema.safeParse(g.principalId).success;
     if (!ok) {
       ctx.addIssue({
-        code: z.ZodIssueCode.custom,
+        code: 'custom',
         path: ['principalId'],
         message: 'INVALID_PRINCIPAL',
       });
@@ -365,7 +375,7 @@ const pageTitle = optionalText(300);
 
 function requireOneTitle(v: { titleEn?: string; titleAr?: string }, ctx: z.RefinementCtx) {
   if (!v.titleEn && !v.titleAr) {
-    ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['titleEn'], message: 'TITLE_REQUIRED' });
+    ctx.addIssue({ code: 'custom', path: ['titleEn'], message: 'TITLE_REQUIRED' });
   }
 }
 
@@ -491,10 +501,10 @@ export const gitSettingsSchema = z
   })
   .superRefine((v, ctx) => {
     if (v.enabled && !v.repository) {
-      ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['repository'], message: 'REQUIRED' });
+      ctx.addIssue({ code: 'custom', path: ['repository'], message: 'REQUIRED' });
     }
     if (v.enabled && !v.branch) {
-      ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['branch'], message: 'REQUIRED' });
+      ctx.addIssue({ code: 'custom', path: ['branch'], message: 'REQUIRED' });
     }
   });
 export type GitSettingsInput = z.infer<typeof gitSettingsSchema>;
@@ -582,7 +592,7 @@ export const reviewDecisionSchema = z
   })
   .superRefine((v, ctx) => {
     if (v.decision !== 'APPROVE' && !v.comment) {
-      ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['comment'], message: 'COMMENT_REQUIRED' });
+      ctx.addIssue({ code: 'custom', path: ['comment'], message: 'COMMENT_REQUIRED' });
     }
   });
 export type ReviewDecisionInput = z.infer<typeof reviewDecisionSchema>;
@@ -639,7 +649,7 @@ export type NotificationListQuery = z.infer<typeof notificationListQuerySchema>;
 
 export const notificationPrefSchema = z.object({ inApp: z.boolean(), email: z.boolean() });
 export const notificationPrefsSchema = z.object({
-  prefs: z.record(z.enum(NOTIFICATION_TYPES), notificationPrefSchema),
+  prefs: z.partialRecord(z.enum(NOTIFICATION_TYPES), notificationPrefSchema),
 });
 export type NotificationPrefsInput = z.infer<typeof notificationPrefsSchema>;
 
@@ -654,20 +664,20 @@ export const emailSettingsSchema = z
     /** Write-only. Omit or send an empty string to keep the stored password. */
     password: z.string().max(500).optional(),
     clearPassword: z.boolean().optional(),
-    fromAddress: z.union([z.string().trim().email().max(254), z.literal('')]).default(''),
+    fromAddress: z.union([emailAddress(false), z.literal('')]).default(''),
     fromName: trimmed(200).default(''),
   })
   .superRefine((v, ctx) => {
     if (v.enabled && !v.host) {
-      ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['host'], message: 'REQUIRED' });
+      ctx.addIssue({ code: 'custom', path: ['host'], message: 'REQUIRED' });
     }
     if (v.enabled && !v.fromAddress) {
-      ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['fromAddress'], message: 'REQUIRED' });
+      ctx.addIssue({ code: 'custom', path: ['fromAddress'], message: 'REQUIRED' });
     }
   });
 export type EmailSettingsInput = z.infer<typeof emailSettingsSchema>;
 
-export const testEmailSchema = z.object({ to: z.string().trim().toLowerCase().email().max(254) });
+export const testEmailSchema = z.object({ to: emailSchema });
 export type TestEmailInput = z.infer<typeof testEmailSchema>;
 
 // ---------- Knowledge Portal ----------
@@ -702,7 +712,7 @@ export const portalSettingsSchema = z.object({
         .superRefine((v, ctx) => {
           if (!v.titleEn && !v.titleAr) {
             ctx.addIssue({
-              code: z.ZodIssueCode.custom,
+              code: 'custom',
               path: ['titleEn'],
               message: 'TITLE_REQUIRED',
             });
