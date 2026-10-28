@@ -17,7 +17,7 @@ Steps (tick as they are committed; a new session continues at the first unticked
 
 - [x] 0. "Before" screenshots of PMS-01 (modeler tab, portal, print; EN/AR) in `docs/screenshots/modeler-design-b1/`;
       `diagram-js-minimap` added.
-- [ ] 1. Shared: layered layout builder moved to `packages/shared/src/bpmn-layout.ts` (also variable shape sizes);
+- [x] 1. Shared: layered layout builder moved to `packages/shared/src/bpmn-layout.ts` (also variable shape sizes);
       the AI builder uses it; tests.
 - [ ] 2. Web: route `/processes/:id/model` (workspace without app chrome): top bar, canvas, collapsible /
       resizable side panel (state per user in localStorage), focus mode, browser full screen; Model tab =
