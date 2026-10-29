@@ -370,5 +370,70 @@
     "pasted_other": "{{count}} steps pasted — review and generate the diagram",
     "unknownSystems": "Not in the IT systems library (left empty): {{names}}",
     "unknownNext": "Next steps not found (row: text): {{refs}}"
+  },
+  "attributes": {
+    "title": "Step attributes",
+    "durationMinutes": "Planned processing time",
+    "waitingMinutes": "Waiting time",
+    "slaMinutes": "SLA (maximum time)",
+    "slaHint": "Time allowed from the start of the step to its completion.",
+    "frequencyPerMonth": "Frequency (per month)",
+    "costPerExecution": "Cost per execution",
+    "inputsEn": "Inputs (English)",
+    "inputsAr": "Inputs (Arabic)",
+    "outputsEn": "Outputs (English)",
+    "outputsAr": "Outputs (Arabic)",
+    "unit": "unit",
+    "units": {
+      "minutes": "minutes",
+      "hours": "hours",
+      "days": "days"
+    },
+    "short": {
+      "minutes": "{{n}} min",
+      "hours": "{{n}} h",
+      "days": "{{n}} d"
+    },
+    "invalid": "A stored value is not valid; enter it again."
+  },
+  "colourBy": {
+    "title": "Colour by",
+    "legend": "Colour legend",
+    "off": "Back to the stored colours",
+    "viewOnly": "View only — the diagram's colours are not changed.",
+    "modes": {
+      "none": "Stored colours",
+      "role": "Lane / role",
+      "system": "IT system",
+      "type": "Step type",
+      "duration": "Planned duration",
+      "missing": "Missing information"
+    },
+    "categories": {
+      "none": "Not set",
+      "type": {
+        "task": "Task",
+        "approval": "Approval",
+        "system": "System step",
+        "notification": "Notification",
+        "decision": "Decision",
+        "end": "End",
+        "other": "Other"
+      },
+      "duration": {
+        "none": "No planned time",
+        "short": "Under 1 hour",
+        "medium": "1 to 8 hours",
+        "long": "More than 8 hours"
+      },
+      "missing": {
+        "complete": "Role and description set",
+        "incomplete": "Information missing"
+      }
+    },
+    "missingRole_one": "{{count}} step without a role",
+    "missingRole_other": "{{count}} steps without a role",
+    "missingDescription_one": "{{count}} step without a description",
+    "missingDescription_other": "{{count}} steps without a description"
   }
 }

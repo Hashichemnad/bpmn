@@ -406,5 +406,78 @@
     "pasted_other": "تم لصق {{count}} خطوة — راجعها وأنشئ المخطط",
     "unknownSystems": "غير موجودة في مكتبة الأنظمة (تُركت فارغة): {{names}}",
     "unknownNext": "خطوات تالية غير موجودة (الصف: النص): {{refs}}"
+  },
+  "attributes": {
+    "title": "خصائص الخطوة",
+    "durationMinutes": "وقت المعالجة المخطط",
+    "waitingMinutes": "وقت الانتظار",
+    "slaMinutes": "اتفاقية مستوى الخدمة (الحد الأقصى للوقت)",
+    "slaHint": "الوقت المسموح به من بدء الخطوة حتى إنجازها.",
+    "frequencyPerMonth": "التكرار (شهريًا)",
+    "costPerExecution": "التكلفة لكل تنفيذ",
+    "inputsEn": "المدخلات (بالإنجليزية)",
+    "inputsAr": "المدخلات (بالعربية)",
+    "outputsEn": "المخرجات (بالإنجليزية)",
+    "outputsAr": "المخرجات (بالعربية)",
+    "unit": "الوحدة",
+    "units": {
+      "minutes": "دقائق",
+      "hours": "ساعات",
+      "days": "أيام"
+    },
+    "short": {
+      "minutes": "{{n}} د",
+      "hours": "{{n}} س",
+      "days": "{{n}} ي"
+    },
+    "invalid": "إحدى القيم المحفوظة غير صالحة؛ أدخلها مرة أخرى."
+  },
+  "colourBy": {
+    "title": "التلوين حسب",
+    "legend": "دليل الألوان",
+    "off": "العودة إلى الألوان المحفوظة",
+    "viewOnly": "للعرض فقط — لا تتغير ألوان المخطط.",
+    "modes": {
+      "none": "الألوان المحفوظة",
+      "role": "المسار / الدور",
+      "system": "نظام تقنية المعلومات",
+      "type": "نوع الخطوة",
+      "duration": "المدة المخططة",
+      "missing": "معلومات ناقصة"
+    },
+    "categories": {
+      "none": "غير محدد",
+      "type": {
+        "task": "مهمة",
+        "approval": "اعتماد",
+        "system": "خطوة آلية",
+        "notification": "إشعار",
+        "decision": "قرار",
+        "end": "نهاية",
+        "other": "أخرى"
+      },
+      "duration": {
+        "none": "بلا وقت مخطط",
+        "short": "أقل من ساعة",
+        "medium": "من ساعة إلى 8 ساعات",
+        "long": "أكثر من 8 ساعات"
+      },
+      "missing": {
+        "complete": "الدور والوصف محددان",
+        "incomplete": "معلومات ناقصة"
+      }
+    },
+    "missingRole_zero": "لا توجد خطوات بلا دور",
+    "missingRole_one": "خطوة واحدة بلا دور",
+    "missingRole_two": "خطوتان بلا دور",
+    "missingRole_few": "{{count}} خطوات بلا دور",
+    "missingRole_many": "{{count}} خطوة بلا دور",
+    "missingRole_other": "{{count}} خطوة بلا دور",
+    "missingDescription_zero": "لا توجد خطوات بلا وصف",
+    "missingDescription_one": "خطوة واحدة بلا وصف",
+    "missingDescription_two": "خطوتان بلا وصف",
+    "missingDescription_few": "{{count}} خطوات بلا وصف",
+    "missingDescription_many": "{{count}} خطوة بلا وصف",
+    "missingDescription_other": "{{count}} خطوة بلا وصف"
   }
 }

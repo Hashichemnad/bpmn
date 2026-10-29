@@ -121,6 +121,14 @@ import { LabelAutocomplete } from './LabelAutocomplete';
 import { keepSelectionModule } from './keep-selection';
 import { applyRows, diagramToRows, quickModelModule, type QuickRow } from './quick-model';
 import { QuickModelView } from './QuickModelView';
+import {
+  COLOUR_BY_MODES,
+  applyColourBy,
+  clearColourBy,
+  type ColourByMode,
+  type LegendItem,
+} from './colour-by';
+import { ColourByLegend } from './ColourByLegend';
 
 type PanelTab = 'properties' | 'issues' | 'comments' | 'ai';
 
@@ -175,6 +183,10 @@ export function BpmnEditor({ process, focusElementId, readOnly = false, onClose 
   /** Diagram or Quick Model (table) view of the same model. */
   const [view, setView] = useState<'diagram' | 'table'>('diagram');
   const [tableOpened, setTableOpened] = useState(false);
+  /** "Colour by" view (view only, stored colours never change). */
+  const [colourBy, setColourBy] = useState<ColourByMode>('none');
+  const [legend, setLegend] = useState<LegendItem[]>([]);
+  const [missingCounts, setMissingCounts] = useState({ role: 0, description: 0 });
   useEffect(() => {
     if (view === 'table') setTableOpened(true);
   }, [view]);
@@ -261,6 +273,37 @@ export function BpmnEditor({ process, focusElementId, readOnly = false, onClose 
     if (!instance || !loaded) return;
     return syncLabelRefMarkers(instance, t('modeler:dictionary.marker'));
   }, [instance, loaded, t]);
+
+  // "Colour by": re-applied after every edit, when links load or the language changes.
+  useEffect(() => {
+    if (!instance || !loaded) return;
+    const eventBus = instance.get<EventBus>('eventBus');
+    let frame = 0;
+    const apply = () => {
+      cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(() => {
+        const result = applyColourBy(instance, colourBy, {
+          links: links.data ?? [],
+          locale,
+          label: (key) => t(`modeler:colourBy.categories.${key.replace(':', '.')}`),
+        });
+        setLegend(result.legend);
+        const lacks = [...result.missing.values()];
+        setMissingCounts({
+          role: lacks.filter((l) => l.includes('role')).length,
+          description: lacks.filter((l) => l.includes('description')).length,
+        });
+      });
+    };
+    apply();
+    if (colourBy === 'none') return;
+    eventBus.on(['commandStack.changed', 'import.done'], apply);
+    return () => {
+      cancelAnimationFrame(frame);
+      eventBus.off(['commandStack.changed', 'import.done'], apply);
+      clearColourBy(instance);
+    };
+  }, [instance, loaded, colourBy, links.data, locale, t]);
 
   // The colour theme (Settings → Branding) applies to new elements and the colour picker.
   const theme = settings.data?.diagramTheme;
@@ -920,6 +963,23 @@ export function BpmnEditor({ process, focusElementId, readOnly = false, onClose 
                       },
                     ]
                   : []),
+                { type: 'divider' as const },
+                {
+                  key: 'colourBy',
+                  type: 'group' as const,
+                  label: t('modeler:colourBy.title'),
+                  children: COLOUR_BY_MODES.map((mode) => ({
+                    key: `colourBy-${mode}`,
+                    label: t(`modeler:colourBy.modes.${mode}`),
+                    icon:
+                      colourBy === mode ? (
+                        <CheckCircleOutlined />
+                      ) : (
+                        <span className="ph-menu-blank" />
+                      ),
+                    onClick: () => setColourBy(mode),
+                  })),
+                },
               ],
             }}
           >
@@ -1092,6 +1152,14 @@ export function BpmnEditor({ process, focusElementId, readOnly = false, onClose 
             aria-label={t('modeler:canvas')}
           />
           {canEdit && instance && <LayoutToolbar instance={instance} selection={selection} />}
+          {colourBy !== 'none' && view === 'diagram' && (
+            <ColourByLegend
+              mode={colourBy}
+              items={legend}
+              missing={missingCounts}
+              onClose={() => setColourBy('none')}
+            />
+          )}
           {canEdit && (
             <LabelAutocomplete
               instance={instance}

@@ -67,6 +67,7 @@ import {
   type LabelSource,
 } from './label-source';
 import { SuggestionItem } from './LabelAutocomplete';
+import { StepAttributes } from './StepAttributes';
 
 interface Props {
   instance: BpmnInstance | null;
@@ -583,6 +584,10 @@ export function ElementPanel({ instance, element, process, links, canEdit }: Pro
           </Form.Item>
         )}
       </Form>
+
+      {isActivityElement(element) && (
+        <StepAttributes instance={instance} element={element} canEdit={canEdit} version={version} />
+      )}
 
       {canDrillDown(element) && (
         <>

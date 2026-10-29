@@ -13,3 +13,5 @@ export * from './diagram-theme';
 export * from './bpmn-layout';
 export * from './dictionary';
 export * from './steps';
+export * from './step-attributes';
+export * from './bpmn-graph';

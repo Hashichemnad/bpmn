@@ -63,5 +63,19 @@
   "moved": "Process moved",
   "deleteTitle": "Delete {{name}}?",
   "deleteText": "The process and its model will be removed from the repository. This is recorded in the audit log.",
-  "deleteHasChildren": "Delete or move its sub-processes first."
+  "deleteHasChildren": "Delete or move its sub-processes first.",
+  "totals": {
+    "title": "Totals (working model)",
+    "steps": "Steps",
+    "approvals": "Approval steps",
+    "decisions": "Decisions",
+    "systems": "IT systems",
+    "roles": "Roles (lanes)",
+    "mainPath": "Planned time, main path",
+    "mainPathHint_one": "Processing + waiting time of the start-to-end path that takes longest ({{count}} step). Loops back are not counted.",
+    "mainPathHint_other": "Processing + waiting time of the start-to-end path that takes longest ({{count}} steps). Loops back are not counted.",
+    "noTimes": "No times set",
+    "withoutTime_one": "{{count}} step has no planned processing time.",
+    "withoutTime_other": "{{count}} steps have no planned processing time."
+  }
 }

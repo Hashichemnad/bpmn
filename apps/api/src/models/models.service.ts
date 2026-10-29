@@ -7,6 +7,7 @@ import {
   extractBpmnElementIds,
   extractLabelRefs,
   extractLaneRoles,
+  parseBpmnGraph,
   resolveDiagramTheme,
   type ApplyThemeResultDto,
   type ContentStatus,
@@ -36,6 +37,15 @@ import { applyThemeToXml, differsOnlyInColours } from './diagram-theme-xml';
 export const APPLY_THEME_CHANGE_NOTE = 'Applied colour theme';
 /** Label of the version created when a published / approved diagram is recoloured in place. */
 export const THEME_ONLY_VERSION_LABEL = 'Theme applied (colours only)';
+
+/** Step attributes (ph:durationMinutes, …) must be valid numbers / texts within limits (D-086). */
+function assertValidStepAttributes(xml: string) {
+  const details = parseBpmnGraph(xml).nodes.flatMap((n) =>
+    n.attributeIssues.map((i) => ({ path: [n.id, i.attribute], message: i.code })),
+  );
+  if (details.length)
+    throw badRequest('INVALID_STEP_ATTRIBUTES', 'Invalid step attributes', details);
+}
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -91,6 +101,7 @@ export class ModelsService {
   ) {
     await this.assertCanChange(processId, actor);
     assertSafeBpmnXml(bpmnXml);
+    assertValidStepAttributes(bpmnXml);
     const ids = [...extractBpmnElementIds(bpmnXml)];
     await this.prisma.$transaction(async (tx) => {
       const existing = await tx.processModel.findUnique({

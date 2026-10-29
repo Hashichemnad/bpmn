@@ -119,5 +119,6 @@
   "NOT_A_TERM": "This object is not a dictionary term.",
   "TERM_ALREADY_APPROVED": "The term is already approved.",
   "TERM_NOT_PROPOSED": "Only proposed (draft) terms can be rejected.",
-  "INVALID_OWNER": "The selected owner does not exist."
+  "INVALID_OWNER": "The selected owner does not exist.",
+  "INVALID_STEP_ATTRIBUTES": "Some step attributes are invalid (times, frequency and cost must be numbers of 0 or more)."
 }

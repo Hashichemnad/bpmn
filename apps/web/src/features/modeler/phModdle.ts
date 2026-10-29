@@ -1,3 +1,5 @@
+import { STEP_NUMBER_ATTRIBUTES, STEP_TEXT_ATTRIBUTES } from '@processhub/shared';
+
 /**
  * bpmn-moddle extension for ProcessHub attributes stored in the BPMN XML:
  *   ph:nameEn / ph:nameAr       — bilingual labels (the standard `name` mirrors the active language)
@@ -8,6 +10,8 @@
  *   ph:roleId                   — lane linked to a Role of the object library (label = role name)
  *   ph:labelRef                 — label chosen from the library (dictionary term, role or IT system);
  *                                 a manual label edit removes it (D-083)
+ *   ph:durationMinutes, ph:waitingMinutes, ph:slaMinutes, ph:frequencyPerMonth,
+ *   ph:costPerExecution, ph:inputsEn / Ar, ph:outputsEn / Ar — step attributes (D-086)
  */
 export const PH_NAMESPACE = 'http://processhub.io/schema/bpmn';
 
@@ -30,6 +34,12 @@ export const phModdleDescriptor = {
         { name: 'stepKind', isAttr: true, type: 'String' },
         { name: 'roleId', isAttr: true, type: 'String' },
         { name: 'labelRef', isAttr: true, type: 'String' },
+        // Step attributes: numbers kept as strings in the XML, validated by the shared reader.
+        ...[...STEP_NUMBER_ATTRIBUTES, ...STEP_TEXT_ATTRIBUTES].map((name) => ({
+          name,
+          isAttr: true,
+          type: 'String',
+        })),
       ],
     },
   ],

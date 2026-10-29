@@ -888,3 +888,23 @@ after "Generate diagram" the draft is saved first (links to missing elements are
 systems are linked / unlinked through the existing link API. Paste from Excel reads tab-separated rows (name EN,
 name AR, performed by, IT system, type, next steps by row number or name, conditions); roles and systems are
 matched to the library by name (spelling variants folded), an unknown role still becomes a lane.
+
+## D-086 — Step attributes, "colour by" views and process totals (Modeler design B2, 2026-10-29)
+
+- **Attributes** live in the BPMN XML as `ph:` attributes of flow nodes (no database table): times in whole
+  minutes (`ph:durationMinutes`, `ph:waitingMinutes`, `ph:slaMinutes`; entered as minutes / hours / days of
+  24 h), `ph:frequencyPerMonth`, `ph:costPerExecution` (organisation currency, no unit stored), bilingual
+  free text `ph:inputsEn/Ar`, `ph:outputsEn/Ar`. They travel with versions, compare and Git export, and need no
+  migration. Every save validates them server-side with the shared reader (non-negative numbers within limits,
+  text ≤ 2,000 characters) → `400 INVALID_STEP_ATTRIBUTES` with the element and attribute in `details`.
+- **Shared BPMN reader** (`bpmn-graph.ts`): a dependency-free tokenizer for server and browser that returns
+  nodes (labels, lane, step type, attributes), flows and lanes. Used by the totals, the reports (Part 4) and the
+  modeling conventions (Part 5).
+- **Colour by** (View menu): lane / role, IT system (SUPPORTS link), step type, planned duration (none,
+  < 1 h, 1–8 h, > 8 h) and missing information (no role — no lane and no PERFORMS link — or no description).
+  View only: canvas marker classes plus one generated stylesheet that paints the renderer's shape body; the
+  stored colours and the XML never change, the view is reapplied after every edit, other elements are dimmed;
+  a legend with counts (and what is missing).
+- **Totals** on the process page (working model): steps (activities), approval steps, decisions, IT systems,
+  roles (lanes holding steps) and the planned time of the main path = the start-to-end path with the largest
+  processing + waiting time (back edges ignored, like a critical path; without times: the path with most steps).

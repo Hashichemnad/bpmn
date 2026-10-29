@@ -41,14 +41,20 @@ Steps (tick as they are committed; a new session continues at the first unticked
       SUPPORTS links; "Read from diagram". Fixes: English inputs stay LTR in the Arabic UI (Ant Design's
       `.ant-input-rtl`). Tests: shared 2, web 8, Playwright 2 (EN paste → generate → edit keeps the id;
       Arabic-only rows).
-- [ ] 3. Step attributes and "colour by" views.
+- [x] 3. Step attributes and "colour by" (D-086): side panel "Step attributes" (processing / waiting time and SLA
+      in minutes / hours / days, frequency per month, cost per execution, inputs / outputs EN/AR) stored as
+      `ph:` attributes, validated on every save (`INVALID_STEP_ATTRIBUTES`); shared BPMN reader
+      `bpmn-graph.ts`; View → Colour by (lane / role, IT system, step type, duration band, missing
+      information) as markers + generated CSS with a legend, view only; totals card on the process page
+      (steps, approvals, decisions, systems, roles, planned time of the main path). Tests: shared 7, API 3,
+      web 5, Playwright 1.
 - [ ] 4. Reports and exports (handbook .docx, RACI .xlsx, object reports).
 - [ ] 5. Modeling conventions (quality gate).
 - [ ] 6. Screenshots EN/AR, sample handbook / RACI from PMS-01, docs, verification, push, pull request.
 
 ### Next (continue here)
 
-1. Part 3 — Step attributes and "colour by" views.
+1. Part 4 — Reports and exports (handbook .docx, RACI .xlsx, object reports).
 
 ## Previous state — 2026-10-28 (dependency upgrade: zod 3 → 4, branch `deps-zod-4`)
 
