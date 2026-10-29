@@ -58,13 +58,19 @@ Steps (tick as they are committed; a new session continues at the first unticked
       audit entry, Viewers published content only (`NOT_PUBLISHED`), 40-process limit. Samples:
       `docs/samples/PMS-01-handbook-{en,ar}.docx`, `PMS-01-raci-{en,ar}.xlsx`. Tests: shared 1, API 6
       (+ authorisation matrix: the RACI route serves the portal), Playwright 1.
-- [ ] 5. Modeling conventions (quality gate).
+- [x] 5. Modeling conventions (D-088): Administration → Modeling conventions (permission `conventions.manage`:
+      Super Admin, Admin) with six rules — both-language labels, steps in a lane linked to a role, user tasks
+      described, maximum elements, no unconnected elements, approval followed by a decision — each "Check" and
+      "Required before review"; Validation panel section "Modeling conventions" (Required / Convention tags, click
+      selects the element) from the shared `checkConventions`; server refuses "Submit for review" with
+      `CONVENTIONS_NOT_MET` and the list (EN/AR dialog). Default: all warnings, none required. Tests: shared 5,
+      API 3, web 1 (+ i18n keys), Playwright 1 (+ settings page view in the admin sign-in test).
 - [ ] 6. Screenshots EN/AR, sample handbook / RACI from PMS-01, docs, verification, push, pull request.
 
 ### Next (continue here)
 
-1. Part 5 — Modeling conventions (Settings → Modeling conventions, Validation panel warnings, mandatory rules
-   checked on Submit for review). Use the shared reader `packages/shared/src/bpmn-graph.ts`.
+1. Step 6 — final verification (all tests, lint, type-check, `pnpm audit --audit-level high`), docs (README,
+   CLAUDE.md phase table), push, pull request to `main`.
 
 ## Previous state — 2026-10-28 (dependency upgrade: zod 3 → 4, branch `deps-zod-4`)
 

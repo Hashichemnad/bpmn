@@ -49,6 +49,7 @@ import {
   type AiGeneratedProcessDto,
   type AiSuggestedLinkDto,
   type BpmnIssue,
+  type ConventionIssue,
   type Locale,
   type ProcessDto,
   type ProcessSummaryDto,
@@ -64,6 +65,7 @@ import {
   useVersions,
 } from '@/api/hooks';
 import { useComments } from '@/api/governance';
+import { useConventions } from '@/api/conventions';
 import { useAuth } from '@/auth/AuthProvider';
 import { useLocale } from '@/app/LocaleProvider';
 import { useErrorMessage, useFormatDate, useLocalized } from '@/components/i18n-helpers';
@@ -92,8 +94,12 @@ import {
   buildGraph,
   exportXml,
   normaliseDiagram,
+  readLabels,
   type LabelState,
 } from './diagram';
+import { pickLabel } from './labels';
+import { ConventionIssueList } from './ConventionIssues';
+import { conventionIssues, withoutDuplicates } from './conventions';
 import { EMPTY_DIAGRAM } from './phModdle';
 import { translateModule } from './translate';
 import { downloadBlob, exportFileName, svgToPng } from './export';
@@ -208,6 +214,11 @@ export function BpmnEditor({ process, focusElementId, readOnly = false, onClose 
   const [selection, setSelection] = useState<DiagramElement[]>([]);
   const [dirty, setDirty] = useState(false);
   const [issues, setIssues] = useState<BpmnIssue[]>([]);
+  const [conventionFindings, setConventionFindings] = useState<ConventionIssue[]>([]);
+  const conventions = useConventions();
+  const conventionsRef = useRef(conventions.data);
+  conventionsRef.current = conventions.data;
+  const conventionRun = useRef(0);
   const [importError, setImportError] = useState<string | null>(null);
   const [panelTab, setPanelTab] = useState<PanelTab>('properties');
   const [versionOpen, setVersionOpen] = useState(false);
@@ -235,8 +246,21 @@ export function BpmnEditor({ process, focusElementId, readOnly = false, onClose 
 
   const revalidate = useCallback(() => {
     const inst = instanceRef.current;
-    if (inst) setIssues(validateBpmnGraph(buildGraph(inst)));
+    if (!inst) return;
+    setIssues(validateBpmnGraph(buildGraph(inst)));
+    const rules = conventionsRef.current;
+    if (!rules) return;
+    const run = ++conventionRun.current;
+    void conventionIssues(inst, rules)
+      .then((found) => {
+        if (run === conventionRun.current) setConventionFindings(found);
+      })
+      .catch(() => undefined);
   }, []);
+
+  useEffect(() => {
+    if (conventions.data) revalidate();
+  }, [conventions.data, revalidate]);
 
   const selectElement = useCallback(
     (el: DiagramElement, tab: PanelTab = 'properties') => {
@@ -764,7 +788,15 @@ export function BpmnEditor({ process, focusElementId, readOnly = false, onClose 
     );
   };
 
-  const warnings = issues.filter((i) => i.severity === 'warning').length;
+  const shownIssues = withoutDuplicates(issues, conventionFindings);
+  const issueCount = shownIssues.length + conventionFindings.length;
+  const warnings =
+    shownIssues.filter((i) => i.severity === 'warning').length + conventionFindings.length;
+  const blockingConventions = conventionFindings.some((i) => i.mandatory);
+  const labelOf = (id: string) => {
+    const el = instanceRef.current?.get<ElementRegistry>('elementRegistry').get(id);
+    return el ? pickLabel(readLabels(el.businessObject), locale) : '';
+  };
   const openComments = (comments.data ?? []).filter((c) => !c.resolvedAt).length;
   const latestVersion = versions.data?.[0];
   const lastSaved = model.data?.updatedAt
@@ -1252,17 +1284,19 @@ export function BpmnEditor({ process, focusElementId, readOnly = false, onClose 
                     label: (
                       <Space size={4}>
                         {t('modeler:issues')}
-                        {issues.length > 0 && (
+                        {issueCount > 0 && (
                           <Badge
-                            count={issues.length}
+                            count={issueCount}
                             size="small"
-                            color={warnings ? '#b45309' : '#64748b'}
+                            color={
+                              blockingConventions ? '#dc2626' : warnings ? '#b45309' : '#64748b'
+                            }
                           />
                         )}
                       </Space>
                     ),
                     children:
-                      issues.length === 0 ? (
+                      issueCount === 0 ? (
                         <Alert type="success" showIcon message={t('modeler:noIssues')} />
                       ) : (
                         <>
@@ -1273,8 +1307,18 @@ export function BpmnEditor({ process, focusElementId, readOnly = false, onClose 
                           >
                             {t('ai:analyse.explainWarnings')}
                           </AiButton>
+                          <ConventionIssueList
+                            issues={conventionFindings}
+                            labelOf={labelOf}
+                            onFocus={focusElement}
+                          />
+                          {conventionFindings.length > 0 && shownIssues.length > 0 && (
+                            <Typography.Title level={5} style={{ marginBlock: '12px 4px' }}>
+                              {t('modeler:conventions.diagramChecks')}
+                            </Typography.Title>
+                          )}
                           <ul className="ph-issues">
-                            {issues.map((i, idx) => (
+                            {shownIssues.map((i, idx) => (
                               <li key={`${i.code}-${i.elementId ?? idx}`}>
                                 <button
                                   type="button"

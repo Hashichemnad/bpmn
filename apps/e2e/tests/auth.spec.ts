@@ -48,5 +48,19 @@ test.describe('Sign-in', () => {
     await page.waitForURL((url) => !url.pathname.startsWith('/login'));
     const me = await page.evaluate(async () => (await fetch('/api/v1/auth/me')).json());
     expect(me).toMatchObject({ email: ADMIN.email, mfaEnabled: true });
+
+    // Administration → Modeling conventions (viewed only: the rules are global, other specs run
+    // with the defaults).
+    await page.getByRole('link', { name: 'Modeling conventions' }).click();
+    await expect(page.getByRole('heading', { name: 'Modeling conventions' })).toBeVisible();
+    await expect(
+      page.getByRole('switch', { name: 'Steps in a lane linked to a role — Check' }),
+    ).toBeChecked();
+    await expect(
+      page.getByRole('switch', {
+        name: 'Steps in a lane linked to a role — Required before review',
+      }),
+    ).toBeVisible();
+    await expect(page.getByRole('spinbutton', { name: 'Maximum elements' })).toHaveValue('50');
   });
 });

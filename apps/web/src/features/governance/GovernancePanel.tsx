@@ -31,7 +31,13 @@ import {
 } from '@ant-design/icons';
 import dayjs, { type Dayjs } from 'dayjs';
 import { useTranslation } from 'react-i18next';
-import type { ContentType, GovernanceInfoDto, ItemGovernanceInput } from '@processhub/shared';
+import type {
+  ContentType,
+  ConventionIssue,
+  GovernanceInfoDto,
+  ItemGovernanceInput,
+} from '@processhub/shared';
+import { ApiError } from '@/api/client';
 import {
   useGovernance,
   useGovernanceAction,
@@ -86,9 +92,47 @@ export function GovernancePanel({ type, id }: { type: ContentType; id: string })
       form.resetFields();
       return true;
     } catch (err) {
+      if (err instanceof ApiError && err.code === 'CONVENTIONS_NOT_MET') {
+        showConventions(err);
+        return false;
+      }
       message.error(errorMessage(err));
       return false;
     }
+  };
+
+  /** Mandatory modeling conventions block the submission (D-088): list what to fix. */
+  const showConventions = (err: ApiError) => {
+    const issues =
+      (err.details as { issues?: (ConventionIssue & { nameEn?: string; nameAr?: string })[] })
+        ?.issues ?? [];
+    modal.error({
+      title: t('governance:submit.conventionsTitle'),
+      width: 560,
+      content: (
+        <>
+          <Typography.Paragraph>{errorMessage(err)}</Typography.Paragraph>
+          <ul className="ph-convention-failures">
+            {issues.slice(0, 12).map((i, idx) => (
+              <li key={`${i.rule}-${i.elementId ?? idx}`}>
+                {t(`modeler:conventions.rules.${i.rule}`, { count: i.count, max: i.max })}
+                {i.elementId && (
+                  <Typography.Text type="secondary">
+                    {' — '}
+                    {loc({ nameEn: i.nameEn ?? '', nameAr: i.nameAr ?? '' }) || i.elementId}
+                  </Typography.Text>
+                )}
+              </li>
+            ))}
+          </ul>
+          {issues.length > 12 && (
+            <Typography.Text type="secondary">
+              {t('governance:submit.conventionsMore', { count: issues.length - 12 })}
+            </Typography.Text>
+          )}
+        </>
+      ),
+    });
   };
 
   const confirm = (content: string, a: Parameters<typeof act.mutateAsync>[0], done: string) =>

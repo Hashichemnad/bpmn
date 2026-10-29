@@ -933,3 +933,21 @@ matched to the library by name (spelling variants folded), an unknown role still
   (`NOT_PUBLISHED` when the root is not published; unpublished sub-processes and unreadable pages are left out).
   Object reports need `objects.read` and `processes.read`. Every download writes an `EXPORT` audit entry (report,
   source, language, processes).
+
+## D-088 — Modeling conventions as a quality gate (Modeler design B2, 2026-10-29)
+
+- **Rules** (shared `packages/shared/src/conventions.ts`): labels in both languages (every step), steps in a lane
+  linked to a library role, user tasks described (either language), diagram size (at most N flow elements, default
+  50, 5 – 1,000), no unconnected elements, approval steps followed directly by a decision (exclusive, inclusive,
+  complex or event-based gateway). "Step" = activity, as in the totals and reports.
+- **Setting** `modeling.conventions` per rule `{ enabled, mandatory }` (mandatory implies enabled) plus
+  `maxElements`; shipped default: every rule enabled as a warning, none mandatory, so nothing changes for existing
+  processes until an Admin decides. Edited in Administration → Modeling conventions by holders of the new
+  permission `conventions.manage` (Super Admin and Admin — Admins manage content structure; system settings stay
+  Super Admin only), audited; read by everyone with `processes.read`.
+- **One check, two places**: the modeler exports its XML and runs the shared reader (`parseBpmnGraph`) and
+  `checkConventions` after every change, so the Validation panel shows exactly what the server checks. The server
+  runs it on "Submit for review" against the version being submitted (processes only) and refuses with
+  `400 CONVENTIONS_NOT_MET` listing the failed mandatory rules and element labels (EN/AR); the panel lists them
+  with a "Required" tag. Processes already in review or published are not re-checked until their next submission.
+- The basic diagram check "not connected" is hidden for elements the convention already reports (no duplicates).

@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { DocsModule } from '../docs/docs.module';
+import { ConventionsModule } from '../conventions/conventions.module';
 import { ContentService } from './content.service';
 import { WorkflowsService } from './workflows.service';
 import { ReviewsService } from './reviews.service';
@@ -16,7 +17,7 @@ import {
 } from './governance.controller';
 
 @Module({
-  imports: [DocsModule],
+  imports: [DocsModule, ConventionsModule],
   controllers: [
     GovernanceController,
     WorkflowsController,

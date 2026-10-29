@@ -19,6 +19,7 @@ import {
   BookOutlined,
   BranchesOutlined,
   CheckSquareOutlined,
+  SafetyCertificateOutlined,
   DashboardOutlined,
   FileOutlined,
   GlobalOutlined,
@@ -216,6 +217,13 @@ export function AppLayout() {
         label: <Link to="/settings/workflows">{t('nav.workflows')}</Link>,
       });
     }
+    if (can(PERMISSIONS.CONVENTIONS_MANAGE)) {
+      admin.push({
+        key: '/settings/conventions',
+        icon: <SafetyCertificateOutlined />,
+        label: <Link to="/settings/conventions">{t('nav.conventions')}</Link>,
+      });
+    }
     if (can(PERMISSIONS.PORTAL_MANAGE)) {
       admin.push({
         key: '/settings/portal',
@@ -253,6 +261,7 @@ export function AppLayout() {
       '/admin/departments',
       '/admin/audit',
       '/settings/workflows',
+      '/settings/conventions',
       '/settings/portal',
       '/settings',
     ].find((k) => p.startsWith(k));

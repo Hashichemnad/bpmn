@@ -327,5 +327,41 @@
     "noticeDetail_other": "{{count}} existing diagrams have no colours yet. Settings → Diagram colours → “Apply theme to existing diagrams” colours them (with a preview of what changes).",
     "noticeOpen": "Open diagram colours",
     "noticeDismiss": "Dismiss"
+  },
+  "conventions": {
+    "title": "Modeling conventions",
+    "subtitle": "House rules for diagrams: enabled rules show as warnings in the Validation panel; mandatory rules must pass before a process can be submitted for review.",
+    "rule": "Rule",
+    "enabled": "Check",
+    "mandatory": "Required before review",
+    "maxElements": "Maximum elements",
+    "reset": "Default rules",
+    "footnote": "The rules apply to all processes. Processes already in review or published are not affected until their next submission.",
+    "rules": {
+      "bilingualLabels": {
+        "title": "Labels in both languages",
+        "hint": "Every step has a label in English and in Arabic."
+      },
+      "laneRole": {
+        "title": "Steps in a lane linked to a role",
+        "hint": "Every step sits in a lane, and the lane is linked to a role from the library."
+      },
+      "userTaskDescription": {
+        "title": "User tasks are described",
+        "hint": "Every user task has a description (in either language)."
+      },
+      "maxElements": {
+        "title": "Diagram size",
+        "hint": "A diagram has at most the number of elements below (events, steps and decisions); split larger processes into sub-processes."
+      },
+      "noUnconnected": {
+        "title": "No unconnected elements",
+        "hint": "Every element is connected to the flow."
+      },
+      "approvalDecision": {
+        "title": "Approval followed by a decision",
+        "hint": "An approval step leads straight into a decision (gateway) with its outcomes, such as approved / returned / rejected."
+      }
+    }
   }
 }

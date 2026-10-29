@@ -435,5 +435,21 @@
     "missingRole_other": "{{count}} steps without a role",
     "missingDescription_one": "{{count}} step without a description",
     "missingDescription_other": "{{count}} steps without a description"
+  },
+  "conventions": {
+    "title": "Modeling conventions",
+    "diagramChecks": "Diagram checks",
+    "required": "Required",
+    "warning": "Convention",
+    "blocking_one": "1 required rule is not met: fix it before submitting for review.",
+    "blocking_other": "{{count}} required rules are not met: fix them before submitting for review.",
+    "rules": {
+      "bilingualLabels": "Step needs a label in English and in Arabic.",
+      "laneRole": "Step is not in a lane linked to a role.",
+      "userTaskDescription": "User task has no description.",
+      "maxElements": "The diagram has {{count}} elements; the limit is {{max}}. Split it into sub-processes.",
+      "noUnconnected": "Element is not connected to the flow.",
+      "approvalDecision": "Approval step is not followed by a decision."
+    }
   }
 }

@@ -324,6 +324,8 @@ zod / UUID pipe; file uploads are checked in the service (allow-list, content sn
 | DELETE | `/settings/logo`                             | `settings.manage`                                         | —                                   | default    |
 | GET    | `/settings/logo`                             | **public**                                                | —                                   | default    |
 | POST   | `/settings/logo`                             | `settings.manage`                                         | file                                | default    |
+| GET    | `/settings/modeling-conventions`             | `processes.read`                                          | —                                   | default    |
+| PUT    | `/settings/modeling-conventions`             | `conventions.manage`                                      | body                                | default    |
 | GET    | `/settings/public`                           | **public**                                                | —                                   | default    |
 | GET    | `/spaces`                                    | `docs.read`                                               | —                                   | default    |
 | POST   | `/spaces`                                    | `docs.manage`                                             | body                                | default    |

@@ -51,6 +51,8 @@ export const PERMISSIONS = {
   DICTIONARY_PROPOSE: 'dictionary.propose',
   /** Approve or reject proposed terms and change approved ones. */
   DICTIONARY_APPROVE: 'dictionary.approve',
+  /** Modeling conventions: which house rules apply and which block a submission. */
+  CONVENTIONS_MANAGE: 'conventions.manage',
 } as const;
 export type Permission = (typeof PERMISSIONS)[keyof typeof PERMISSIONS];
 export const ALL_PERMISSIONS: Permission[] = Object.values(PERMISSIONS);
@@ -293,6 +295,7 @@ export const SETTING_KEYS = {
   DIAGRAM_THEME: 'branding.diagramTheme',
   /** Set when the post-upgrade "run Apply theme" notice was dismissed or the theme applied. */
   DIAGRAM_THEME_NOTICE: 'branding.diagramThemeNotice',
+  MODELING_CONVENTIONS: 'modeling.conventions',
 } as const;
 
 /** Logo upload limits. */

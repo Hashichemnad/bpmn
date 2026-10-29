@@ -16,6 +16,7 @@ import { ModelsModule } from './models/models.module';
 import { ObjectsModule } from './objects/objects.module';
 import { DictionaryModule } from './dictionary/dictionary.module';
 import { ReportsModule } from './reports/reports.module';
+import { ConventionsModule } from './conventions/conventions.module';
 import { EventsModule } from './events/domain-events';
 import { DocsModule } from './docs/docs.module';
 import { SearchModule } from './search/search.module';
@@ -56,6 +57,7 @@ import { AllExceptionsFilter } from './common/http-exception.filter';
     ObjectsModule,
     DictionaryModule,
     ReportsModule,
+    ConventionsModule,
     DocsModule,
     SearchModule,
     IntegrationsModule,

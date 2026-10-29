@@ -44,6 +44,7 @@ import { PortalSearchPage } from '@/features/portal/PortalSearchPage';
 import { MyProcessesPage } from '@/features/portal/MyProcessesPage';
 import { MyFeedbackPage } from '@/features/portal/MyFeedbackPage';
 import { PortalSettingsPage } from '@/features/portal/PortalSettingsPage';
+import { ConventionsSettingsPage } from '@/features/settings/ConventionsSettingsPage';
 import { PortalPrintProcess } from '@/features/portal/PortalPrintProcess';
 import { PortalPrintPage } from '@/features/portal/PortalPrintPage';
 
@@ -142,6 +143,14 @@ export const routes: RouteObject[] = [
                     element: (
                       <RequirePermission all={[P.GOVERNANCE_MANAGE]}>
                         <WorkflowsSettingsPage />
+                      </RequirePermission>
+                    ),
+                  },
+                  {
+                    path: 'settings/conventions',
+                    element: (
+                      <RequirePermission all={[P.CONVENTIONS_MANAGE]}>
+                        <ConventionsSettingsPage />
                       </RequirePermission>
                     ),
                   },
