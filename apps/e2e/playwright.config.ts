@@ -10,6 +10,9 @@ import { defineConfig, devices } from '@playwright/test';
 export default defineConfig({
   testDir: './tests',
   fullyParallel: false,
+  // One worker: the specs share one database and the demo users' saved language (several specs
+  // switch a user to Arabic), so files running side by side would change each other's UI.
+  workers: 1,
   retries: process.env.CI ? 1 : 0,
   reporter: [['list']],
   use: {

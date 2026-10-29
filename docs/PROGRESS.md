@@ -2,7 +2,7 @@
 
 Read this together with `CLAUDE.md` at the start of every session.
 
-## Current state — 2026-10-28 (Modeler design — Part B2: smarter modeling and reports, branch `modeler-design-b2`)
+## Current state — 2026-10-29 (Modeler design — Part B2: smarter modeling and reports, branch `modeler-design-b2`)
 
 Everything up to Modeler design Part B1 and the zod 4 upgrade is merged into `main`. Part B2 adds browser
 tests in CI, a Dictionary with label autocomplete, Quick Model (table entry), step attributes with "colour by"
@@ -65,12 +65,21 @@ Steps (tick as they are committed; a new session continues at the first unticked
       selects the element) from the shared `checkConventions`; server refuses "Submit for review" with
       `CONVENTIONS_NOT_MET` and the list (EN/AR dialog). Default: all warnings, none required. Tests: shared 5,
       API 3, web 1 (+ i18n keys), Playwright 1 (+ settings page view in the admin sign-in test).
-- [ ] 6. Screenshots EN/AR, sample handbook / RACI from PMS-01, docs, verification, push, pull request.
+- [x] 6. Screenshots EN/AR (`docs/screenshots/modeler-design-b2/`, prefix = part), samples from PMS-01
+      (`docs/samples/PMS-01-handbook-{en,ar}.docx`, `PMS-01-raci-{en,ar}.xlsx`), docs (README, CLAUDE.md phase
+      table and data model, DECISIONS D-083 – D-088, BACKLOG, SECURITY), verification, pull request.
+      Verification on 2026-10-29: shared 125, web 79, API 332 tests pass; Playwright 26 tests pass in 2.7 min
+      (now one worker: the specs share the demo users' saved language); lint, format and type-check clean;
+      `pnpm audit --audit-level high` clean (8 moderate, 1 low: `minio` → stream-json / decode-uri-component,
+      `nodemailer` 3 new moderate advisories already on `main`, `exceljs` → `uuid` 8 — see SECURITY SEC-09).
 
 ### Next (continue here)
 
-1. Step 6 — final verification (all tests, lint, type-check, `pnpm audit --audit-level high`), docs (README,
-   CLAUDE.md phase table), push, pull request to `main`.
+1. Review and merge the pull request `modeler-design-b2` → `main` (decisions for the product owner are listed
+   in the pull request: default conventions, RACI R / A only, Admins managing conventions, the e2e suite on one
+   worker).
+2. Then: update `nodemailer` (moderate advisories, separate dependency branch), Phase 6 part 4 step 6 and
+   Phase 4 (GRC, EA, KPIs + Salesforce) as before.
 
 ## Previous state — 2026-10-28 (dependency upgrade: zod 3 → 4, branch `deps-zod-4`)
 
