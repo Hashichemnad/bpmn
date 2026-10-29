@@ -129,6 +129,7 @@ import {
   type LegendItem,
 } from './colour-by';
 import { ColourByLegend } from './ColourByLegend';
+import { ReportDialog, type ReportKind } from '@/features/reports/ReportDialog';
 
 type PanelTab = 'properties' | 'issues' | 'comments' | 'ai';
 
@@ -187,6 +188,7 @@ export function BpmnEditor({ process, focusElementId, readOnly = false, onClose 
   const [colourBy, setColourBy] = useState<ColourByMode>('none');
   const [legend, setLegend] = useState<LegendItem[]>([]);
   const [missingCounts, setMissingCounts] = useState({ role: 0, description: 0 });
+  const [report, setReport] = useState<ReportKind | null>(null);
   useEffect(() => {
     if (view === 'table') setTableOpened(true);
   }, [view]);
@@ -1086,6 +1088,17 @@ export function BpmnEditor({ process, focusElementId, readOnly = false, onClose 
                 },
                 { key: 'svg', label: t('modeler:exportSvg'), onClick: () => void doExport('svg') },
                 { key: 'png', label: t('modeler:exportPng'), onClick: () => void doExport('png') },
+                { type: 'divider' as const },
+                {
+                  key: 'handbook',
+                  label: t('processes:reports.handbook'),
+                  onClick: () => setReport('handbook'),
+                },
+                {
+                  key: 'raci',
+                  label: t('processes:reports.raci'),
+                  onClick: () => setReport('raci'),
+                },
               ],
             }}
           >
@@ -1406,6 +1419,14 @@ export function BpmnEditor({ process, focusElementId, readOnly = false, onClose 
         onFocusElement={focusElement}
         onClose={() => setAiDialog(null)}
       />
+      {report && (
+        <ReportDialog
+          kind={report}
+          process={process}
+          hasChildren={process.children.length > 0}
+          onClose={() => setReport(null)}
+        />
+      )}
       <VersionsDrawer
         processId={process.id}
         open={historyOpen}

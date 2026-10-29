@@ -173,3 +173,59 @@ export async function apiStream(
     }
   }
 }
+
+/** A file returned by the API (reports and exports). */
+export interface DownloadedFile {
+  blob: Blob;
+  fileName: string;
+}
+
+/** File name from `Content-Disposition` (RFC 5987 `filename*` first). */
+export function dispositionFileName(header: string | null, fallback: string): string {
+  const star = /filename\*=UTF-8''([^;]+)/i.exec(header ?? '')?.[1];
+  if (star) {
+    try {
+      return decodeURIComponent(star);
+    } catch {
+      /* malformed: use the fallback */
+    }
+  }
+  return /filename="([^"]+)"/i.exec(header ?? '')?.[1] ?? fallback;
+}
+
+/** Like `api()`, but returns the response body as a file (with its name). */
+export async function apiDownload(
+  path: string,
+  opts: RequestOptions = {},
+  fallbackName = 'download',
+): Promise<DownloadedFile> {
+  const method = opts.method ?? 'GET';
+  const headers: Record<string, string> = {};
+  if (opts.body !== undefined) headers['Content-Type'] = 'application/json';
+  if (method !== 'GET') headers[CSRF_HEADER] = await csrfToken();
+  const res = await fetch(buildUrl(path, opts.query), {
+    method,
+    headers,
+    body: opts.body === undefined ? undefined : JSON.stringify(opts.body),
+    credentials: 'same-origin',
+    signal: opts.signal,
+  });
+  if (res.status === 401 && !opts.noRefresh) {
+    if (await refreshSession())
+      return apiDownload(path, { ...opts, noRefresh: true }, fallbackName);
+    sessionExpiredListeners.forEach((fn) => fn());
+  }
+  if (!res.ok) {
+    let err: Partial<ApiErrorBody> = {};
+    try {
+      err = (await res.json()) as ApiErrorBody;
+    } catch {
+      /* non-JSON error */
+    }
+    throw new ApiError(res.status, err.code ?? 'ERROR', err.message ?? res.statusText, err.details);
+  }
+  return {
+    blob: await res.blob(),
+    fileName: dispositionFileName(res.headers.get('content-disposition'), fallbackName),
+  };
+}

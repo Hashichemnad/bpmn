@@ -48,13 +48,23 @@ Steps (tick as they are committed; a new session continues at the first unticked
       information) as markers + generated CSS with a legend, view only; totals card on the process page
       (steps, approvals, decisions, systems, roles, planned time of the main path). Tests: shared 7, API 3,
       web 5, Playwright 1.
-- [ ] 4. Reports and exports (handbook .docx, RACI .xlsx, object reports).
+- [x] 4. Reports and exports (D-087): process handbook (.docx) for a process or its branch — cover with logo,
+      contents, per process description, details (owner, version, approval), diagram on a landscape page, step
+      table in flow order, linked documents and SOP page text — fully RTL in Arabic; RACI (.xlsx: RACI, IT
+      systems, steps with attributes, legend; Arabic sheets right-to-left); object report "where used"
+      (.xlsx) on the object page. Process page → More (workspace: working or published version, language,
+      sub-processes), portal process page → Reports (published only), workspace import / export menu.
+      Diagrams drawn in the browser (PNG), documents built on the server (`docx`, `exceljs`), `EXPORT`
+      audit entry, Viewers published content only (`NOT_PUBLISHED`), 40-process limit. Samples:
+      `docs/samples/PMS-01-handbook-{en,ar}.docx`, `PMS-01-raci-{en,ar}.xlsx`. Tests: shared 1, API 6
+      (+ authorisation matrix: the RACI route serves the portal), Playwright 1.
 - [ ] 5. Modeling conventions (quality gate).
 - [ ] 6. Screenshots EN/AR, sample handbook / RACI from PMS-01, docs, verification, push, pull request.
 
 ### Next (continue here)
 
-1. Part 4 — Reports and exports (handbook .docx, RACI .xlsx, object reports).
+1. Part 5 — Modeling conventions (Settings → Modeling conventions, Validation panel warnings, mandatory rules
+   checked on Submit for review). Use the shared reader `packages/shared/src/bpmn-graph.ts`.
 
 ## Previous state — 2026-10-28 (dependency upgrade: zod 3 → 4, branch `deps-zod-4`)
 

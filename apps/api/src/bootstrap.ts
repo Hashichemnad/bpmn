@@ -22,6 +22,9 @@ export function configureApp(app: NestExpressApplication): INestApplication {
     }),
   );
   app.use(cookieParser());
+  // The process handbook carries diagram images (PNG, base64) rendered in the browser (D-087);
+  // 10 MB stays below the reverse proxies' request limit (nginx 11 MB, Caddy 12 MB).
+  app.use('/api/v1/reports/handbook', json({ limit: '10mb' }));
   app.use(json({ limit: config.BODY_LIMIT }));
   app.use(urlencoded({ extended: false, limit: '100kb' }));
   app.enableCors({

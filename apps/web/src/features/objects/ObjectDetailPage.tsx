@@ -1,7 +1,13 @@
 import { useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { App, Button, Card, Col, Descriptions, Flex, Row, Table, Tag, Typography } from 'antd';
-import { CheckOutlined, DeleteOutlined, EditOutlined, FormOutlined } from '@ant-design/icons';
+import {
+  CheckOutlined,
+  DeleteOutlined,
+  EditOutlined,
+  FileExcelOutlined,
+  FormOutlined,
+} from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
 import type { ObjectUsageDto } from '@processhub/shared';
 import { useObject, useObjectUsage } from '@/api/hooks';
@@ -15,6 +21,8 @@ import { ObjectFormModal } from './ObjectFormModal';
 import { useConfirmDeleteObject } from './useConfirmDeleteObject';
 import { useObjectAccess } from './term-access';
 import { RenameModal } from './RenameModal';
+import { useReports } from '@/features/reports/useReports';
+import { useLocale } from '@/app/LocaleProvider';
 
 const LIBRARY_PATH: Record<string, string> = {
   ROLE: '/library/roles',
@@ -32,6 +40,8 @@ export function ObjectDetailPage() {
   const { message } = App.useApp();
   const approve = useApproveTerm();
   const [renaming, setRenaming] = useState(false);
+  const reports = useReports();
+  const { locale } = useLocale();
   const formatDate = useFormatDate();
   const navigate = useNavigate();
   const object = useObject(id);
@@ -183,7 +193,19 @@ export function ObjectDetailPage() {
           <Card
             title={t('objects:whereUsed')}
             extra={
-              <Tag color="blue">{t('objects:usedInSteps', { count: usage.data?.length ?? 0 })}</Tag>
+              <Flex gap={8} align="center">
+                <Tag color="blue">
+                  {t('objects:usedInSteps', { count: usage.data?.length ?? 0 })}
+                </Tag>
+                <Button
+                  size="small"
+                  icon={<FileExcelOutlined />}
+                  loading={reports.busy}
+                  onClick={() => void reports.objectReport(o.id, locale)}
+                >
+                  {t('objects:exportUsage')}
+                </Button>
+              </Flex>
             }
           >
             {usage.isError ? (

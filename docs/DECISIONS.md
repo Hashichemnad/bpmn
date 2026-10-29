@@ -908,3 +908,28 @@ matched to the library by name (spelling variants folded), an unknown role still
 - **Totals** on the process page (working model): steps (activities), approval steps, decisions, IT systems,
   roles (lanes holding steps) and the planned time of the main path = the start-to-end path with the largest
   processing + waiting time (back edges ignored, like a critical path; without times: the path with most steps).
+
+## D-087 — Reports and exports: handbook (.docx), RACI and object reports (.xlsx) (Modeler design B2, 2026-10-29)
+
+- **Built on the server** with `docx` (Word) and `exceljs` (Excel): one place for permission checks, the audit
+  entry and the bilingual layout. Arabic files are fully right-to-left (bidirectional paragraphs and right-to-left
+  runs, visually right-to-left tables in Word; right-to-left sheet views in Excel), in Arial (installed everywhere and covers Arabic; the
+  self-hosted web fonts are not embedded in Office files).
+- **Diagram images are rendered in the browser** (bpmn-js viewer → embedded fonts → PNG, width by number of
+  processes) and sent with the request, so the server needs no headless browser. The server accepts PNG only
+  (signature and size checked, `INVALID_IMAGE`); the handbook route alone allows a 10 MB JSON body (nginx 11 MB,
+  Caddy 12 MB). A branch is limited to 40 processes (`REPORT_TOO_LARGE`); the client asks for the plan first.
+- **Handbook**: cover (logo when PNG / JPEG, organisation name, source, date, user), table of contents (Word fills
+  the page numbers on open), per process: description, details (code, category, status, owner, department,
+  version and label, approved on / by, published on), diagram on its own landscape page, step table in flow
+  order (type, role, IT system, description, attributes), linked documents (library DOCUMENT objects) and the
+  text of linked SOP pages; page numbers in the footer.
+- **RACI**: steps × roles — a role is the step's lane role (or lane name) plus PERFORMS links; **R** = performs,
+  **A** = approves (approval steps); C / I are not modelled yet (BACKLOG). Extra sheets: IT systems per step,
+  steps with their attributes, legend. **Object report**: every process and step where a role, system, term,
+  document, risk, control or KPI is used.
+- **Permissions**: users with `processes.read` choose the working or the published version; everyone else
+  (Viewers, from the portal) always gets the published version, limited to what the Knowledge Portal shows them
+  (`NOT_PUBLISHED` when the root is not published; unpublished sub-processes and unreadable pages are left out).
+  Object reports need `objects.read` and `processes.read`. Every download writes an `EXPORT` audit entry (report,
+  source, language, processes).

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { parseBpmnGraph, processTotals } from './bpmn-graph';
+import { flowOrder, parseBpmnGraph, processTotals } from './bpmn-graph';
 import { durationBand, readStepAttributes, splitMinutes } from './step-attributes';
 
 const xml = (body: string, lanes = '') => `<?xml version="1.0" encoding="UTF-8"?>
@@ -112,5 +112,16 @@ describe('step attributes', () => {
     expect(splitMinutes(2880)).toEqual({ value: 2, unit: 'days' });
     expect(splitMinutes(120)).toEqual({ value: 2, unit: 'hours' });
     expect(splitMinutes(90)).toEqual({ value: 90, unit: 'minutes' });
+  });
+});
+
+describe('flowOrder', () => {
+  it('lists nodes breadth-first from the start, then the unreached ones', () => {
+    const g = parseBpmnGraph(
+      xml(`<bpmn:task id="Z" /><bpmn:startEvent id="S" /><bpmn:task id="B" /><bpmn:task id="A" />
+        <bpmn:sequenceFlow id="f1" sourceRef="S" targetRef="A" />
+        <bpmn:sequenceFlow id="f2" sourceRef="A" targetRef="B" />`),
+    );
+    expect(flowOrder(g).map((n) => n.id)).toEqual(['S', 'A', 'B', 'Z']);
   });
 });

@@ -249,6 +249,8 @@ export const AUDIT_ACTIONS = [
   'MFA_DISABLE',
   'MFA_RESET',
   'MFA_RECOVERY_CODES',
+  /** A report or export was downloaded (handbook, RACI, object report). */
+  'EXPORT',
 ] as const;
 export type AuditAction = (typeof AUDIT_ACTIONS)[number];
 
@@ -515,3 +517,14 @@ export type PortalSearchType = (typeof PORTAL_SEARCH_TYPES)[number];
 
 export const PORTAL_MAX_QUICK_LINKS = 12;
 export const PORTAL_MAX_FEATURED = 12;
+
+// ---------- Reports and exports (Modeler design B2) ----------
+/** Working model (workspace) or the published version (portal; the only one Viewers get). */
+export const REPORT_SOURCES = ['working', 'published'] as const;
+export type ReportSource = (typeof REPORT_SOURCES)[number];
+export const REPORT_KINDS = ['handbook', 'raci', 'object'] as const;
+export type ReportKind = (typeof REPORT_KINDS)[number];
+/** Processes in one handbook (a branch of the process house). */
+export const HANDBOOK_MAX_PROCESSES = 40;
+/** One diagram image (PNG, base64) sent for the handbook. */
+export const HANDBOOK_IMAGE_MAX_CHARS = 3_000_000;

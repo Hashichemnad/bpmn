@@ -1,7 +1,14 @@
 import { useState } from 'react';
 import { Link, useParams, useSearchParams } from 'react-router-dom';
-import { Button, Card, Col, Descriptions, List, Row, Space, Typography } from 'antd';
-import { BranchesOutlined, FilePdfOutlined, FileTextOutlined } from '@ant-design/icons';
+import { Button, Card, Col, Descriptions, Dropdown, List, Row, Space, Typography } from 'antd';
+import {
+  BranchesOutlined,
+  DownOutlined,
+  FileExcelOutlined,
+  FilePdfOutlined,
+  FileTextOutlined,
+  FileWordOutlined,
+} from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
 import { usePortalProcess } from '@/api/portal';
 import { useLocale } from '@/app/LocaleProvider';
@@ -15,6 +22,7 @@ import type { StepInfo } from './step-info';
 import { PortalMeta } from './PortalMeta';
 import { StepDetails } from './StepDetails';
 import { portalItemLink } from './portal-links';
+import { ReportDialog, type ReportKind } from '@/features/reports/ReportDialog';
 
 /** A published process: official version, diagram with step details, sub-processes, documentation. */
 export function PortalProcessPage() {
@@ -25,6 +33,7 @@ export function PortalProcessPage() {
   const loc = useLocalized();
   const process = usePortalProcess(processId);
   const [step, setStep] = useState<StepInfo | null>(null);
+  const [report, setReport] = useState<ReportKind | null>(null);
   const selectedId = step?.id ?? params.get('step');
 
   if (process.isLoading) return <LoadingState />;
@@ -69,6 +78,29 @@ export function PortalProcessPage() {
             >
               {t('portal:downloadPdf')}
             </Button>
+            <Dropdown
+              trigger={['click']}
+              menu={{
+                items: [
+                  {
+                    key: 'handbook',
+                    icon: <FileWordOutlined />,
+                    label: t('processes:reports.handbook'),
+                    onClick: () => setReport('handbook'),
+                  },
+                  {
+                    key: 'raci',
+                    icon: <FileExcelOutlined />,
+                    label: t('processes:reports.raci'),
+                    onClick: () => setReport('raci'),
+                  },
+                ],
+              }}
+            >
+              <Button>
+                {t('processes:reports.menu')} <DownOutlined />
+              </Button>
+            </Dropdown>
             <FeedbackButton type="PROCESS" id={p.id} />
           </>
         }
@@ -156,6 +188,15 @@ export function PortalProcessPage() {
           </Card>
         </Col>
       </Row>
+      {report && (
+        <ReportDialog
+          kind={report}
+          process={p}
+          hasChildren={p.children.length > 0}
+          publishedOnly
+          onClose={() => setReport(null)}
+        />
+      )}
     </>
   );
 }

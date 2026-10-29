@@ -272,3 +272,24 @@ export function processTotals(
     stepsWithoutDuration: steps.filter((s) => s.attributes.durationMinutes === undefined).length,
   };
 }
+
+/**
+ * Nodes in flow order: breadth-first from the start events along the sequence flows, then the
+ * nodes not reached, by document order (the order of Quick Model rows and report step tables).
+ */
+export function flowOrder(graph: BpmnGraph): GraphNode[] {
+  const byId = new Map(graph.nodes.map((n) => [n.id, n]));
+  const out = new Map<string, string[]>();
+  for (const f of graph.flows) out.set(f.from, [...(out.get(f.from) ?? []), f.to]);
+  const seen = new Set<string>();
+  const order: GraphNode[] = [];
+  const queue = graph.nodes.filter((n) => n.type === 'bpmn:StartEvent').map((n) => n.id);
+  while (queue.length) {
+    const id = queue.shift()!;
+    if (seen.has(id) || !byId.has(id)) continue;
+    seen.add(id);
+    order.push(byId.get(id)!);
+    queue.push(...(out.get(id) ?? []));
+  }
+  return [...order, ...graph.nodes.filter((n) => !seen.has(n.id))];
+}

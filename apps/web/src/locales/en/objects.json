@@ -141,5 +141,6 @@
     "done_other": "Renamed — {{count}} processes updated",
     "doneSkipped": "{{count}} could not be updated (see the list).",
     "nameChanged": "The name changed. Review the diagrams that use it before renaming."
-  }
+  },
+  "exportUsage": "Export to Excel"
 }

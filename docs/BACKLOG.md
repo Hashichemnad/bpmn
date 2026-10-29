@@ -8,8 +8,6 @@ where they belong; move items into the plan when that phase starts.
 Part A (colours, D-067 – D-073) and Part B1 (full-screen workspace and productivity, D-074 – D-081) are done.
 Planned for Part B2:
 
-- Process handbook / Word report generation.
-- Excel export of the steps (RACI).
 - Modeling conventions per diagram type (allowed elements, naming rules).
 - Real-time co-editing.
 
@@ -22,6 +20,11 @@ B2 follow-ups noted during the work:
   drag rows to reorder, several pools, rows for sub-processes and their content, a description column.
 - Step attributes: organisation currency in Settings; working-day calendar (8-hour days) for durations; cost
   and time simulation (Phase 5); show attributes in the portal step details; colour-by views in the portal.
+- Reports: handbook as PDF (server-side LibreOffice or a print stylesheet); a company Word template
+  (styles, header / footer) uploaded in Settings; scheduled report e-mails; RACI with consulted / informed
+  roles (C / I need a relation per step: CONSULTED / INFORMED links); handbook of a whole category (house
+  column); render the diagrams server-side (headless browser) for exports without a browser; replace
+  `exceljs` when it drops the `uuid` 8 dependency (moderate advisory, SECURITY SEC-09).
 - Rename: offer the update for published processes as a colours-only style "in place" change (today a new
   draft that needs approval again, like any other edit).
 

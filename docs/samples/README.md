@@ -1,4 +1,4 @@
-# Sample diagrams
+# Sample diagrams and reports
 
 Real-world reference content for testing the modeler, viewer and imports.
 
@@ -6,6 +6,8 @@ Real-world reference content for testing the modeler, viewer and imports.
 |---|---|
 | `PMS-01-Program-Request-Approval.bpmn` | DOF Portfolio Management System, process 1: Program / Initiative Request & Approval. 8 lanes, 27 elements, bilingual labels (`ph:nameEn` / `ph:nameAr`), step descriptions, and colours stored as BPMN-in-Color (`color:background-color` / `color:border-color`) plus `bioc:fill` / `bioc:stroke`. |
 | `PMS-01-reference-colours-en.png` | How that file renders with plain bpmn-js: the reference colour scheme by element type. |
+| `PMS-01-handbook-en.docx`, `PMS-01-handbook-ar.docx` | Process handbook generated from PMS-01 (working version, with step times, costs and IT systems), English and Arabic (RTL). |
+| `PMS-01-raci-en.xlsx`, `PMS-01-raci-ar.xlsx` | RACI matrix of PMS-01: steps × roles, IT systems per step, steps with attributes, legend. |
 
 Colour scheme (fill / border):
 

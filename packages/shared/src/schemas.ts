@@ -34,6 +34,9 @@ import {
   PORTAL_MAX_QUICK_LINKS,
   PORTAL_SEARCH_TYPES,
   REVIEW_DECISIONS,
+  REPORT_SOURCES,
+  HANDBOOK_MAX_PROCESSES,
+  HANDBOOK_IMAGE_MAX_CHARS,
 } from './constants';
 
 const trimmed = (max: number) => z.string().trim().max(max);
@@ -823,3 +826,36 @@ export type FeedbackListQuery = z.infer<typeof feedbackListQuerySchema>;
 
 export const userDirectoryQuerySchema = z.object({ q: trimmed(100).default('') });
 export type UserDirectoryQuery = z.infer<typeof userDirectoryQuerySchema>;
+
+// ---------- Reports and exports (Modeler design B2) ----------
+export const handbookPlanSchema = z.object({
+  processId: uuidSchema,
+  /** The whole branch below the process (in process-house order). */
+  includeChildren: z.boolean().default(false),
+  source: z.enum(REPORT_SOURCES).optional(),
+});
+export type HandbookPlanInput = z.infer<typeof handbookPlanSchema>;
+
+export const handbookSchema = handbookPlanSchema.extend({
+  locale: localeSchema,
+  /** Diagram images rendered in the browser (PNG as base64), one per process. */
+  images: z
+    .array(
+      z.object({
+        processId: uuidSchema,
+        png: z
+          .string()
+          .max(HANDBOOK_IMAGE_MAX_CHARS)
+          .regex(/^[A-Za-z0-9+/]+={0,2}$/, 'INVALID_IMAGE'),
+      }),
+    )
+    .max(HANDBOOK_MAX_PROCESSES)
+    .default([]),
+});
+export type HandbookInput = z.infer<typeof handbookSchema>;
+
+export const reportQuerySchema = z.object({
+  source: z.enum(REPORT_SOURCES).optional(),
+  locale: localeSchema.default('en'),
+});
+export type ReportQuery = z.infer<typeof reportQuerySchema>;

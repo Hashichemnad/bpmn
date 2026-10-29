@@ -16,6 +16,7 @@ import type {
   Locale,
   ObjectStatus,
   ObjectType,
+  ReportSource,
   Permission,
   ProcessCategory,
   ProcessStatus,
@@ -933,4 +934,11 @@ export interface MyPortalDto {
   pages: MyPortalItemDto[];
   jobRoles: JobRoleRef[];
   department: DepartmentRef | null;
+}
+
+// ---------- Reports and exports (Modeler design B2) ----------
+/** What a handbook will contain: the diagram of each process is rendered by the browser. */
+export interface HandbookPlanDto {
+  source: ReportSource;
+  processes: { id: string; code: string; nameEn: string; nameAr: string; bpmnXml: string | null }[];
 }

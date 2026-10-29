@@ -77,5 +77,25 @@
     "noTimes": "No times set",
     "withoutTime_one": "{{count}} step has no planned processing time.",
     "withoutTime_other": "{{count}} steps have no planned processing time."
+  },
+  "reports": {
+    "menu": "Reports",
+    "handbook": "Process handbook (Word)",
+    "raci": "RACI matrix (Excel)",
+    "handbookTitle": "Process handbook — {{name}}",
+    "raciTitle": "RACI matrix — {{name}}",
+    "handbookHint": "A Word document with cover page, contents and, per process: description, owner, version and approval data, diagram, steps with roles, IT systems and attributes, linked documents and SOP pages.",
+    "raciHint": "An Excel workbook: steps × roles (R = performs, A = approves), IT systems per step, the steps with their attributes.",
+    "language": "Language",
+    "source": "Version",
+    "sourceHint": "The published version is the official one in the Knowledge Portal.",
+    "working": "Working version",
+    "published": "Published version",
+    "includeChildren": "Include all sub-processes (the whole branch)",
+    "download": "Download",
+    "preparing": "Preparing the report…",
+    "rendering": "Drawing diagram {{n}} of {{total}}…",
+    "building": "Building the document…",
+    "done": "Report downloaded"
   }
 }

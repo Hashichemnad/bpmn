@@ -98,7 +98,8 @@
       "MFA_ENABLE": "2FA turned on",
       "MFA_DISABLE": "2FA turned off",
       "MFA_RESET": "2FA reset by admin",
-      "MFA_RECOVERY_CODES": "New 2FA recovery codes"
+      "MFA_RECOVERY_CODES": "New 2FA recovery codes",
+      "EXPORT": "Report downloaded"
     },
     "entities": {
       "User": "User",
