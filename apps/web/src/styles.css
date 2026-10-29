@@ -2368,3 +2368,58 @@ button.ph-badge:focus-visible {
 .ph-panel-labelref {
   margin-block-end: 12px;
 }
+
+/* ---------- Modeler design B2: Quick Model ---------- */
+.ph-quick-wrap {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  overflow: auto;
+  background: var(--ph-bg, #f8fafc);
+}
+.ph-quick-wrap[hidden] {
+  display: none;
+}
+.ph-quick {
+  padding: 12px 16px 24px;
+}
+.ph-quick-bar {
+  margin-block-end: 10px;
+}
+.ph-quick-spacer {
+  flex: 1;
+}
+.ph-quick-hint {
+  font-size: 12px;
+}
+.ph-quick-issues {
+  margin-block-end: 10px;
+}
+.ph-quick-issues ul {
+  margin: 0;
+  padding-inline-start: 16px;
+  max-block-size: 96px;
+  overflow-y: auto;
+}
+.ph-quick-n {
+  color: #64748b;
+  font-variant-numeric: tabular-nums;
+}
+.ph-quick-columns {
+  font-size: 12px;
+  background: #f1f5f9;
+  padding: 6px 8px;
+  border-radius: 6px;
+  white-space: pre-wrap;
+}
+
+/* A field's own text direction wins over the page direction: English inputs stay left-to-right
+   in the Arabic UI (Ant Design's .ant-input-rtl would otherwise force rtl). */
+.ant-input[dir='ltr'],
+textarea.ant-input[dir='ltr'] {
+  direction: ltr;
+}
+.ant-input[dir='rtl'],
+textarea.ant-input[dir='rtl'] {
+  direction: rtl;
+}

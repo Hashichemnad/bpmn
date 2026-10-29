@@ -33,7 +33,14 @@ Steps (tick as they are committed; a new session continues at the first unticked
       approved terms only as AI translation terminology. Fixes: a click keeps the selected shape selected and
       the diagram stays still when the Arabic panel opens (double-click label editing hit the wrong shape);
       Ant Design's Arabic "(optional)". Tests: shared 9, API e2e 6 (+ seed), web 6, Playwright 4.
-- [ ] 2. Quick Model (table entry).
+- [x] 2. Quick Model (D-085): "Diagram | Quick Model" switch in the workspace; table with step EN/AR, performed
+      by (library role or free text → lane), IT system, step type (shared `steps.ts`), next step(s) with
+      bilingual condition labels; add / insert / move / delete rows, validation (errors block, warnings
+      shown); Paste from Excel (TSV, header detection, row numbers or names, library matching); "Generate
+      diagram" = one undoable command (ids kept, lanes from roles, pool when needed, auto-layout) + save +
+      SUPPORTS links; "Read from diagram". Fixes: English inputs stay LTR in the Arabic UI (Ant Design's
+      `.ant-input-rtl`). Tests: shared 2, web 8, Playwright 2 (EN paste → generate → edit keeps the id;
+      Arabic-only rows).
 - [ ] 3. Step attributes and "colour by" views.
 - [ ] 4. Reports and exports (handbook .docx, RACI .xlsx, object reports).
 - [ ] 5. Modeling conventions (quality gate).
@@ -41,7 +48,7 @@ Steps (tick as they are committed; a new session continues at the first unticked
 
 ### Next (continue here)
 
-1. Part 2 — Quick Model (table entry).
+1. Part 3 — Step attributes and "colour by" views.
 
 ## Previous state — 2026-10-28 (dependency upgrade: zod 3 → 4, branch `deps-zod-4`)
 

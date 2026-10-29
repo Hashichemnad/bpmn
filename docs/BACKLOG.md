@@ -8,7 +8,6 @@ where they belong; move items into the plan when that phase starts.
 Part A (colours, D-067 – D-073) and Part B1 (full-screen workspace and productivity, D-074 – D-081) are done.
 Planned for Part B2:
 
-- Table-based "Quick Model" entry (rows → BPMN with the shared layout).
 - Attribute-based shape colouring and step attributes (duration, cost, frequency).
 - Process handbook / Word report generation.
 - Excel export of the steps (RACI).
@@ -20,6 +19,8 @@ B2 follow-ups noted during the work:
 - Dictionary: notify the proposer when a term is approved or rejected; import / export the dictionary (Excel);
   term relations ("see also", broader / narrower); show term definitions as tooltips in the portal.
 - Autocomplete for the description fields (insert a term inside a sentence); several terms in one label.
+- Quick Model: spreadsheet keyboard navigation (arrows / Enter between cells, copy a block back to Excel),
+  drag rows to reorder, several pools, rows for sub-processes and their content, a description column.
 - Rename: offer the update for published processes as a colours-only style "in place" change (today a new
   draft that needs approval again, like any other edit).
 

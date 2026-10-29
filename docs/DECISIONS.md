@@ -860,5 +860,31 @@ diagram-js deselects the only selected shape when it is clicked again. In the wo
 on selection, so a double-click (edit label) closed and reopened the panel between the two clicks; in Arabic
 the panel sits on the left, the canvas moved and the second click hit another element (e.g. the lane). Now a
 plain click on the selected shape keeps it (`keep-selection.ts`; Esc, an empty-canvas click and Shift+click
-still deselect), and when the canvas's left edge moves (panel on the left in Arabic) the diagram is scrolled
-back so it stays where it was on screen.
+still deselect), and in Arabic, when the canvas's left edge moves (panel opening or closing on the left), the
+diagram is scrolled back so it stays where it was on screen. In English only the palette sits on the left and
+the diagram keeps moving with it as before.
+
+## D-085 — Quick Model: the table edits the live diagram (Modeler design B2, 2026-10-29)
+
+Quick Model is a second view of the same model in the workspace ("Diagram | Quick Model"), not a separate
+document. Rows are read from the diagram (one per top-level flow node except start and boundary events, in
+flow order: breadth-first from the start events, then the rest left to right) and written back by one
+command `ph.quickModel` on the bpmn-js command stack, so a single Undo reverts it:
+
+- lanes from the roles of the rows (a library role → lane with `ph:roleId`, text → lane named by it; an
+  existing lane is reused by role id or name; a pool is created when needed; lanes left empty are removed);
+- steps: existing elements keep their id (rename, type change via bpmn-js replace — also keeps the id, step
+  kind for task ↔ approval, moved to their role's lane); new rows are created; rows removed from the table are
+  removed from the diagram;
+- sequence flows between steps follow the "next step(s)" column with bilingual condition labels; a start
+  event leads to the first row;
+- then the shared auto-layout (D-077) inside the same command.
+
+Elements the table does not show (start / boundary events, data objects, annotations, message flows) are left
+alone; other flow-node types (parallel gateways, intermediate events, sub-processes) appear as read-only "other"
+rows. Step types are shared (`packages/shared/src/steps.ts`: task, approval, system, notification, decision,
+end) and reused by "colour by", reports and conventions. The IT system column is the element's SUPPORTS link:
+after "Generate diagram" the draft is saved first (links to missing elements are pruned on save), then changed
+systems are linked / unlinked through the existing link API. Paste from Excel reads tab-separated rows (name EN,
+name AR, performed by, IT system, type, next steps by row number or name, conditions); roles and systems are
+matched to the library by name (spelling variants folded), an unknown role still becomes a lane.

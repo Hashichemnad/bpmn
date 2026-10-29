@@ -9,6 +9,7 @@ import {
   Form,
   Input,
   Modal,
+  Segmented,
   Space,
   Tabs,
   Tag,
@@ -55,6 +56,7 @@ import {
 import {
   useCreateLink,
   useCreateVersion,
+  useDeleteLink,
   useLinks,
   useProcessModel,
   usePublicSettings,
@@ -117,6 +119,8 @@ import { workspaceShortcut } from './keys';
 import { applyLabelSource, syncLabelRefMarkers } from './label-source';
 import { LabelAutocomplete } from './LabelAutocomplete';
 import { keepSelectionModule } from './keep-selection';
+import { applyRows, diagramToRows, quickModelModule, type QuickRow } from './quick-model';
+import { QuickModelView } from './QuickModelView';
 
 type PanelTab = 'properties' | 'issues' | 'comments' | 'ai';
 
@@ -139,6 +143,8 @@ const AUTOSAVE_MS = 3000;
 export function BpmnEditor({ process, focusElementId, readOnly = false, onClose }: Props) {
   const { t } = useTranslation();
   const { locale, dir } = useLocale();
+  const dirRef = useRef(dir);
+  dirRef.current = dir;
   const { user } = useAuth();
   const loc = useLocalized();
   const navigate = useNavigate();
@@ -152,6 +158,7 @@ export function BpmnEditor({ process, focusElementId, readOnly = false, onClose 
   const saveModel = useSaveModel(process.id);
   const createVersion = useCreateVersion(process.id);
   const createLink = useCreateLink(process.id);
+  const deleteLink = useDeleteLink(process.id);
   const { available: aiAvailable } = useAi();
   const versions = useVersions(process.id);
   const comments = useComments('PROCESS', process.id);
@@ -165,6 +172,12 @@ export function BpmnEditor({ process, focusElementId, readOnly = false, onClose 
   const [focusMode, setFocusMode] = useState(false);
   const [fullscreen, setFullscreen] = useState(false);
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
+  /** Diagram or Quick Model (table) view of the same model. */
+  const [view, setView] = useState<'diagram' | 'table'>('diagram');
+  const [tableOpened, setTableOpened] = useState(false);
+  useEffect(() => {
+    if (view === 'table') setTableOpened(true);
+  }, [view]);
 
   const containerRef = useRef<HTMLDivElement>(null);
   const instanceRef = useRef<BpmnInstance | null>(null);
@@ -272,6 +285,7 @@ export function BpmnEditor({ process, focusElementId, readOnly = false, onClose 
               colourPickerModule(),
               autoLayoutModule,
               keepSelectionModule,
+              quickModelModule,
             ]
           : []),
       ],
@@ -320,16 +334,18 @@ export function BpmnEditor({ process, focusElementId, readOnly = false, onClose 
         .get<{ setActive(active: boolean): void }>('gridSnapping')
         .setActive(prefsRef.current.grid);
     }
-    // Keep the diagram still on screen when the canvas's left edge moves: in Arabic the side panel
+    // Arabic: keep the diagram still on screen when the canvas's left edge moves. The side panel
     // opens on the left, and a click that selects (or deselects) a shape would otherwise shift the
-    // diagram under the pointer, so a double-click to edit a label hit the wrong element.
+    // diagram under the pointer, so a double-click to edit a label hit the wrong element. (In
+    // English only the palette sits on the left; the diagram moves with it as before.)
     const container = containerRef.current;
     let left = container.getBoundingClientRect().left;
     const observer = new ResizeObserver(() => {
       const canvas = inst.get<Canvas>('canvas');
       canvas.resized();
       const now = container.getBoundingClientRect().left;
-      if (now !== left && loadedRef.current) canvas.scroll({ dx: left - now, dy: 0 });
+      if (now !== left && loadedRef.current && dirRef.current === 'rtl')
+        canvas.scroll({ dx: left - now, dy: 0 });
       left = now;
     });
     observer.observe(container);
@@ -623,6 +639,48 @@ export function BpmnEditor({ process, focusElementId, readOnly = false, onClose 
       },
     });
 
+  /** First IT system linked to an element (the table's "IT system" column). */
+  const systemOf = (elementId: string) =>
+    (links.data ?? []).find((l) => l.bpmnElementId === elementId && l.repoObject.type === 'SYSTEM')
+      ?.repoObject.id ?? null;
+
+  /**
+   * Quick Model "Generate diagram": table → diagram (one undo step), save the draft, then link the
+   * IT systems chosen in the table (SUPPORTS links, D-085).
+   */
+  const generateFromTable = async (rows: QuickRow[], original: QuickRow[]) => {
+    const inst = instanceRef.current;
+    if (!inst) return null;
+    const ids = applyRows(inst, rows, stateRef.current.locale);
+    if (!(await autosaveRef.current())) return null;
+    const idOf = (key: string) => ids.get(key) ?? key;
+    try {
+      for (const row of rows) {
+        const was = original.find((o) => o.key === row.key)?.systemId ?? null;
+        if (was === row.systemId) continue;
+        const elementId = idOf(row.key);
+        const old = (links.data ?? []).find(
+          (l) =>
+            l.bpmnElementId === elementId && l.repoObject.id === was && l.relation === 'SUPPORTS',
+        );
+        if (old) await deleteLink.mutateAsync(old.id);
+        if (row.systemId)
+          await createLink.mutateAsync({
+            bpmnElementId: elementId,
+            repoObjectId: row.systemId,
+            relation: 'SUPPORTS',
+          });
+      }
+    } catch (err) {
+      message.error(errorMessage(err));
+    }
+    setView('diagram');
+    afterLayout(() => fitWidth(inst.get<Canvas>('canvas')));
+    message.success(t('modeler:quick.generated'));
+    const systems = new Map(rows.map((r) => [idOf(r.key), r.systemId]));
+    return diagramToRows(inst, (id) => systems.get(id) ?? null);
+  };
+
   const focusElement = (id?: string) => {
     if (!id || !instanceRef.current) return;
     const el = instanceRef.current.get<ElementRegistry>('elementRegistry').get(id);
@@ -770,6 +828,18 @@ export function BpmnEditor({ process, focusElementId, readOnly = false, onClose 
           {saveState}
         </div>
         <div className="ph-ws-tools" role="toolbar" aria-label={t('modeler:workspace.toolbar')}>
+          <Segmented
+            size="small"
+            className="ph-ws-view"
+            value={view}
+            onChange={(v) => setView(v as 'diagram' | 'table')}
+            options={[
+              { value: 'diagram', label: t('modeler:quick.viewDiagram') },
+              { value: 'table', label: t('modeler:quick.viewTable') },
+            ]}
+            aria-label={t('modeler:quick.viewLabel')}
+          />
+          <span className="ph-ws-sep" />
           {canEdit && (
             <>
               <Tooltip title={t('modeler:saveHint')}>
@@ -1003,7 +1073,7 @@ export function BpmnEditor({ process, focusElementId, readOnly = false, onClose 
         />
       )}
       <div className="ph-ws-body">
-        {canEdit && (
+        {canEdit && view === 'diagram' && (
           <Palette
             instance={instance}
             collapsed={prefs.paletteCollapsed || focusMode}
@@ -1034,6 +1104,16 @@ export function BpmnEditor({ process, focusElementId, readOnly = false, onClose 
           {focusMode && (
             <div className="ph-ws-focus-hint" role="status">
               {t('modeler:workspace.focusHint')}
+            </div>
+          )}
+          {tableOpened && loaded && instance && (
+            <div className="ph-quick-wrap" hidden={view !== 'table'}>
+              <QuickModelView
+                visible={view === 'table'}
+                readRows={() => diagramToRows(instance, systemOf)}
+                canEdit={canEdit}
+                onGenerate={generateFromTable}
+              />
             </div>
           )}
           {model.isLoading && (
