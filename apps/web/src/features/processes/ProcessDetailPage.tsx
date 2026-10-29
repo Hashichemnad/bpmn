@@ -22,6 +22,8 @@ import {
   DownOutlined,
   EditOutlined,
   PlusOutlined,
+  FileExcelOutlined,
+  FileWordOutlined,
 } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
 import { PERMISSIONS, type ObjectLinkDto } from '@processhub/shared';
@@ -37,6 +39,8 @@ import { useErrorMessage, useFormatDate, useLocalized } from '@/components/i18n-
 import { ProcessFormModal } from './ProcessFormModal';
 import { ModelPreview } from '@/features/modeler/ModelPreview';
 import { RelatedDocsCard } from '@/features/docs/RelatedDocsCard';
+import { ProcessTotalsCard } from './ProcessTotalsCard';
+import { ReportDialog, type ReportKind } from '@/features/reports/ReportDialog';
 import { useRelatedPages } from '@/api/docs';
 import { useComments, useGovernance } from '@/api/governance';
 import { GovernancePanel } from '@/features/governance/GovernancePanel';
@@ -62,6 +66,7 @@ export function ProcessDetailPage() {
   const comments = useComments('PROCESS', id!);
   const [modalState, setModalState] = useState<'edit' | 'sub' | null>(null);
   const [docOpen, setDocOpen] = useState(false);
+  const [report, setReport] = useState<ReportKind | null>(null);
   const tab = (params.get('tab') as Tab) || 'overview';
 
   const linksByObject = useMemo(() => {
@@ -103,6 +108,23 @@ export function ProcessDetailPage() {
   const openModelAt = (elementId: string) => setParams({ tab: 'model', element: elementId });
 
   const actionItems = [
+    ...(p.hasModel
+      ? [
+          {
+            key: 'handbook',
+            icon: <FileWordOutlined />,
+            label: t('processes:reports.handbook'),
+            onClick: () => setReport('handbook'),
+          },
+          {
+            key: 'raci',
+            icon: <FileExcelOutlined />,
+            label: t('processes:reports.raci'),
+            onClick: () => setReport('raci'),
+          },
+          { type: 'divider' as const },
+        ]
+      : []),
     ...(can(PERMISSIONS.PROCESSES_CREATE)
       ? [
           {
@@ -149,6 +171,7 @@ export function ProcessDetailPage() {
             <Typography.Text type="secondary">{t('processes:noDescription')}</Typography.Text>
           )}
         </Card>
+        {p.hasModel && <ProcessTotalsCard processId={p.id} />}
       </Col>
       <Col xs={24} xl={8}>
         <GovernancePanel type="PROCESS" id={p.id} />
@@ -365,6 +388,14 @@ export function ProcessDetailPage() {
         <ProcessFormModal open mode="create" parent={p} onClose={() => setModalState(null)} />
       )}
       {docOpen && <GenerateDocModal process={p} open onClose={() => setDocOpen(false)} />}
+      {report && (
+        <ReportDialog
+          kind={report}
+          process={p}
+          hasChildren={p.children.length > 0}
+          onClose={() => setReport(null)}
+        />
+      )}
     </>
   );
 }

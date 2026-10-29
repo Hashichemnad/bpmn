@@ -47,6 +47,12 @@ export const PERMISSIONS = {
   PORTAL_MANAGE: 'portal.manage',
   /** See the AI usage report (requests and tokens per user, feature and month). */
   AI_USAGE_READ: 'ai.usage.read',
+  /** Propose new dictionary terms (created as drafts). */
+  DICTIONARY_PROPOSE: 'dictionary.propose',
+  /** Approve or reject proposed terms and change approved ones. */
+  DICTIONARY_APPROVE: 'dictionary.approve',
+  /** Modeling conventions: which house rules apply and which block a submission. */
+  CONVENTIONS_MANAGE: 'conventions.manage',
 } as const;
 export type Permission = (typeof PERMISSIONS)[keyof typeof PERMISSIONS];
 export const ALL_PERMISSIONS: Permission[] = Object.values(PERMISSIONS);
@@ -101,6 +107,8 @@ export const SYSTEM_ROLES: Record<
       P.MODELS_EDIT_OWN,
       P.DOCS_EDIT,
       P.GOVERNANCE_DASHBOARD,
+      P.DICTIONARY_PROPOSE,
+      P.DICTIONARY_APPROVE,
     ],
   },
   MODELER: {
@@ -114,6 +122,7 @@ export const SYSTEM_ROLES: Record<
       P.MODELS_EDIT,
       P.OBJECTS_MANAGE,
       P.DOCS_EDIT,
+      P.DICTIONARY_PROPOSE,
     ],
   },
   REVIEWER: {
@@ -158,10 +167,30 @@ export const PROCESS_STATUSES = [
 ] as const;
 export type ProcessStatus = (typeof PROCESS_STATUSES)[number];
 
-export const OBJECT_TYPES = ['ROLE', 'SYSTEM', 'DOCUMENT', 'RISK', 'CONTROL', 'KPI'] as const;
+export const OBJECT_TYPES = [
+  'ROLE',
+  'SYSTEM',
+  'DOCUMENT',
+  'RISK',
+  'CONTROL',
+  'KPI',
+  'TERM',
+] as const;
 export type ObjectType = (typeof OBJECT_TYPES)[number];
-/** Object types that have a library UI (documents since Phase 3: linked to steps in the portal). */
-export const PHASE1_OBJECT_TYPES: ObjectType[] = ['ROLE', 'SYSTEM', 'DOCUMENT'];
+/** Object types that have a library UI (documents since Phase 3, dictionary terms since B2). */
+export const PHASE1_OBJECT_TYPES: ObjectType[] = ['ROLE', 'SYSTEM', 'DOCUMENT', 'TERM'];
+
+/** Dictionary terms are proposed as DRAFT and approved; other objects are always APPROVED. */
+export const OBJECT_STATUSES = ['DRAFT', 'APPROVED'] as const;
+export type ObjectStatus = (typeof OBJECT_STATUSES)[number];
+
+/** Object types the label autocomplete in the modeler suggests. */
+export const LABEL_SOURCE_TYPES = [
+  'TERM',
+  'ROLE',
+  'SYSTEM',
+] as const satisfies readonly ObjectType[];
+export type LabelSourceType = (typeof LABEL_SOURCE_TYPES)[number];
 
 export const LINK_RELATIONS = [
   'PERFORMS',
@@ -170,6 +199,8 @@ export const LINK_RELATIONS = [
   'OUTPUT',
   'MITIGATES',
   'MEASURES',
+  /** The element's label comes from a dictionary term (ph:labelRef). */
+  'NAMED',
 ] as const;
 export type LinkRelation = (typeof LINK_RELATIONS)[number];
 
@@ -181,6 +212,7 @@ export const DEFAULT_RELATION_FOR_TYPE: Record<ObjectType, LinkRelation> = {
   RISK: 'MITIGATES',
   CONTROL: 'MITIGATES',
   KPI: 'MEASURES',
+  TERM: 'NAMED',
 };
 
 export const USER_STATUSES = ['ACTIVE', 'INACTIVE'] as const;
@@ -219,6 +251,8 @@ export const AUDIT_ACTIONS = [
   'MFA_DISABLE',
   'MFA_RESET',
   'MFA_RECOVERY_CODES',
+  /** A report or export was downloaded (handbook, RACI, object report). */
+  'EXPORT',
 ] as const;
 export type AuditAction = (typeof AUDIT_ACTIONS)[number];
 
@@ -261,6 +295,7 @@ export const SETTING_KEYS = {
   DIAGRAM_THEME: 'branding.diagramTheme',
   /** Set when the post-upgrade "run Apply theme" notice was dismissed or the theme applied. */
   DIAGRAM_THEME_NOTICE: 'branding.diagramThemeNotice',
+  MODELING_CONVENTIONS: 'modeling.conventions',
 } as const;
 
 /** Logo upload limits. */
@@ -485,3 +520,14 @@ export type PortalSearchType = (typeof PORTAL_SEARCH_TYPES)[number];
 
 export const PORTAL_MAX_QUICK_LINKS = 12;
 export const PORTAL_MAX_FEATURED = 12;
+
+// ---------- Reports and exports (Modeler design B2) ----------
+/** Working model (workspace) or the published version (portal; the only one Viewers get). */
+export const REPORT_SOURCES = ['working', 'published'] as const;
+export type ReportSource = (typeof REPORT_SOURCES)[number];
+export const REPORT_KINDS = ['handbook', 'raci', 'object'] as const;
+export type ReportKind = (typeof REPORT_KINDS)[number];
+/** Processes in one handbook (a branch of the process house). */
+export const HANDBOOK_MAX_PROCESSES = 40;
+/** One diagram image (PNG, base64) sent for the handbook. */
+export const HANDBOOK_IMAGE_MAX_CHARS = 3_000_000;

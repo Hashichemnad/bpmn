@@ -14,6 +14,7 @@ import { ProcessListPage } from '@/features/processes/ProcessListPage';
 import { ProcessDetailPage } from '@/features/processes/ProcessDetailPage';
 import { ModelerWorkspacePage } from '@/features/modeler/ModelerWorkspacePage';
 import { ObjectLibraryPage } from '@/features/objects/ObjectLibraryPage';
+import { DictionaryPage } from '@/features/objects/DictionaryPage';
 import { ObjectDetailPage } from '@/features/objects/ObjectDetailPage';
 import { SpacesPage } from '@/features/docs/SpacesPage';
 import { SpaceLayout } from '@/features/docs/SpaceLayout';
@@ -43,6 +44,7 @@ import { PortalSearchPage } from '@/features/portal/PortalSearchPage';
 import { MyProcessesPage } from '@/features/portal/MyProcessesPage';
 import { MyFeedbackPage } from '@/features/portal/MyFeedbackPage';
 import { PortalSettingsPage } from '@/features/portal/PortalSettingsPage';
+import { ConventionsSettingsPage } from '@/features/settings/ConventionsSettingsPage';
 import { PortalPrintProcess } from '@/features/portal/PortalPrintProcess';
 import { PortalPrintPage } from '@/features/portal/PortalPrintPage';
 
@@ -145,6 +147,14 @@ export const routes: RouteObject[] = [
                     ),
                   },
                   {
+                    path: 'settings/conventions',
+                    element: (
+                      <RequirePermission all={[P.CONVENTIONS_MANAGE]}>
+                        <ConventionsSettingsPage />
+                      </RequirePermission>
+                    ),
+                  },
+                  {
                     path: 'settings/portal',
                     element: (
                       <RequirePermission all={[P.PORTAL_MANAGE]}>
@@ -185,6 +195,14 @@ export const routes: RouteObject[] = [
                     element: (
                       <RequirePermission all={[P.OBJECTS_READ]}>
                         <ObjectLibraryPage key="SYSTEM" type="SYSTEM" />
+                      </RequirePermission>
+                    ),
+                  },
+                  {
+                    path: 'library/dictionary',
+                    element: (
+                      <RequirePermission all={[P.OBJECTS_READ]}>
+                        <DictionaryPage />
                       </RequirePermission>
                     ),
                   },

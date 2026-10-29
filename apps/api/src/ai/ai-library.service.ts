@@ -100,13 +100,15 @@ export class AiLibraryService {
   }
 
   /**
-   * Approved translations (library objects and process names) whose source-language term occurs
+   * Approved translations (library objects incl. approved dictionary terms, and process names)
+   * whose source-language term occurs
    * in the text, as "source → target" lines for the translation prompt.
    */
   async glossary(text: string, source: Locale): Promise<string[]> {
     const [objects, processes] = await Promise.all([
       this.prisma.repoObject.findMany({
-        where: { deletedAt: null, nameEn: { not: '' }, nameAr: { not: '' } },
+        // Proposed (draft) dictionary terms are not approved terminology yet.
+        where: { deletedAt: null, status: 'APPROVED', nameEn: { not: '' }, nameAr: { not: '' } },
         select: { nameEn: true, nameAr: true },
         take: 3000,
       }),

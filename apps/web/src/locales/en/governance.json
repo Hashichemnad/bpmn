@@ -108,7 +108,10 @@
     "note": "Note for the reviewers",
     "dueAt": "Review due by",
     "dueHint": "Optional. By default reviewers have the number of days set in the governance settings.",
-    "done": "Submitted for review"
+    "done": "Submitted for review",
+    "conventionsTitle": "Modeling conventions not met",
+    "conventionsMore_one": "… and 1 more.",
+    "conventionsMore_other": "… and {{count}} more."
   },
   "withdraw": {
     "confirm": "Withdraw the review? The item returns to draft and open review tasks are cancelled.",

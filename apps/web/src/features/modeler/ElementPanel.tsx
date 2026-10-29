@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import {
   Alert,
   App,
+  AutoComplete,
   Button,
   Divider,
   Empty,
@@ -15,19 +16,31 @@ import {
   TreeSelect,
   Typography,
 } from 'antd';
-import { DisconnectOutlined, ExportOutlined, LinkOutlined, SyncOutlined } from '@ant-design/icons';
+import {
+  BookOutlined,
+  DisconnectOutlined,
+  ExportOutlined,
+  LinkOutlined,
+  SyncOutlined,
+} from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
 import {
+  PERMISSIONS,
   STEP_KIND_APPROVAL,
   STEP_KIND_TASK,
   isApprovalLabel,
+  type LabelSourceType,
+  type LabelSuggestionDto,
   type ObjectLinkDto,
   type ObjectType,
   type ProcessDto,
   type RepoObjectDto,
 } from '@processhub/shared';
 import { useCreateLink, useDeleteLink, useObject, useObjects, useProcessTree } from '@/api/hooks';
+import { useLabelSuggestions } from '@/api/dictionary';
+import { useAuth } from '@/auth/AuthProvider';
 import { useLocale } from '@/app/LocaleProvider';
+import { ObjectFormModal } from '@/features/objects/ObjectFormModal';
 import { useErrorMessage, useLocalized } from '@/components/i18n-helpers';
 import type {
   BpmnInstance,
@@ -46,6 +59,15 @@ import {
 } from './diagram';
 import { labelAttr, pickLabel } from './labels';
 import { useProcessTreeOptions } from './process-tree-options';
+import {
+  applyLabelSource,
+  labelRefOf,
+  sourceTypesFor,
+  unlinkLabelSource,
+  type LabelSource,
+} from './label-source';
+import { SuggestionItem } from './LabelAutocomplete';
+import { StepAttributes } from './StepAttributes';
 
 interface Props {
   instance: BpmnInstance | null;
@@ -109,6 +131,70 @@ function ObjectPicker({
   );
 }
 
+/**
+ * Bilingual label field with the dictionary autocomplete (terms, roles and IT systems matching
+ * what is typed, in both languages and their synonyms).
+ */
+function NameField({
+  lang,
+  label,
+  value,
+  readOnly,
+  types,
+  onChange,
+  onCommit,
+  onPick,
+}: {
+  lang: 'en' | 'ar';
+  label: string;
+  value: string;
+  readOnly: boolean;
+  types: LabelSourceType[];
+  onChange: (v: string) => void;
+  onCommit: () => void;
+  onPick: (s: LabelSuggestionDto) => void;
+}) {
+  const [focused, setFocused] = useState(false);
+  const [query, setQuery] = useState('');
+  useEffect(() => {
+    const timer = setTimeout(() => setQuery(value), 250);
+    return () => clearTimeout(timer);
+  }, [value]);
+  const suggestions = useLabelSuggestions(query, types, focused && !readOnly);
+  const items = focused ? (suggestions.data ?? []) : [];
+  const textArea = (
+    <Input.TextArea
+      dir={lang === 'ar' ? 'rtl' : 'ltr'}
+      lang={lang}
+      aria-label={label}
+      autoSize={{ minRows: 1, maxRows: 4 }}
+      readOnly={readOnly}
+      value={readOnly ? value : undefined}
+    />
+  );
+  if (readOnly) return textArea;
+  return (
+    <AutoComplete
+      value={value}
+      style={{ width: '100%' }}
+      options={items.map((s) => ({ value: s.id, label: <SuggestionItem s={s} />, s }))}
+      onChange={(v: string) => {
+        // Choosing an option reports its id: handled by onSelect.
+        if (!items.some((s) => s.id === v)) onChange(v);
+      }}
+      onSelect={(_: string, option: { s: LabelSuggestionDto }) => onPick(option.s)}
+      onFocus={() => setFocused(true)}
+      onBlur={() => {
+        setFocused(false);
+        onCommit();
+      }}
+      popupMatchSelectWidth={false}
+    >
+      {textArea}
+    </AutoComplete>
+  );
+}
+
 export function ElementPanel({ instance, element, process, links, canEdit }: Props) {
   const { t } = useTranslation();
   const { locale } = useLocale();
@@ -124,6 +210,8 @@ export function ElementPanel({ instance, element, process, links, canEdit }: Pro
   const [dismissed, setDismissed] = useState<Set<string>>(() => new Set());
   const [names, setNames] = useState({ nameEn: '', nameAr: '' });
   const [desc, setDesc] = useState({ descriptionEn: '', descriptionAr: '' });
+  const [proposing, setProposing] = useState(false);
+  const { can } = useAuth();
 
   const bo = element?.businessObject;
   useEffect(() => {
@@ -142,6 +230,8 @@ export function ElementPanel({ instance, element, process, links, canEdit }: Pro
     element && registry && element.type !== 'bpmn:Lane' ? laneOf(registry, element) : null;
   const laneRoleId = element?.type === 'bpmn:Lane' ? laneRoleOf(element) : laneRoleOf(lane);
   const laneRole = useObject(laneRoleId ?? undefined);
+  const labelRef = labelRefOf(bo);
+  const labelSource = useObject(labelRef ?? undefined);
 
   if (!element || !bo || element.type === 'bpmn:Process' || element.type === 'bpmn:Collaboration') {
     return (
@@ -168,12 +258,77 @@ export function ElementPanel({ instance, element, process, links, canEdit }: Pro
     const value = names[attr].trim();
     const current = readLabels(bo)[attr] ?? '';
     if (value === current) return;
-    modeling.updateModdleProperties(element, bo, { [`ph:${attr}`]: value || undefined });
+    // A label typed by hand is no longer the library object's name.
+    modeling.updateModdleProperties(element, bo, {
+      [`ph:${attr}`]: value || undefined,
+      ...(labelRefOf(bo) ? { 'ph:labelRef': undefined } : {}),
+    });
     // Refresh the visible label when editing the active language (or its fallback).
     const l = { ...readLabels(bo), [attr]: value };
     const display = (locale === 'ar' ? l.nameAr || l.nameEn : l.nameEn || l.nameAr) || '';
     if ((bo.name ?? '') !== display) modeling.updateLabel(element, display || null);
   };
+
+  /** A suggestion was chosen: both labels from the object, element linked to it. */
+  const pickSource = (source: LabelSource) => {
+    if (!instance || !canEdit) return;
+    applyLabelSource(instance, element, source, locale);
+    setNames({
+      nameEn: source.nameEn || source.nameAr,
+      nameAr: source.nameAr || source.nameEn,
+    });
+  };
+  const types = sourceTypesFor(element);
+  const canPropose = can(PERMISSIONS.DICTIONARY_PROPOSE);
+  const labelSection = labelRef ? (
+    <Alert
+      type="info"
+      showIcon
+      icon={<BookOutlined />}
+      className="ph-panel-labelref"
+      message={
+        <span>
+          {t('modeler:dictionary.linked', {
+            type: labelSource.data ? t(`objects:types.${labelSource.data.type}`) : '',
+          })}{' '}
+          <Link to={`/library/objects/${labelRef}`}>
+            {labelSource.data
+              ? loc(labelSource.data)
+              : labelSource.isError
+                ? t('modeler:dictionary.missing')
+                : '…'}
+          </Link>
+        </span>
+      }
+      action={
+        canEdit && (
+          <Button
+            size="small"
+            type="text"
+            icon={<DisconnectOutlined />}
+            onClick={() => instance && unlinkLabelSource(instance, element)}
+          >
+            {t('modeler:dictionary.unlink')}
+          </Button>
+        )
+      }
+    />
+  ) : (
+    canEdit &&
+    canPropose &&
+    element.type !== 'bpmn:Lane' &&
+    (names.nameEn.trim() || names.nameAr.trim()) && (
+      <Button
+        size="small"
+        type="dashed"
+        icon={<BookOutlined />}
+        onClick={() => setProposing(true)}
+        style={{ marginBlockEnd: 12 }}
+      >
+        {t('modeler:dictionary.propose')}
+      </Button>
+    )
+  );
 
   const commitDescription = (field: 'descriptionEn' | 'descriptionAr') => {
     if (!modeling) return;
@@ -349,27 +504,30 @@ export function ElementPanel({ instance, element, process, links, canEdit }: Pro
       <Divider style={{ margin: '12px 0' }} />
       <Form layout="vertical" size="small">
         <Form.Item label={t('fields.nameEn')}>
-          <Input.TextArea
-            dir="ltr"
+          <NameField
             lang="en"
-            autoSize={{ minRows: 1, maxRows: 4 }}
+            label={t('fields.nameEn')}
             value={names.nameEn}
             readOnly={!canEdit}
-            onChange={(e) => setNames((n) => ({ ...n, nameEn: e.target.value }))}
-            onBlur={() => commitName('en')}
+            types={types}
+            onChange={(v) => setNames((n) => ({ ...n, nameEn: v }))}
+            onCommit={() => commitName('en')}
+            onPick={pickSource}
           />
         </Form.Item>
         <Form.Item label={t('fields.nameAr')}>
-          <Input.TextArea
-            dir="rtl"
+          <NameField
             lang="ar"
-            autoSize={{ minRows: 1, maxRows: 4 }}
+            label={t('fields.nameAr')}
             value={names.nameAr}
             readOnly={!canEdit}
-            onChange={(e) => setNames((n) => ({ ...n, nameAr: e.target.value }))}
-            onBlur={() => commitName('ar')}
+            types={types}
+            onChange={(v) => setNames((n) => ({ ...n, nameAr: v }))}
+            onCommit={() => commitName('ar')}
+            onPick={pickSource}
           />
         </Form.Item>
+        {labelSection}
         {element.type !== 'bpmn:SequenceFlow' && (
           <>
             <Form.Item label={t('modeler:description.en')} extra={t('modeler:description.hint')}>
@@ -427,6 +585,10 @@ export function ElementPanel({ instance, element, process, links, canEdit }: Pro
         )}
       </Form>
 
+      {isActivityElement(element) && (
+        <StepAttributes instance={instance} element={element} canEdit={canEdit} version={version} />
+      )}
+
       {canDrillDown(element) && (
         <>
           <Divider style={{ margin: '12px 0' }} />
@@ -483,6 +645,17 @@ export function ElementPanel({ instance, element, process, links, canEdit }: Pro
           {linkSection('SYSTEM')}
           {linkSection('DOCUMENT')}
         </>
+      )}
+      {proposing && (
+        <ObjectFormModal
+          open
+          type="TERM"
+          defaults={{ ...names, ...desc }}
+          onClose={(saved) => {
+            setProposing(false);
+            if (saved) pickSource(saved as LabelSource);
+          }}
+        />
       )}
     </div>
   );

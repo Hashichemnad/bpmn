@@ -25,6 +25,7 @@ import {
   type SubmitReviewInput,
   type TextDirection,
 } from '@processhub/shared';
+import { ConventionsService } from '../conventions/conventions.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { AuditService } from '../audit/audit.service';
 import { NotificationsService } from '../notifications/notifications.service';
@@ -85,6 +86,7 @@ export class ReviewsService {
     private readonly workflows: WorkflowsService,
     private readonly notifications: NotificationsService,
     private readonly events: DomainEvents,
+    private readonly conventions: ConventionsService,
   ) {}
 
   // ---------- Submit ----------
@@ -102,6 +104,14 @@ export class ReviewsService {
     if (!item.latestVersion) throw conflict('NO_VERSION', 'Save a version first');
     if (await this.content.hasUnversionedChanges(item)) {
       throw conflict('UNVERSIONED_CHANGES', 'Save the working model as a version first');
+    }
+    if (type === 'PROCESS') {
+      // Mandatory modeling conventions (D-088), checked on the version being submitted.
+      const version = await this.prisma.processVersion.findUnique({
+        where: { processId_versionNumber: { processId: id, versionNumber: item.latestVersion } },
+        select: { bpmnXml: true },
+      });
+      if (version) await this.conventions.assertMandatory(version.bpmnXml);
     }
     const { workflow } = await this.workflows.resolve(item);
     if (!workflow) throw badRequest('NO_WORKFLOW', 'No approval workflow is configured');

@@ -45,7 +45,8 @@ with no per-user licensing. Target: 50–500 users on a single server.
 | 6 | Hardening: SSO, performance, security review fixes, deployment guide | 🟡 In progress — part 1 (security review, `docs/SECURITY.md`) and part 2 (production stack, backups, `docs/DEPLOYMENT.md`) merged; part 3 (SSO with Entra ID / OIDC, TOTP two-factor) merged; part 4 (product owner decisions: 2FA for admins, break-glass, roles in ProcessHub, 24 h sessions, Node 22) done on branch `phase-6-part-4` |
 | Design A | Modeler design upgrade — Part A: look and feel (colour theme as BPMN-in-Color, renderer, colour picker, fonts/RTL, apply theme) | ✅ Done (merged into `main`, D-067 – D-073) |
 | Design B1 | Modeler design — Part B1: full-screen workspace and modeling productivity (palette, ready-made steps, zoom/mini-map, align, auto-layout, lane roles, badges, portal diagram, print layout) | ✅ Done (merged into `main`, D-074 – D-081); Part B2 in BACKLOG |
-| Deps | zod 3 → 4 (high advisory GHSA-mrhx-c7xc-m3w5, D-082) | 🟡 Done on branch `deps-zod-4`, awaiting review |
+| Design B2 | Modeler design — Part B2: smarter modeling and reports (Playwright e2e in CI, Dictionary with label autocomplete, Quick Model, step attributes and "colour by", handbook / RACI / object reports, modeling conventions) | 🟡 Done on branch `modeler-design-b2` (D-083 – D-088), awaiting review |
+| Deps | zod 3 → 4 (high advisory GHSA-mrhx-c7xc-m3w5, D-082) | ✅ Done (merged into `main`) |
 | — | M15 Migration of existing documentation (after system is ready) | ⬜ |
 
 Update this table and `docs/PROGRESS.md` at the end of every session.
@@ -170,6 +171,16 @@ Modeler design Part B1 additions (DECISIONS D-074 – D-081):
 - BPMN XML: `ph:roleId` on lanes (lane linked to a library Role), mirrored on save as a PERFORMS `ObjectLink`
   from the lane (D-081); no database changes
 - Shared layered layout `packages/shared/src/bpmn-layout.ts` (AI builder and modeler auto-layout)
+
+Modeler design Part B2 additions (DECISIONS D-083 – D-088):
+
+- `RepoObject` type `TERM` (dictionary) + `status` (DRAFT | APPROVED), `category`, `synonymsEn/Ar`, `ownerId`,
+  `approvedAt/ById`; link relation `NAMED`; permissions `dictionary.propose`, `dictionary.approve`,
+  `conventions.manage`; audit action `EXPORT`
+- BPMN XML: `ph:labelRef` (label linked to a term / role / system), step attributes `ph:durationMinutes`,
+  `ph:waitingMinutes`, `ph:slaMinutes`, `ph:frequencyPerMonth`, `ph:costPerExecution`, `ph:inputsEn/Ar`,
+  `ph:outputsEn/Ar`
+- Setting `modeling.conventions`; shared reader `packages/shared/src/bpmn-graph.ts` (totals, reports, conventions)
 
 ## 10. Definition of Done (every phase)
 

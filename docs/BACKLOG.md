@@ -3,18 +3,35 @@
 Ideas and follow-ups noted during development, outside the current phase scope. Group by the phase
 where they belong; move items into the plan when that phase starts.
 
-## Modeler design — Part B2 (after B1)
+## Modeler design — after Part B2
 
-Part A (colours, D-067 – D-073) and Part B1 (full-screen workspace and productivity, D-074 – D-081) are done.
-Planned for Part B2:
+Part A (colours, D-067 – D-073), Part B1 (full-screen workspace and productivity, D-074 – D-081) and Part B2
+(Dictionary, Quick Model, step attributes and "colour by", reports, modeling conventions, D-083 – D-088) are done.
+Kept out of B2 on purpose:
 
-- Glossary / dictionary with label autocomplete linked to repository objects (like SAP Signavio "Dictionary").
-- Table-based "Quick Model" entry (rows → BPMN with the shared layout).
-- Attribute-based shape colouring and step attributes (duration, cost, frequency).
-- Process handbook / Word report generation.
-- Excel export of the steps (RACI).
-- Modeling conventions per diagram type (allowed elements, naming rules).
 - Real-time co-editing.
+- Other diagram types: EPC, value chain, organisation chart, DMN decision tables.
+- Simulation (time and cost, using the step attributes) — with Phase 5.
+
+B2 follow-ups noted during the work:
+
+- Dictionary: notify the proposer when a term is approved or rejected; import / export the dictionary (Excel);
+  term relations ("see also", broader / narrower); show term definitions as tooltips in the portal.
+- Autocomplete for the description fields (insert a term inside a sentence); several terms in one label.
+- Quick Model: spreadsheet keyboard navigation (arrows / Enter between cells, copy a block back to Excel),
+  drag rows to reorder, several pools, rows for sub-processes and their content, a description column.
+- Step attributes: organisation currency in Settings; working-day calendar (8-hour days) for durations; cost
+  and time simulation (Phase 5); show attributes in the portal step details; colour-by views in the portal.
+- Reports: handbook as PDF (server-side LibreOffice or a print stylesheet); a company Word template
+  (styles, header / footer) uploaded in Settings; scheduled report e-mails; RACI with consulted / informed
+  roles (C / I need a relation per step: CONSULTED / INFORMED links); handbook of a whole category (house
+  column); render the diagrams server-side (headless browser) for exports without a browser; replace
+  `exceljs` when it drops the `uuid` 8 dependency (moderate advisory, SECURITY SEC-09).
+- Modeling conventions: rules per process category or department; naming rules (verb + noun, glossary terms
+  only, maximum label length); allowed element types; exceptions per process with a reason; a conventions report
+  across all processes; check pages (SOP templates) too.
+- Rename: offer the update for published processes as a colours-only style "in place" change (today a new
+  draft that needs approval again, like any other edit).
 
 B1 follow-ups noted during the work:
 

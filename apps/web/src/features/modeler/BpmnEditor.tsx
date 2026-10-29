@@ -9,6 +9,7 @@ import {
   Form,
   Input,
   Modal,
+  Segmented,
   Space,
   Tabs,
   Tag,
@@ -48,6 +49,7 @@ import {
   type AiGeneratedProcessDto,
   type AiSuggestedLinkDto,
   type BpmnIssue,
+  type ConventionIssue,
   type Locale,
   type ProcessDto,
   type ProcessSummaryDto,
@@ -55,6 +57,7 @@ import {
 import {
   useCreateLink,
   useCreateVersion,
+  useDeleteLink,
   useLinks,
   useProcessModel,
   usePublicSettings,
@@ -62,6 +65,7 @@ import {
   useVersions,
 } from '@/api/hooks';
 import { useComments } from '@/api/governance';
+import { useConventions } from '@/api/conventions';
 import { useAuth } from '@/auth/AuthProvider';
 import { useLocale } from '@/app/LocaleProvider';
 import { useErrorMessage, useFormatDate, useLocalized } from '@/components/i18n-helpers';
@@ -90,8 +94,12 @@ import {
   buildGraph,
   exportXml,
   normaliseDiagram,
+  readLabels,
   type LabelState,
 } from './diagram';
+import { pickLabel } from './labels';
+import { ConventionIssueList } from './ConventionIssues';
+import { conventionIssues, withoutDuplicates } from './conventions';
 import { EMPTY_DIAGRAM } from './phModdle';
 import { translateModule } from './translate';
 import { downloadBlob, exportFileName, svgToPng } from './export';
@@ -114,6 +122,20 @@ import { autoLayoutModule, runAutoLayout } from './auto-layout';
 import { commentBadgeItems, linkBadgeItems, useDiagramOverlays } from './useDiagramOverlays';
 import type { ReadyStep } from './palette-entries';
 import { workspaceShortcut } from './keys';
+import { applyLabelSource, syncLabelRefMarkers } from './label-source';
+import { LabelAutocomplete } from './LabelAutocomplete';
+import { keepSelectionModule } from './keep-selection';
+import { applyRows, diagramToRows, quickModelModule, type QuickRow } from './quick-model';
+import { QuickModelView } from './QuickModelView';
+import {
+  COLOUR_BY_MODES,
+  applyColourBy,
+  clearColourBy,
+  type ColourByMode,
+  type LegendItem,
+} from './colour-by';
+import { ColourByLegend } from './ColourByLegend';
+import { ReportDialog, type ReportKind } from '@/features/reports/ReportDialog';
 
 type PanelTab = 'properties' | 'issues' | 'comments' | 'ai';
 
@@ -136,6 +158,8 @@ const AUTOSAVE_MS = 3000;
 export function BpmnEditor({ process, focusElementId, readOnly = false, onClose }: Props) {
   const { t } = useTranslation();
   const { locale, dir } = useLocale();
+  const dirRef = useRef(dir);
+  dirRef.current = dir;
   const { user } = useAuth();
   const loc = useLocalized();
   const navigate = useNavigate();
@@ -149,6 +173,7 @@ export function BpmnEditor({ process, focusElementId, readOnly = false, onClose 
   const saveModel = useSaveModel(process.id);
   const createVersion = useCreateVersion(process.id);
   const createLink = useCreateLink(process.id);
+  const deleteLink = useDeleteLink(process.id);
   const { available: aiAvailable } = useAi();
   const versions = useVersions(process.id);
   const comments = useComments('PROCESS', process.id);
@@ -162,6 +187,17 @@ export function BpmnEditor({ process, focusElementId, readOnly = false, onClose 
   const [focusMode, setFocusMode] = useState(false);
   const [fullscreen, setFullscreen] = useState(false);
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
+  /** Diagram or Quick Model (table) view of the same model. */
+  const [view, setView] = useState<'diagram' | 'table'>('diagram');
+  const [tableOpened, setTableOpened] = useState(false);
+  /** "Colour by" view (view only, stored colours never change). */
+  const [colourBy, setColourBy] = useState<ColourByMode>('none');
+  const [legend, setLegend] = useState<LegendItem[]>([]);
+  const [missingCounts, setMissingCounts] = useState({ role: 0, description: 0 });
+  const [report, setReport] = useState<ReportKind | null>(null);
+  useEffect(() => {
+    if (view === 'table') setTableOpened(true);
+  }, [view]);
 
   const containerRef = useRef<HTMLDivElement>(null);
   const instanceRef = useRef<BpmnInstance | null>(null);
@@ -178,6 +214,11 @@ export function BpmnEditor({ process, focusElementId, readOnly = false, onClose 
   const [selection, setSelection] = useState<DiagramElement[]>([]);
   const [dirty, setDirty] = useState(false);
   const [issues, setIssues] = useState<BpmnIssue[]>([]);
+  const [conventionFindings, setConventionFindings] = useState<ConventionIssue[]>([]);
+  const conventions = useConventions();
+  const conventionsRef = useRef(conventions.data);
+  conventionsRef.current = conventions.data;
+  const conventionRun = useRef(0);
   const [importError, setImportError] = useState<string | null>(null);
   const [panelTab, setPanelTab] = useState<PanelTab>('properties');
   const [versionOpen, setVersionOpen] = useState(false);
@@ -205,8 +246,21 @@ export function BpmnEditor({ process, focusElementId, readOnly = false, onClose 
 
   const revalidate = useCallback(() => {
     const inst = instanceRef.current;
-    if (inst) setIssues(validateBpmnGraph(buildGraph(inst)));
+    if (!inst) return;
+    setIssues(validateBpmnGraph(buildGraph(inst)));
+    const rules = conventionsRef.current;
+    if (!rules) return;
+    const run = ++conventionRun.current;
+    void conventionIssues(inst, rules)
+      .then((found) => {
+        if (run === conventionRun.current) setConventionFindings(found);
+      })
+      .catch(() => undefined);
   }, []);
+
+  useEffect(() => {
+    if (conventions.data) revalidate();
+  }, [conventions.data, revalidate]);
 
   const selectElement = useCallback(
     (el: DiagramElement, tab: PanelTab = 'properties') => {
@@ -240,6 +294,43 @@ export function BpmnEditor({ process, focusElementId, readOnly = false, onClose 
     drill: { open: (target) => navigate(`/processes/${target}/model`) },
   });
 
+  // Labels from the library (dictionary terms, roles, systems) carry a small book marker.
+  useEffect(() => {
+    if (!instance || !loaded) return;
+    return syncLabelRefMarkers(instance, t('modeler:dictionary.marker'));
+  }, [instance, loaded, t]);
+
+  // "Colour by": re-applied after every edit, when links load or the language changes.
+  useEffect(() => {
+    if (!instance || !loaded) return;
+    const eventBus = instance.get<EventBus>('eventBus');
+    let frame = 0;
+    const apply = () => {
+      cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(() => {
+        const result = applyColourBy(instance, colourBy, {
+          links: links.data ?? [],
+          locale,
+          label: (key) => t(`modeler:colourBy.categories.${key.replace(':', '.')}`),
+        });
+        setLegend(result.legend);
+        const lacks = [...result.missing.values()];
+        setMissingCounts({
+          role: lacks.filter((l) => l.includes('role')).length,
+          description: lacks.filter((l) => l.includes('description')).length,
+        });
+      });
+    };
+    apply();
+    if (colourBy === 'none') return;
+    eventBus.on(['commandStack.changed', 'import.done'], apply);
+    return () => {
+      cancelAnimationFrame(frame);
+      eventBus.off(['commandStack.changed', 'import.done'], apply);
+      clearColourBy(instance);
+    };
+  }, [instance, loaded, colourBy, links.data, locale, t]);
+
   // The colour theme (Settings → Branding) applies to new elements and the colour picker.
   const theme = settings.data?.diagramTheme;
   useEffect(() => {
@@ -262,6 +353,8 @@ export function BpmnEditor({ process, focusElementId, readOnly = false, onClose 
               themeModule(themeRef.current),
               colourPickerModule(),
               autoLayoutModule,
+              keepSelectionModule,
+              quickModelModule,
             ]
           : []),
       ],
@@ -310,8 +403,21 @@ export function BpmnEditor({ process, focusElementId, readOnly = false, onClose 
         .get<{ setActive(active: boolean): void }>('gridSnapping')
         .setActive(prefsRef.current.grid);
     }
-    const observer = new ResizeObserver(() => inst.get<Canvas>('canvas').resized());
-    observer.observe(containerRef.current);
+    // Arabic: keep the diagram still on screen when the canvas's left edge moves. The side panel
+    // opens on the left, and a click that selects (or deselects) a shape would otherwise shift the
+    // diagram under the pointer, so a double-click to edit a label hit the wrong element. (In
+    // English only the palette sits on the left; the diagram moves with it as before.)
+    const container = containerRef.current;
+    let left = container.getBoundingClientRect().left;
+    const observer = new ResizeObserver(() => {
+      const canvas = inst.get<Canvas>('canvas');
+      canvas.resized();
+      const now = container.getBoundingClientRect().left;
+      if (now !== left && loadedRef.current && dirRef.current === 'rtl')
+        canvas.scroll({ dx: left - now, dy: 0 });
+      left = now;
+    });
+    observer.observe(container);
     setInstance(inst);
     return () => {
       clearTimeout(autosaveTimer.current);
@@ -602,6 +708,48 @@ export function BpmnEditor({ process, focusElementId, readOnly = false, onClose 
       },
     });
 
+  /** First IT system linked to an element (the table's "IT system" column). */
+  const systemOf = (elementId: string) =>
+    (links.data ?? []).find((l) => l.bpmnElementId === elementId && l.repoObject.type === 'SYSTEM')
+      ?.repoObject.id ?? null;
+
+  /**
+   * Quick Model "Generate diagram": table → diagram (one undo step), save the draft, then link the
+   * IT systems chosen in the table (SUPPORTS links, D-085).
+   */
+  const generateFromTable = async (rows: QuickRow[], original: QuickRow[]) => {
+    const inst = instanceRef.current;
+    if (!inst) return null;
+    const ids = applyRows(inst, rows, stateRef.current.locale);
+    if (!(await autosaveRef.current())) return null;
+    const idOf = (key: string) => ids.get(key) ?? key;
+    try {
+      for (const row of rows) {
+        const was = original.find((o) => o.key === row.key)?.systemId ?? null;
+        if (was === row.systemId) continue;
+        const elementId = idOf(row.key);
+        const old = (links.data ?? []).find(
+          (l) =>
+            l.bpmnElementId === elementId && l.repoObject.id === was && l.relation === 'SUPPORTS',
+        );
+        if (old) await deleteLink.mutateAsync(old.id);
+        if (row.systemId)
+          await createLink.mutateAsync({
+            bpmnElementId: elementId,
+            repoObjectId: row.systemId,
+            relation: 'SUPPORTS',
+          });
+      }
+    } catch (err) {
+      message.error(errorMessage(err));
+    }
+    setView('diagram');
+    afterLayout(() => fitWidth(inst.get<Canvas>('canvas')));
+    message.success(t('modeler:quick.generated'));
+    const systems = new Map(rows.map((r) => [idOf(r.key), r.systemId]));
+    return diagramToRows(inst, (id) => systems.get(id) ?? null);
+  };
+
   const focusElement = (id?: string) => {
     if (!id || !instanceRef.current) return;
     const el = instanceRef.current.get<ElementRegistry>('elementRegistry').get(id);
@@ -640,7 +788,15 @@ export function BpmnEditor({ process, focusElementId, readOnly = false, onClose 
     );
   };
 
-  const warnings = issues.filter((i) => i.severity === 'warning').length;
+  const shownIssues = withoutDuplicates(issues, conventionFindings);
+  const issueCount = shownIssues.length + conventionFindings.length;
+  const warnings =
+    shownIssues.filter((i) => i.severity === 'warning').length + conventionFindings.length;
+  const blockingConventions = conventionFindings.some((i) => i.mandatory);
+  const labelOf = (id: string) => {
+    const el = instanceRef.current?.get<ElementRegistry>('elementRegistry').get(id);
+    return el ? pickLabel(readLabels(el.businessObject), locale) : '';
+  };
   const openComments = (comments.data ?? []).filter((c) => !c.resolvedAt).length;
   const latestVersion = versions.data?.[0];
   const lastSaved = model.data?.updatedAt
@@ -749,6 +905,18 @@ export function BpmnEditor({ process, focusElementId, readOnly = false, onClose 
           {saveState}
         </div>
         <div className="ph-ws-tools" role="toolbar" aria-label={t('modeler:workspace.toolbar')}>
+          <Segmented
+            size="small"
+            className="ph-ws-view"
+            value={view}
+            onChange={(v) => setView(v as 'diagram' | 'table')}
+            options={[
+              { value: 'diagram', label: t('modeler:quick.viewDiagram') },
+              { value: 'table', label: t('modeler:quick.viewTable') },
+            ]}
+            aria-label={t('modeler:quick.viewLabel')}
+          />
+          <span className="ph-ws-sep" />
           {canEdit && (
             <>
               <Tooltip title={t('modeler:saveHint')}>
@@ -829,6 +997,23 @@ export function BpmnEditor({ process, focusElementId, readOnly = false, onClose 
                       },
                     ]
                   : []),
+                { type: 'divider' as const },
+                {
+                  key: 'colourBy',
+                  type: 'group' as const,
+                  label: t('modeler:colourBy.title'),
+                  children: COLOUR_BY_MODES.map((mode) => ({
+                    key: `colourBy-${mode}`,
+                    label: t(`modeler:colourBy.modes.${mode}`),
+                    icon:
+                      colourBy === mode ? (
+                        <CheckCircleOutlined />
+                      ) : (
+                        <span className="ph-menu-blank" />
+                      ),
+                    onClick: () => setColourBy(mode),
+                  })),
+                },
               ],
             }}
           >
@@ -935,6 +1120,17 @@ export function BpmnEditor({ process, focusElementId, readOnly = false, onClose 
                 },
                 { key: 'svg', label: t('modeler:exportSvg'), onClick: () => void doExport('svg') },
                 { key: 'png', label: t('modeler:exportPng'), onClick: () => void doExport('png') },
+                { type: 'divider' as const },
+                {
+                  key: 'handbook',
+                  label: t('processes:reports.handbook'),
+                  onClick: () => setReport('handbook'),
+                },
+                {
+                  key: 'raci',
+                  label: t('processes:reports.raci'),
+                  onClick: () => setReport('raci'),
+                },
               ],
             }}
           >
@@ -982,7 +1178,7 @@ export function BpmnEditor({ process, focusElementId, readOnly = false, onClose 
         />
       )}
       <div className="ph-ws-body">
-        {canEdit && (
+        {canEdit && view === 'diagram' && (
           <Palette
             instance={instance}
             collapsed={prefs.paletteCollapsed || focusMode}
@@ -1001,9 +1197,36 @@ export function BpmnEditor({ process, focusElementId, readOnly = false, onClose 
             aria-label={t('modeler:canvas')}
           />
           {canEdit && instance && <LayoutToolbar instance={instance} selection={selection} />}
+          {colourBy !== 'none' && view === 'diagram' && (
+            <ColourByLegend
+              mode={colourBy}
+              items={legend}
+              missing={missingCounts}
+              onClose={() => setColourBy('none')}
+            />
+          )}
+          {canEdit && (
+            <LabelAutocomplete
+              instance={instance}
+              onPick={(el, s) =>
+                instanceRef.current &&
+                applyLabelSource(instanceRef.current, el, s, stateRef.current.locale)
+              }
+            />
+          )}
           {focusMode && (
             <div className="ph-ws-focus-hint" role="status">
               {t('modeler:workspace.focusHint')}
+            </div>
+          )}
+          {tableOpened && loaded && instance && (
+            <div className="ph-quick-wrap" hidden={view !== 'table'}>
+              <QuickModelView
+                visible={view === 'table'}
+                readRows={() => diagramToRows(instance, systemOf)}
+                canEdit={canEdit}
+                onGenerate={generateFromTable}
+              />
             </div>
           )}
           {model.isLoading && (
@@ -1061,17 +1284,19 @@ export function BpmnEditor({ process, focusElementId, readOnly = false, onClose 
                     label: (
                       <Space size={4}>
                         {t('modeler:issues')}
-                        {issues.length > 0 && (
+                        {issueCount > 0 && (
                           <Badge
-                            count={issues.length}
+                            count={issueCount}
                             size="small"
-                            color={warnings ? '#b45309' : '#64748b'}
+                            color={
+                              blockingConventions ? '#dc2626' : warnings ? '#b45309' : '#64748b'
+                            }
                           />
                         )}
                       </Space>
                     ),
                     children:
-                      issues.length === 0 ? (
+                      issueCount === 0 ? (
                         <Alert type="success" showIcon message={t('modeler:noIssues')} />
                       ) : (
                         <>
@@ -1082,8 +1307,18 @@ export function BpmnEditor({ process, focusElementId, readOnly = false, onClose 
                           >
                             {t('ai:analyse.explainWarnings')}
                           </AiButton>
+                          <ConventionIssueList
+                            issues={conventionFindings}
+                            labelOf={labelOf}
+                            onFocus={focusElement}
+                          />
+                          {conventionFindings.length > 0 && shownIssues.length > 0 && (
+                            <Typography.Title level={5} style={{ marginBlock: '12px 4px' }}>
+                              {t('modeler:conventions.diagramChecks')}
+                            </Typography.Title>
+                          )}
                           <ul className="ph-issues">
-                            {issues.map((i, idx) => (
+                            {shownIssues.map((i, idx) => (
                               <li key={`${i.code}-${i.elementId ?? idx}`}>
                                 <button
                                   type="button"
@@ -1228,6 +1463,14 @@ export function BpmnEditor({ process, focusElementId, readOnly = false, onClose 
         onFocusElement={focusElement}
         onClose={() => setAiDialog(null)}
       />
+      {report && (
+        <ReportDialog
+          kind={report}
+          process={process}
+          hasChildren={process.children.length > 0}
+          onClose={() => setReport(null)}
+        />
+      )}
       <VersionsDrawer
         processId={process.id}
         open={historyOpen}

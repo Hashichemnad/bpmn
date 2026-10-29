@@ -46,7 +46,8 @@
   "linked": {
     "ROLE": "Performed by (roles)",
     "SYSTEM": "Supported by (IT systems)",
-    "DOCUMENT": "Documents (input / output)"
+    "DOCUMENT": "Documents (input / output)",
+    "TERM": "Dictionary terms"
   },
   "severity": {
     "warning": "Warning",
@@ -297,5 +298,158 @@
     "suggestion": "Suggested: “{{role}}” performs this step (lane “{{lane}}”).",
     "suggestionLink": "Link",
     "suggestionDismiss": "Not now"
+  },
+  "dictionary": {
+    "suggestions": "From the dictionary and library",
+    "keysHint": "↑ ↓ choose · Enter use · Esc close",
+    "linked": "Label from the library ({{type}}):",
+    "missing": "object not found",
+    "unlink": "Unlink",
+    "propose": "Propose as dictionary term",
+    "marker": "Label from the dictionary / library — renaming the object updates it"
+  },
+  "quick": {
+    "viewLabel": "View",
+    "viewDiagram": "Diagram",
+    "viewTable": "Quick Model",
+    "title": "Quick Model",
+    "hint": "One row per step. Generate the diagram from the table — lanes come from the roles.",
+    "addStep": "Add step",
+    "paste": "Paste from Excel",
+    "reread": "Read from diagram",
+    "rereadTitle": "Discard the table changes?",
+    "rereadText": "The table is read again from the diagram; your changes in the table are lost.",
+    "generate": "Generate diagram",
+    "generateHint": "Updates the diagram from the table (existing steps keep their comments and links; one undo step).",
+    "generated": "Diagram updated from the table — one Undo reverts it",
+    "fixErrors": "Fix the errors listed above first",
+    "row": "Row {{n}}",
+    "empty": "No steps yet — add a step or paste rows from Excel",
+    "nameEn": "Step (English)",
+    "nameAr": "Step (Arabic)",
+    "role": "Performed by (role)",
+    "system": "IT system",
+    "type": "Step type",
+    "next": "Next step(s)",
+    "conditions": "Conditions",
+    "conditionsSet_one": "{{count}} condition",
+    "conditionsSet_other": "{{count}} conditions",
+    "conditionEn": "Condition (English), e.g. Yes",
+    "conditionAr": "Condition (Arabic), e.g. نعم",
+    "otherHint": "This element type is kept as it is; edit it in the diagram.",
+    "moveUp": "Move up",
+    "moveDown": "Move down",
+    "insert": "Insert a step below",
+    "types": {
+      "task": "Task",
+      "approval": "Approval",
+      "system": "System step",
+      "notification": "Notification",
+      "decision": "Decision",
+      "end": "End"
+    },
+    "issues": {
+      "NAME_MISSING": "the step has no name",
+      "UNKNOWN_NEXT": "a next step no longer exists",
+      "SELF_LOOP": "a step cannot lead to itself",
+      "END_HAS_NEXT": "an end has no next step",
+      "NO_NEXT": "no next step (the flow stops here)",
+      "DECISION_ONE_WAY": "a decision should have at least two next steps",
+      "EMPTY": "The table has no steps."
+    },
+    "pasteTitle": "Paste rows from Excel",
+    "pasteHint": "Copy the rows in Excel (or any spreadsheet) and paste them below. Columns, in this order — only the first is required:",
+    "pasteColumns": "Step (English) · Step (Arabic) · Performed by · IT system · Step type · Next step(s) · Conditions\nNext step(s): row numbers or step names separated by \";\". Conditions: one label per next step, same order.",
+    "pastePlaceholder": "Paste here (Ctrl+V)",
+    "pasteCount_one": "{{count}} step found",
+    "pasteCount_other": "{{count}} steps found",
+    "pasteUse": "Use these rows",
+    "pasteReplace": "Replace the table",
+    "pasteAppend": "Add to the table",
+    "pasted_one": "{{count}} step pasted — review and generate the diagram",
+    "pasted_other": "{{count}} steps pasted — review and generate the diagram",
+    "unknownSystems": "Not in the IT systems library (left empty): {{names}}",
+    "unknownNext": "Next steps not found (row: text): {{refs}}"
+  },
+  "attributes": {
+    "title": "Step attributes",
+    "durationMinutes": "Planned processing time",
+    "waitingMinutes": "Waiting time",
+    "slaMinutes": "SLA (maximum time)",
+    "slaHint": "Time allowed from the start of the step to its completion.",
+    "frequencyPerMonth": "Frequency (per month)",
+    "costPerExecution": "Cost per execution",
+    "inputsEn": "Inputs (English)",
+    "inputsAr": "Inputs (Arabic)",
+    "outputsEn": "Outputs (English)",
+    "outputsAr": "Outputs (Arabic)",
+    "unit": "unit",
+    "units": {
+      "minutes": "minutes",
+      "hours": "hours",
+      "days": "days"
+    },
+    "short": {
+      "minutes": "{{n}} min",
+      "hours": "{{n}} h",
+      "days": "{{n}} d"
+    },
+    "invalid": "A stored value is not valid; enter it again."
+  },
+  "colourBy": {
+    "title": "Colour by",
+    "legend": "Colour legend",
+    "off": "Back to the stored colours",
+    "viewOnly": "View only — the diagram's colours are not changed.",
+    "modes": {
+      "none": "Stored colours",
+      "role": "Lane / role",
+      "system": "IT system",
+      "type": "Step type",
+      "duration": "Planned duration",
+      "missing": "Missing information"
+    },
+    "categories": {
+      "none": "Not set",
+      "type": {
+        "task": "Task",
+        "approval": "Approval",
+        "system": "System step",
+        "notification": "Notification",
+        "decision": "Decision",
+        "end": "End",
+        "other": "Other"
+      },
+      "duration": {
+        "none": "No planned time",
+        "short": "Under 1 hour",
+        "medium": "1 to 8 hours",
+        "long": "More than 8 hours"
+      },
+      "missing": {
+        "complete": "Role and description set",
+        "incomplete": "Information missing"
+      }
+    },
+    "missingRole_one": "{{count}} step without a role",
+    "missingRole_other": "{{count}} steps without a role",
+    "missingDescription_one": "{{count}} step without a description",
+    "missingDescription_other": "{{count}} steps without a description"
+  },
+  "conventions": {
+    "title": "Modeling conventions",
+    "diagramChecks": "Diagram checks",
+    "required": "Required",
+    "warning": "Convention",
+    "blocking_one": "1 required rule is not met: fix it before submitting for review.",
+    "blocking_other": "{{count}} required rules are not met: fix them before submitting for review.",
+    "rules": {
+      "bilingualLabels": "Step needs a label in English and in Arabic.",
+      "laneRole": "Step is not in a lane linked to a role.",
+      "userTaskDescription": "User task has no description.",
+      "maxElements": "The diagram has {{count}} elements; the limit is {{max}}. Split it into sub-processes.",
+      "noUnconnected": "Element is not connected to the flow.",
+      "approvalDecision": "Approval step is not followed by a decision."
+    }
   }
 }

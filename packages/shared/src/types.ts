@@ -11,9 +11,12 @@ import type {
   SpaceIcon,
   SpacePrincipalType,
   TextDirection,
+  LabelSourceType,
   LinkRelation,
   Locale,
+  ObjectStatus,
   ObjectType,
+  ReportSource,
   Permission,
   ProcessCategory,
   ProcessStatus,
@@ -189,8 +192,57 @@ export interface RepoObjectDto {
   descriptionAr: string;
   attributes: Record<string, string | number | boolean>;
   usageCount: number;
+  /** DRAFT = proposed dictionary term waiting for approval; all other objects are APPROVED. */
+  status: ObjectStatus;
+  category: string | null;
+  synonymsEn: string[];
+  synonymsAr: string[];
+  owner: UserRef | null;
+  /** Who created (for terms: proposed) the object. */
+  createdBy: UserRef | null;
+  approvedAt: string | null;
+  approvedBy: UserRef | null;
   createdAt: string;
   updatedAt: string;
+}
+
+/** One suggestion of the label autocomplete (dictionary term, role or IT system). */
+export interface LabelSuggestionDto {
+  id: string;
+  type: LabelSourceType;
+  code: string | null;
+  nameEn: string;
+  nameAr: string;
+  /** Short definition (terms) or description, in both languages. */
+  descriptionEn: string;
+  descriptionAr: string;
+  /** The synonym that matched, when the match was not on the name. */
+  synonym: string | null;
+}
+
+/** "Rename and update labels": one element whose label changes. */
+export interface RenameElementDto {
+  elementId: string;
+  before: ElementLabelDto;
+  after: ElementLabelDto;
+}
+
+/** "Rename and update labels": the effect on one process. */
+export interface RenameProcessDto {
+  process: Pick<ProcessSummaryDto, 'id' | 'code' | 'nameEn' | 'nameAr' | 'status'>;
+  elements: RenameElementDto[];
+  /** False when the user may not edit the process or it is locked (in review, archived). */
+  canUpdate: boolean;
+  reason: 'NO_PERMISSION' | 'ITEM_IN_REVIEW' | 'ITEM_ARCHIVED' | null;
+  /** Approved or published processes get a new draft version that must be approved again. */
+  newDraft: boolean;
+  /** Set by the rename itself: the version created for this process. */
+  versionNumber?: number;
+}
+
+export interface RenamePreviewDto {
+  object: Pick<RepoObjectDto, 'id' | 'type' | 'nameEn' | 'nameAr'>;
+  processes: RenameProcessDto[];
 }
 
 /** Label of the BPMN element a link points to (from the current working model). */
@@ -882,4 +934,11 @@ export interface MyPortalDto {
   pages: MyPortalItemDto[];
   jobRoles: JobRoleRef[];
   department: DepartmentRef | null;
+}
+
+// ---------- Reports and exports (Modeler design B2) ----------
+/** What a handbook will contain: the diagram of each process is rendered by the browser. */
+export interface HandbookPlanDto {
+  source: ReportSource;
+  processes: { id: string; code: string; nameEn: string; nameAr: string; bpmnXml: string | null }[];
 }

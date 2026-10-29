@@ -89,5 +89,12 @@ describe('Seed (e2e)', () => {
     expect(await ctx.prisma.notification.count()).toBeGreaterThan(5);
     expect(await ctx.prisma.feedback.count()).toBe(2);
     expect(await ctx.prisma.setting.findUnique({ where: { key: 'portal' } })).not.toBeNull();
+    // Dictionary (B2): approved bilingual terms with synonyms and one proposal.
+    const terms = await ctx.prisma.repoObject.findMany({ where: { type: 'TERM' } });
+    expect(terms.filter((t) => t.status === 'APPROVED')).toHaveLength(5);
+    expect(terms.filter((t) => t.status === 'DRAFT').map((t) => t.nameEn)).toEqual([
+      'Steering committee',
+    ]);
+    expect(terms.every((t) => t.nameEn && t.nameAr)).toBe(true);
   });
 });

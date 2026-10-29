@@ -35,7 +35,7 @@ import {
   SSO_ERROR_CODES,
   SSO_PROVIDERS,
 } from '@processhub/shared';
-import { THEME_KINDS } from '@processhub/shared';
+import { CONVENTION_RULES, THEME_KINDS } from '@processhub/shared';
 import { resources } from './i18n';
 import { BADGE_KINDS } from './features/modeler/badges';
 import { PALETTE_ENTRIES, PALETTE_GROUPS, READY_STEPS } from './features/modeler/palette-entries';
@@ -150,6 +150,11 @@ describe('translations', () => {
       ),
       ...PAPERS.map((p) => `portal:print.paper.${p}`),
       ...THEME_KINDS.map((k) => `admin:theme.kind.${k}`),
+      ...CONVENTION_RULES.flatMap((r) => [
+        `admin:conventions.rules.${r}.title`,
+        `admin:conventions.rules.${r}.hint`,
+        `modeler:conventions.rules.${r}`,
+      ]),
       // Governance and Knowledge Portal
       ...APPROVAL_RULES.map((r) => `governance:rule.${r}`),
       ...ASSIGNEE_TYPES.map((a) => `governance:assignee.${a}`),

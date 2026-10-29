@@ -8,5 +8,6 @@ import { ModelsService } from './models.service';
   imports: [ProcessesModule],
   controllers: [ModelsController, DiagramThemeController],
   providers: [ModelsService],
+  exports: [ModelsService],
 })
 export class ModelsModule {}

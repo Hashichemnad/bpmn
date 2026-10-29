@@ -2,7 +2,86 @@
 
 Read this together with `CLAUDE.md` at the start of every session.
 
-## Current state — 2026-10-28 (dependency upgrade: zod 3 → 4, branch `deps-zod-4`)
+## Current state — 2026-10-29 (Modeler design — Part B2: smarter modeling and reports, branch `modeler-design-b2`)
+
+Everything up to Modeler design Part B1 and the zod 4 upgrade is merged into `main`. Part B2 adds browser
+tests in CI, a Dictionary with label autocomplete, Quick Model (table entry), step attributes with "colour by"
+views, reports (handbook .docx, RACI .xlsx, object reports) and modeling conventions as a quality gate. Main
+test diagram: `docs/samples/PMS-01-Program-Request-Approval.bpmn`.
+
+Local setup used by this session: PostgreSQL 16 (role `processhub` / `devpassword`, databases `processhub`,
+`processhub_test`); the Docker daemon works in this sandbox, so the e2e suite ran against
+`docker compose up` (images built with the sandbox proxy CA through a scratch Dockerfile copy — the
+repository Dockerfiles are unchanged); `.env` with `LOGIN_RATE_LIMIT_MAX=1000`.
+
+Steps (tick as they are committed; a new session continues at the first unticked one):
+
+- [x] 0. Playwright smoke tests in CI (job "End-to-end": `docker compose up --build --wait`, Chromium,
+      artifacts on failure): sign-in incl. wrong password and the Super Admin's first 2FA enrolment (TOTP from
+      the shown key, recovery codes kept in `apps/e2e/.auth/` for re-runs), process house → new process,
+      workspace → import PMS-01 → ready-made "Approval step" → Save version, submit → reviewer and owner
+      approve → owner publishes, viewer opens it in the portal, Arabic workspace RTL (palette on the right).
+      17 tests, ≈ 40 s locally.
+- [x] 1. Dictionary (D-083, D-084): library type `TERM` with definition, synonyms EN/AR, category, owner,
+      status (draft / approved); Dictionary page (Library → Dictionary: approved terms, proposals with approve /
+      reject), term fields in the object form, term details on the object page; label autocomplete on the
+      canvas (direct editing, ↑ ↓ Enter Esc) and in the panel's name fields — approved terms, roles and IT
+      systems, both languages and synonyms, Arabic spelling variants; choosing one fills both labels and sets
+      `ph:labelRef` (lanes: role); book marker on linked shapes; "Propose as dictionary term" from the panel;
+      Rename with preview (affected processes / labels, skipped ones and why, one version per process,
+      audited) for terms, roles and systems; API keeps NAMED links in sync on save; demo terms in the seed;
+      approved terms only as AI translation terminology. Fixes: a click keeps the selected shape selected and
+      the diagram stays still when the Arabic panel opens (double-click label editing hit the wrong shape);
+      Ant Design's Arabic "(optional)". Tests: shared 9, API e2e 6 (+ seed), web 6, Playwright 4.
+- [x] 2. Quick Model (D-085): "Diagram | Quick Model" switch in the workspace; table with step EN/AR, performed
+      by (library role or free text → lane), IT system, step type (shared `steps.ts`), next step(s) with
+      bilingual condition labels; add / insert / move / delete rows, validation (errors block, warnings
+      shown); Paste from Excel (TSV, header detection, row numbers or names, library matching); "Generate
+      diagram" = one undoable command (ids kept, lanes from roles, pool when needed, auto-layout) + save +
+      SUPPORTS links; "Read from diagram". Fixes: English inputs stay LTR in the Arabic UI (Ant Design's
+      `.ant-input-rtl`). Tests: shared 2, web 8, Playwright 2 (EN paste → generate → edit keeps the id;
+      Arabic-only rows).
+- [x] 3. Step attributes and "colour by" (D-086): side panel "Step attributes" (processing / waiting time and SLA
+      in minutes / hours / days, frequency per month, cost per execution, inputs / outputs EN/AR) stored as
+      `ph:` attributes, validated on every save (`INVALID_STEP_ATTRIBUTES`); shared BPMN reader
+      `bpmn-graph.ts`; View → Colour by (lane / role, IT system, step type, duration band, missing
+      information) as markers + generated CSS with a legend, view only; totals card on the process page
+      (steps, approvals, decisions, systems, roles, planned time of the main path). Tests: shared 7, API 3,
+      web 5, Playwright 1.
+- [x] 4. Reports and exports (D-087): process handbook (.docx) for a process or its branch — cover with logo,
+      contents, per process description, details (owner, version, approval), diagram on a landscape page, step
+      table in flow order, linked documents and SOP page text — fully RTL in Arabic; RACI (.xlsx: RACI, IT
+      systems, steps with attributes, legend; Arabic sheets right-to-left); object report "where used"
+      (.xlsx) on the object page. Process page → More (workspace: working or published version, language,
+      sub-processes), portal process page → Reports (published only), workspace import / export menu.
+      Diagrams drawn in the browser (PNG), documents built on the server (`docx`, `exceljs`), `EXPORT`
+      audit entry, Viewers published content only (`NOT_PUBLISHED`), 40-process limit. Samples:
+      `docs/samples/PMS-01-handbook-{en,ar}.docx`, `PMS-01-raci-{en,ar}.xlsx`. Tests: shared 1, API 6
+      (+ authorisation matrix: the RACI route serves the portal), Playwright 1.
+- [x] 5. Modeling conventions (D-088): Administration → Modeling conventions (permission `conventions.manage`:
+      Super Admin, Admin) with six rules — both-language labels, steps in a lane linked to a role, user tasks
+      described, maximum elements, no unconnected elements, approval followed by a decision — each "Check" and
+      "Required before review"; Validation panel section "Modeling conventions" (Required / Convention tags, click
+      selects the element) from the shared `checkConventions`; server refuses "Submit for review" with
+      `CONVENTIONS_NOT_MET` and the list (EN/AR dialog). Default: all warnings, none required. Tests: shared 5,
+      API 3, web 1 (+ i18n keys), Playwright 1 (+ settings page view in the admin sign-in test).
+- [x] 6. Screenshots EN/AR (`docs/screenshots/modeler-design-b2/`, prefix = part), samples from PMS-01
+      (`docs/samples/PMS-01-handbook-{en,ar}.docx`, `PMS-01-raci-{en,ar}.xlsx`), docs (README, CLAUDE.md phase
+      table and data model, DECISIONS D-083 – D-088, BACKLOG, SECURITY), verification, pull request.
+      Verification on 2026-10-29: shared 125, web 79, API 332 tests pass; Playwright 26 tests pass in 2.7 min
+      (now one worker: the specs share the demo users' saved language); lint, format and type-check clean;
+      `pnpm audit --audit-level high` clean (8 moderate, 1 low: `minio` → stream-json / decode-uri-component,
+      `nodemailer` 3 new moderate advisories already on `main`, `exceljs` → `uuid` 8 — see SECURITY SEC-09).
+
+### Next (continue here)
+
+1. Review and merge the pull request `modeler-design-b2` → `main` (decisions for the product owner are listed
+   in the pull request: default conventions, RACI R / A only, Admins managing conventions, the e2e suite on one
+   worker).
+2. Then: update `nodemailer` (moderate advisories, separate dependency branch), Phase 6 part 4 step 6 and
+   Phase 4 (GRC, EA, KPIs + Salesforce) as before.
+
+## Previous state — 2026-10-28 (dependency upgrade: zod 3 → 4, branch `deps-zod-4`)
 
 Modeler design Part B1 is merged into `main`. This branch only upgrades zod (product owner decision 1 of
 2026-10-28) and closes the high advisory GHSA-mrhx-c7xc-m3w5 that has no zod 3 fix. Decision: DECISIONS D-082.

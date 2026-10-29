@@ -46,7 +46,8 @@
   "linked": {
     "ROLE": "يُنفَّذ بواسطة (الأدوار)",
     "SYSTEM": "مدعوم بـ (أنظمة تقنية المعلومات)",
-    "DOCUMENT": "الوثائق (مدخلات / مخرجات)"
+    "DOCUMENT": "الوثائق (مدخلات / مخرجات)",
+    "TERM": "مصطلحات القاموس"
   },
   "severity": {
     "warning": "تحذير",
@@ -321,5 +322,182 @@
     "suggestion": "مقترح: «{{role}}» يُنفّذ هذه الخطوة (المسار «{{lane}}»).",
     "suggestionLink": "ربط",
     "suggestionDismiss": "ليس الآن"
+  },
+  "dictionary": {
+    "suggestions": "من القاموس والمكتبة",
+    "keysHint": "↑ ↓ للاختيار · Enter للاستخدام · Esc للإغلاق",
+    "linked": "التسمية من المكتبة ({{type}}):",
+    "missing": "العنصر غير موجود",
+    "unlink": "إلغاء الربط",
+    "propose": "اقتراح كمصطلح في القاموس",
+    "marker": "تسمية من القاموس / المكتبة — إعادة تسمية العنصر تحدّثها"
+  },
+  "quick": {
+    "viewLabel": "العرض",
+    "viewDiagram": "المخطط",
+    "viewTable": "النمذجة السريعة",
+    "title": "النمذجة السريعة",
+    "hint": "صف لكل خطوة. أنشئ المخطط من الجدول — المسارات من الأدوار.",
+    "addStep": "إضافة خطوة",
+    "paste": "لصق من Excel",
+    "reread": "القراءة من المخطط",
+    "rereadTitle": "تجاهل تعديلات الجدول؟",
+    "rereadText": "سيُقرأ الجدول من المخطط مجددًا، وستُفقد تعديلاتك في الجدول.",
+    "generate": "إنشاء المخطط",
+    "generateHint": "يحدّث المخطط من الجدول (تحتفظ الخطوات الموجودة بتعليقاتها وروابطها؛ خطوة تراجع واحدة).",
+    "generated": "تم تحديث المخطط من الجدول — تراجع واحد يلغي ذلك",
+    "fixErrors": "صحّح الأخطاء المذكورة أعلاه أولًا",
+    "row": "الصف {{n}}",
+    "empty": "لا توجد خطوات بعد — أضف خطوة أو الصق صفوفًا من Excel",
+    "nameEn": "الخطوة (بالإنجليزية)",
+    "nameAr": "الخطوة (بالعربية)",
+    "role": "يُنفّذها (الدور)",
+    "system": "نظام تقنية المعلومات",
+    "type": "نوع الخطوة",
+    "next": "الخطوة (الخطوات) التالية",
+    "conditions": "الشروط",
+    "conditionsSet_zero": "{{count}} شرط",
+    "conditionsSet_one": "شرط واحد",
+    "conditionsSet_two": "شرطان",
+    "conditionsSet_few": "{{count}} شروط",
+    "conditionsSet_many": "{{count}} شرطًا",
+    "conditionsSet_other": "{{count}} شرط",
+    "conditionEn": "الشرط (بالإنجليزية)، مثل Yes",
+    "conditionAr": "الشرط (بالعربية)، مثل نعم",
+    "otherHint": "يبقى هذا النوع من العناصر كما هو؛ عدّله في المخطط.",
+    "moveUp": "تحريك لأعلى",
+    "moveDown": "تحريك لأسفل",
+    "insert": "إدراج خطوة أسفل هذه",
+    "types": {
+      "task": "مهمة",
+      "approval": "اعتماد",
+      "system": "خطوة آلية",
+      "notification": "إشعار",
+      "decision": "قرار",
+      "end": "نهاية"
+    },
+    "issues": {
+      "NAME_MISSING": "لا يوجد اسم للخطوة",
+      "UNKNOWN_NEXT": "إحدى الخطوات التالية لم تعد موجودة",
+      "SELF_LOOP": "لا يمكن أن تؤدي الخطوة إلى نفسها",
+      "END_HAS_NEXT": "لا توجد خطوة بعد النهاية",
+      "NO_NEXT": "لا توجد خطوة تالية (يتوقف التدفق هنا)",
+      "DECISION_ONE_WAY": "يجب أن يكون للقرار خطوتان تاليتان على الأقل",
+      "EMPTY": "لا توجد خطوات في الجدول."
+    },
+    "pasteTitle": "لصق صفوف من Excel",
+    "pasteHint": "انسخ الصفوف في Excel (أو أي جدول بيانات) والصقها أدناه. الأعمدة بهذا الترتيب — الأول فقط مطلوب:",
+    "pasteColumns": "Step (English) · Step (Arabic) · Performed by · IT system · Step type · Next step(s) · Conditions\nالخطوات التالية: أرقام الصفوف أو أسماء الخطوات مفصولة بـ \";\". الشروط: تسمية لكل خطوة تالية بالترتيب نفسه.",
+    "pastePlaceholder": "الصق هنا (Ctrl+V)",
+    "pasteCount_zero": "لم يُعثر على خطوات",
+    "pasteCount_one": "تم العثور على خطوة واحدة",
+    "pasteCount_two": "تم العثور على خطوتين",
+    "pasteCount_few": "تم العثور على {{count}} خطوات",
+    "pasteCount_many": "تم العثور على {{count}} خطوة",
+    "pasteCount_other": "تم العثور على {{count}} خطوة",
+    "pasteUse": "استخدام هذه الصفوف",
+    "pasteReplace": "استبدال الجدول",
+    "pasteAppend": "إضافة إلى الجدول",
+    "pasted_zero": "لم تُلصق أي خطوة",
+    "pasted_one": "تم لصق خطوة واحدة — راجعها وأنشئ المخطط",
+    "pasted_two": "تم لصق خطوتين — راجعهما وأنشئ المخطط",
+    "pasted_few": "تم لصق {{count}} خطوات — راجعها وأنشئ المخطط",
+    "pasted_many": "تم لصق {{count}} خطوة — راجعها وأنشئ المخطط",
+    "pasted_other": "تم لصق {{count}} خطوة — راجعها وأنشئ المخطط",
+    "unknownSystems": "غير موجودة في مكتبة الأنظمة (تُركت فارغة): {{names}}",
+    "unknownNext": "خطوات تالية غير موجودة (الصف: النص): {{refs}}"
+  },
+  "attributes": {
+    "title": "خصائص الخطوة",
+    "durationMinutes": "وقت المعالجة المخطط",
+    "waitingMinutes": "وقت الانتظار",
+    "slaMinutes": "اتفاقية مستوى الخدمة (الحد الأقصى للوقت)",
+    "slaHint": "الوقت المسموح به من بدء الخطوة حتى إنجازها.",
+    "frequencyPerMonth": "التكرار (شهريًا)",
+    "costPerExecution": "التكلفة لكل تنفيذ",
+    "inputsEn": "المدخلات (بالإنجليزية)",
+    "inputsAr": "المدخلات (بالعربية)",
+    "outputsEn": "المخرجات (بالإنجليزية)",
+    "outputsAr": "المخرجات (بالعربية)",
+    "unit": "الوحدة",
+    "units": {
+      "minutes": "دقائق",
+      "hours": "ساعات",
+      "days": "أيام"
+    },
+    "short": {
+      "minutes": "{{n}} د",
+      "hours": "{{n}} س",
+      "days": "{{n}} ي"
+    },
+    "invalid": "إحدى القيم المحفوظة غير صالحة؛ أدخلها مرة أخرى."
+  },
+  "colourBy": {
+    "title": "التلوين حسب",
+    "legend": "دليل الألوان",
+    "off": "العودة إلى الألوان المحفوظة",
+    "viewOnly": "للعرض فقط — لا تتغير ألوان المخطط.",
+    "modes": {
+      "none": "الألوان المحفوظة",
+      "role": "المسار / الدور",
+      "system": "نظام تقنية المعلومات",
+      "type": "نوع الخطوة",
+      "duration": "المدة المخططة",
+      "missing": "معلومات ناقصة"
+    },
+    "categories": {
+      "none": "غير محدد",
+      "type": {
+        "task": "مهمة",
+        "approval": "اعتماد",
+        "system": "خطوة آلية",
+        "notification": "إشعار",
+        "decision": "قرار",
+        "end": "نهاية",
+        "other": "أخرى"
+      },
+      "duration": {
+        "none": "بلا وقت مخطط",
+        "short": "أقل من ساعة",
+        "medium": "من ساعة إلى 8 ساعات",
+        "long": "أكثر من 8 ساعات"
+      },
+      "missing": {
+        "complete": "الدور والوصف محددان",
+        "incomplete": "معلومات ناقصة"
+      }
+    },
+    "missingRole_zero": "لا توجد خطوات بلا دور",
+    "missingRole_one": "خطوة واحدة بلا دور",
+    "missingRole_two": "خطوتان بلا دور",
+    "missingRole_few": "{{count}} خطوات بلا دور",
+    "missingRole_many": "{{count}} خطوة بلا دور",
+    "missingRole_other": "{{count}} خطوة بلا دور",
+    "missingDescription_zero": "لا توجد خطوات بلا وصف",
+    "missingDescription_one": "خطوة واحدة بلا وصف",
+    "missingDescription_two": "خطوتان بلا وصف",
+    "missingDescription_few": "{{count}} خطوات بلا وصف",
+    "missingDescription_many": "{{count}} خطوة بلا وصف",
+    "missingDescription_other": "{{count}} خطوة بلا وصف"
+  },
+  "conventions": {
+    "title": "قواعد النمذجة",
+    "diagramChecks": "فحوص المخطط",
+    "required": "إلزامي",
+    "warning": "قاعدة",
+    "blocking_zero": "لا توجد قواعد إلزامية غير مستوفاة.",
+    "blocking_one": "قاعدة إلزامية واحدة غير مستوفاة: صحّحها قبل الإرسال للمراجعة.",
+    "blocking_two": "قاعدتان إلزاميتان غير مستوفاتين: صحّحهما قبل الإرسال للمراجعة.",
+    "blocking_few": "{{count}} قواعد إلزامية غير مستوفاة: صحّحها قبل الإرسال للمراجعة.",
+    "blocking_many": "{{count}} قاعدة إلزامية غير مستوفاة: صحّحها قبل الإرسال للمراجعة.",
+    "blocking_other": "{{count}} قاعدة إلزامية غير مستوفاة: صحّحها قبل الإرسال للمراجعة.",
+    "rules": {
+      "bilingualLabels": "تحتاج الخطوة إلى تسمية بالإنجليزية وبالعربية.",
+      "laneRole": "الخطوة ليست في مسار مرتبط بدور.",
+      "userTaskDescription": "مهمة المستخدم بلا وصف.",
+      "maxElements": "يحتوي المخطط على {{count}} عنصرًا والحد الأقصى {{max}}. قسّمه إلى عمليات فرعية.",
+      "noUnconnected": "العنصر غير متصل بالتدفق.",
+      "approvalDecision": "خطوة الاعتماد لا يتبعها قرار."
+    }
   }
 }

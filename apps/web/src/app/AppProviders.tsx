@@ -1,12 +1,18 @@
 import { type ReactNode } from 'react';
-import { App as AntApp, ConfigProvider } from 'antd';
+import { App as AntApp, ConfigProvider, type ConfigProviderProps } from 'antd';
 import enUS from 'antd/locale/en_US';
-import arEG from 'antd/locale/ar_EG';
+import arEGBase from 'antd/locale/ar_EG';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ApiError } from '@/api/client';
 import { LocaleProvider, useLocale } from './LocaleProvider';
 import { AuthProvider } from '@/auth/AuthProvider';
 import { buildTheme } from './theme';
+
+/** Ant Design's Arabic locale has no text for optional form fields ("(optional)" otherwise). */
+const arEG: ConfigProviderProps['locale'] = {
+  ...arEGBase,
+  Form: { defaultValidateMessages: {}, ...arEGBase.Form, optional: '(اختياري)' },
+};
 
 export function createQueryClient() {
   return new QueryClient({

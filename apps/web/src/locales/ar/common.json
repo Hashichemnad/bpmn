@@ -47,10 +47,12 @@
     "governanceGroup": "الحوكمة",
     "documents": "الوثائق",
     "workflows": "مسارات الاعتماد",
+    "conventions": "قواعد النمذجة",
     "portalSettings": "بوابة المعرفة",
     "portal": "البوابة",
     "portalHint": "فتح بوابة المعرفة (المحتوى المنشور)",
-    "aiUsage": "استخدام الذكاء الاصطناعي"
+    "aiUsage": "استخدام الذكاء الاصطناعي",
+    "dictionary": "القاموس"
   },
   "auth": {
     "subtitle": "سجّل الدخول للمتابعة",

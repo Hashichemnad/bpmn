@@ -67,7 +67,7 @@
   "WORKFLOW_NO_ASSIGNEES": "The step “{{stepName}}” of the approval workflow has nobody who can review this item.",
   "REVIEW_CLOSED": "This review is already closed.",
   "NO_APPROVED_REVIEW": "There is no approved version to publish.",
-  "NOT_PUBLISHED": "The item is not published.",
+  "NOT_PUBLISHED": "This process has no published version yet.",
   "NOT_YOUR_TASK": "You have no open task in this review.",
   "WORKFLOW_NOT_FOUND": "The workflow does not exist.",
   "USER_NOT_FOUND": "The user does not exist.",
@@ -115,5 +115,13 @@
   "SSO_DOMAIN_NOT_ALLOWED": "Your e-mail domain is not allowed to sign in to ProcessHub.",
   "SSO_USER_NOT_FOUND": "You do not have a ProcessHub account yet. Ask an administrator to create one.",
   "SSO_USER_INACTIVE": "Your ProcessHub account is deactivated. Contact an administrator.",
-  "SSO_ACCOUNT_CONFLICT": "This e-mail address is already linked to another sign-in. Contact an administrator."
+  "SSO_ACCOUNT_CONFLICT": "This e-mail address is already linked to another sign-in. Contact an administrator.",
+  "NOT_A_TERM": "This object is not a dictionary term.",
+  "TERM_ALREADY_APPROVED": "The term is already approved.",
+  "TERM_NOT_PROPOSED": "Only proposed (draft) terms can be rejected.",
+  "INVALID_OWNER": "The selected owner does not exist.",
+  "INVALID_STEP_ATTRIBUTES": "Some step attributes are invalid (times, frequency and cost must be numbers of 0 or more).",
+  "REPORT_TOO_LARGE": "The branch has too many processes for one handbook. Choose a smaller branch.",
+  "INVALID_IMAGE": "A diagram image could not be read.",
+  "CONVENTIONS_NOT_MET": "The process does not meet {{count}} required modeling convention(s). Open the diagram’s Validation panel to see and fix them, save a version, then submit again."
 }

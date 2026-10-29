@@ -17,6 +17,7 @@
 | **Process House & Repository** | Management / Core / Support process house, drag-and-drop process tree, owners, departments | ✅ 1 |
 | **Process Modeler** | BPMN 2.0 editor with bilingual labels, validation, versions, drill-down, import/export (BPMN XML, SVG, PNG); enterprise look (colour theme by element type, approval steps, rounded shapes, task icons, Inter / IBM Plex Sans Arabic, right-to-left Arabic labels), colour picker, all colours stored as standard BPMN-in-Color | ✅ 1, design A, B1 |
 | **Object Repository** | Reusable roles and IT systems linked to process steps, "where used" report (documents, risks, controls, KPIs later) | ✅ 1 |
+| **Smarter modeling & reports** | Dictionary of approved bilingual terms with label autocomplete (terms, roles, IT systems, synonyms) and rename with preview; Quick Model (enter a process as a table or paste from Excel, generate the diagram); step attributes (times, SLA, frequency, cost, inputs / outputs) with "colour by" views and process totals; process handbook (Word) and RACI / "where used" reports (Excel) in English or Arabic (RTL); modeling conventions (house rules as warnings, selected ones required before review) | ✅ design B2 |
 | **Documentation Wiki** | Spaces with access rules, page tree, rich-text editor (tables, checklists, callouts, images, attachments, embedded BPMN diagrams, RTL/LTR), English + Arabic versions, templates, trash, full-text search, PDF / Markdown export | ✅ 2 |
 | **Version Control** | Versions with change notes for processes and pages, visual BPMN diff, side-by-side / inline text diff, restore, labels | ✅ 2 |
 | **Git Integration** *(optional)* | One-way sync of BPMN models (.bpmn + .json) and pages (Markdown) to GitHub or GitLab, on every version or on demand, with a status page | ✅ 2 |
@@ -267,7 +268,13 @@ pnpm e2e            # Playwright smoke tests against a running, seeded stack (E2
 ```
 
 The Playwright tests (`apps/e2e`) need a Chromium for Playwright 1.56 (`pnpm --filter @processhub/e2e exec
-playwright install chromium` once) and only read data or add feedback, so they can be re-run.
+playwright install chromium` once, or `E2E_CHROMIUM_PATH` pointing at an installed Chromium). They cover
+sign-in with the Super Admin's first 2FA enrolment, the process house, the full-screen modeler (import of
+the PMS-01 sample, a ready-made step, Save version), submit → approve → publish, the Knowledge Portal as
+Viewer and Arabic RTL. Each run creates a new process, so the suite can be re-run on the same database; the
+admin's 2FA secret and unused recovery codes are kept in `apps/e2e/.auth/` (git-ignored). Every test signs
+in from the same address: raise `LOGIN_RATE_LIMIT_MAX` in `.env` (e.g. 1000) on a test stack. CI runs the
+suite against `docker compose up` (job "End-to-end").
 
 The API end-to-end tests run against `TEST_DATABASE_URL`, which defaults to
 `postgresql://processhub:devpassword@localhost:5432/processhub_test`. They **empty every table** in that

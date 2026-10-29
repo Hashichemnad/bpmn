@@ -43,10 +43,12 @@
     "governanceGroup": "Governance",
     "documents": "Documents",
     "workflows": "Workflows",
+    "conventions": "Modeling conventions",
     "portalSettings": "Knowledge Portal",
     "portal": "Portal",
     "portalHint": "Open the Knowledge Portal (published content)",
-    "aiUsage": "AI usage"
+    "aiUsage": "AI usage",
+    "dictionary": "Dictionary"
   },
   "auth": {
     "subtitle": "Sign in to continue",

@@ -21,3 +21,4 @@ deploy/certs/*.pem
 
 # Stray Python wheels (tool downloads)
 *.whl
+.auth/
