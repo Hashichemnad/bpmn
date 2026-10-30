@@ -2,7 +2,7 @@
 
 Read this together with `CLAUDE.md` at the start of every session.
 
-## Current state — 2026-10-30 (Phase 4 — Part 2: GRC assurance, branch `phase-4-2-grc-assurance`)
+## Current state — 2026-10-30 (Phase 4 — Part 2: GRC assurance, branch `phase-4-2-grc-assurance`, done — awaiting review)
 
 Everything up to Phase 4.1 (GRC core) is merged into `main`. This branch builds module M10 assurance (DOF RFP §4.5,
 compliance items 32–36): approval of changes to active risks / controls, control testing, issues and action plans,
@@ -95,11 +95,27 @@ Steps (tick as they are committed; a new session continues at the first unticked
       audited). Risk dashboard heat map toggle "Using tested effectiveness" (`/grc/dashboard?tested=true`, register
       filter `matrix=tested`, shared `testedResidual`). Web: "Assurance dashboard" in the Risk & Compliance menu.
       Tests: shared 2, API 1 (`assurance-dashboard.e2e-spec.ts`), Playwright 1.
-- [ ] 6. Permissions sweep, demo seed, screenshots EN / AR, sample audit report, docs, pull request.
+- [x] 6. Permissions, demo data, docs: authorisation matrix with real assurance records + a Modeler sweep over every
+      assurance write endpoint; route table in SECURITY.md regenerated; demo seed `seed-assurance.ts` (2 test plans,
+      the failed CTL-01 test → ISS-0001 with two actions, an overdue and a planned test, engagement AUD-YYYY-01 with
+      F-01 agreed → ISS-0002 and F-02 waiting for the response, RCSA campaign with two answers / four proposals; demo
+      user `audit@processhub.local`); screenshots EN / AR in `docs/screenshots/phase-4-2/` (spec
+      `screenshots-phase-4-2.spec.ts`, run with `SCREENSHOTS=1`), sample audit reports
+      `docs/samples/sample-audit-report-{en,ar}.docx`; README tour, CLAUDE.md (roles, data model, phase table),
+      BACKLOG (4.2 follow-ups, 4.3), DECISIONS D-098 – D-103.
+
+Verification on 2026-10-30: shared 147, web 79, API 359 tests pass; Playwright 35 tests (8 new in `assurance.spec.ts`)
+— 34 passed in the full run, the Phase 4.1 portal test hit the 30 s default budget with six sign-ins and now has 60 s
+(passes alone in 28 s); lint, format and type-check clean; `pnpm build` succeeds; `pnpm audit --audit-level high
+--prod` clean (7 moderate, unchanged). **Not verified here:** the Docker image builds — Docker Hub answered
+429 Too Many Requests for the base images in this sandbox (the build steps themselves, `pnpm build`, pass).
 
 ### Next (continue here)
 
-Step 6 — permissions sweep, demo seed, screenshots, sample report, docs, pull request.
+1. Review and merge the pull request `phase-4-2-grc-assurance` → `main`; build the Docker images in CI.
+2. Product-owner decisions listed in the pull request (approval routing of imports, Viewer action owners, audit
+   visibility, default of the change approval).
+3. Then Phase 4.3 (EA, KPIs, Salesforce, Oracle overlay — BACKLOG).
 
 ## Previous state — 2026-10-30 (Phase 4 — Part 1: GRC core, branch `phase-4-1-grc`, done — awaiting review)
 
