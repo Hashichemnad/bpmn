@@ -24,7 +24,8 @@
 | **Governance** | Draft → In Review → Approved → Published → Archived with approval workflows (sequential steps, any-one or all approvers), review page with visual diff, threaded comments with @mentions on BPMN elements, notification centre and email, review dates with reminders, My tasks, governance dashboard | ✅ 3 |
 | **Knowledge Portal** | Read-only portal for all staff with published content only: process house, step details, documentation with table of contents, English/Arabic search, "my processes", feedback to owners, PDF download, branding and access settings | ✅ 3 |
 | **AI Assistant** *(optional, off by default)* | Generate a BPMN process (lanes, bilingual labels, auto-layout) from a description; refine it by chat with a visual review; SOP / work instruction from a process and a process from a page; EN↔AR translation of fields, labels and pages; analysis (missing steps, responsibilities, bottlenecks, risks, controls) and plain-language validation warnings; summaries and "what changed"; a Knowledge Portal assistant that answers only from published content with links. Anthropic Claude, encrypted key, roles, limits, usage report, full audit | ✅ AI |
-| **GRC, EA & KPIs** | Risks and controls, IT landscape, KPI dashboards, Salesforce link | 4 |
+| **Risk & Compliance (GRC core)** | Risk register (inherent / residual 5 × 5 ratings, configurable categories and rating bands), control library (type, nature, frequency, key control, IT system, design effectiveness), requirements (law → section → clause); risk ↔ control ↔ requirement relations; assessment history and comments; links to process steps with a modeler panel, warning badges and "colour by" risk views; heat maps, coverage dashboard with drill-down, risk–control matrix and Excel import / export; review reminders; portal visibility setting; handbook section; AI control-gap check | ✅ 4.1 |
+| **EA & KPIs** | Control testing, issues, audits, IT landscape, KPI dashboards, Salesforce link | 4.2 / 4.3 |
 | **Process Mining & Execution** | Event-log analysis, bottlenecks, running approved processes as workflows | 5 |
 
 ## Quick start (Docker)
@@ -61,10 +62,24 @@ content in every lifecycle state, comments, notifications and portal feedback.
 | `reviewer@processhub.local` | Reviewer (Rami) | Workspace — has reviews waiting in **My tasks** |
 | `owner@processhub.local` | Process Owner (Omar) | Workspace — owns the demo processes, overdue items, feedback |
 | `modeler@processhub.local` | Modeler / Editor (Maha) | Workspace — drafts and comments |
-| `auditor@processhub.local` | Auditor (Adel) | Workspace, read-only — drafts, history, reviews, audit log, AI usage |
+| `auditor@processhub.local` | Auditor (Adel) | Workspace, read-only — drafts, history, reviews, audit log, AI usage, Risk & Compliance (read) |
+| `risk@processhub.local` | Risk & Compliance Officer (Rana) | Risk & Compliance — registers, dashboard, settings; rest of the workspace read-only |
 
 Demo users are only created on a demo installation (`SEED_DEMO_DATA=true`, the default). **Emails** sent by
 the demo installation go to the bundled **Mailpit** at **http://localhost:8025** — nothing leaves the machine.
+
+### A short tour of Phase 4.1 — Risk & Compliance
+
+Sign in as `risk@processhub.local`. **Risk & Compliance → Risk dashboard** shows the inherent and residual heat
+maps of the demo risks (purchasing and payments) — click a cell to list its risks, a tile (e.g. "High / critical
+without an effective control") to open the filtered register, a department row to drill down to processes and
+steps; **Risk-control matrix (Excel)** exports process → step → risk → control → requirement. The **Risk register**,
+**Control library** and **Requirements** pages filter, sort, export to Excel and import from Excel (with a check
+before anything is imported). Open "S.01.01 Purchase Requisition" in the modeler: the step "Approve requisition"
+carries a red warning badge (a critical risk whose control is not assessed); the side panel tab **Risks &
+Controls** shows the linked items and **Check control gaps** runs the rules (and, with the AI assistant on, its
+explanations and suggestions). **View → Colour by → Residual risk rating**. Administration → **Risk & Compliance**
+configures the categories, the 5 × 5 matrix and whether the Knowledge Portal shows controls and risks.
 
 ### A short tour of Phase 3 — governance and the Knowledge Portal
 

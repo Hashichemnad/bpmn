@@ -2,7 +2,7 @@
 
 Read this together with `CLAUDE.md` at the start of every session.
 
-## Current state — 2026-10-30 (Phase 4 — Part 1: GRC core, branch `phase-4-1-grc`)
+## Current state — 2026-10-30 (Phase 4 — Part 1: GRC core, branch `phase-4-1-grc`, done — awaiting review)
 
 Everything up to Modeler design Part B2 is merged into `main`. This branch builds module M10 core: risks,
 controls and requirements linked to process steps (DOF RFP §4.5). Phase 4.2 / 4.3 items are in BACKLOG.
@@ -46,7 +46,24 @@ Steps (tick as they are committed; a new session continues at the first unticked
 - [x] 6. AI control-gap check (D-095): shared rules `detectControlGaps` + `GET /grc/processes/:id/gaps`, AI feature
       `CONTROL_GAPS` (`POST /ai/control-gaps`, mocked provider in tests), modeler drawer "Check control gaps" with
       Accept (link / create control) and Dismiss. Tests: shared 1, API 1.
-- [ ] 7. Demo data, e2e tests, screenshots, docs, verification, pull request.
+- [x] 7. Demo data (seed `seed-grc.ts`: 10 risks, 12 controls, 6 requirements on S.01 / S.01.01 / C.01.01, incl.
+      the critical RSK-02 whose only control is not assessed; demo user `risk@processhub.local`), Playwright
+      `grc.spec.ts` (3 tests: create risk → link in modeler → heat map and coverage; portal setting OFF / CONTROLS /
+      ALL; Excel import validation), screenshots EN/AR in `docs/screenshots/phase-4-1/` (register, risk detail,
+      modeler panel with badges, heat map, coverage dashboard, portal step), docs (README, CLAUDE.md, DECISIONS
+      D-089 – D-096, BACKLOG, SECURITY), dependency fix D-096.
+
+Verification on 2026-10-30: shared 134, web 79, API 343 tests pass; Playwright 29 tests pass (3.9 min, against the
+dev stack: API from `apps/api/dist`, Vite on 5173, `E2E_BASE_URL=http://localhost:5173`); lint, format and
+type-check clean; `pnpm audit --audit-level high --prod` clean (7 moderate); API and web Docker images build
+(built with the sandbox proxy CA through scratch Dockerfile copies — repository Dockerfiles unchanged).
+
+### Next (continue here)
+
+1. Review and merge the pull request `phase-4-1-grc` → `main`; decisions for the product owner are listed in the
+   pull request (approval of GRC changes through workflows, Reviewer read access, portal default OFF hides
+   earlier risk / control links, `grc.propose` permission).
+2. Then Phase 4.2 (control testing, issues, audits — BACKLOG) or 4.3 (EA, KPIs, Salesforce).
 
 ## Previous state — 2026-10-29 (Modeler design — Part B2: smarter modeling and reports, branch `modeler-design-b2`)
 

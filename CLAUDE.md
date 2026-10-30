@@ -40,7 +40,7 @@ with no per-user licensing. Target: 50–500 users on a single server.
 | 2 | M5 Wiki, M6 Version control, M7 Git integration | ✅ Done (merged into `main`) |
 | 3 | M8 Governance, M9 Knowledge Portal | ✅ Done (merged into `main`) |
 | AI | M16 AI Assistant (after Phase 3) | ✅ Done (merged into `main`) |
-| 4.1 | M10 GRC core: risks, controls, requirements linked to process steps; heat maps, coverage dashboard, RCM export, reminders, AI control-gap check | 🟡 In progress on branch `phase-4-1-grc` |
+| 4.1 | M10 GRC core: risks, controls, requirements linked to process steps; heat maps, coverage dashboard, RCM export, reminders, AI control-gap check | 🟡 Done on branch `phase-4-1-grc` (D-089 – D-095), awaiting review |
 | 4.2 / 4.3 | M10 control testing, issues and audits; M11 EA; M12 KPIs + Salesforce | ⬜ |
 | 5 | M13 Mining, M14 Execution, simulation | ⬜ |
 | Design A | Modeler design upgrade — Part A: look and feel (colour theme as BPMN-in-Color, renderer, colour picker, fonts/RTL, apply theme) | ✅ Done (merged into `main`, D-067 – D-073) |
@@ -87,7 +87,8 @@ System roles (extensible, permission-based underneath):
 | Process Owner | Own processes: edit, submit for review, approve where assigned |
 | Modeler / Editor | Create and edit drafts |
 | Reviewer | Review and comment, approve where assigned |
-| Auditor | Read-only workspace: drafts, history, reviews, audit log — no edit, comment, approve or publish |
+| Auditor | Read-only workspace: drafts, history, reviews, audit log, Risk & Compliance — no edit, comment, approve or publish |
+| Risk & Compliance Officer | Risks, controls, requirements: create, assess, link to steps, import, settings; rest of the workspace read-only |
 | Viewer | Knowledge Portal only (published content, read-only) |
 
 Permissions are checked **on the server** for every request (NestJS guards). The UI hides what the user cannot do, but never relies on that for security.
@@ -182,6 +183,14 @@ Modeler design Part B2 additions (DECISIONS D-083 – D-088):
   `ph:waitingMinutes`, `ph:slaMinutes`, `ph:frequencyPerMonth`, `ph:costPerExecution`, `ph:inputsEn/Ar`,
   `ph:outputsEn/Ar`
 - Setting `modeling.conventions`; shared reader `packages/shared/src/bpmn-graph.ts` (totals, reports, conventions)
+
+Phase 4.1 additions (DECISIONS D-089 – D-095):
+
+- `RepoObject` type `REQUIREMENT`, link relation `REQUIRES`; `Risk`, `Control`, `Requirement` detail tables (1:1 with
+  the library object), `RiskControl`, `RequirementControl`, `GrcActivity` (assessment history + comments)
+- Process-level links use element id `#process`; permissions `grc.read`, `grc.propose`, `grc.edit`, `grc.admin`;
+  system role `RISK_OFFICER`; notification `GRC_REVIEW`; audit actions `IMPORT`, `ASSESS`; Setting `grc`
+- Shared `packages/shared/src/grc.ts` (schemas, ratings, per-step coverage, control-gap rules); AI feature `CONTROL_GAPS`
 
 ## 10. Definition of Done (every phase)
 

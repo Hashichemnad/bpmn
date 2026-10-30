@@ -1066,3 +1066,11 @@ matched to the library by name (spelling variants folded), an unknown role still
 - **Nothing changes automatically**: in the modeler (Risks & Controls → "Check control gaps") each suggestion has
   Accept (calls the normal link endpoint, or opens the control form prefilled and links the saved control) and
   Dismiss (client only). Proposers create drafts as usual.
+
+## D-096 — `decode-uri-component` override (Phase 4.1, 2026-10-30)
+
+- `pnpm audit --audit-level high --prod` reported GHSA-qr28-fpjm-wq7f (high) on `minio → query-string 7 →
+decode-uri-component 0.2.2`, also on `main`; no MinIO release avoids it. Root `pnpm.overrides` forces
+  `decode-uri-component@<0.5.1` to `^0.5.1` (ESM-only). MinIO uses only `query-string.stringify` (the decoder is
+  never called); Node 22 loads the ES module through `require(esm)`, verified in the production API image, and the
+  API Jest config compiles it like `openid-client`. Remove the override when MinIO drops `query-string` 7.
