@@ -1136,3 +1136,23 @@ decode-uri-component 0.2.2`, also on `main`; no MinIO release avoids it. Root `p
   `AssuranceFile` table used by every Phase 4.2 record; downloads go through `GET /assurance/files/:id`, which asks
   the owning feature whether the caller may read the record (404 otherwise), with `Content-Disposition: attachment`
   and a sandbox CSP.
+
+## D-100 — Issues, action plans, verification and escalation (Phase 4.2, 2026-10-30)
+
+- **Sources**: a failed or "with exceptions" control test, a risk (assessment), an audit finding, a portal feedback item,
+  or by hand. The source fills default links (test → control and department, risk → risk, feedback → process) and the
+  issue keeps a link back. Creating issues needs `issues.manage` (Risk & Compliance officers, admins); accepted audit
+  findings create them through the service.
+- **Severity** comes from a configurable scale in the new Setting `assurance` (default Low / Medium / High / Critical,
+  2–6 levels, also used to rate audit findings), together with the reminder days, escalation days and target.
+- **Who works on it**: the owner edits the content of an open issue and its action plan; only issue managers change the
+  owner or the severity; action owners update progress, note and evidence of their own action. People involved (owner,
+  raiser, action owners) open the issue without `grc.read`; action owners without the workspace (e.g. Viewers) do it
+  in the portal (`/portal/tasks`, `/portal/issues/:id`); workspace links redirect there.
+- **Closing**: "Ready for verification" needs every action at 100 % (`ACTIONS_OPEN`); "Verify and close" is done by the
+  raiser or a Risk & Compliance officer and never by the owner (four-eyes); "Not fixed yet" returns it with a reason.
+  "Accept risk" needs `grc.edit`, a justification, and a different person than the owner; the approver and date are
+  recorded. "Reopen" (reason required) for managers / officers. All transitions audited and in the history.
+- **Escalation**: owners are reminded before the due date and when overdue (issues and actions); after `escalationDays`
+  the issue / action is escalated once to the manager of the owner's department (new `Department.managerId`), to the
+  Risk & Compliance officers, or both (setting); without a manager the officers are always told.

@@ -54,7 +54,9 @@
     "users": "Users",
     "empty": "No departments yet",
     "deleteTitle": "Delete {{name}}?",
-    "deleteText": "Departments with sub-departments, users or processes cannot be deleted."
+    "deleteText": "Departments with sub-departments, users or processes cannot be deleted.",
+    "manager": "Manager (head of department)",
+    "managerHint": "Overdue issues and actions of the department's staff are escalated to this person."
   },
   "audit": {
     "title": "Audit log",

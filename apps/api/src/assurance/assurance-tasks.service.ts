@@ -3,6 +3,7 @@ import { PERMISSIONS, type AssuranceTasksDto } from '@processhub/shared';
 import type { AuthUser } from '../common/auth-user';
 import { GrcChangesService } from './grc-changes.service';
 import { ControlTestsService } from './control-tests.service';
+import { IssuesService } from './issues.service';
 
 /** My tasks → assurance tabs: change approvals, control tests, issues, actions, surveys. */
 @Injectable()
@@ -10,6 +11,7 @@ export class AssuranceTasksService {
   constructor(
     private readonly changes: GrcChangesService,
     private readonly tests: ControlTestsService,
+    private readonly issues: IssuesService,
   ) {}
 
   async myTasks(user: AuthUser): Promise<AssuranceTasksDto> {
@@ -17,6 +19,7 @@ export class AssuranceTasksService {
     return {
       grcChanges: grc ? await this.changes.list({ mine: true }, user) : [],
       ...(await this.tests.myTasks(user)),
+      ...(await this.issues.myTasks(user)),
     };
   }
 }

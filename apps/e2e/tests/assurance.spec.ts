@@ -147,3 +147,69 @@ test('a control test is planned, performed with evidence, signed off and updates
   await page.goto(`/grc/controls/${controlId}`);
   await expect(page.getByTestId('control-testing')).toContainText('Partly effective');
 });
+
+/** Picks a user in a UserSelect (searchable directory). */
+async function pickUser(
+  page: Page,
+  scope: ReturnType<Page['getByTestId']>,
+  field: string,
+  email: string,
+) {
+  await scope.locator(`#${field}`).click({ force: true });
+  await page.keyboard.type(email);
+  await page
+    .locator('.ant-select-dropdown:not(.ant-select-dropdown-hidden) .ant-select-item-option', {
+      hasText: email,
+    })
+    .first()
+    .click();
+}
+
+test('an issue with an action plan is worked by its owner and verified by the raiser', async ({
+  page,
+}) => {
+  await login(page, DEMO.risk);
+  await page.goto('/grc/issues');
+  await page.getByRole('button', { name: 'Raise issue' }).click();
+  const form = page.getByTestId('issue-form');
+  await form.locator('#titleEn').fill(`Supplier onboarding gaps ${stamp}`);
+  await form.locator('#titleAr').fill(`ثغرات تسجيل الموردين ${stamp}`);
+  await pickUser(page, form, 'ownerId', DEMO.owner);
+  await page.locator('.ant-modal').getByRole('button', { name: 'Save' }).click();
+  await expect(page).toHaveURL(/\/grc\/issues\/[0-9a-f-]+$/);
+  const issueUrl = page.url();
+
+  await page.getByTestId('add-action').click();
+  const actionForm = page.getByTestId('action-form');
+  await actionForm.locator('#titleEn').fill('Update the onboarding checklist');
+  await pickUser(page, actionForm, 'ownerId', DEMO.owner);
+  await page.locator('.ant-modal').getByRole('button', { name: 'OK' }).click();
+  await expect(page.getByTestId('issue-actions')).toContainText('Update the onboarding checklist');
+
+  // The owner completes the action and reports the issue as fixed.
+  await login(page, DEMO.owner);
+  await page.goto('/tasks?tab=issueActions');
+  await page
+    .getByTestId('tasks-actions')
+    .getByRole('link', { name: 'Update the onboarding checklist' })
+    .first()
+    .click();
+  await expect(page).toHaveURL(issueUrl);
+  const handle = page.getByTestId('issue-actions').locator('.ant-slider-handle').first();
+  await handle.focus();
+  await page.keyboard.press('End');
+  await expect(page.getByRole('progressbar').first()).toHaveAttribute('aria-valuenow', '100');
+  await expect(page.getByTestId('issue-READY')).toBeVisible();
+  await page.getByTestId('issue-READY').click();
+  await expect(page.locator('body')).toContainText('Ready for verification');
+
+  // The raiser verifies and closes it.
+  await login(page, DEMO.risk);
+  await page.goto('/tasks?tab=issuesToVerify');
+  await page
+    .getByTestId('tasks-verify')
+    .getByRole('link', { name: new RegExp(`Supplier onboarding gaps ${stamp}`) })
+    .click();
+  await page.getByTestId('issue-VERIFY').click();
+  await expect(page.locator('.ant-page-header, body')).toContainText('Closed');
+});

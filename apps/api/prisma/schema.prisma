@@ -301,6 +301,8 @@ model RefreshToken {
 model Department {
   id          String       @id @default(uuid()) @db.Uuid
   code        String?
+  /// Head of the department: overdue issues and actions of its staff are escalated to them (D-100).
+  managerId   String?      @db.Uuid
   nameEn      String       @default("")
   nameAr      String       @default("")
   parentId    String?      @db.Uuid
@@ -1194,4 +1196,82 @@ model AssuranceEvent {
   createdBy   User?    @relation("AssuranceEventAuthor", fields: [createdById], references: [id], onDelete: SetNull)
 
   @@index([entityType, entityId, createdAt])
+}
+
+/// An issue to fix (Phase 4.2, D-100): from a failed test, a risk assessment, an audit finding,
+/// portal feedback or raised by hand. Open → In progress → Ready for verification → Closed, or
+/// Accepted risk (justification + approver).
+model Issue {
+  id                      String        @id @default(uuid()) @db.Uuid
+  /// ISS-0001 …
+  code                    String        @unique
+  titleEn                 String        @default("")
+  titleAr                 String        @default("")
+  descriptionEn           String        @default("")
+  descriptionAr           String        @default("")
+  /// CONTROL_TEST | RISK_ASSESSMENT | AUDIT_FINDING | FEEDBACK | MANUAL
+  sourceType              String        @default("MANUAL")
+  sourceId                String?       @db.Uuid
+  /// Key of the configurable severity scale (Setting `assurance`).
+  severity                String
+  /// OPEN | IN_PROGRESS | READY_FOR_VERIFICATION | CLOSED | ACCEPTED_RISK
+  status                  String        @default("OPEN")
+  ownerId                 String?       @db.Uuid
+  dueAt                   DateTime?
+  processId               String?       @db.Uuid
+  bpmnElementId           String?
+  riskId                  String?       @db.Uuid
+  controlId               String?       @db.Uuid
+  requirementId           String?       @db.Uuid
+  departmentId            String?       @db.Uuid
+  acceptanceJustification String        @default("")
+  acceptedById            String?       @db.Uuid
+  acceptedAt              DateTime?
+  verifiedById            String?       @db.Uuid
+  verifiedAt              DateTime?
+  closedAt                DateTime?
+  dueNotifiedAt           DateTime?
+  overdueNotifiedAt       DateTime?
+  escalatedAt             DateTime?
+  createdAt               DateTime      @default(now())
+  updatedAt               DateTime      @updatedAt
+  /// The raiser (verifies the fix together with Risk & Compliance).
+  createdById             String?       @db.Uuid
+  updatedById             String?       @db.Uuid
+  deletedAt               DateTime?
+  actions                 IssueAction[]
+
+  @@index([status])
+  @@index([ownerId])
+  @@index([sourceType, sourceId])
+  @@index([processId])
+  @@index([controlId])
+  @@index([riskId])
+}
+
+/// An action of an issue's action plan: owner, due date, progress and evidence.
+model IssueAction {
+  id                String    @id @default(uuid()) @db.Uuid
+  issueId           String    @db.Uuid
+  issue             Issue     @relation(fields: [issueId], references: [id], onDelete: Cascade)
+  titleEn           String    @default("")
+  titleAr           String    @default("")
+  note              String    @default("")
+  ownerId           String?   @db.Uuid
+  dueAt             DateTime?
+  /// 0–100; 100 = done.
+  progress          Int       @default(0)
+  completedAt       DateTime?
+  sortOrder         Int       @default(0)
+  dueNotifiedAt     DateTime?
+  overdueNotifiedAt DateTime?
+  escalatedAt       DateTime?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  createdById       String?   @db.Uuid
+  updatedById       String?   @db.Uuid
+  deletedAt         DateTime?
+
+  @@index([issueId])
+  @@index([ownerId])
 }

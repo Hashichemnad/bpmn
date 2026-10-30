@@ -1,7 +1,8 @@
 import { Link } from 'react-router-dom';
 import { Badge, Table, Typography, type TabsProps } from 'antd';
 import { useTranslation } from 'react-i18next';
-import type { AssuranceTasksDto, ControlTestDto, GrcChangeDto } from '@processhub/shared';
+import type { AssuranceTasksDto, ControlTestDto, GrcChangeDto, IssueDto } from '@processhub/shared';
+import { IssueStatusTag, SeverityTag } from './assurance-tags';
 import { AssigneeLabel, TestStatusTag } from './assurance-tags';
 import { useAssuranceTasks } from '@/api/assurance';
 import { useFormatDate, useLocalized } from '@/components/i18n-helpers';
@@ -10,7 +11,7 @@ import { grcItemPath } from '@/features/grc/grc-helpers';
 type Key = keyof AssuranceTasksDto;
 
 /** Tabs of My tasks for assurance work (Phase 4.2), with their counts. */
-export function useAssuranceTaskTabs(): {
+export function useAssuranceTaskTabs(portal = false): {
   items: NonNullable<TabsProps['items']>;
   counts: Record<string, number>;
 } {
@@ -125,6 +126,91 @@ export function useAssuranceTaskTabs(): {
       key: 'testsToReview',
       label: label('testsToReview', t('assurance:tasks.testsToReview')),
       children: testTable(d.testsToReview, 'tasks-tests-review'),
+    });
+  const issuePath = (id: string) => (portal ? `/portal/issues/${id}` : `/grc/issues/${id}`);
+  const issueTable = (list: IssueDto[], testId: string) => (
+    <Table
+      rowKey="id"
+      size="middle"
+      pagination={false}
+      dataSource={list}
+      data-testid={testId}
+      columns={[
+        {
+          title: t('assurance:issues.titleLabel'),
+          render: (_, r) => (
+            <Link to={issuePath(r.id)}>
+              <span dir="ltr">{r.code}</span> {loc(r, 'title')}
+            </Link>
+          ),
+        },
+        {
+          title: t('assurance:issues.severity'),
+          render: (_, r) => <SeverityTag value={r.severity} />,
+        },
+        {
+          title: t('assurance:issues.statusLabel'),
+          render: (_, r) => <IssueStatusTag status={r.status} />,
+        },
+        {
+          title: t('assurance:issues.due'),
+          render: (_, r) => (
+            <Typography.Text type={r.overdue ? 'danger' : undefined}>
+              {formatDate(r.dueAt, false)}
+            </Typography.Text>
+          ),
+        },
+      ]}
+    />
+  );
+  if (d.issues.length)
+    items.push({
+      key: 'issues',
+      label: label('issues', t('assurance:tasks.issues')),
+      children: issueTable(d.issues, 'tasks-issues'),
+    });
+  if (d.issueActions.length)
+    items.push({
+      key: 'issueActions',
+      label: label('issueActions', t('assurance:tasks.issueActions')),
+      children: (
+        <Table
+          rowKey="id"
+          size="middle"
+          pagination={false}
+          dataSource={d.issueActions}
+          data-testid="tasks-actions"
+          columns={[
+            {
+              title: t('assurance:issues.actionTitle'),
+              render: (_, a) => <Link to={issuePath(a.issue.id)}>{loc(a, 'title')}</Link>,
+            },
+            {
+              title: t('assurance:issues.titleLabel'),
+              render: (_, a) => (
+                <>
+                  <span dir="ltr">{a.issue.code}</span> {loc(a.issue, 'title')}
+                </>
+              ),
+            },
+            { title: t('assurance:issues.progress'), render: (_, a) => `${a.progress}%` },
+            {
+              title: t('assurance:issues.due'),
+              render: (_, a) => (
+                <Typography.Text type={a.overdue ? 'danger' : undefined}>
+                  {formatDate(a.dueAt, false)}
+                </Typography.Text>
+              ),
+            },
+          ]}
+        />
+      ),
+    });
+  if (d.issuesToVerify.length)
+    items.push({
+      key: 'issuesToVerify',
+      label: label('issuesToVerify', t('assurance:tasks.issuesToVerify')),
+      children: issueTable(d.issuesToVerify, 'tasks-verify'),
     });
   return { items, counts };
 }

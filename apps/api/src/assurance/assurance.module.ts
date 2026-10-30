@@ -11,6 +11,9 @@ import { AssigneeResolver } from './assignees';
 import { ControlTestsService } from './control-tests.service';
 import { ControlTestsController } from './control-tests.controller';
 import { AssuranceScheduler } from './assurance-scheduler.service';
+import { AssuranceSettingsService } from './assurance-settings.service';
+import { IssuesService } from './issues.service';
+import { AssuranceSettingsController, IssuesController } from './issues.controller';
 
 /**
  * Assurance (Phase 4.2, module M10): approval of GRC changes, control testing, issues and
@@ -18,7 +21,13 @@ import { AssuranceScheduler } from './assurance-scheduler.service';
  */
 @Module({
   imports: [GrcModule, GovernanceModule],
-  controllers: [GrcChangesController, AssuranceController, ControlTestsController],
+  controllers: [
+    GrcChangesController,
+    AssuranceController,
+    ControlTestsController,
+    AssuranceSettingsController,
+    IssuesController,
+  ],
   providers: [
     GrcChangesService,
     AssuranceTasksService,
@@ -27,7 +36,9 @@ import { AssuranceScheduler } from './assurance-scheduler.service';
     AssigneeResolver,
     ControlTestsService,
     AssuranceScheduler,
+    AssuranceSettingsService,
+    IssuesService,
   ],
-  exports: [GrcChangesService, ControlTestsService, AssuranceScheduler],
+  exports: [GrcChangesService, ControlTestsService, AssuranceScheduler, IssuesService],
 })
 export class AssuranceModule {}

@@ -35,6 +35,7 @@ import { useErrorMessage, useFormatDate, useLocalized } from '@/components/i18n-
 import { GrcFormModal } from './GrcFormModal';
 import { GrcChangeCard } from '@/features/assurance/GrcChangeCard';
 import { ControlTestingCard } from '@/features/assurance/ControlTestingCard';
+import { RaiseIssueButton } from '@/features/assurance/RaiseIssueButton';
 import { RiskMatrix } from './RiskMatrix';
 import { GRC_ROUTES, grcItemPath, stepHref, useCategoryName, useGrcAccess } from './grc-helpers';
 import { EffectivenessTag, GrcStatusTag, OverdueTag, RatingTag } from './grc-tags';
@@ -491,6 +492,18 @@ export function GrcDetailPage({ type }: { type: GrcObjectType }) {
               >
                 {t('edit')}
               </Button>
+            )}
+            {item.type === 'RISK' && item.status === 'ACTIVE' && (
+              <RaiseIssueButton
+                prefill={{
+                  sourceType: 'RISK_ASSESSMENT',
+                  sourceId: item.id,
+                  riskId: item.id,
+                  ownerId: item.owner?.id ?? null,
+                  titleEn: item.nameEn,
+                  titleAr: item.nameAr,
+                }}
+              />
             )}
             {access.canDelete(item) && (
               <Button danger icon={<DeleteOutlined />} onClick={confirmDelete}>

@@ -1,6 +1,12 @@
 import { Tag } from 'antd';
 import { useTranslation } from 'react-i18next';
-import type { AssigneeDto, ControlTestStatus, TestConclusion } from '@processhub/shared';
+import type {
+  AssigneeDto,
+  ControlTestStatus,
+  IssueStatus,
+  TestConclusion,
+} from '@processhub/shared';
+import { useAssuranceSettings } from '@/api/assurance';
 import { useLocalized } from '@/components/i18n-helpers';
 
 const TEST_STATUS_COLOUR: Record<ControlTestStatus, string> = {
@@ -36,4 +42,29 @@ export function AssigneeLabel({ value }: { value: AssigneeDto }) {
   if (value.roleKey)
     return <>{t('assurance:anyone', { role: t(`admin:roles.${value.roleKey}`) })}</>;
   return <>{t('assurance:unassigned')}</>;
+}
+
+const ISSUE_STATUS_COLOUR: Record<IssueStatus, string> = {
+  OPEN: 'blue',
+  IN_PROGRESS: 'processing',
+  READY_FOR_VERIFICATION: 'purple',
+  CLOSED: 'green',
+  ACCEPTED_RISK: 'gold',
+};
+
+export function IssueStatusTag({ status }: { status: IssueStatus }) {
+  const { t } = useTranslation();
+  return <Tag color={ISSUE_STATUS_COLOUR[status]}>{t(`assurance:issues.status.${status}`)}</Tag>;
+}
+
+/** Severity / finding rating from the configurable scale (Settings → Risk & Compliance). */
+export function SeverityTag({ value }: { value: string }) {
+  const settings = useAssuranceSettings();
+  const loc = useLocalized();
+  const s = settings.data?.severities.find((x) => x.key === value);
+  return (
+    <Tag color={s?.colour} style={{ color: s ? '#fff' : undefined }}>
+      {s ? loc(s) : value}
+    </Tag>
+  );
 }

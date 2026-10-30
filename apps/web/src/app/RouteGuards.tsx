@@ -49,8 +49,12 @@ export function Home() {
 }
 
 /** Pages only for users with workspace access; Viewers are sent to the portal. */
+/** Workspace pages that people without the workspace open in the portal (from notifications). */
+const PORTAL_EQUIVALENTS: [RegExp, string][] = [[/^\/grc\/issues\/([^/]+)$/, '/portal/issues/$1']];
+
 export function WorkspaceOnly() {
   const { canAny } = useAuth();
+  const location = useLocation();
   if (
     !canAny(
       PERMISSIONS.PROCESSES_READ,
@@ -59,7 +63,10 @@ export function WorkspaceOnly() {
       PERMISSIONS.SETTINGS_MANAGE,
     )
   ) {
-    return <Navigate to="/portal" replace />;
+    const match = PORTAL_EQUIVALENTS.find(([re]) => re.test(location.pathname));
+    return (
+      <Navigate to={match ? location.pathname.replace(match[0], match[1]) : '/portal'} replace />
+    );
   }
   return <Outlet />;
 }

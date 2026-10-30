@@ -43,8 +43,18 @@ Steps (tick as they are committed; a new session continues at the first unticked
       conclusion, evidence, history, Start / Save / Submit / Sign off / Return / Close), "Testing" card on the control
       (plans, history, Test now), My tasks tabs "Control tests to perform / review". Tests: shared 4, API 3
       (`control-tests.e2e-spec.ts`), Playwright 1.
-- [ ] 2. Issues and action plans: sources, severity scale, actions with progress and evidence, verification,
-      accepted risk, escalation, ageing.
+- [x] 2. Issues and action plans (D-100): `Issue` (ISS-0001 …, bilingual, source CONTROL_TEST / RISK_ASSESSMENT /
+      AUDIT_FINDING / FEEDBACK / MANUAL with a link back, severity from the new Setting `assurance` scale, owner, due,
+      links to process / step / risk / control / requirement / department) and `IssueAction` (owner, due, progress %,
+      evidence). Open → In progress → Ready for verification (all actions at 100 %, `ACTIONS_OPEN`) → Closed (raiser or
+      a GRC officer verifies, never the owner) or Accepted risk (officer, justification). Reminders, overdue and
+      escalation after `escalationDays` to the owner's department manager (new `Department.managerId`, field in Admin →
+      Departments) and / or the Risk & Compliance officers; ageing (days, buckets). Notification `ISSUE` (13 kinds,
+      EN/AR e-mail). Web: register `/grc/issues` (filters in the URL), issue page with action plan (progress slider,
+      evidence per action), lifecycle buttons, history; "Raise issue" on failed tests, risks and portal feedback;
+      Settings card "Issues"; My tasks tabs (my issues / my actions / to verify); portal "My tasks" + `/portal/issues/:id`
+      for action owners without the workspace (workspace links redirect there). Tests: API 3 (`issues.e2e-spec.ts`),
+      Playwright 1.
 - [ ] 3. Audit management: universe, annual plan and engagements (role Internal Audit, `audit.manage`), work
       programme, findings → issues, report .docx (EN / AR).
 - [ ] 4. Questionnaires and surveys: builder, campaigns, responses, results and Excel, RCSA proposals, compliance
@@ -54,7 +64,7 @@ Steps (tick as they are committed; a new session continues at the first unticked
 
 ### Next (continue here)
 
-Step 2 — issues and action plans (the "Raise issue" button on failed tests comes with it).
+Step 3 — audit management (findings register an issue source through `IssuesService.registerSource`).
 
 ## Previous state — 2026-10-30 (Phase 4 — Part 1: GRC core, branch `phase-4-1-grc`, done — awaiting review)
 

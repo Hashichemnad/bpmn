@@ -178,6 +178,8 @@ zod / UUID pipe; file uploads are checked in the service (allow-list, content sn
 | GET    | `/ai/usage`                                  | `ai.usage.read`                                           | query                               | default    |
 | DELETE | `/assurance/files/:id`                       | authenticated                                             | param `id`                          | default    |
 | GET    | `/assurance/files/:id`                       | authenticated                                             | param `id`                          | default    |
+| GET    | `/assurance/settings`                        | any of `grc.read`, `issues.manage`, `audit.manage`        | —                                   | default    |
+| PUT    | `/assurance/settings`                        | `grc.admin`                                               | body                                | default    |
 | GET    | `/assurance/tasks`                           | authenticated                                             | —                                   | default    |
 | DELETE | `/attachments/:id`                           | `docs.read` + `docs.edit`                                 | param `id`                          | default    |
 | GET    | `/attachments/:id/content`                   | `docs.read`                                               | param `id`                          | default    |
@@ -288,6 +290,18 @@ zod / UUID pipe; file uploads are checked in the service (allow-list, content sn
 | GET    | `/integrations/git/status`                   | `settings.manage`                                         | —                                   | default    |
 | POST   | `/integrations/git/sync`                     | `settings.manage`                                         | body                                | default    |
 | POST   | `/integrations/git/test`                     | `settings.manage`                                         | body                                | default    |
+| GET    | `/issues`                                    | any of `grc.read`, `issues.manage`                        | query                               | default    |
+| POST   | `/issues`                                    | `issues.manage`                                           | body                                | default    |
+| DELETE | `/issues/:id`                                | `issues.manage` + `grc.admin`                             | param `id`                          | default    |
+| GET    | `/issues/:id`                                | authenticated                                             | param `id`                          | default    |
+| PATCH  | `/issues/:id`                                | authenticated                                             | body, param `id`                    | default    |
+| POST   | `/issues/:id/actions`                        | authenticated                                             | body, param `id`                    | default    |
+| POST   | `/issues/:id/comments`                       | authenticated                                             | body, param `id`                    | default    |
+| POST   | `/issues/:id/files`                          | authenticated                                             | file, param `id`                    | default    |
+| POST   | `/issues/:id/transition`                     | authenticated                                             | body, param `id`                    | default    |
+| DELETE | `/issues/actions/:id`                        | authenticated                                             | param `id`                          | default    |
+| PATCH  | `/issues/actions/:id`                        | authenticated                                             | body, param `id`                    | default    |
+| POST   | `/issues/actions/:id/files`                  | authenticated                                             | file, param `id`                    | default    |
 | GET    | `/notifications`                             | authenticated                                             | query                               | default    |
 | POST   | `/notifications/:id/read`                    | authenticated                                             | param `id`                          | default    |
 | GET    | `/notifications/preferences`                 | authenticated                                             | —                                   | default    |

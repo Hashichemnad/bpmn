@@ -1,6 +1,13 @@
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type {
+  AssuranceSettings,
   AssuranceTasksDto,
+  CreateIssueInput,
+  IssueActionInput,
+  IssueDetailDto,
+  IssueDto,
+  IssueTransitionInput,
+  UpdateIssueInput,
   ControlTestDetailDto,
   ControlTestDto,
   CreateControlTestInput,
@@ -179,5 +186,98 @@ export function useDeleteAssuranceFile() {
   return useMutation({
     mutationFn: (id: string) => api<void>(`/assurance/files/${id}`, { method: 'DELETE' }),
     onSuccess: done,
+  });
+}
+
+// ---------- Settings, issues and actions ----------
+
+export const useAssuranceSettings = (enabled = true) =>
+  useQuery({
+    queryKey: ['assurance', 'settings'],
+    queryFn: () => api<AssuranceSettings>('/assurance/settings'),
+    staleTime: 60_000,
+    enabled,
+  });
+
+export function useSaveAssuranceSettings() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (body: AssuranceSettings) =>
+      api<AssuranceSettings>('/assurance/settings', { method: 'PUT', body }),
+    onSuccess: (s) => qc.setQueryData(['assurance', 'settings'], s),
+  });
+}
+
+export const issueKeys = {
+  list: (q: Record<string, unknown>) => ['assurance', 'issues', 'list', q] as const,
+  one: (id: string) => ['assurance', 'issues', 'one', id] as const,
+};
+
+export const useIssues = (q: Record<string, unknown>, enabled = true) =>
+  useQuery({
+    queryKey: issueKeys.list(q),
+    queryFn: () => api<Paginated<IssueDto>>(`/issues?${qs(q)}`),
+    placeholderData: keepPreviousData,
+    enabled,
+  });
+
+export const useIssue = (id: string | undefined) =>
+  useQuery({
+    queryKey: issueKeys.one(id ?? ''),
+    queryFn: () => api<IssueDetailDto>(`/issues/${id}`),
+    enabled: !!id,
+  });
+
+export function useSaveIssue() {
+  const done = useInvalidateAll();
+  return useMutation({
+    mutationFn: ({ id, body }: { id?: string; body: CreateIssueInput | UpdateIssueInput }) =>
+      id
+        ? api<IssueDetailDto>(`/issues/${id}`, { method: 'PATCH', body })
+        : api<IssueDetailDto>('/issues', { method: 'POST', body }),
+    onSuccess: done,
+  });
+}
+
+/** Issue lifecycle, comments, actions and evidence. */
+export function useIssueAction(issueId: string) {
+  const qc = useQueryClient();
+  const done = useInvalidateAll();
+  return useMutation({
+    mutationFn: (
+      a:
+        | { kind: 'transition'; body: IssueTransitionInput }
+        | { kind: 'comment'; body: string }
+        | { kind: 'addAction'; body: IssueActionInput }
+        | { kind: 'updateAction'; actionId: string; body: IssueActionInput }
+        | { kind: 'removeAction'; actionId: string }
+        | { kind: 'file'; file: File; actionId?: string },
+    ): Promise<unknown> => {
+      switch (a.kind) {
+        case 'transition':
+          return api(`/issues/${issueId}/transition`, { method: 'POST', body: a.body });
+        case 'comment':
+          return api(`/issues/${issueId}/comments`, { method: 'POST', body: { body: a.body } });
+        case 'addAction':
+          return api(`/issues/${issueId}/actions`, { method: 'POST', body: a.body });
+        case 'updateAction':
+          return api(`/issues/actions/${a.actionId}`, { method: 'PATCH', body: a.body });
+        case 'removeAction':
+          return api(`/issues/actions/${a.actionId}`, { method: 'DELETE' });
+        case 'file': {
+          const form = new FormData();
+          form.append('file', a.file);
+          return api(
+            a.actionId ? `/issues/actions/${a.actionId}/files` : `/issues/${issueId}/files`,
+            { method: 'POST', body: form },
+          );
+        }
+      }
+    },
+    onSuccess: (data) => {
+      if (data && typeof data === 'object' && 'code' in data && 'actions' in data)
+        qc.setQueryData(issueKeys.one(issueId), data);
+      done();
+    },
   });
 }

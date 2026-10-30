@@ -14,7 +14,10 @@ export function UserSelect({
   allowClear,
   size,
   style,
+  id,
 }: {
+  /** Set by Form.Item (labels, tests). */
+  id?: string;
   value?: string | null;
   onChange?: (id: string | null) => void;
   /** Users whose names are already known (current value), shown before searching. */
@@ -38,6 +41,7 @@ export function UserSelect({
   }, [known, users.data, loc]);
   return (
     <Select
+      id={id}
       showSearch
       allowClear={allowClear}
       size={size}

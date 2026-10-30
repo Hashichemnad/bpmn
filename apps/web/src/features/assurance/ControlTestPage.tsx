@@ -36,6 +36,7 @@ import { useLocale } from '@/app/LocaleProvider';
 import { EvidenceList } from './EvidenceList';
 import { EventsTimeline } from './EventsTimeline';
 import { AssigneeLabel, ConclusionTag, TestStatusTag } from './assurance-tags';
+import { RaiseIssueButton } from './RaiseIssueButton';
 
 /** Execute, submit and review one control test (samples × steps, conclusion, evidence). */
 export function ControlTestPage() {
@@ -163,6 +164,24 @@ export function ControlTestPage() {
                 </Button>
               </>
             )}
+            {test.conclusion &&
+              test.conclusion !== 'EFFECTIVE' &&
+              ['SUBMITTED', 'REVIEWED', 'CLOSED'].includes(test.status) && (
+                <RaiseIssueButton
+                  prefill={{
+                    sourceType: 'CONTROL_TEST',
+                    sourceId: test.id,
+                    controlId: test.control.id,
+                    ownerId: test.control.owner?.id ?? null,
+                    severity: test.conclusion === 'NOT_EFFECTIVE' ? 'HIGH' : 'MEDIUM',
+                    titleEn:
+                      `${test.control.code ?? ''} ${test.control.nameEn} — ${t(`assurance:tests.conclusion.${test.conclusion}`, { lng: 'en' })} (${test.period})`.trim(),
+                    titleAr:
+                      `${test.control.code ?? ''} ${test.control.nameAr} — ${t(`assurance:tests.conclusion.${test.conclusion}`, { lng: 'ar' })} (${test.period})`.trim(),
+                    descriptionEn: test.testerComment,
+                  }}
+                />
+              )}
             {test.can.close && (
               <Button onClick={() => void run({ action: 'close' })}>
                 {t('assurance:tests.close')}

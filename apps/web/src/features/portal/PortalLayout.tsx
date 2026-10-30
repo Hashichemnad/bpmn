@@ -27,12 +27,14 @@ import {
   StarOutlined,
   SwapOutlined,
   UserOutlined,
+  CheckSquareOutlined,
 } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
 import { PERMISSIONS } from '@processhub/shared';
 import { useAuth } from '@/auth/AuthProvider';
 import { usePublicSettings } from '@/api/hooks';
 import { usePortalHome } from '@/api/portal';
+import { assuranceTaskCount, useAssuranceTasks } from '@/api/assurance';
 import { useLocalized } from '@/components/i18n-helpers';
 import { BrandMark } from '@/layout/BrandMark';
 import { LanguageToggle } from '@/layout/AppLayout';
@@ -55,6 +57,7 @@ export function PortalLayout() {
   const loc = useLocalized();
   const navigate = useNavigate();
   const location = useLocation();
+  const assuranceTasks = useAssuranceTasks(!!user);
   const settings = usePublicSettings();
   const home = usePortalHome();
   const [q, setQ] = useState('');
@@ -63,6 +66,7 @@ export function PortalLayout() {
     loc({ nameEn: settings.data?.orgNameEn, nameAr: settings.data?.orgNameAr }) || 'ProcessHub';
   const portalName = loc(home.data) || t('portal:name');
 
+  const taskCount = assuranceTaskCount(assuranceTasks.data);
   const nav: MenuProps['items'] = [
     {
       key: '/portal',
@@ -84,6 +88,19 @@ export function PortalLayout() {
       icon: <StarOutlined />,
       label: <Link to="/portal/my">{t('portal:nav.my')}</Link>,
     },
+    ...(taskCount
+      ? [
+          {
+            key: '/portal/tasks',
+            icon: <CheckSquareOutlined />,
+            label: (
+              <Link to="/portal/tasks">
+                {t('assurance:portal.tasks')} <span className="ph-menu-count">{taskCount}</span>
+              </Link>
+            ),
+          },
+        ]
+      : []),
   ];
   const p = location.pathname;
   const selected =
@@ -95,7 +112,9 @@ export function PortalLayout() {
           ? '/portal/docs'
           : p.startsWith('/portal/my')
             ? '/portal/my'
-            : '';
+            : p.startsWith('/portal/tasks') || p.startsWith('/portal/issues')
+              ? '/portal/tasks'
+              : '';
 
   const workspace = canAny(PERMISSIONS.PROCESSES_READ, PERMISSIONS.DOCS_READ);
   const userMenu: MenuProps['items'] = [

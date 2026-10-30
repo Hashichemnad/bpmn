@@ -384,6 +384,8 @@ export const SETTING_KEYS = {
   MODELING_CONVENTIONS: 'modeling.conventions',
   /** Risk & Compliance: categories, risk matrix, portal visibility, reminders. */
   GRC: 'grc',
+  /** Assurance (Phase 4.2): issue severity scale, escalation. */
+  ASSURANCE: 'assurance',
 } as const;
 
 /** Logo upload limits. */
@@ -589,6 +591,8 @@ export const NOTIFICATION_TYPES = [
   'GRC_CHANGE',
   /** Control test assigned / due / overdue / submitted / returned / reviewed (params.kind). */
   'CONTROL_TEST',
+  /** Issue / action assigned, due, overdue, escalated, ready for verification, closed (params.kind). */
+  'ISSUE',
 ] as const;
 export type NotificationType = (typeof NOTIFICATION_TYPES)[number];
 

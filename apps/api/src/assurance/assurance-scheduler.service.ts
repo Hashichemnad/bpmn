@@ -8,6 +8,7 @@ import {
 import { APP_CONFIG, type AppConfig } from '../config/config';
 import { GrcSettingsService } from '../grc/grc-settings.service';
 import { ControlTestsService } from './control-tests.service';
+import { IssuesService } from './issues.service';
 
 /**
  * Periodic assurance work in this process (like the governance scheduler): control test cycles
@@ -22,6 +23,7 @@ export class AssuranceScheduler implements OnModuleInit, OnModuleDestroy {
 
   constructor(
     private readonly tests: ControlTestsService,
+    private readonly issues: IssuesService,
     private readonly grcSettings: GrcSettingsService,
     @Inject(APP_CONFIG) private readonly config: AppConfig,
   ) {}
@@ -44,6 +46,8 @@ export class AssuranceScheduler implements OnModuleInit, OnModuleDestroy {
     const tests = await this.tests.runScheduler(now, settings.reminderDaysBefore);
     if (tests.created || tests.reminders)
       this.logger.log(`Control tests created: ${tests.created}, reminders: ${tests.reminders}`);
-    return { tests };
+    const issues = await this.issues.runScheduler(now);
+    if (issues) this.logger.log(`Issue reminders and escalations: ${issues}`);
+    return { tests, issues };
   }
 }

@@ -31,6 +31,7 @@ import { PageHeader } from '@/components/PageHeader';
 import { ErrorState, LoadingState } from '@/components/states';
 import { useErrorMessage } from '@/components/i18n-helpers';
 import { RiskMatrix } from './RiskMatrix';
+import { AssuranceSettingsCard } from '@/features/assurance/AssuranceSettingsCard';
 
 /** Settings → Risk & Compliance: categories, matrix labels and bands, portal, reminders. */
 export function GrcSettingsPage() {
@@ -397,6 +398,7 @@ export function GrcSettingsPage() {
               />
             </Space>
           </Card>
+          <AssuranceSettingsCard />
         </Col>
       </Row>
     </>

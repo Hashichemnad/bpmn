@@ -68,6 +68,7 @@ const TEMPLATES: Record<Locale, Record<NotificationType, Template>> = {
     },
     GRC_CHANGE: BY_KIND,
     CONTROL_TEST: BY_KIND,
+    ISSUE: BY_KIND,
   },
   ar: {
     REVIEW_REQUESTED: {
@@ -120,6 +121,7 @@ const TEMPLATES: Record<Locale, Record<NotificationType, Template>> = {
     },
     GRC_CHANGE: BY_KIND,
     CONTROL_TEST: BY_KIND,
+    ISSUE: BY_KIND,
   },
 };
 
@@ -165,6 +167,58 @@ const KIND_TEMPLATES: Record<Locale, Record<string, { subject: string; body: str
       subject: 'Control test reviewed: {title}',
       body: 'The test of “{title}” ({period}) was reviewed. Conclusion: {conclusion}.',
     },
+    'ISSUE:assigned': {
+      subject: 'Issue assigned to you: {title}',
+      body: 'The issue “{title}” is assigned to you. Due: {due}.',
+    },
+    'ISSUE:action_assigned': {
+      subject: 'Action assigned to you: {step}',
+      body: 'The action “{step}” of the issue “{title}” is assigned to you. Due: {due}.',
+    },
+    'ISSUE:ready': {
+      subject: 'Issue ready for verification: {title}',
+      body: 'The owner reports that the issue “{title}” is fixed. Please verify it.',
+    },
+    'ISSUE:closed': {
+      subject: 'Issue closed: {title}',
+      body: '{actor} verified the fix and closed the issue “{title}”.',
+    },
+    'ISSUE:returned': {
+      subject: 'Issue verification rejected: {title}',
+      body: '{actor} did not accept the fix of “{title}”: {comment}',
+    },
+    'ISSUE:accepted': {
+      subject: 'Risk accepted: {title}',
+      body: '{actor} accepted the risk of the issue “{title}”: {comment}',
+    },
+    'ISSUE:reopened': {
+      subject: 'Issue reopened: {title}',
+      body: '{actor} reopened the issue “{title}”: {comment}',
+    },
+    'ISSUE:due': {
+      subject: 'Issue due on {due}: {title}',
+      body: 'The issue “{title}” is due on {due}.',
+    },
+    'ISSUE:overdue': {
+      subject: 'Issue overdue: {title}',
+      body: 'The issue “{title}” was due on {due} and is still open.',
+    },
+    'ISSUE:escalated': {
+      subject: 'Escalation: overdue issue {title}',
+      body: 'The issue “{title}” was due on {due} and is still open. You receive this escalation as the owner’s manager or as Risk & Compliance.',
+    },
+    'ISSUE:action_due': {
+      subject: 'Action due on {due}: {step}',
+      body: 'The action “{step}” of the issue “{title}” is due on {due}.',
+    },
+    'ISSUE:action_overdue': {
+      subject: 'Action overdue: {step}',
+      body: 'The action “{step}” of the issue “{title}” was due on {due}.',
+    },
+    'ISSUE:action_escalated': {
+      subject: 'Escalation: overdue action {step}',
+      body: 'The action “{step}” of the issue “{title}” was due on {due} and is not done.',
+    },
   },
   ar: {
     'GRC_CHANGE:requested': {
@@ -202,6 +256,58 @@ const KIND_TEMPLATES: Record<Locale, Record<string, { subject: string; body: str
     'CONTROL_TEST:reviewed': {
       subject: 'تمت مراجعة اختبار الضابط: {title}',
       body: 'تمت مراجعة اختبار «{title}» ({period}). النتيجة: {conclusion}.',
+    },
+    'ISSUE:assigned': {
+      subject: 'أُسندت إليك ملاحظة: {title}',
+      body: 'أُسندت إليك الملاحظة «{title}». الموعد: {due}.',
+    },
+    'ISSUE:action_assigned': {
+      subject: 'أُسند إليك إجراء: {step}',
+      body: 'أُسند إليك الإجراء «{step}» من الملاحظة «{title}». الموعد: {due}.',
+    },
+    'ISSUE:ready': {
+      subject: 'ملاحظة جاهزة للتحقق: {title}',
+      body: 'أفاد المالك بمعالجة الملاحظة «{title}». يرجى التحقق منها.',
+    },
+    'ISSUE:closed': {
+      subject: 'أُغلقت الملاحظة: {title}',
+      body: 'تحقق {actor} من المعالجة وأغلق الملاحظة «{title}».',
+    },
+    'ISSUE:returned': {
+      subject: 'رُفض التحقق: {title}',
+      body: 'لم يقبل {actor} معالجة «{title}»: {comment}',
+    },
+    'ISSUE:accepted': {
+      subject: 'تم قبول المخاطر: {title}',
+      body: 'قبل {actor} مخاطر الملاحظة «{title}»: {comment}',
+    },
+    'ISSUE:reopened': {
+      subject: 'أُعيد فتح الملاحظة: {title}',
+      body: 'أعاد {actor} فتح الملاحظة «{title}»: {comment}',
+    },
+    'ISSUE:due': {
+      subject: 'موعد الملاحظة {due}: {title}',
+      body: 'موعد الملاحظة «{title}» هو {due}.',
+    },
+    'ISSUE:overdue': {
+      subject: 'ملاحظة متأخرة: {title}',
+      body: 'كان موعد الملاحظة «{title}» في {due} وما زالت مفتوحة.',
+    },
+    'ISSUE:escalated': {
+      subject: 'تصعيد: ملاحظة متأخرة {title}',
+      body: 'كان موعد الملاحظة «{title}» في {due} وما زالت مفتوحة. تصلك هذه الرسالة بصفتك مدير المالك أو من المخاطر والامتثال.',
+    },
+    'ISSUE:action_due': {
+      subject: 'موعد الإجراء {due}: {step}',
+      body: 'موعد الإجراء «{step}» من الملاحظة «{title}» هو {due}.',
+    },
+    'ISSUE:action_overdue': {
+      subject: 'إجراء متأخر: {step}',
+      body: 'كان موعد الإجراء «{step}» من الملاحظة «{title}» في {due}.',
+    },
+    'ISSUE:action_escalated': {
+      subject: 'تصعيد: إجراء متأخر {step}',
+      body: 'كان موعد الإجراء «{step}» من الملاحظة «{title}» في {due} ولم يُنجز.',
     },
   },
 };

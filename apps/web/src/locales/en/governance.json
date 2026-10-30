@@ -322,7 +322,21 @@
       "CONTROL_TEST_overdue": "Control test overdue (due {{due}}): {{title}}",
       "CONTROL_TEST_submitted": "{{actor}} submitted a control test for your review: {{title}}",
       "CONTROL_TEST_returned": "{{actor}} returned your control test: {{title}}",
-      "CONTROL_TEST_reviewed": "Your control test was signed off: {{title}}"
+      "CONTROL_TEST_reviewed": "Your control test was signed off: {{title}}",
+      "ISSUE": "Issue {{title}}",
+      "ISSUE_assigned": "An issue is assigned to you: {{title}}",
+      "ISSUE_action_assigned": "An action is assigned to you: {{step}} ({{title}})",
+      "ISSUE_ready": "Ready for verification: {{title}}",
+      "ISSUE_closed": "{{actor}} verified and closed {{title}}",
+      "ISSUE_returned": "{{actor}} did not accept the fix of {{title}}",
+      "ISSUE_accepted": "{{actor}} accepted the risk of {{title}}",
+      "ISSUE_reopened": "{{actor}} reopened {{title}}",
+      "ISSUE_due": "Issue due on {{due}}: {{title}}",
+      "ISSUE_overdue": "Issue overdue (due {{due}}): {{title}}",
+      "ISSUE_escalated": "Escalation — overdue issue: {{title}}",
+      "ISSUE_action_due": "Action due on {{due}}: {{step}}",
+      "ISSUE_action_overdue": "Action overdue (due {{due}}): {{step}}",
+      "ISSUE_action_escalated": "Escalation — overdue action: {{step}} ({{title}})"
     }
   },
   "prefs": {
@@ -345,7 +359,8 @@
       "FEEDBACK_UPDATED": "Updates on feedback I sent",
       "GRC_REVIEW": "Risk & Compliance review dates",
       "GRC_CHANGE": "Changes of risks and controls (approvals)",
-      "CONTROL_TEST": "Control tests (assigned, due, reviews)"
+      "CONTROL_TEST": "Control tests (assigned, due, reviews)",
+      "ISSUE": "Issues and actions (assigned, due, escalations)"
     }
   },
   "feedback": {

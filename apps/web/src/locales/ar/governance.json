@@ -337,7 +337,21 @@
       "CONTROL_TEST_overdue": "اختبار ضابط متأخر (الموعد {{due}}): {{title}}",
       "CONTROL_TEST_submitted": "قدّم {{actor}} اختبار ضابط لمراجعتك: {{title}}",
       "CONTROL_TEST_returned": "أعاد {{actor}} اختبار الضابط الخاص بك: {{title}}",
-      "CONTROL_TEST_reviewed": "تم اعتماد اختبار الضابط الخاص بك: {{title}}"
+      "CONTROL_TEST_reviewed": "تم اعتماد اختبار الضابط الخاص بك: {{title}}",
+      "ISSUE": "ملاحظة {{title}}",
+      "ISSUE_assigned": "أُسندت إليك ملاحظة: {{title}}",
+      "ISSUE_action_assigned": "أُسند إليك إجراء: {{step}} ({{title}})",
+      "ISSUE_ready": "جاهزة للتحقق: {{title}}",
+      "ISSUE_closed": "تحقق {{actor}} وأغلق {{title}}",
+      "ISSUE_returned": "لم يقبل {{actor}} معالجة {{title}}",
+      "ISSUE_accepted": "قبل {{actor}} مخاطر {{title}}",
+      "ISSUE_reopened": "أعاد {{actor}} فتح {{title}}",
+      "ISSUE_due": "موعد الملاحظة {{due}}: {{title}}",
+      "ISSUE_overdue": "ملاحظة متأخرة (الموعد {{due}}): {{title}}",
+      "ISSUE_escalated": "تصعيد — ملاحظة متأخرة: {{title}}",
+      "ISSUE_action_due": "موعد الإجراء {{due}}: {{step}}",
+      "ISSUE_action_overdue": "إجراء متأخر (الموعد {{due}}): {{step}}",
+      "ISSUE_action_escalated": "تصعيد — إجراء متأخر: {{step}} ({{title}})"
     }
   },
   "prefs": {
@@ -360,7 +374,8 @@
       "FEEDBACK_UPDATED": "تحديثات على ملاحظات أرسلتها",
       "GRC_REVIEW": "مواعيد مراجعة المخاطر والامتثال",
       "GRC_CHANGE": "تعديلات المخاطر والضوابط (الاعتمادات)",
-      "CONTROL_TEST": "اختبارات الضوابط (الإسناد والمواعيد والمراجعات)"
+      "CONTROL_TEST": "اختبارات الضوابط (الإسناد والمواعيد والمراجعات)",
+      "ISSUE": "الملاحظات والإجراءات (الإسناد والمواعيد والتصعيد)"
     }
   },
   "feedback": {

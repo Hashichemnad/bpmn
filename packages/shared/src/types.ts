@@ -99,6 +99,9 @@ export interface RoleDto {
 export interface DepartmentDto extends DepartmentRef {
   code: string | null;
   parentId: string | null;
+  /** Head of the department (escalation of overdue issues and actions). */
+  managerId: string | null;
+  manager?: UserRef | null;
   userCount: number;
   createdAt: string;
   updatedAt: string;

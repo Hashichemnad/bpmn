@@ -20,6 +20,7 @@ import { PageHeader } from '@/components/PageHeader';
 import { BilingualFields } from '@/components/BilingualFields';
 import { EmptyState, ErrorState } from '@/components/states';
 import { useErrorMessage, useLocalized } from '@/components/i18n-helpers';
+import { UserSelect } from '@/features/governance/UserSelect';
 
 type Row = Omit<TreeNode<DepartmentDto>, 'children'> & { children?: Row[] };
 
@@ -67,7 +68,13 @@ export function DepartmentsPage() {
     form.setFieldsValue(
       d === 'new'
         ? { parentId: parentId ?? null }
-        : { nameEn: d.nameEn, nameAr: d.nameAr, code: d.code, parentId: d.parentId },
+        : {
+            nameEn: d.nameEn,
+            nameAr: d.nameAr,
+            code: d.code,
+            parentId: d.parentId,
+            managerId: d.managerId,
+          },
     );
   };
 
@@ -76,7 +83,7 @@ export function DepartmentsPage() {
     try {
       await save.mutateAsync({
         id: editing === 'new' ? undefined : editing?.id,
-        body: { ...values, parentId: values.parentId ?? null },
+        body: { ...values, parentId: values.parentId ?? null, managerId: values.managerId ?? null },
       });
       message.success(t('saved'));
       setEditing(null);
@@ -206,6 +213,16 @@ export function DepartmentsPage() {
               treeData={parentOptions}
               treeDefaultExpandAll
               placeholder={t('admin:departments.topLevel')}
+            />
+          </Form.Item>
+          <Form.Item
+            name="managerId"
+            label={t('admin:departments.manager')}
+            extra={t('admin:departments.managerHint')}
+          >
+            <UserSelect
+              allowClear
+              known={editing && editing !== 'new' && editing.manager ? [editing.manager] : []}
             />
           </Form.Item>
         </Form>

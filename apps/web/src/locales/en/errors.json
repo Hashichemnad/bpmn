@@ -143,5 +143,10 @@
   "TEST_INCOMPLETE": "Record a result for every sample and choose a conclusion before submitting.",
   "TESTER_IS_REVIEWER": "The tester and the reviewer must be different people.",
   "INVALID_USER": "A selected user no longer exists.",
-  "TEST_STARTED": "Only planned tests can be removed."
+  "TEST_STARTED": "Only planned tests can be removed.",
+  "ACTIONS_OPEN": "Every action must be done (100 %) first.",
+  "INVALID_SEVERITY": "Choose a severity from the scale.",
+  "INVALID_SOURCE": "The source of the issue no longer exists.",
+  "SOURCE_REQUIRED": "Choose the source of the issue.",
+  "INVALID_PROCESS": "The process no longer exists."
 }

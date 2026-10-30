@@ -11,7 +11,7 @@ import { AuditService, diffFields } from '../audit/audit.service';
 import { badRequest, conflict, notFound } from '../common/app-exception';
 import type { AuthUser, RequestMeta } from '../common/auth-user';
 
-const FIELDS = ['code', 'nameEn', 'nameAr', 'parentId'];
+const FIELDS = ['code', 'nameEn', 'nameAr', 'parentId', 'managerId'];
 
 function toDto(d: Department & { _count?: { users: number } }): DepartmentDto {
   return {
@@ -20,6 +20,7 @@ function toDto(d: Department & { _count?: { users: number } }): DepartmentDto {
     nameEn: d.nameEn,
     nameAr: d.nameAr,
     parentId: d.parentId,
+    managerId: d.managerId,
     userCount: d._count?.users ?? 0,
     createdAt: d.createdAt.toISOString(),
     updatedAt: d.updatedAt.toISOString(),
@@ -40,7 +41,15 @@ export class DepartmentsService {
       include: { _count: { select: { users: { where: { deletedAt: null } } } } },
       orderBy: [{ nameEn: 'asc' }],
     });
-    return rows.map(toDto);
+    const managers = await this.prisma.user.findMany({
+      where: { id: { in: rows.map((r) => r.managerId).filter((v): v is string => !!v) } },
+      select: { id: true, email: true, nameEn: true, nameAr: true },
+    });
+    const byId = new Map(managers.map((u) => [u.id, u]));
+    return rows.map((r) => ({
+      ...toDto(r),
+      manager: r.managerId ? (byId.get(r.managerId) ?? null) : null,
+    }));
   }
 
   async get(id: string) {
@@ -49,8 +58,15 @@ export class DepartmentsService {
     return d;
   }
 
+  private async assertManager(managerId: string | null | undefined) {
+    if (!managerId) return;
+    const u = await this.prisma.user.findFirst({ where: { id: managerId, deletedAt: null } });
+    if (!u) throw badRequest('INVALID_USER');
+  }
+
   async create(input: CreateDepartmentInput, actor: AuthUser, meta: RequestMeta) {
     if (input.parentId) await this.assertParent(input.parentId);
+    await this.assertManager(input.managerId);
     return this.prisma.$transaction(async (tx) => {
       const d = await tx.department.create({
         data: {
@@ -58,6 +74,7 @@ export class DepartmentsService {
           nameEn: input.nameEn ?? '',
           nameAr: input.nameAr ?? '',
           parentId: input.parentId ?? null,
+          managerId: input.managerId ?? null,
           createdById: actor.id,
           updatedById: actor.id,
         },
@@ -81,6 +98,7 @@ export class DepartmentsService {
 
   async update(id: string, input: UpdateDepartmentInput, actor: AuthUser, meta: RequestMeta) {
     const before = await this.get(id);
+    await this.assertManager(input.managerId);
     if (input.parentId !== undefined && input.parentId !== null) {
       await this.assertParent(input.parentId);
       const all = await this.prisma.department.findMany({
@@ -102,6 +120,7 @@ export class DepartmentsService {
           nameEn,
           nameAr,
           parentId: input.parentId,
+          managerId: input.managerId,
           updatedById: actor.id,
         },
       });

@@ -59,6 +59,8 @@ describe('Route security declarations', () => {
     expect(unvalidated.sort()).toEqual([
       'POST /control-tests/:id/files file',
       'POST /grc/import/:kind file',
+      'POST /issues/:id/files file',
+      'POST /issues/actions/:id/files file',
       'POST /pages/:id/attachments file',
       'POST /settings/logo file',
     ]);

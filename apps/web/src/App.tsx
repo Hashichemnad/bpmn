@@ -53,6 +53,9 @@ import { GrcSettingsPage } from '@/features/grc/GrcSettingsPage';
 import { GrcDashboardPage } from '@/features/grc/GrcDashboardPage';
 import { ControlTestsPage } from '@/features/assurance/ControlTestsPage';
 import { ControlTestPage } from '@/features/assurance/ControlTestPage';
+import { IssuesPage } from '@/features/assurance/IssuesPage';
+import { IssuePage } from '@/features/assurance/IssuePage';
+import { PortalTasksPage } from '@/features/assurance/PortalTasksPage';
 
 const P = PERMISSIONS;
 
@@ -106,6 +109,8 @@ export const routes: RouteObject[] = [
               { path: 'my', element: <MyProcessesPage /> },
               { path: 'feedback', element: <MyFeedbackPage /> },
               { path: 'notifications', element: <NotificationsPage /> },
+              { path: 'tasks', element: <PortalTasksPage /> },
+              { path: 'issues/:id', element: <IssuePage portal /> },
               { path: 'profile', element: <ProfilePage /> },
               { path: '*', element: <NotFound /> },
             ],
@@ -240,6 +245,16 @@ export const routes: RouteObject[] = [
                       </RequirePermission>
                     ),
                   },
+                  {
+                    path: 'grc/issues',
+                    element: (
+                      <RequirePermission any={[P.GRC_READ, P.ISSUES_MANAGE]}>
+                        <IssuesPage />
+                      </RequirePermission>
+                    ),
+                  },
+                  // Owners of an issue or an action reach it without the registers (checked on the server).
+                  { path: 'grc/issues/:id', element: <IssuePage /> },
                   {
                     path: 'settings/grc',
                     element: (

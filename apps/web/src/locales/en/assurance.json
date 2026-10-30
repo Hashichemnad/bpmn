@@ -70,7 +70,8 @@
     }
   },
   "nav": {
-    "tests": "Control tests"
+    "tests": "Control tests",
+    "issues": "Issues & actions"
   },
   "anyone": "Anyone with the role {{role}}",
   "unassigned": "Risk & Compliance",
@@ -78,7 +79,10 @@
   "system": "System",
   "tasks": {
     "testsToExecute": "Control tests to perform",
-    "testsToReview": "Control tests to review"
+    "testsToReview": "Control tests to review",
+    "issues": "My issues",
+    "issueActions": "My actions",
+    "issuesToVerify": "Issues to verify"
   },
   "evidence": {
     "title": "Evidence",
@@ -201,6 +205,106 @@
       "open": "Open only",
       "overdue": "Overdue",
       "mine": "Assigned to me"
+    }
+  },
+  "portal": {
+    "tasks": "My tasks",
+    "noTasks": "Nothing is waiting for you."
+  },
+  "settings": {
+    "title": "Issues: severity, reminders and escalation",
+    "saved": "Issue settings saved",
+    "severities": "Severity scale (also used to rate audit findings), lowest first",
+    "key": "Key",
+    "nameEn": "Name (English)",
+    "nameAr": "Name (Arabic)",
+    "colour": "Colour",
+    "addSeverity": "Add level",
+    "reminderDays": "Remind owners this many days before an issue or action is due:",
+    "escalationDays": "Escalate open issues and actions this many days after their due date:",
+    "escalateTo": {
+      "MANAGER": "To the owner's department manager (Risk & Compliance if there is none)",
+      "RISK_OFFICER": "To the Risk & Compliance officers",
+      "BOTH": "To the manager and the Risk & Compliance officers"
+    }
+  },
+  "issues": {
+    "title": "Issues and actions",
+    "subtitle": "Issues raised from tests, risk assessments, audit findings, feedback or by hand, with their action plans.",
+    "raise": "Raise issue",
+    "edit": "Edit issue",
+    "raised": "Issue {{code}} raised",
+    "saved": "Issue saved",
+    "search": "Search issues",
+    "code": "Code",
+    "titleLabel": "Issue",
+    "titleEn": "Title (English)",
+    "titleAr": "Title (Arabic)",
+    "descriptionEn": "Description (English)",
+    "descriptionAr": "Description (Arabic)",
+    "severity": "Severity",
+    "statusLabel": "Status",
+    "owner": "Owner",
+    "due": "Due",
+    "age": "Age",
+    "days_one": "{{count}} day",
+    "days_other": "{{count}} days",
+    "ageBucket": "{{range}} days",
+    "source": "Source",
+    "process": "Process",
+    "step": "Step",
+    "department": "Department",
+    "raisedBy": "Raised by",
+    "verifiedBy": "Verified by",
+    "escalated": "Escalated",
+    "actions": "Actions",
+    "actionPlan": "Action plan",
+    "addAction": "Add action",
+    "editAction": "Edit action",
+    "removeAction": "Remove this action?",
+    "noActions": "No actions yet.",
+    "actionTitle": "Action",
+    "progress": "Progress",
+    "acceptedBy": "Risk accepted by {{name}} on {{date}}",
+    "filters": {
+      "open": "Open only",
+      "overdue": "Overdue",
+      "mine": "Mine"
+    },
+    "sources": {
+      "CONTROL_TEST": "Control test",
+      "RISK_ASSESSMENT": "Risk assessment",
+      "AUDIT_FINDING": "Audit finding",
+      "FEEDBACK": "Portal feedback",
+      "MANUAL": "Raised by hand"
+    },
+    "status": {
+      "OPEN": "Open",
+      "IN_PROGRESS": "In progress",
+      "READY_FOR_VERIFICATION": "Ready for verification",
+      "CLOSED": "Closed",
+      "ACCEPTED_RISK": "Accepted risk"
+    },
+    "action": {
+      "START": "Start work",
+      "READY": "Ready for verification",
+      "VERIFY": "Verify and close",
+      "REJECT_VERIFICATION": "Not fixed yet",
+      "ACCEPT_RISK": "Accept risk",
+      "REOPEN": "Reopen"
+    },
+    "done": {
+      "START": "Work started",
+      "READY": "Sent for verification",
+      "VERIFY": "Issue closed",
+      "REJECT_VERIFICATION": "Returned to the owner",
+      "ACCEPT_RISK": "Risk accepted",
+      "REOPEN": "Issue reopened"
+    },
+    "commentHint": {
+      "ACCEPT_RISK": "Why is the risk accepted instead of fixed? (required, kept with the issue)",
+      "REJECT_VERIFICATION": "What is still missing? (required)",
+      "REOPEN": "Why is the issue reopened? (required)"
     }
   }
 }
