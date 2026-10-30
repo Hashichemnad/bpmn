@@ -231,6 +231,26 @@ zod / UUID pipe; file uploads are checked in the service (allow-list, content sn
 | GET    | `/governance/settings`                       | any of `governance.manage`, `processes.read`, `docs.read` | —                                   | default    |
 | PUT    | `/governance/settings`                       | `governance.manage`                                       | body                                | default    |
 | PUT    | `/governance/spaces/:spaceId/workflow`       | any of `governance.manage`, `docs.read`                   | body, param `spaceId`               | default    |
+| GET    | `/grc/controls`                              | `grc.read`                                                | query                               | default    |
+| POST   | `/grc/controls`                              | any of `grc.edit`, `grc.propose`                          | body                                | default    |
+| DELETE | `/grc/controls/:id`                          | any of `grc.edit`, `grc.propose`                          | param `id`                          | default    |
+| GET    | `/grc/controls/:id`                          | `grc.read`                                                | param `id`                          | default    |
+| PATCH  | `/grc/controls/:id`                          | any of `grc.edit`, `grc.propose`                          | body, param `id`                    | default    |
+| POST   | `/grc/items/:id/comments`                    | `grc.read` + `comments.write`                             | body, param `id`                    | default    |
+| GET    | `/grc/items/:id/timeline`                    | `grc.read`                                                | param `id`                          | default    |
+| GET    | `/grc/processes/:id`                         | `grc.read` + `processes.read`                             | param `id`                          | default    |
+| GET    | `/grc/requirements`                          | `grc.read`                                                | query                               | default    |
+| POST   | `/grc/requirements`                          | `grc.edit`                                                | body                                | default    |
+| DELETE | `/grc/requirements/:id`                      | `grc.admin`                                               | param `id`                          | default    |
+| GET    | `/grc/requirements/:id`                      | `grc.read`                                                | param `id`                          | default    |
+| PATCH  | `/grc/requirements/:id`                      | `grc.edit`                                                | body, param `id`                    | default    |
+| GET    | `/grc/risks`                                 | `grc.read`                                                | query                               | default    |
+| POST   | `/grc/risks`                                 | any of `grc.edit`, `grc.propose`                          | body                                | default    |
+| DELETE | `/grc/risks/:id`                             | any of `grc.edit`, `grc.propose`                          | param `id`                          | default    |
+| GET    | `/grc/risks/:id`                             | `grc.read`                                                | param `id`                          | default    |
+| PATCH  | `/grc/risks/:id`                             | any of `grc.edit`, `grc.propose`                          | body, param `id`                    | default    |
+| GET    | `/grc/settings`                              | any of `grc.read`, `processes.read`                       | —                                   | default    |
+| PUT    | `/grc/settings`                              | `grc.admin`                                               | body                                | default    |
 | GET    | `/health`                                    | **public**                                                | —                                   | skip       |
 | GET    | `/integrations/git`                          | `settings.manage`                                         | —                                   | default    |
 | PUT    | `/integrations/git`                          | `settings.manage`                                         | body                                | default    |
@@ -288,8 +308,8 @@ zod / UUID pipe; file uploads are checked in the service (allow-list, content sn
 | GET    | `/processes/:id`                             | `processes.read`                                          | param `id`                          | default    |
 | PATCH  | `/processes/:id`                             | any of `processes.edit`, `processes.edit_own`             | body, param `id`                    | default    |
 | GET    | `/processes/:id/links`                       | `processes.read`                                          | param `id`                          | default    |
-| POST   | `/processes/:id/links`                       | any of `models.edit`, `models.edit_own`                   | body, param `id`                    | default    |
-| DELETE | `/processes/:id/links/:linkId`               | any of `models.edit`, `models.edit_own`                   | param `id`, param `linkId`          | default    |
+| POST   | `/processes/:id/links`                       | any of `models.edit`, `models.edit_own`, `grc.edit`       | body, param `id`                    | default    |
+| DELETE | `/processes/:id/links/:linkId`               | any of `models.edit`, `models.edit_own`, `grc.edit`       | param `id`, param `linkId`          | default    |
 | GET    | `/processes/:id/model`                       | `processes.read`                                          | param `id`                          | default    |
 | PUT    | `/processes/:id/model`                       | any of `models.edit`, `models.edit_own`                   | body, param `id`                    | default    |
 | POST   | `/processes/:id/move`                        | `processes.edit`                                          | body, param `id`                    | default    |

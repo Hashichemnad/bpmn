@@ -17,6 +17,7 @@ import { ObjectsModule } from './objects/objects.module';
 import { DictionaryModule } from './dictionary/dictionary.module';
 import { ReportsModule } from './reports/reports.module';
 import { ConventionsModule } from './conventions/conventions.module';
+import { GrcModule } from './grc/grc.module';
 import { EventsModule } from './events/domain-events';
 import { DocsModule } from './docs/docs.module';
 import { SearchModule } from './search/search.module';
@@ -58,6 +59,7 @@ import { AllExceptionsFilter } from './common/http-exception.filter';
     DictionaryModule,
     ReportsModule,
     ConventionsModule,
+    GrcModule,
     DocsModule,
     SearchModule,
     IntegrationsModule,

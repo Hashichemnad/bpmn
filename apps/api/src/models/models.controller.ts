@@ -105,7 +105,7 @@ export class ModelsController {
   }
 
   @Post('links')
-  @RequireAnyPermission(...EDIT)
+  @RequireAnyPermission(...EDIT, PERMISSIONS.GRC_EDIT)
   createLink(
     @Param('id', UuidPipe()) id: string,
     @Body(new ZodPipe(createLinkSchema)) body: CreateLinkInput,
@@ -116,7 +116,7 @@ export class ModelsController {
   }
 
   @Delete('links/:linkId')
-  @RequireAnyPermission(...EDIT)
+  @RequireAnyPermission(...EDIT, PERMISSIONS.GRC_EDIT)
   @HttpCode(200)
   deleteLink(
     @Param('id', UuidPipe()) id: string,

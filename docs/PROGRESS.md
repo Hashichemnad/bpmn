@@ -13,9 +13,14 @@ Local setup used by this session: PostgreSQL 16 (`service postgresql start`; rol
 Steps (tick as they are committed; a new session continues at the first unticked one):
 
 - [x] 0. CLAUDE.md phase table (B2 and Phase 6 part 4 merged; Phase 6 remainder moved to the end), this plan.
-- [ ] 1. Data model and permissions: `Risk`, `Control`, `Requirement` tables (1:1 with a `RepoObject` row),
-      relations, assessment history, process-level links, permissions `grc.*`, role Risk & Compliance Officer,
-      API module `grc` with guards and tests.
+- [x] 1. Data model and permissions (D-089 – D-091): `Risk`, `Control`, `Requirement` detail tables 1:1 with
+      a `RepoObject` (types RISK / CONTROL / new REQUIREMENT), `RiskControl`, `RequirementControl`,
+      `GrcActivity` (assessment history + comments); process-level links (`#process`, kept on save);
+      permissions `grc.read` / `grc.propose` / `grc.edit` / `grc.admin`, role `RISK_OFFICER`; API `/grc/*`
+      (registers with filters incl. rating / heat-map cell / coverage, details with linked steps, timeline,
+      comments, settings, per-process view); GRC editors link GRC items without model rights; `/objects` refuses
+      GRC types (`USE_GRC_REGISTER`). Shared `grc.ts` (schemas, ratings, settings). Tests: shared 7, API 6 (+
+      authorisation matrix covers the new tables), SECURITY.md route table regenerated.
 - [ ] 2. GRC workspace: menu "Risk & Compliance", registers with filters, detail pages (relations, steps,
       timeline, comments), forms EN/AR, Excel import / export, risk matrix settings.
 - [ ] 3. Modeler and portal: step panel "Risks & Controls", badges + warning, colour-by views, portal setting,

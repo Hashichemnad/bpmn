@@ -91,6 +91,7 @@ const EN = {
     CONTROL: 'Control',
     KPI: 'KPI',
     TERM: 'Dictionary term',
+    REQUIREMENT: 'Requirement',
   },
   relations: {
     PERFORMS: 'Performs',
@@ -100,6 +101,7 @@ const EN = {
     MITIGATES: 'Mitigates',
     MEASURES: 'Measures',
     NAMED: 'Label (dictionary)',
+    REQUIRES: 'Must satisfy',
   },
 };
 
@@ -190,6 +192,7 @@ const AR: Texts = {
     CONTROL: 'ضابط',
     KPI: 'مؤشر أداء',
     TERM: 'مصطلح القاموس',
+    REQUIREMENT: 'متطلب',
   },
   relations: {
     PERFORMS: 'ينفّذ',
@@ -199,6 +202,7 @@ const AR: Texts = {
     MITIGATES: 'يخفف',
     MEASURES: 'يقيس',
     NAMED: 'التسمية (القاموس)',
+    REQUIRES: 'يجب استيفاء',
   },
 };
 

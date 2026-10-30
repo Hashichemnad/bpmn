@@ -39,6 +39,7 @@ enum ObjectType {
   CONTROL
   KPI
   TERM
+  REQUIREMENT
 }
 
 /// Dictionary terms are proposed as DRAFT and approved; other library objects are APPROVED.
@@ -121,6 +122,64 @@ enum LinkRelation {
   MITIGATES
   MEASURES
   NAMED
+  REQUIRES
+}
+
+// ---------- Risk & Compliance (M10, Phase 4.1 — D-089) ----------
+
+enum GrcStatus {
+  DRAFT
+  ACTIVE
+  RETIRED
+}
+
+enum RiskResponse {
+  ACCEPT
+  AVOID
+  MITIGATE
+  TRANSFER
+}
+
+enum ControlType {
+  PREVENTIVE
+  DETECTIVE
+  CORRECTIVE
+}
+
+enum ControlNature {
+  MANUAL
+  AUTOMATED
+  IT_DEPENDENT_MANUAL
+}
+
+enum ControlFrequency {
+  PER_TRANSACTION
+  DAILY
+  WEEKLY
+  MONTHLY
+  QUARTERLY
+  ANNUAL
+  AD_HOC
+}
+
+enum ControlEffectiveness {
+  EFFECTIVE
+  PARTLY
+  NOT_EFFECTIVE
+  NOT_ASSESSED
+}
+
+enum RequirementLevel {
+  SOURCE
+  SECTION
+  CLAUSE
+}
+
+enum GrcActivityKind {
+  CREATED
+  ASSESSMENT
+  STATUS
+  COMMENT
 }
 
 model User {
@@ -165,6 +224,7 @@ model User {
   aiUsage        AiUsage[]
   recoveryCodes  MfaRecoveryCode[]
   ownedObjects   RepoObject[]      @relation("ObjectOwner")
+  grcActivities  GrcActivity[]
 
   @@unique([ssoIssuer, ssoSubject])
   @@index([departmentId])
@@ -251,9 +311,12 @@ model Department {
   updatedById String?      @db.Uuid
   deletedAt   DateTime?
 
-  users     User[]
-  processes Process[]
-  spaces    Space[]
+  users        User[]
+  processes    Process[]
+  spaces       Space[]
+  risks        Risk[]
+  controls     Control[]
+  requirements Requirement[]
 
   @@index([parentId])
 }
@@ -356,7 +419,137 @@ model RepoObject {
   users     UserJobRole[]
   published PublishedLink[]
 
+  /// Risk & Compliance details (one of them for RISK / CONTROL / REQUIREMENT objects, D-089).
+  risk           Risk?
+  control        Control?
+  requirement    Requirement?
+  /// IT system objects: the controls that run in or depend on them.
+  systemControls Control[]     @relation("ControlSystem")
+  grcActivities  GrcActivity[]
+
   @@index([type, status])
+}
+
+/// Risk register entry; code, title, description and owner live on the RepoObject (type RISK).
+model Risk {
+  objectId           String       @id @db.Uuid
+  object             RepoObject   @relation(fields: [objectId], references: [id], onDelete: Cascade)
+  /// Key of a configurable category (Setting `grc`).
+  category           String
+  causeEn            String       @default("")
+  causeAr            String       @default("")
+  consequenceEn      String       @default("")
+  consequenceAr      String       @default("")
+  departmentId       String?      @db.Uuid
+  department         Department?  @relation(fields: [departmentId], references: [id], onDelete: SetNull)
+  inherentLikelihood Int
+  inherentImpact     Int
+  /// After controls; null = not assessed yet (the inherent rating stands).
+  residualLikelihood Int?
+  residualImpact     Int?
+  response           RiskResponse @default(MITIGATE)
+  status             GrcStatus    @default(DRAFT)
+  nextReviewAt       DateTime?
+  lastAssessedAt     DateTime?
+  /// Last "review due" / "overdue" reminder (prevents repeats).
+  reminderSentFor    DateTime?
+
+  controls RiskControl[]
+
+  @@index([status])
+  @@index([departmentId])
+  @@index([nextReviewAt])
+}
+
+/// Internal control; code, title, description and owner live on the RepoObject (type CONTROL).
+model Control {
+  objectId        String               @id @db.Uuid
+  object          RepoObject           @relation(fields: [objectId], references: [id], onDelete: Cascade)
+  controlType     ControlType          @default(PREVENTIVE)
+  nature          ControlNature        @default(MANUAL)
+  frequency       ControlFrequency     @default(PER_TRANSACTION)
+  departmentId    String?              @db.Uuid
+  department      Department?          @relation(fields: [departmentId], references: [id], onDelete: SetNull)
+  keyControl      Boolean              @default(false)
+  systemId        String?              @db.Uuid
+  system          RepoObject?          @relation("ControlSystem", fields: [systemId], references: [id], onDelete: SetNull)
+  effectiveness   ControlEffectiveness @default(NOT_ASSESSED)
+  status          GrcStatus            @default(DRAFT)
+  nextReviewAt    DateTime?
+  lastAssessedAt  DateTime?
+  reminderSentFor DateTime?
+
+  risks        RiskControl[]
+  requirements RequirementControl[]
+
+  @@index([status])
+  @@index([departmentId])
+  @@index([nextReviewAt])
+}
+
+/// Regulation, law, policy, standard or internal rule: source document → section → clause.
+/// Code, title, bilingual text (description) and owner live on the RepoObject (type REQUIREMENT).
+model Requirement {
+  objectId      String           @id @db.Uuid
+  object        RepoObject       @relation(fields: [objectId], references: [id], onDelete: Cascade)
+  level         RequirementLevel @default(SOURCE)
+  parentId      String?          @db.Uuid
+  parent        Requirement?     @relation("RequirementTree", fields: [parentId], references: [objectId], onDelete: SetNull)
+  children      Requirement[]    @relation("RequirementTree")
+  sourceRef     String           @default("")
+  url           String?
+  departmentId  String?          @db.Uuid
+  department    Department?      @relation(fields: [departmentId], references: [id], onDelete: SetNull)
+  effectiveDate DateTime?
+  status        GrcStatus        @default(ACTIVE)
+  nextReviewAt  DateTime?
+
+  controls RequirementControl[]
+
+  @@index([parentId])
+  @@index([status])
+}
+
+/// Risk "mitigated by" control.
+model RiskControl {
+  riskId      String   @db.Uuid
+  risk        Risk     @relation(fields: [riskId], references: [objectId], onDelete: Cascade)
+  controlId   String   @db.Uuid
+  control     Control  @relation(fields: [controlId], references: [objectId], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+  createdById String?  @db.Uuid
+
+  @@id([riskId, controlId])
+  @@index([controlId])
+}
+
+/// Requirement "satisfied by" control.
+model RequirementControl {
+  requirementId String      @db.Uuid
+  requirement   Requirement @relation(fields: [requirementId], references: [objectId], onDelete: Cascade)
+  controlId     String      @db.Uuid
+  control       Control     @relation(fields: [controlId], references: [objectId], onDelete: Cascade)
+  createdAt     DateTime    @default(now())
+  createdById   String?     @db.Uuid
+
+  @@id([requirementId, controlId])
+  @@index([controlId])
+}
+
+/// Assessment history and comments of a risk, control or requirement (timeline).
+model GrcActivity {
+  id          String          @id @default(uuid()) @db.Uuid
+  objectId    String          @db.Uuid
+  object      RepoObject      @relation(fields: [objectId], references: [id], onDelete: Cascade)
+  kind        GrcActivityKind
+  /// { field: { from, to } } for likelihood / impact / effectiveness / status changes.
+  changes     Json            @default("{}")
+  comment     String          @default("")
+  createdAt   DateTime        @default(now())
+  createdById String?         @db.Uuid
+  createdBy   User?           @relation(fields: [createdById], references: [id], onDelete: SetNull)
+
+  @@index([objectId, createdAt])
 }
 
 model ObjectLink {

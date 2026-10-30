@@ -6,7 +6,8 @@
     "RISK": "Risk",
     "CONTROL": "Control",
     "KPI": "KPI",
-    "TERM": "Dictionary term"
+    "TERM": "Dictionary term",
+    "REQUIREMENT": "Requirement"
   },
   "relations": {
     "PERFORMS": "Performs",
@@ -15,7 +16,8 @@
     "OUTPUT": "Output",
     "MITIGATES": "Mitigates",
     "MEASURES": "Measures",
-    "NAMED": "Label (dictionary)"
+    "NAMED": "Label (dictionary)",
+    "REQUIRES": "Must satisfy"
   },
   "library": {
     "ROLE": {
@@ -46,7 +48,8 @@
     "RISK": "New risk",
     "CONTROL": "New control",
     "KPI": "New KPI",
-    "TERM": "New term"
+    "TERM": "New term",
+    "REQUIREMENT": "New requirement"
   },
   "edit": {
     "ROLE": "Edit role",
@@ -55,7 +58,8 @@
     "RISK": "Edit risk",
     "CONTROL": "Edit control",
     "KPI": "Edit KPI",
-    "TERM": "Edit term"
+    "TERM": "Edit term",
+    "REQUIREMENT": "Edit requirement"
   },
   "search": "Search by name or code",
   "usage": "Usage",

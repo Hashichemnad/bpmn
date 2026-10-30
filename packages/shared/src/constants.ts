@@ -53,6 +53,14 @@ export const PERMISSIONS = {
   DICTIONARY_APPROVE: 'dictionary.approve',
   /** Modeling conventions: which house rules apply and which block a submission. */
   CONVENTIONS_MANAGE: 'conventions.manage',
+  /** Risk & Compliance workspace: risk register, controls, requirements, dashboards (read). */
+  GRC_READ: 'grc.read',
+  /** Propose new risks and controls (created as drafts) and link GRC items to steps they may edit. */
+  GRC_PROPOSE: 'grc.propose',
+  /** Create, change, assess and link any risk, control or requirement; Excel import. */
+  GRC_EDIT: 'grc.edit',
+  /** Risk matrix, categories, portal visibility; delete GRC items. */
+  GRC_ADMIN: 'grc.admin',
 } as const;
 export type Permission = (typeof PERMISSIONS)[keyof typeof PERMISSIONS];
 export const ALL_PERMISSIONS: Permission[] = Object.values(PERMISSIONS);
@@ -64,6 +72,7 @@ export const SYSTEM_ROLE_KEYS = [
   'MODELER',
   'REVIEWER',
   'AUDITOR',
+  'RISK_OFFICER',
   'VIEWER',
 ] as const;
 export type SystemRoleKey = (typeof SYSTEM_ROLE_KEYS)[number];
@@ -109,6 +118,8 @@ export const SYSTEM_ROLES: Record<
       P.GOVERNANCE_DASHBOARD,
       P.DICTIONARY_PROPOSE,
       P.DICTIONARY_APPROVE,
+      P.GRC_READ,
+      P.GRC_PROPOSE,
     ],
   },
   MODELER: {
@@ -123,12 +134,14 @@ export const SYSTEM_ROLES: Record<
       P.OBJECTS_MANAGE,
       P.DOCS_EDIT,
       P.DICTIONARY_PROPOSE,
+      P.GRC_READ,
+      P.GRC_PROPOSE,
     ],
   },
   REVIEWER: {
     nameEn: 'Reviewer',
     nameAr: 'مراجع',
-    permissions: [...READ_REPOSITORY, P.USERS_READ],
+    permissions: [...READ_REPOSITORY, P.USERS_READ, P.GRC_READ],
   },
   AUDITOR: {
     nameEn: 'Auditor',
@@ -145,6 +158,21 @@ export const SYSTEM_ROLES: Record<
       P.AUDIT_READ,
       P.GOVERNANCE_DASHBOARD,
       P.AI_USAGE_READ,
+      P.GRC_READ,
+    ],
+  },
+  RISK_OFFICER: {
+    nameEn: 'Risk & Compliance Officer',
+    nameAr: 'مسؤول المخاطر والامتثال',
+    // Full Risk & Compliance rights; the rest of the workspace read-only (D-090).
+    permissions: [
+      ...READ_REPOSITORY,
+      P.USERS_READ,
+      P.GOVERNANCE_DASHBOARD,
+      P.GRC_READ,
+      P.GRC_PROPOSE,
+      P.GRC_EDIT,
+      P.GRC_ADMIN,
     ],
   },
   VIEWER: {
@@ -175,6 +203,7 @@ export const OBJECT_TYPES = [
   'CONTROL',
   'KPI',
   'TERM',
+  'REQUIREMENT',
 ] as const;
 export type ObjectType = (typeof OBJECT_TYPES)[number];
 /** Object types that have a library UI (documents since Phase 3, dictionary terms since B2). */
@@ -201,6 +230,8 @@ export const LINK_RELATIONS = [
   'MEASURES',
   /** The element's label comes from a dictionary term (ph:labelRef). */
   'NAMED',
+  /** The process or step must satisfy a requirement (regulation, policy, standard). */
+  'REQUIRES',
 ] as const;
 export type LinkRelation = (typeof LINK_RELATIONS)[number];
 
@@ -213,6 +244,7 @@ export const DEFAULT_RELATION_FOR_TYPE: Record<ObjectType, LinkRelation> = {
   CONTROL: 'MITIGATES',
   KPI: 'MEASURES',
   TERM: 'NAMED',
+  REQUIREMENT: 'REQUIRES',
 };
 
 export const USER_STATUSES = ['ACTIVE', 'INACTIVE'] as const;
@@ -253,6 +285,10 @@ export const AUDIT_ACTIONS = [
   'MFA_RECOVERY_CODES',
   /** A report or export was downloaded (handbook, RACI, object report). */
   'EXPORT',
+  /** Excel import of a GRC register. */
+  'IMPORT',
+  /** Risk rating or control effectiveness changed (assessment history). */
+  'ASSESS',
 ] as const;
 export type AuditAction = (typeof AUDIT_ACTIONS)[number];
 
@@ -278,6 +314,9 @@ export const AUDIT_ENTITY_TYPES = [
   'Comment',
   'Feedback',
   'AI',
+  'Risk',
+  'Control',
+  'Requirement',
 ] as const;
 export type AuditEntityType = (typeof AUDIT_ENTITY_TYPES)[number];
 
@@ -296,6 +335,8 @@ export const SETTING_KEYS = {
   /** Set when the post-upgrade "run Apply theme" notice was dismissed or the theme applied. */
   DIAGRAM_THEME_NOTICE: 'branding.diagramThemeNotice',
   MODELING_CONVENTIONS: 'modeling.conventions',
+  /** Risk & Compliance: categories, risk matrix, portal visibility, reminders. */
+  GRC: 'grc',
 } as const;
 
 /** Logo upload limits. */

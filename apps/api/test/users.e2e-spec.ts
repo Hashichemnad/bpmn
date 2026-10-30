@@ -153,7 +153,7 @@ describe('Users & roles (e2e)', () => {
     expect(await ctx.prisma.auditLog.count({ where: { action: 'PASSWORD_RESET' } })).toBe(1);
   });
 
-  it('GET /roles lists the seven system roles with permissions', async () => {
+  it('GET /roles lists the eight system roles with permissions', async () => {
     const res = await admin.get('/roles').expect(200);
     expect(res.body.map((r: { key: string }) => r.key)).toEqual([
       'SUPER_ADMIN',
@@ -162,6 +162,7 @@ describe('Users & roles (e2e)', () => {
       'MODELER',
       'REVIEWER',
       'AUDITOR',
+      'RISK_OFFICER',
       'VIEWER',
     ]);
     const viewer = await loggedIn(ctx.app, 'viewer@test.local');

@@ -6,7 +6,8 @@
     "MODELER": "Modeler / Editor",
     "REVIEWER": "Reviewer",
     "AUDITOR": "Auditor",
-    "VIEWER": "Viewer"
+    "VIEWER": "Viewer",
+    "RISK_OFFICER": "Risk & Compliance Officer"
   },
   "status": {
     "ACTIVE": "Active",
@@ -99,7 +100,9 @@
       "MFA_DISABLE": "2FA turned off",
       "MFA_RESET": "2FA reset by admin",
       "MFA_RECOVERY_CODES": "New 2FA recovery codes",
-      "EXPORT": "Report downloaded"
+      "EXPORT": "Report downloaded",
+      "IMPORT": "Import",
+      "ASSESS": "Assessment"
     },
     "entities": {
       "User": "User",
@@ -122,7 +125,10 @@
       "Review": "Review",
       "Comment": "Comment",
       "Feedback": "Feedback",
-      "AI": "AI assistant"
+      "AI": "AI assistant",
+      "Risk": "Risk",
+      "Control": "Control",
+      "Requirement": "Requirement"
     }
   },
   "settings": {

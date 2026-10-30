@@ -358,12 +358,13 @@ export const rejectTermSchema = z.object({ reason: trimmed(1000).optional() });
 export type RejectTermInput = z.infer<typeof rejectTermSchema>;
 
 export const createLinkSchema = z.object({
+  /** A BPMN element id, or `#process` (PROCESS_ELEMENT_ID) for a link to the whole process. */
   bpmnElementId: z
     .string()
     .trim()
     .min(1)
     .max(255)
-    .regex(/^[A-Za-z_][\w.-]*$/, 'INVALID_ELEMENT_ID'),
+    .regex(/^(?:[A-Za-z_][\w.-]*|#process)$/, 'INVALID_ELEMENT_ID'),
   repoObjectId: uuidSchema,
   relation: z.enum(LINK_RELATIONS).optional(),
 });

@@ -1,0 +1,344 @@
+import { DEFAULT_GRC_SETTINGS, PROCESS_ELEMENT_ID } from '@processhub/shared';
+import {
+  createApp,
+  createUser,
+  loggedIn,
+  resetDb,
+  sampleBpmn,
+  type Client,
+  type TestContext,
+} from './helpers';
+
+/** Risk & Compliance registers (Phase 4.1): risks, controls, requirements, links, permissions. */
+describe('Risk & Compliance (e2e)', () => {
+  let ctx: TestContext;
+  let officer: Client;
+  let modeler: Client;
+  let owner: Client;
+  let auditor: Client;
+  let viewer: Client;
+  let reviewer: Client;
+  let processId: string;
+  let otherProcessId: string;
+
+  beforeAll(async () => {
+    ctx = await createApp();
+  });
+  afterAll(async () => {
+    await ctx.app.close();
+  });
+  beforeEach(async () => {
+    await resetDb(ctx.prisma);
+    await createUser(ctx.prisma, 'officer@test.local', ['RISK_OFFICER']);
+    await createUser(ctx.prisma, 'modeler@test.local', ['MODELER']);
+    const ownerUser = await createUser(ctx.prisma, 'owner@test.local', ['PROCESS_OWNER']);
+    await createUser(ctx.prisma, 'auditor@test.local', ['AUDITOR']);
+    await createUser(ctx.prisma, 'viewer@test.local', ['VIEWER']);
+    await createUser(ctx.prisma, 'reviewer@test.local', ['REVIEWER']);
+    officer = await loggedIn(ctx.app, 'officer@test.local');
+    modeler = await loggedIn(ctx.app, 'modeler@test.local');
+    owner = await loggedIn(ctx.app, 'owner@test.local');
+    auditor = await loggedIn(ctx.app, 'auditor@test.local');
+    viewer = await loggedIn(ctx.app, 'viewer@test.local');
+    reviewer = await loggedIn(ctx.app, 'reviewer@test.local');
+    processId = (
+      await modeler
+        .post('/processes')
+        .send({ code: 'S.01', nameEn: 'Purchasing', category: 'SUPPORT' })
+        .expect(201)
+    ).body.id;
+    await modeler
+      .put(`/processes/${processId}/model`)
+      .send({ bpmnXml: sampleBpmn(['Task_Order', 'Task_Approve']) })
+      .expect(200);
+    otherProcessId = (
+      await modeler
+        .post('/processes')
+        .send({ code: 'S.02', nameEn: 'Payments', category: 'SUPPORT', ownerId: ownerUser.id })
+        .expect(201)
+    ).body.id;
+  });
+
+  const risk = (c: Client, body: object = {}) =>
+    c.post('/grc/risks').send({
+      code: 'R-01',
+      nameEn: 'Split purchase orders',
+      nameAr: 'تجزئة أوامر الشراء',
+      category: 'FRAUD',
+      inherentLikelihood: 4,
+      inherentImpact: 4,
+      ...body,
+    });
+
+  it('creates risks with ratings, relates controls and requirements, filters the registers', async () => {
+    const r = (await risk(officer).expect(201)).body.item;
+    expect(r).toMatchObject({
+      type: 'RISK',
+      status: 'ACTIVE',
+      rating: { inherentScore: 16, inherentBand: 'CRITICAL', residualScore: 16, alert: true },
+      controls: [],
+      effectivelyControlled: false,
+    });
+    await risk(officer, { category: 'NOPE' }).expect(400);
+    await risk(officer, { residualLikelihood: 2 }).expect(400);
+    await risk(officer, { inherentImpact: 6 }).expect(400);
+
+    const source = (
+      await officer
+        .post('/grc/requirements')
+        .send({
+          code: 'PL',
+          nameEn: 'Procurement law',
+          nameAr: 'نظام المشتريات',
+          sourceRef: 'Law 2019',
+        })
+        .expect(201)
+    ).body.item;
+    expect(source).toMatchObject({ level: 'SOURCE', status: 'ACTIVE' });
+    const clause = (
+      await officer
+        .post('/grc/requirements')
+        .send({ code: 'PL-12', nameEn: 'Art. 12', parentId: source.id, level: 'CLAUSE' })
+        .expect(201)
+    ).body.item;
+    expect(clause.parent).toMatchObject({ id: source.id });
+    await officer.post('/grc/requirements').send({ nameEn: 'Orphan', level: 'CLAUSE' }).expect(400);
+    await officer
+      .post('/grc/requirements')
+      .send({ nameEn: 'Bad link', url: 'javascript:alert(1)' })
+      .expect(400);
+
+    const c = (
+      await officer
+        .post('/grc/controls')
+        .send({
+          code: 'C-01',
+          nameEn: 'Three quotations',
+          controlType: 'PREVENTIVE',
+          nature: 'MANUAL',
+          frequency: 'PER_TRANSACTION',
+          keyControl: true,
+          riskIds: [r.id],
+          requirementIds: [clause.id],
+        })
+        .expect(201)
+    ).body.item;
+    expect(c).toMatchObject({
+      effectiveness: 'NOT_ASSESSED',
+      keyControl: true,
+      risks: [{ id: r.id, rating: { residualBand: 'CRITICAL' } }],
+      requirements: [{ id: clause.id }],
+    });
+    const withControl = (await officer.get(`/grc/risks/${r.id}`).expect(200)).body.item;
+    expect(withControl.controls).toMatchObject([{ id: c.id, effectiveness: 'NOT_ASSESSED' }]);
+    expect(withControl.effectivelyControlled).toBe(false);
+
+    await risk(officer, {
+      code: 'R-02',
+      nameEn: 'Late payment',
+      category: 'FINANCIAL',
+      inherentLikelihood: 2,
+      inherentImpact: 2,
+    }).expect(201);
+
+    const list = (await officer.get('/grc/risks?sort=residualScore&order=desc').expect(200)).body;
+    expect(list.items.map((x: { code: string }) => x.code)).toEqual(['R-01', 'R-02']);
+    expect((await officer.get('/grc/risks?rating=LOW').expect(200)).body.total).toBe(1);
+    expect((await officer.get('/grc/risks?category=FRAUD').expect(200)).body.total).toBe(1);
+    expect((await officer.get('/grc/risks?cell=4,4').expect(200)).body.total).toBe(1);
+    expect((await officer.get('/grc/risks?withoutControls=true').expect(200)).body.total).toBe(1);
+    expect(
+      (await officer.get('/grc/risks?alertWithoutEffectiveControl=true').expect(200)).body.items,
+    ).toMatchObject([{ code: 'R-01' }]);
+    expect((await officer.get('/grc/controls?keyAttention=true').expect(200)).body.total).toBe(1);
+    expect(
+      (await officer.get('/grc/requirements?withoutControls=true').expect(200)).body.items,
+    ).toMatchObject([{ code: 'PL' }]);
+    await officer.get('/grc/risks?cell=9,9').expect(400);
+
+    // Risks, controls and requirements also appear in the object library ("where used").
+    const lib = (await modeler.get('/objects?type=REQUIREMENT').expect(200)).body;
+    expect(lib.total).toBe(2);
+    await modeler.patch(`/objects/${r.id}`).send({ nameEn: 'X' }).expect(400);
+    await modeler.delete(`/objects/${r.id}`).expect(400);
+  });
+
+  it('keeps an assessment history and comments as a timeline', async () => {
+    const r = (await risk(officer).expect(201)).body.item;
+    await officer
+      .patch(`/grc/risks/${r.id}`)
+      .send({ residualLikelihood: 2, residualImpact: 3, comment: 'Quotations in place' })
+      .expect(200);
+    const c = (await officer.post('/grc/controls').send({ nameEn: 'Review' }).expect(201)).body
+      .item;
+    await officer
+      .patch(`/grc/controls/${c.id}`)
+      .send({ effectiveness: 'NOT_EFFECTIVE', comment: 'Sample failed' })
+      .expect(200);
+    await officer.patch(`/grc/risks/${r.id}`).send({ status: 'RETIRED' }).expect(200);
+    await officer
+      .post(`/grc/items/${r.id}/comments`)
+      .send({ body: 'Discussed in committee' })
+      .expect(201);
+
+    const timeline = (await auditor.get(`/grc/items/${r.id}/timeline`).expect(200)).body;
+    expect(timeline.map((a: { kind: string }) => a.kind)).toEqual([
+      'COMMENT',
+      'STATUS',
+      'ASSESSMENT',
+      'CREATED',
+    ]);
+    expect(timeline[2]).toMatchObject({
+      comment: 'Quotations in place',
+      changes: {
+        residualLikelihood: { from: null, to: 2 },
+        residualImpact: { from: null, to: 3 },
+      },
+      author: { email: 'officer@test.local' },
+    });
+    const ct = (await officer.get(`/grc/items/${c.id}/timeline`).expect(200)).body;
+    expect(ct[0]).toMatchObject({
+      kind: 'ASSESSMENT',
+      changes: { effectiveness: { from: 'NOT_ASSESSED', to: 'NOT_EFFECTIVE' } },
+    });
+    const audit = await ctx.prisma.auditLog.findMany({
+      where: { entityId: r.id, action: 'ASSESS' },
+    });
+    expect(audit).toHaveLength(1);
+    // Auditors read but do not comment.
+    await auditor.post(`/grc/items/${r.id}/comments`).send({ body: 'x' }).expect(403);
+  });
+
+  it('process owners and modelers propose drafts; only editors activate, assess and map requirements', async () => {
+    const draft = (await risk(modeler, { status: 'ACTIVE' }).expect(201)).body.item;
+    expect(draft.status).toBe('DRAFT');
+    await modeler.patch(`/grc/risks/${draft.id}`).send({ nameEn: 'Better name' }).expect(200);
+    await modeler.patch(`/grc/risks/${draft.id}`).send({ status: 'ACTIVE' }).expect(403);
+    // Someone else's draft, an active risk, requirements and assessments are off limits.
+    await owner.patch(`/grc/risks/${draft.id}`).send({ nameEn: 'Mine' }).expect(403);
+    const active = (await risk(officer, { code: 'R-9' }).expect(201)).body.item;
+    await modeler.patch(`/grc/risks/${active.id}`).send({ nameEn: 'X' }).expect(403);
+    await modeler.post('/grc/requirements').send({ nameEn: 'Policy' }).expect(403);
+    const ctl = (
+      await owner
+        .post('/grc/controls')
+        .send({ nameEn: 'Check', effectiveness: 'EFFECTIVE' })
+        .expect(201)
+    ).body.item;
+    expect(ctl).toMatchObject({ status: 'DRAFT', effectiveness: 'NOT_ASSESSED' });
+    await owner.patch(`/grc/controls/${ctl.id}`).send({ effectiveness: 'EFFECTIVE' }).expect(403);
+    await owner
+      .post('/grc/controls')
+      .send({ nameEn: 'Y', riskIds: [active.id] })
+      .expect(403);
+    // The officer activates the proposal.
+    await officer.patch(`/grc/risks/${draft.id}`).send({ status: 'ACTIVE' }).expect(200);
+    // Proposers delete their own drafts only; admins anything.
+    await owner.delete(`/grc/risks/${active.id}`).expect(403);
+    await owner.delete(`/grc/controls/${ctl.id}`).expect(204);
+    await officer.delete(`/grc/risks/${active.id}`).expect(204);
+    await officer.get(`/grc/risks/${active.id}`).expect(404);
+  });
+
+  it('read-only roles read, Viewers see nothing, settings need grc.admin', async () => {
+    const r = (await risk(officer).expect(201)).body.item;
+    for (const c of [auditor, reviewer]) {
+      await c.get('/grc/risks').expect(200);
+      await c.get(`/grc/risks/${r.id}`).expect(200);
+      await risk(c).expect(403);
+      await c.patch(`/grc/risks/${r.id}`).send({ nameEn: 'X' }).expect(403);
+      await c.delete(`/grc/risks/${r.id}`).expect(403);
+      await c.put('/grc/settings').send(DEFAULT_GRC_SETTINGS).expect(403);
+    }
+    for (const path of ['/grc/risks', '/grc/controls', '/grc/requirements', `/grc/risks/${r.id}`])
+      await viewer.get(path).expect(403);
+    await viewer.get('/grc/settings').expect(403);
+    await viewer.get(`/grc/processes/${processId}`).expect(403);
+
+    await modeler.get('/grc/settings').expect(200);
+    await modeler.put('/grc/settings').send(DEFAULT_GRC_SETTINGS).expect(403);
+    const bands = DEFAULT_GRC_SETTINGS.bands.map((b) =>
+      b.key === 'HIGH' ? { ...b, minScore: 12 } : b,
+    );
+    const saved = (
+      await officer
+        .put('/grc/settings')
+        .send({ ...DEFAULT_GRC_SETTINGS, bands, portalVisibility: 'CONTROLS' })
+        .expect(200)
+    ).body;
+    expect(saved.portalVisibility).toBe('CONTROLS');
+    await officer
+      .put('/grc/settings')
+      .send({ ...DEFAULT_GRC_SETTINGS, bands: [...bands].reverse() })
+      .expect(400);
+  });
+
+  it('links risks and controls to steps and to the whole process; saves keep process links', async () => {
+    const r = (await risk(officer).expect(201)).body.item;
+    const req = (await officer.post('/grc/requirements').send({ nameEn: 'Policy' }).expect(201))
+      .body.item;
+    // The officer links without model edit rights; the modeler as an editor of the model.
+    await officer
+      .post(`/processes/${processId}/links`)
+      .send({ bpmnElementId: 'Task_Approve', repoObjectId: r.id })
+      .expect(201);
+    await officer
+      .post(`/processes/${processId}/links`)
+      .send({ bpmnElementId: PROCESS_ELEMENT_ID, repoObjectId: req.id })
+      .expect(201);
+    // …but not other library objects.
+    const role = (await modeler.post('/objects').send({ type: 'ROLE', nameEn: 'Clerk' })).body;
+    await officer
+      .post(`/processes/${processId}/links`)
+      .send({ bpmnElementId: 'Task_Order', repoObjectId: role.id })
+      .expect(403);
+    // Owners link to their own processes only; auditors never.
+    await owner
+      .post(`/processes/${processId}/links`)
+      .send({ bpmnElementId: 'Task_Order', repoObjectId: r.id })
+      .expect(403);
+    await owner
+      .post(`/processes/${otherProcessId}/links`)
+      .send({ bpmnElementId: PROCESS_ELEMENT_ID, repoObjectId: r.id })
+      .expect(201);
+    await auditor
+      .post(`/processes/${processId}/links`)
+      .send({ bpmnElementId: 'Task_Order', repoObjectId: r.id })
+      .expect(403);
+
+    const view = (await modeler.get(`/grc/processes/${processId}`).expect(200)).body;
+    expect(view.items).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          id: r.id,
+          bpmnElementId: 'Task_Approve',
+          rating: expect.any(Object),
+        }),
+        expect.objectContaining({ id: req.id, bpmnElementId: PROCESS_ELEMENT_ID }),
+      ]),
+    );
+    const detail = (await auditor.get(`/grc/risks/${r.id}`).expect(200)).body;
+    expect(detail.item.stepCount).toBe(2);
+    expect(detail.steps).toMatchObject([
+      {
+        process: { code: 'S.01' },
+        bpmnElementId: 'Task_Approve',
+        element: { nameEn: 'Task_Approve' },
+      },
+      { process: { code: 'S.02' }, bpmnElementId: PROCESS_ELEMENT_ID },
+    ]);
+    expect((await officer.get(`/grc/risks?processId=${processId}`).expect(200)).body.total).toBe(1);
+
+    // Removing the step prunes its links; the process-level link stays.
+    await modeler
+      .put(`/processes/${processId}/model`)
+      .send({ bpmnXml: sampleBpmn(['Task_Order']) })
+      .expect(200);
+    const after = (await modeler.get(`/grc/processes/${processId}`).expect(200)).body.items;
+    expect(after.map((i: { id: string }) => i.id)).toEqual([req.id]);
+
+    // Deleting a risk removes its links.
+    await officer.delete(`/grc/risks/${r.id}`).expect(204);
+    expect(await ctx.prisma.objectLink.count({ where: { repoObjectId: r.id } })).toBe(0);
+  });
+});

@@ -951,3 +951,54 @@ matched to the library by name (spelling variants folded), an unknown role still
   `400 CONVENTIONS_NOT_MET` listing the failed mandatory rules and element labels (EN/AR); the panel lists them
   with a "Required" tag. Processes already in review or published are not re-checked until their next submission.
 - The basic diagram check "not connected" is hidden for elements the convention already reports (no duplicates).
+
+## D-089 — Risk & Compliance data model: detail tables beside the library object (Phase 4.1, 2026-10-30)
+
+- **Class-table design**: every risk, control and requirement is a `RepoObject` (type `RISK`, `CONTROL`, new
+  `REQUIREMENT`) holding the shared fields — code, bilingual title and description (a requirement's bilingual
+  text), owner, soft delete — plus a one-to-one detail row in `Risk`, `Control` or `Requirement` (primary key =
+  object id). Step links, badges, the link panel, "where used", reports and published links therefore keep using
+  `ObjectLink` / `PublishedLink` unchanged; nothing is duplicated as JSON attributes.
+- **Risk**: configurable category key (Setting `grc`), cause and consequence EN/AR, department, inherent and
+  residual likelihood / impact 1–5 (residual null = not assessed, the inherent rating stands), response
+  (accept / avoid / mitigate / transfer), status (draft / active / retired), next review date.
+  **Control**: type, nature, frequency, department, key control, IT system (`SYSTEM` library object),
+  design effectiveness (effective / partly / not effective / not assessed), status, next review, last assessed.
+  **Requirement**: level source → section → clause (`parentId`, a clause may hang under a source directly),
+  source reference, `http(s)` link only, effective date, status.
+- **Relations**: `RiskControl` (risk "mitigated by" control), `RequirementControl` (requirement "satisfied by"
+  control); step and process links are `ObjectLink`s (default relation `MITIGATES` for risks and controls, new
+  `REQUIRES` for requirements). A link to the whole process uses the element id `#process`
+  (`PROCESS_ELEMENT_ID`), which saving a model never prunes.
+- **History**: `GrcActivity` rows (CREATED, ASSESSMENT, STATUS, COMMENT) with `{ field: { from, to } }`, comment,
+  author and time; every change of likelihood / impact / effectiveness writes one (audit action `ASSESS`).
+  Comments on GRC items live here too (not in the process/page `Comment` table, which is tied to governance).
+- **Ratings are computed** (score = likelihood × impact, band from the configurable thresholds), never stored, so
+  changing the matrix re-rates everything at once. Lists filter, sort and page in memory after the database
+  filters — fine for the expected few thousand items; revisit with stored scores if registers grow far beyond.
+- **Existing data**: the migration gives every pre-existing `RISK` object a register row (category Operational,
+  3 × 3, active) and every `CONTROL` object a control row (active, not assessed). Risks, controls and
+  requirements can no longer be created or changed through `/objects` (`USE_GRC_REGISTER`); the library lists
+  them read-only.
+
+## D-090 — GRC permissions and the Risk & Compliance Officer role (Phase 4.1, 2026-10-30)
+
+- New permissions `grc.read` (registers, dashboards), `grc.propose` (create risks and controls as drafts, change
+  and delete one's own drafts), `grc.edit` (create, change, assess, activate, relate and link any item; Excel
+  import), `grc.admin` (settings: categories, matrix, portal visibility; delete any item). `grc.propose` was added
+  to the three requested permissions so process owners and modelers can propose without edit rights on the
+  registers.
+- New system role **Risk & Compliance Officer** (`RISK_OFFICER`): all four GRC permissions, the rest of the
+  workspace read-only (same read bundle as a Reviewer, so it may comment and be a workflow approver).
+  Process Owner and Modeler: `grc.read` + `grc.propose`. Auditor: `grc.read` (no comments, as elsewhere).
+  Reviewer: `grc.read` (reviewers judge processes that show their risks; read-only). Viewer: none — the portal shows
+  linked risks / controls only as the portal setting allows. Super Admin and Admin: everything.
+- Requirements are created and changed by `grc.edit` only. Proposers can neither set effectiveness nor map
+  requirements, and relate only their own drafts.
+
+## D-091 — Who links risks, controls and requirements to steps (Phase 4.1, 2026-10-30)
+
+- Linking is a change of the process content (links are published with the process), so the existing link
+  endpoints are used with the governance lock (not while in review or archived; an approved / published process
+  gets a new draft). Allowed: model editors of the process (with `grc.propose` for GRC items) — as before — and
+  additionally `grc.edit` holders for GRC items on any process, without general model edit rights.

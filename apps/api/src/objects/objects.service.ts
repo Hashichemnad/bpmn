@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { Prisma, type RepoObject } from '@prisma/client';
 import {
   PERMISSIONS,
+  isGrcObjectType,
   extractBpmnLabels,
   type BpmnElementLabel,
   type ObjectStatus,
@@ -168,6 +169,8 @@ export class ObjectsService {
    * approver may still choose DRAFT. Every other object type is always APPROVED.
    */
   async create(input: CreateObjectInput, actor: AuthUser, meta: RequestMeta) {
+    // Risks, controls and requirements have their own register (Risk & Compliance, D-089).
+    if (isGrcObjectType(input.type)) throw badRequest('USE_GRC_REGISTER');
     const approver = actor.permissions.has(PERMISSIONS.DICTIONARY_APPROVE);
     const status: ObjectStatus =
       input.type !== 'TERM' ? 'APPROVED' : approver ? (input.status ?? 'APPROVED') : 'DRAFT';
@@ -237,6 +240,7 @@ export class ObjectsService {
   async update(id: string, input: UpdateObjectInput, actor: AuthUser, meta: RequestMeta) {
     const before = await this.prisma.repoObject.findFirst({ where: { id, deletedAt: null } });
     if (!before) throw notFound('Object');
+    if (isGrcObjectType(before.type)) throw badRequest('USE_GRC_REGISTER');
     this.assertMayChange(before, actor);
     const nameEn = input.nameEn ?? before.nameEn;
     const nameAr = input.nameAr ?? before.nameAr;
@@ -339,6 +343,7 @@ export class ObjectsService {
   async remove(id: string, actor: AuthUser, meta: RequestMeta) {
     const o = await this.prisma.repoObject.findFirst({ where: { id, deletedAt: null } });
     if (!o) throw notFound('Object');
+    if (isGrcObjectType(o.type)) throw badRequest('USE_GRC_REGISTER');
     this.assertMayChange(o, actor);
     await this.prisma.$transaction(async (tx) => {
       const removed = await tx.objectLink.deleteMany({ where: { repoObjectId: id } });
