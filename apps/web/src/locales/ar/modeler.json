@@ -451,7 +451,8 @@
       "duration": "المدة المخططة",
       "missing": "معلومات ناقصة",
       "riskRating": "تقييم الخطر المتبقي",
-      "riskControl": "مخاطر بلا ضوابط"
+      "riskControl": "مخاطر بلا ضوابط",
+      "appLifecycle": "دورة حياة التطبيقات"
     },
     "categories": {
       "none": "غير محدد",
@@ -478,6 +479,12 @@
         "noRisk": "لا يوجد خطر مرتبط",
         "uncovered": "خطر دون ضابط",
         "covered": "خطر مع ضوابط"
+      },
+      "lifecycle": {
+        "PLANNED": "تطبيق مخطط",
+        "ACTIVE": "تطبيق نشط",
+        "PHASING_OUT": "قيد الإيقاف التدريجي",
+        "RETIRED": "تطبيق موقوف"
       }
     },
     "missingRole_zero": "لا توجد خطوات بلا دور",

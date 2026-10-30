@@ -3,6 +3,10 @@ import type {
   ApplicationDetailDto,
   ApplicationDto,
   CapabilityDto,
+  CapabilityMapDto,
+  ImpactDto,
+  LandscapeDto,
+  TraceRowDto,
   DataObjectDto,
   EaImportKind,
   EaImportReportDto,
@@ -121,3 +125,32 @@ export function useEaImport(kind: EaImportKind) {
     },
   });
 }
+
+export const useCapabilityMap = (enabled = true) =>
+  useQuery({
+    queryKey: ['ea', 'capability-map'],
+    queryFn: () => api<CapabilityMapDto>('/ea/capability-map'),
+    enabled,
+  });
+
+export const useLandscape = (q: EaQuery) =>
+  useQuery({
+    queryKey: ['ea', 'landscape', q],
+    queryFn: () => api<LandscapeDto>('/ea/landscape', { query: q }),
+    placeholderData: keepPreviousData,
+  });
+
+export const useTrace = (q: EaQuery, enabled = true) =>
+  useQuery({
+    queryKey: ['ea', 'trace', q],
+    queryFn: () => api<TraceRowDto[]>('/ea/trace', { query: q }),
+    placeholderData: keepPreviousData,
+    enabled,
+  });
+
+export const useImpact = (id: string | undefined) =>
+  useQuery({
+    queryKey: ['ea', 'impact', id],
+    queryFn: () => api<ImpactDto>(`/ea/applications/${id}/impact`),
+    enabled: !!id,
+  });

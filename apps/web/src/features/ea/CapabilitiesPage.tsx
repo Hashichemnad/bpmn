@@ -104,7 +104,7 @@ export function CapabilitiesPage() {
       ) : caps.isError ? (
         <ErrorState error={caps.error} onRetry={() => void caps.refetch()} />
       ) : view === 'map' ? (
-        <CapabilityMap capabilities={caps.data ?? []} />
+        <CapabilityMap />
       ) : (
         <Card>
           <Table<Row>

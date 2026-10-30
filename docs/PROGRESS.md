@@ -25,8 +25,13 @@ Steps (tick as they are committed; a new session continues at the first unticked
       export / template / import per catalogue, shared `common/excel.ts`), all audited. Web: Architecture menu
       (Capabilities with list + basic map, Applications list / detail, Interfaces, Data objects with CRUD matrix),
       generic `components/ExcelMenu.tsx`. Tests: API 4 (`ea.e2e-spec.ts`), Playwright 1 (`ea.spec.ts`).
-- [ ] 2. EA views and traceability: capability map with colour-by, application landscape / interface diagram,
-      traceability and impact analysis (Excel), modeler "by application lifecycle", handbook "Systems and data".
+- [x] 2. EA views and traceability (D-110): `GET /ea/capability-map` (roll-up metrics: processes, applications,
+      lifecycles, highest residual risk), `/ea/landscape` (filters + neighbours), `/ea/trace` (+ Excel),
+      `/ea/applications/:id/impact` (+ Excel EN / AR). Web: capability map with colour-by (coverage, number of
+      applications, lifecycle, risk rating) and detail drawer; Landscape page (SVG, layered layout
+      `landscape-layout.ts`, RTL, export SVG / PNG); Traceability page; "Impact analysis" tab on the application;
+      modeler "Colour by → Application lifecycle"; handbook option "Systems and data". Tests: API +1, web +3
+      (layout 2, colour-by 1), Playwright +1.
 - [ ] 3. KPIs (M12): KPI table on the KPI library objects (migration), objectives, relations, measurements with
       evidence, owner reminders, Excel import, calculated process KPIs, permissions `kpi.read` / `kpi.edit` /
       `kpi.measure`.

@@ -22,6 +22,7 @@ import { PageHeader } from '@/components/PageHeader';
 import { ErrorState, LoadingState } from '@/components/states';
 import { useErrorMessage, useFormatDate, useLocalized } from '@/components/i18n-helpers';
 import { ApplicationFormModal } from './ApplicationFormModal';
+import { ImpactPanel } from './ImpactPanel';
 import { ClassificationTag, CriticalityTag, LifecycleTag } from './ea-components';
 import { applicationPath, eaStepHref, useEaAccess, useEaLabel } from './ea-helpers';
 
@@ -237,6 +238,11 @@ export function ApplicationDetailPage() {
                 </Col>
               </Row>
             ),
+          },
+          {
+            key: 'impact',
+            label: t('ea:impact.tab'),
+            children: <ImpactPanel applicationId={a.id} />,
           },
           {
             key: 'interfaces',

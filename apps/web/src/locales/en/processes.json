@@ -97,6 +97,7 @@
     "rendering": "Drawing diagram {{n}} of {{total}}…",
     "building": "Building the document…",
     "done": "Report downloaded",
-    "includeRisks": "Include a \"Risks and controls\" section"
+    "includeRisks": "Include a \"Risks and controls\" section",
+    "includeSystems": "Include \"Systems and data\" (applications, lifecycle, data objects)"
   }
 }

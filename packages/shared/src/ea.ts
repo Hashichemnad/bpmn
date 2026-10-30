@@ -396,3 +396,114 @@ export function capabilityDepths(
   for (const i of items) visit(i.id, new Set());
   return depth;
 }
+
+// ---------- Views and traceability (step 2, D-110) ----------
+
+export const CAPABILITY_COLOUR_BY = ['coverage', 'applications', 'lifecycle', 'risk'] as const;
+export type CapabilityColourBy = (typeof CAPABILITY_COLOUR_BY)[number];
+
+/** Lifecycle that needs the most attention first (retired > phasing out > planned > active). */
+export const LIFECYCLE_SEVERITY: Record<AppLifecycle, number> = {
+  ACTIVE: 0,
+  PLANNED: 1,
+  PHASING_OUT: 2,
+  RETIRED: 3,
+};
+
+export function worstLifecycle(values: AppLifecycle[]): AppLifecycle | null {
+  let worst: AppLifecycle | null = null;
+  for (const v of values)
+    if (!worst || LIFECYCLE_SEVERITY[v] > LIFECYCLE_SEVERITY[worst]) worst = v;
+  return worst;
+}
+
+export interface CapabilityMetricsDto {
+  /** Processes and applications of the capability and its sub-capabilities. */
+  processCount: number;
+  applicationCount: number;
+  lifecycles: Partial<Record<AppLifecycle, number>>;
+  worstLifecycle: AppLifecycle | null;
+  /** Highest residual score of active risks on steps of those processes (Risk & Compliance). */
+  maxRiskScore: number | null;
+  maxRiskBand: string | null;
+}
+
+export interface CapabilityMapDto {
+  capabilities: (CapabilityDto & { metrics: CapabilityMetricsDto })[];
+}
+
+export const landscapeQuerySchema = z.object({
+  departmentId: id.optional(),
+  capabilityId: id.optional(),
+  lifecycle: z.enum(APP_LIFECYCLES).optional(),
+  /** Also show applications connected to the filtered ones (one hop). */
+  neighbours: bool,
+});
+export type LandscapeQuery = z.infer<typeof landscapeQuerySchema>;
+
+export interface LandscapeDto {
+  nodes: (ApplicationRef & {
+    criticality: Criticality;
+    department: DepartmentRef | null;
+    /** Outside the filter, shown because it is connected to a filtered application. */
+    neighbour: boolean;
+  })[];
+  edges: {
+    id: string;
+    sourceId: string;
+    targetId: string;
+    direction: InterfaceDirection;
+    technology: InterfaceTechnology;
+    status: EaStatus;
+    nameEn: string;
+    nameAr: string;
+    dataObjects: EaRef[];
+  }[];
+}
+
+export const traceQuerySchema = z.object({
+  capabilityId: id.optional(),
+  processId: id.optional(),
+  applicationId: id.optional(),
+  dataObjectId: id.optional(),
+  locale: z.enum(['en', 'ar']).default('en'),
+});
+export type TraceQuery = z.infer<typeof traceQuerySchema>;
+
+export interface TraceGrcRef extends EaRef {
+  type: 'RISK' | 'CONTROL';
+  /** Risks: residual band key; controls: effectiveness. */
+  detail: string | null;
+}
+
+/** One row of the traceability chain: capability → process → step → application → data objects. */
+export interface TraceRowDto {
+  capabilities: EaRef[];
+  process: Pick<ProcessSummaryDto, 'id' | 'code' | 'nameEn' | 'nameAr' | 'status'>;
+  bpmnElementId: string | null;
+  element: ElementLabelDto | null;
+  application: ApplicationRef | null;
+  dataObjects: (EaRef & CrudDto & { systemOfRecord: boolean })[];
+  risks: TraceGrcRef[];
+  controls: TraceGrcRef[];
+}
+
+/** "If this application is retired": everything that depends on it. */
+export interface ImpactDto {
+  application: ApplicationRef;
+  summary: {
+    processes: number;
+    steps: number;
+    controls: number;
+    risks: number;
+    interfaces: number;
+    dataObjects: number;
+    capabilities: number;
+  };
+  steps: (EaStepDto & { risks: TraceGrcRef[]; controls: TraceGrcRef[] })[];
+  /** Controls that run in the application (Control.systemId) or sit on a supported step. */
+  controls: (TraceGrcRef & { runsIn: boolean; onSteps: number })[];
+  interfaces: InterfaceDto[];
+  dataObjects: ApplicationDetailDto['dataObjects'];
+  capabilities: EaRef[];
+}

@@ -45,6 +45,7 @@ import {
   PartitionOutlined,
   SwapOutlined,
   DatabaseOutlined,
+  NodeIndexOutlined,
 } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
 import { PERMISSIONS, type Locale } from '@processhub/shared';
@@ -253,6 +254,16 @@ export function AppLayout() {
             key: '/ea/data',
             icon: <DatabaseOutlined />,
             label: <Link to="/ea/data">{t('ea:nav.dataObjects')}</Link>,
+          },
+          {
+            key: '/ea/landscape',
+            icon: <ClusterOutlined />,
+            label: <Link to="/ea/landscape">{t('ea:nav.landscape')}</Link>,
+          },
+          {
+            key: '/ea/traceability',
+            icon: <NodeIndexOutlined />,
+            label: <Link to="/ea/traceability">{t('ea:nav.traceability')}</Link>,
           },
         ],
       });

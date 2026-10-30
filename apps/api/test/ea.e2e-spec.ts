@@ -1,4 +1,5 @@
 import ExcelJS from 'exceljs';
+import JSZip from 'jszip';
 import {
   createApp,
   createUser,
@@ -384,5 +385,170 @@ describe('Enterprise architecture (e2e)', () => {
     expect(
       await ctx.prisma.auditLog.count({ where: { action: 'IMPORT', entityType: 'Capability' } }),
     ).toBe(1);
+  });
+  const binary = (r: import('supertest').Test) =>
+    r.buffer(true).parse((res, cb) => {
+      const chunks: Buffer[] = [];
+      res.on('data', (c: Buffer) => chunks.push(c));
+      res.on('end', () => cb(null, Buffer.concat(chunks)));
+    });
+
+  it('capability map metrics, landscape, traceability and impact analysis (+ Excel, handbook)', async () => {
+    const erp = (await app(architect, { lifecycle: 'PHASING_OUT' }).expect(201)).body.item;
+    const crm = (
+      await app(architect, { code: 'CRM', nameEn: 'CRM', lifecycle: 'ACTIVE' }).expect(201)
+    ).body.item;
+    const ext = (
+      await app(architect, { code: 'EXT', nameEn: 'Bank', lifecycle: 'ACTIVE' }).expect(201)
+    ).body.item;
+    await architect
+      .post('/ea/interfaces')
+      .send({ sourceId: crm.id, targetId: erp.id, technology: 'API' })
+      .expect(201);
+    await architect.post('/ea/interfaces').send({ sourceId: erp.id, targetId: ext.id }).expect(201);
+    const budget = (
+      await architect
+        .post('/ea/data-objects')
+        .send({
+          code: 'D-BUD',
+          nameEn: 'Budget',
+          systemOfRecordId: erp.id,
+          usages: [{ applicationId: erp.id, create: true, read: true }],
+        })
+        .expect(201)
+    ).body;
+    const finance = (
+      await architect.post('/ea/capabilities').send({ code: 'C1', nameEn: 'Finance' }).expect(201)
+    ).body;
+    await architect
+      .post('/ea/capabilities')
+      .send({
+        code: 'C1.1',
+        nameEn: 'Purchasing',
+        parentId: finance.id,
+        processIds: [processId],
+        applicationIds: [erp.id, crm.id],
+      })
+      .expect(201);
+    // ERP supports Task_Order; a risk (5×5, no residual) and a control sit on the same step, and
+    // another control runs in ERP.
+    await modeler
+      .post(`/processes/${processId}/links`)
+      .send({ bpmnElementId: 'Task_Order', repoObjectId: erp.id, relation: 'SUPPORTS' })
+      .expect(201);
+    const risk = (
+      await officer
+        .post('/grc/risks')
+        .send({
+          code: 'R-1',
+          nameEn: 'Overspend',
+          category: 'FINANCIAL',
+          inherentLikelihood: 5,
+          inherentImpact: 5,
+        })
+        .expect(201)
+    ).body.item;
+    const onStep = (
+      await officer.post('/grc/controls').send({ code: 'K-1', nameEn: 'Budget check' }).expect(201)
+    ).body.item;
+    await officer
+      .post('/grc/controls')
+      .send({ code: 'K-2', nameEn: 'ERP limit', systemId: erp.id })
+      .expect(201);
+    for (const id of [risk.id, onStep.id])
+      await officer
+        .post(`/processes/${processId}/links`)
+        .send({ bpmnElementId: 'Task_Order', repoObjectId: id, relation: 'MITIGATES' })
+        .expect(201);
+
+    // Capability map: roll-up of processes, applications, worst lifecycle and highest risk.
+    const map = (await architect.get('/ea/capability-map').expect(200)).body.capabilities as {
+      code: string;
+      metrics: Record<string, unknown>;
+    }[];
+    expect(map.find((c) => c.code === 'C1')!.metrics).toMatchObject({
+      processCount: 1,
+      applicationCount: 2,
+      worstLifecycle: 'PHASING_OUT',
+      lifecycles: { PHASING_OUT: 1, ACTIVE: 1 },
+      maxRiskScore: 25,
+      maxRiskBand: 'CRITICAL',
+    });
+
+    // Landscape filtered by capability; neighbours add the bank.
+    const land = (await architect.get(`/ea/landscape?capabilityId=${finance.id}`).expect(200)).body;
+    expect(land.nodes.map((n: { code: string }) => n.code).sort()).toEqual(['CRM', 'ERP']);
+    expect(land.edges).toHaveLength(1);
+    const wide = (
+      await architect.get(`/ea/landscape?capabilityId=${finance.id}&neighbours=true`).expect(200)
+    ).body;
+    expect(wide.nodes.find((n: { code: string }) => n.code === 'EXT')).toMatchObject({
+      neighbour: true,
+    });
+    expect(wide.edges).toHaveLength(2);
+
+    // Traceability: capability → process → step → application → data, with risks and controls.
+    const trace = (await architect.get(`/ea/trace?capabilityId=${finance.id}`).expect(200)).body;
+    expect(trace).toEqual([
+      expect.objectContaining({
+        capabilities: [expect.objectContaining({ code: 'C1.1' })],
+        bpmnElementId: 'Task_Order',
+        application: expect.objectContaining({ code: 'ERP' }),
+        dataObjects: [
+          expect.objectContaining({ code: 'D-BUD', create: true, systemOfRecord: true }),
+        ],
+        risks: [expect.objectContaining({ code: 'R-1', detail: 'CRITICAL' })],
+        controls: [expect.objectContaining({ code: 'K-1' })],
+      }),
+    ]);
+    // Backwards: from the data object.
+    const back = (await architect.get(`/ea/trace?dataObjectId=${budget.id}`).expect(200)).body;
+    expect(back.map((r: { application: { code: string } }) => r.application.code)).toEqual(['ERP']);
+
+    // Impact analysis: supported steps, controls on them and running in ERP, risks, interfaces.
+    const impact = (await architect.get(`/ea/applications/${erp.id}/impact`).expect(200)).body;
+    expect(impact.summary).toEqual({
+      processes: 1,
+      steps: 1,
+      controls: 2,
+      risks: 1,
+      interfaces: 2,
+      dataObjects: 1,
+      capabilities: 1,
+    });
+    expect(impact.controls).toEqual([
+      expect.objectContaining({ code: 'K-1', runsIn: false, onSteps: 1 }),
+      expect.objectContaining({ code: 'K-2', runsIn: true, onSteps: 0 }),
+    ]);
+    const xlsx = await binary(
+      architect.get(`/ea/applications/${erp.id}/impact/export?locale=ar`),
+    ).expect(200);
+    const wb = new ExcelJS.Workbook();
+    await wb.xlsx.load(xlsx.body as ArrayBuffer);
+    expect(wb.worksheets.map((w) => w.name)).toContain('العمليات والخطوات');
+    expect(wb.worksheets[0].views[0].rightToLeft).toBe(true);
+    await binary(architect.get(`/ea/trace/export?capabilityId=${finance.id}`)).expect(200);
+    expect(
+      await ctx.prisma.auditLog.count({
+        where: { action: 'EXPORT', entityType: 'Application' },
+      }),
+    ).toBe(2);
+    await viewer.get(`/ea/applications/${erp.id}/impact`).expect(403);
+    await viewer.get('/ea/capability-map').expect(403);
+    await viewer.get('/ea/landscape').expect(403);
+    await viewer.get('/ea/trace').expect(403);
+
+    // Handbook: optional "Systems and data" section.
+    const doc = await binary(
+      modeler.post('/reports/handbook').send({ processId, locale: 'en', includeSystems: true }),
+    ).expect(200);
+    const docXml = await (
+      await JSZip.loadAsync(doc.body as Buffer)
+    )
+      .file('word/document.xml')!
+      .async('string');
+    expect(docXml).toContain('Systems and data');
+    expect(docXml).toContain('Phasing out');
+    expect(docXml).toContain('Budget (CR) ★');
   });
 });

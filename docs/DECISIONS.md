@@ -1301,3 +1301,28 @@ is audited (entity types `Application`, `AppInterface`, `DataObject`, `Capabilit
   while it has errors; references by code (applications, capabilities, processes, data objects) or e-mail (users);
   the CRUD column reads `APP:CRUD; APP2:R`; capability parents may be defined later in the same file. Shared helpers
   in `apps/api/src/common/excel.ts` (also used by the KPI catalogue).
+
+## D-110 — Architecture views, traceability and impact analysis (Phase 4.3, 2026-10-30)
+
+- **Capability map** (`GET /ea/capability-map`): every capability with metrics rolled up over its sub-capabilities —
+  processes, applications, applications per lifecycle, the worst lifecycle (retired > phasing out > planned >
+  active) and the highest residual score / band of active risks on any step of those processes (only for users with
+  `grc.read`). The web map shows level-1 columns with nested level-2 / 3 tiles and "colour by" process coverage
+  (none / one / several), number of applications, application lifecycle or risk rating (GRC bands); a tile opens a
+  drawer with the processes and applications and links to the landscape and the traceability of that capability.
+- **Landscape** (`GET /ea/landscape`, filters department / capability (with sub-capabilities) / lifecycle, optionally
+  the connected applications one hop away): drawn in the browser as SVG with a small layered layout
+  (`features/ea/landscape-layout.ts`: longest-path ranks, cycles broken by DFS, two barycentre sweeps, unconnected
+  applications in a last row) — no new diagram library. Right-to-left in Arabic; export SVG / PNG.
+- **Traceability** (`GET /ea/trace` + `/ea/trace/export`): rows capability → process → step → application → data
+  objects (CRUD, system of record), with the risks and controls linked to the same step (only with `grc.read`);
+  filter by capability, process, application or data object (backwards from data to steps). Processes of a
+  capability without any application on their steps still appear (one row).
+- **Impact analysis** (`GET /ea/applications/:id/impact` + `/export`): supported steps with their risks and controls,
+  controls affected (running in the application via `Control.systemId` or sitting on a supported step), interfaces,
+  data objects, capabilities and summary counts; Excel EN / AR (summary, steps, controls, interfaces, data), audited
+  `EXPORT`.
+- **Modeler**: the IT system link of a step is the application catalogue (same objects); "Colour by" gains
+  **Application lifecycle** (the worst lifecycle of the step's applications; steps using phasing-out systems stand
+  out). **Process handbook**: optional section **"Systems and data"** (application, lifecycle, steps supported, data
+  objects with CRUD and ★ for the system of record) for users with `ea.read`.

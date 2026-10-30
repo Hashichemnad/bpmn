@@ -23,7 +23,13 @@ import { ObjectsService } from '../objects/objects.service';
 import { badRequest } from '../common/app-exception';
 import type { AuthUser, RequestMeta } from '../common/auth-user';
 import { ReportDataService, type ReportProcess } from './report-data.service';
-import { buildHandbook, imageInfo, type HandbookGrcRow, type ReportImage } from './handbook-docx';
+import {
+  buildHandbook,
+  imageInfo,
+  type HandbookGrcRow,
+  type HandbookSystemRow,
+  type ReportImage,
+} from './handbook-docx';
 import { buildObjectReport, buildRaci } from './xlsx-reports';
 import { pick, reportTexts } from './report-i18n';
 
@@ -119,6 +125,69 @@ export class ReportsService {
     return out;
   }
 
+  /** Rows of the handbook's "Systems and data" section: applications on the steps of each process. */
+  private async systemRows(processes: ReportProcess[], locale: Locale) {
+    const t = reportTexts(locale);
+    const ids = [
+      ...new Set(
+        processes.flatMap((p) =>
+          p.links.filter((l) => l.object.type === 'SYSTEM').map((l) => l.object.id),
+        ),
+      ),
+    ];
+    const apps = await this.prisma.application.findMany({
+      where: { objectId: { in: ids }, object: { deletedAt: null } },
+      include: {
+        dataUsages: { where: { dataObject: { deletedAt: null } }, include: { dataObject: true } },
+        recordOf: { where: { deletedAt: null } },
+      },
+    });
+    const byId = new Map(apps.map((a) => [a.objectId, a]));
+    const out = new Map<string, HandbookSystemRow[]>();
+    for (const p of processes) {
+      const labels = extractBpmnLabels(p.bpmnXml ?? '');
+      const perApp = new Map<string, { name: string; steps: string[] }>();
+      for (const l of p.links) {
+        if (l.object.type !== 'SYSTEM') continue;
+        const entry = perApp.get(l.object.id) ?? {
+          name: `${l.object.code ? `${l.object.code} ` : ''}${pick(locale, l.object)}`,
+          steps: [],
+        };
+        const label = labels.get(l.bpmnElementId);
+        const step =
+          l.bpmnElementId === PROCESS_ELEMENT_ID
+            ? t.wholeProcess
+            : (label && pick(locale, label)) || l.bpmnElementId;
+        if (!entry.steps.includes(step)) entry.steps.push(step);
+        perApp.set(l.object.id, entry);
+      }
+      out.set(
+        p.id,
+        [...perApp.entries()]
+          .map(([id, e]) => {
+            const a = byId.get(id);
+            const data = new Map<string, string>();
+            for (const r of a?.recordOf ?? []) data.set(r.id, `${pick(locale, r)} ★`);
+            for (const u of a?.dataUsages ?? []) {
+              const flags = `${u.canCreate ? 'C' : ''}${u.canRead ? 'R' : ''}${u.canUpdate ? 'U' : ''}${u.canDelete ? 'D' : ''}`;
+              data.set(
+                u.dataObjectId,
+                `${pick(locale, u.dataObject)} (${flags})${data.has(u.dataObjectId) ? ' ★' : ''}`,
+              );
+            }
+            return {
+              application: e.name,
+              lifecycle: a ? (t.lifecycles[a.lifecycle] ?? a.lifecycle) : '',
+              steps: e.steps.join(', '),
+              dataObjects: [...data.values()].join('; '),
+            };
+          })
+          .sort((x, y) => x.application.localeCompare(y.application)),
+      );
+    }
+    return out;
+  }
+
   /** The processes of a handbook and the diagram XML the browser renders as images. */
   async handbookPlan(input: HandbookPlanInput, user: AuthUser): Promise<HandbookPlanDto> {
     const source = this.data.sourceFor(user, input.source);
@@ -161,12 +230,17 @@ export class ReportsService {
       generatedBy: pick(locale, user) || user.email,
       generatedAt: new Date(),
       grc: input.includeRisks ? await this.grcRows(processes, user, locale) : undefined,
+      systems:
+        input.includeSystems && user.permissions.has(PERMISSIONS.EA_READ)
+          ? await this.systemRows(processes, locale)
+          : undefined,
     });
     await this.logExport('handbook', root.id, user, meta, {
       source,
       locale,
       includeChildren: input.includeChildren,
       ...(input.includeRisks ? { includeRisks: true } : {}),
+      ...(input.includeSystems ? { includeSystems: true } : {}),
       processes: processes.map((p) => p.code),
     });
     return {

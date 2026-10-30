@@ -411,7 +411,8 @@
       "duration": "Planned duration",
       "missing": "Missing information",
       "riskRating": "Residual risk rating",
-      "riskControl": "Risks without controls"
+      "riskControl": "Risks without controls",
+      "appLifecycle": "Application lifecycle"
     },
     "categories": {
       "none": "Not set",
@@ -438,6 +439,12 @@
         "noRisk": "No risk linked",
         "uncovered": "Risk but no control",
         "covered": "Risk with controls"
+      },
+      "lifecycle": {
+        "PLANNED": "Planned application",
+        "ACTIVE": "Active application",
+        "PHASING_OUT": "Phasing out",
+        "RETIRED": "Retired application"
       }
     },
     "missingRole_one": "{{count}} step without a role",

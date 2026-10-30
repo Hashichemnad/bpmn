@@ -70,6 +70,8 @@ import { InterfacesPage } from '@/features/ea/InterfacesPage';
 import { DataObjectsPage } from '@/features/ea/DataObjectsPage';
 import { CapabilitiesPage } from '@/features/ea/CapabilitiesPage';
 import { SystemsLibraryRoute } from '@/features/ea/SystemsLibraryRoute';
+import { LandscapePage } from '@/features/ea/LandscapePage';
+import { TraceabilityPage } from '@/features/ea/TraceabilityPage';
 
 const P = PERMISSIONS;
 
@@ -373,6 +375,22 @@ export const routes: RouteObject[] = [
                     element: (
                       <RequirePermission all={[P.EA_READ]}>
                         <DataObjectsPage />
+                      </RequirePermission>
+                    ),
+                  },
+                  {
+                    path: 'ea/landscape',
+                    element: (
+                      <RequirePermission all={[P.EA_READ]}>
+                        <LandscapePage />
+                      </RequirePermission>
+                    ),
+                  },
+                  {
+                    path: 'ea/traceability',
+                    element: (
+                      <RequirePermission all={[P.EA_READ]}>
+                        <TraceabilityPage />
                       </RequirePermission>
                     ),
                   },

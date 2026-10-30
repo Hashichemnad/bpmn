@@ -82,3 +82,96 @@ test('application catalogue: create an application, capability and data object; 
   const denied = await apiCall(page, 'GET', '/ea/applications');
   expect(denied.status).toBe(403);
 });
+
+test('impact analysis after a step link; capability map colour-by; landscape and traceability', async ({
+  page,
+}) => {
+  await login(page, DEMO.modeler);
+  const processId = await createSampleProcess(page, `E2E.EB${stamp}`, {
+    nameEn: `E2E impact ${stamp}`,
+    nameAr: `أثر ${stamp}`,
+  });
+  await login(page, DEMO.architect);
+  const app = await apiCall<{ item: { id: string } }>(page, 'POST', '/ea/applications', {
+    code: `IMP-${stamp}`,
+    nameEn: `Legacy finance ${stamp}`,
+    lifecycle: 'PHASING_OUT',
+  });
+  expect(app.status).toBe(201);
+  const appId = app.data.item.id;
+  const other = await apiCall<{ item: { id: string } }>(page, 'POST', '/ea/applications', {
+    code: `NEW-${stamp}`,
+    nameEn: `New finance ${stamp}`,
+    lifecycle: 'PLANNED',
+  });
+  await apiCall(page, 'POST', '/ea/interfaces', {
+    sourceId: appId,
+    targetId: other.data.item.id,
+    technology: 'API',
+  });
+  const top = await apiCall<{ id: string }>(page, 'POST', '/ea/capabilities', {
+    code: `L1-${stamp}`,
+    nameEn: `Finance ${stamp}`,
+  });
+  await apiCall(page, 'POST', '/ea/capabilities', {
+    code: `L2-${stamp}`,
+    nameEn: `Accounting ${stamp}`,
+    parentId: top.data.id,
+    processIds: [processId],
+    applicationIds: [appId],
+  });
+
+  // Not linked yet: nothing affected.
+  await page.goto(`/ea/applications/${appId}`);
+  await page.getByRole('tab', { name: 'Impact analysis' }).click();
+  await expect(page.getByTestId('impact-steps')).toContainText('0');
+
+  // A modeler links the application to two steps; the impact analysis shows them.
+  await login(page, DEMO.modeler);
+  for (const step of ['Task_CreateRequest', 'Task_Screening'])
+    expect(
+      (
+        await apiCall(page, 'POST', `/processes/${processId}/links`, {
+          bpmnElementId: step,
+          repoObjectId: appId,
+          relation: 'SUPPORTS',
+        })
+      ).status,
+    ).toBe(201);
+  await login(page, DEMO.architect);
+  await page.goto(`/ea/applications/${appId}`);
+  await page.getByRole('tab', { name: 'Impact analysis' }).click();
+  await expect(page.getByTestId('impact-steps')).toContainText('2');
+  await expect(page.getByTestId('impact-processes')).toContainText('1');
+  await expect(page.getByTestId('impact-panel')).toContainText(`E2E.EB${stamp}`);
+
+  // Capability map: colour by application lifecycle paints the capability orange (phasing out).
+  await page.goto('/ea/capabilities?colourBy=lifecycle');
+  const tile = page
+    .getByTestId('cap-tile')
+    .filter({ hasText: `Accounting ${stamp}` })
+    .last();
+  await expect(tile).toHaveAttribute('data-colour', '#d46b08');
+  await page.goto('/ea/capabilities?colourBy=coverage');
+  await expect(tile).toHaveAttribute('data-colour', '#fcd34d');
+  await tile.click();
+  await expect(page.getByTestId('cap-detail')).toContainText(`Legacy finance ${stamp}`);
+
+  // Landscape of the capability with neighbours: both applications and the interface.
+  await page.goto(`/ea/landscape?capabilityId=${top.data.id}&neighbours=true`);
+  await expect(page.getByTestId('landscape-node')).toHaveCount(2);
+  await expect(page.getByTestId('landscape-edge')).toHaveCount(1);
+
+  // Traceability from the capability down to the steps.
+  await page.goto(`/ea/traceability?capabilityId=${top.data.id}`);
+  await expect(page.getByTestId('trace-table')).toContainText(`IMP-${stamp}`);
+  await expect(page.getByTestId('trace-table').locator('tbody tr.ant-table-row')).toHaveCount(2);
+
+  // Modeler: "Colour by → Application lifecycle" marks the two steps as phasing out.
+  await page.goto(`/processes/${processId}/model`);
+  await page.locator('.djs-container').waitFor();
+  await page.getByRole('button', { name: 'View', exact: true }).click();
+  await page.getByText('Application lifecycle', { exact: true }).click();
+  const legend = page.getByRole('region', { name: 'Colour legend' });
+  await expect(legend.getByRole('listitem').filter({ hasText: 'Phasing out' })).toContainText('2');
+});

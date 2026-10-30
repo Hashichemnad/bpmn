@@ -114,6 +114,7 @@ import { ElementPanel } from './ElementPanel';
 import { GrcStepPanel } from '@/features/grc/GrcStepPanel';
 import { ControlGapsDrawer } from '@/features/grc/ControlGapsDrawer';
 import { useGrcSettings, useProcessGrc } from '@/api/grc';
+import { useAllApplications } from '@/api/ea';
 import { VersionsDrawer } from './VersionsDrawer';
 import { useWorkspacePrefs } from './workspace-prefs';
 import { initialPanelState, panelReducer } from './panel-state';
@@ -207,6 +208,13 @@ export function BpmnEditor({ process, focusElementId, readOnly = false, onClose 
   const [tableOpened, setTableOpened] = useState(false);
   /** "Colour by" view (view only, stored colours never change). */
   const [colourBy, setColourBy] = useState<ColourByMode>('none');
+  // Application lifecycles for "Colour by → Application lifecycle" (Phase 4.3).
+  const canReadEa = can(PERMISSIONS.EA_READ);
+  const applications = useAllApplications(canReadEa && colourBy === 'appLifecycle');
+  const lifecycles = useMemo(
+    () => new Map((applications.data?.items ?? []).map((a) => [a.id, a.lifecycle])),
+    [applications.data],
+  );
   const [legend, setLegend] = useState<LegendItem[]>([]);
   const [missingCounts, setMissingCounts] = useState({ role: 0, description: 0 });
   const [report, setReport] = useState<ReportKind | null>(null);
@@ -338,6 +346,7 @@ export function BpmnEditor({ process, focusElementId, readOnly = false, onClose 
           locale,
           label: (key) => t(`modeler:colourBy.categories.${key.replace(':', '.')}`),
           grc: { steps: grcSteps, bands: grcConfig.data?.bands ?? DEFAULT_GRC_SETTINGS.bands },
+          lifecycles,
         });
         setLegend(result.legend);
         const lacks = [...result.missing.values()];
@@ -355,7 +364,7 @@ export function BpmnEditor({ process, focusElementId, readOnly = false, onClose 
       eventBus.off(['commandStack.changed', 'import.done'], apply);
       clearColourBy(instance);
     };
-  }, [instance, loaded, colourBy, links.data, locale, t, grcSteps, grcConfig.data]);
+  }, [instance, loaded, colourBy, links.data, locale, t, grcSteps, grcConfig.data, lifecycles]);
 
   // The colour theme (Settings → Branding) applies to new elements and the colour picker.
   const theme = settings.data?.diagramTheme;
@@ -1029,7 +1038,9 @@ export function BpmnEditor({ process, focusElementId, readOnly = false, onClose 
                   type: 'group' as const,
                   label: t('modeler:colourBy.title'),
                   children: COLOUR_BY_MODES.filter(
-                    (m) => canReadGrc || (m !== 'riskRating' && m !== 'riskControl'),
+                    (m) =>
+                      (canReadGrc || (m !== 'riskRating' && m !== 'riskControl')) &&
+                      (canReadEa || m !== 'appLifecycle'),
                   ).map((mode) => ({
                     key: `colourBy-${mode}`,
                     label: t(`modeler:colourBy.modes.${mode}`),

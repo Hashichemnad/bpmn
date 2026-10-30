@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { Checkbox, Form, Modal, Radio, Typography } from 'antd';
 import { useTranslation } from 'react-i18next';
-import type { Locale, ReportSource } from '@processhub/shared';
+import { PERMISSIONS, type Locale, type ReportSource } from '@processhub/shared';
+import { useAuth } from '@/auth/AuthProvider';
 import { useLocale } from '@/app/LocaleProvider';
 import { useLocalized } from '@/components/i18n-helpers';
 import { useReports } from './useReports';
@@ -29,7 +30,9 @@ export function ReportDialog({ kind, process, hasChildren, publishedOnly, onClos
     source: ReportSource;
     includeChildren: boolean;
     includeRisks: boolean;
+    includeSystems: boolean;
   }>();
+  const { can } = useAuth();
   const [submitting, setSubmitting] = useState(false);
 
   const submit = async () => {
@@ -42,6 +45,7 @@ export function ReportDialog({ kind, process, hasChildren, publishedOnly, onClos
             processId: process.id,
             includeChildren: !!v.includeChildren,
             includeRisks: !!v.includeRisks,
+            includeSystems: !!v.includeSystems,
             source,
             locale: v.locale,
           })
@@ -95,6 +99,11 @@ export function ReportDialog({ kind, process, hasChildren, publishedOnly, onClos
         {kind === 'handbook' && (
           <Form.Item name="includeRisks" valuePropName="checked">
             <Checkbox>{t('processes:reports.includeRisks')}</Checkbox>
+          </Form.Item>
+        )}
+        {kind === 'handbook' && can(PERMISSIONS.EA_READ) && (
+          <Form.Item name="includeSystems" valuePropName="checked">
+            <Checkbox>{t('processes:reports.includeSystems')}</Checkbox>
           </Form.Item>
         )}
       </Form>

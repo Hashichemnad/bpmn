@@ -12,6 +12,8 @@ export interface HandbookOptions {
   includeChildren: boolean;
   /** "Risks and controls" section (only what the user may see). */
   includeRisks?: boolean;
+  /** "Systems and data" section (Phase 4.3; users with `ea.read`). */
+  includeSystems?: boolean;
   source?: ReportSource;
   locale: Locale;
 }
@@ -72,6 +74,7 @@ export function useReports() {
             processId: o.processId,
             includeChildren: o.includeChildren,
             includeRisks: !!o.includeRisks,
+            includeSystems: !!o.includeSystems,
             source: plan.source,
             locale: o.locale,
             images,

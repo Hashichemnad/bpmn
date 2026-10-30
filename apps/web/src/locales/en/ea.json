@@ -171,5 +171,51 @@
   "filters": {
     "search": "Search code, name or vendor",
     "all": "All"
+  },
+  "map": {
+    "colourBy": "Colour by",
+    "legend": "Legend",
+    "modes": {
+      "coverage": "Process coverage",
+      "applications": "Number of applications",
+      "lifecycle": "Application lifecycle",
+      "risk": "Risk rating"
+    },
+    "coverage": {
+      "none": "No process",
+      "one": "1 process",
+      "many": "2 or more processes"
+    },
+    "noApplications": "No application",
+    "noRisk": "No risk",
+    "counts": "{{processes}} processes · {{applications}} applications",
+    "riskScore": "Highest residual risk {{score}}"
+  },
+  "landscape": {
+    "title": "Application landscape",
+    "subtitle": "Applications and the interfaces between them; click an application to open it",
+    "export": "Export",
+    "neighbours": "Show connected applications",
+    "empty": "No applications match the filters"
+  },
+  "trace": {
+    "title": "Traceability",
+    "subtitle": "Capability → process → step → application → data object, with the risks and controls on each step",
+    "empty": "Nothing to trace for these filters",
+    "noApplication": "No application on its steps",
+    "risksControls": "Risks and controls"
+  },
+  "impact": {
+    "tab": "Impact analysis",
+    "headline": "If {{name}} is retired, these processes, steps and controls are affected",
+    "processes": "Processes",
+    "steps": "Steps",
+    "controls": "Controls",
+    "risks": "Risks",
+    "stepsTitle": "Processes and steps supported",
+    "controlsTitle": "Controls affected",
+    "control": "Control",
+    "runsIn": "Runs in the application",
+    "onSteps": "On supported steps"
   }
 }

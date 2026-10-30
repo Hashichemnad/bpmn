@@ -54,6 +54,16 @@ export interface HandbookInput {
   generatedAt: Date;
   /** "Risks and controls" rows per process; absent = section not requested. */
   grc?: Map<string, HandbookGrcRow[]>;
+  /** "Systems and data" rows per process (Phase 4.3); absent = section not requested. */
+  systems?: Map<string, HandbookSystemRow[]>;
+}
+
+/** One application used by a process in the handbook (texts already localised). */
+export interface HandbookSystemRow {
+  application: string;
+  lifecycle: string;
+  steps: string;
+  dataObjects: string;
 }
 
 /** One linked risk, control or requirement in the handbook (texts already localised). */
@@ -347,6 +357,38 @@ export async function buildHandbook(input: HandbookInput): Promise<Buffer> {
               ),
             ])
           : para([run(t.noRisks, { color: MUTED })]),
+      );
+    }
+    if (input.systems) {
+      const rows = input.systems.get(p.id) ?? [];
+      children.push(
+        para([run(t.systemsData, { bold: true })], { heading: HeadingLevel.HEADING_2 }),
+      );
+      children.push(
+        rows.length
+          ? table([
+              new TableRow({
+                tableHeader: true,
+                children: [
+                  cell(t.application, { header: true, width: 26 }),
+                  cell(t.lifecycle, { header: true, width: 14 }),
+                  cell(t.stepsSupported, { header: true, width: 30 }),
+                  cell(t.dataObjects, { header: true, width: 30 }),
+                ],
+              }),
+              ...rows.map(
+                (r) =>
+                  new TableRow({
+                    children: [
+                      cell(r.application),
+                      cell(r.lifecycle),
+                      cell(r.steps),
+                      cell(r.dataObjects),
+                    ],
+                  }),
+              ),
+            ])
+          : para([run(t.noSystems, { color: MUTED })]),
       );
     }
     if (p.pages.length) {
