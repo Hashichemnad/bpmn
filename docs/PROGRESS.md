@@ -2,7 +2,34 @@
 
 Read this together with `CLAUDE.md` at the start of every session.
 
-## Current state — 2026-10-30 (Phase 4 — Part 2: GRC assurance, branch `phase-4-2-grc-assurance`, done — awaiting review)
+## Current state — 2026-10-30 (Phase 4 — Part 3: EA, KPIs and the Salesforce KPI link, branch `phase-4-3-ea-kpi`, in progress)
+
+Everything up to Phase 4.2 (GRC core and assurance) is merged into `main`. This branch builds module M11 (enterprise
+architecture: application catalogue, interfaces, data objects, capability map, traceability) and M12 (KPIs,
+measurements, dashboards, Salesforce KPI link) — DOF RFP §4.4 / §4.6. Oracle Fusion overlay and other connectors stay
+in BACKLOG (Phase 4.4). The session works on `claude/amazing-meitner-tj41n1` (the harness branch) and pushes the same
+commits to `phase-4-3-ea-kpi`.
+
+Local setup: PostgreSQL 16 (`service postgresql start`; role `processhub` / `devpassword`, databases `processhub`,
+`processhub_test`); API suites `npx jest --runInBand test/<file> --selectProjects e2e`.
+
+Steps (tick as they are committed; a new session continues at the first unticked one):
+
+- [x] 0. CLAUDE.md phase table (4.1 / 4.2 merged, 4.4 added), this plan.
+- [ ] 1. IT architecture data model and workspace (M11): application catalogue on the SYSTEM library objects,
+      interfaces, data objects + CRUD matrix, capabilities (levels 1–3) with process / application relations,
+      permissions `ea.read` / `ea.edit` / `ea.admin`, role Enterprise Architect, Excel import / export per catalogue.
+- [ ] 2. EA views and traceability: capability map with colour-by, application landscape / interface diagram,
+      traceability and impact analysis (Excel), modeler "by application lifecycle", handbook "Systems and data".
+- [ ] 3. KPIs (M12): KPI table on the KPI library objects (migration), objectives, relations, measurements with
+      evidence, owner reminders, Excel import, calculated process KPIs, permissions `kpi.read` / `kpi.edit` /
+      `kpi.measure`.
+- [ ] 4. KPI dashboards: scorecard, KPI detail chart, process performance, KPI badge and colour-by, portal setting.
+- [ ] 5. Salesforce KPI link (off by default): settings, encrypted credentials, mapping, preview, apply, scheduled
+      sync, sync log, notifications; mocked API in tests; DEPLOYMENT.md setup.
+- [ ] 6. Demo data, permission tests, e2e, screenshots EN / AR, docs.
+
+## Previous state — 2026-10-30 (Phase 4 — Part 2: GRC assurance, branch `phase-4-2-grc-assurance`, done — awaiting review)
 
 Everything up to Phase 4.1 (GRC core) is merged into `main`. This branch builds module M10 assurance (DOF RFP §4.5,
 compliance items 32–36): approval of changes to active risks / controls, control testing, issues and action plans,
