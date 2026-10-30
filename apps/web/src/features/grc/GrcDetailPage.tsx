@@ -386,8 +386,30 @@ export function GrcDetailPage({ type }: { type: GrcObjectType }) {
       },
       {
         key: 'eff',
-        label: t('grc:fields.effectiveness'),
-        children: <EffectivenessTag value={c.effectiveness} />,
+        label: t('grc:fields.selfAssessed'),
+        children: (
+          <Space size={4} wrap>
+            <EffectivenessTag value={c.effectiveness} />
+            {c.operatingEffectiveness === 'NOT_ASSESSED' && (
+              <Typography.Text type="secondary">{t('grc:fields.counts')}</Typography.Text>
+            )}
+          </Space>
+        ),
+      },
+      {
+        key: 'tested',
+        label: t('grc:fields.operatingEffectiveness'),
+        children: (
+          <Space size={4} wrap data-testid="tested-effectiveness">
+            <EffectivenessTag value={c.operatingEffectiveness} />
+            {c.operatingEffectiveness !== 'NOT_ASSESSED' && (
+              <Typography.Text type="secondary">
+                {t('grc:fields.counts')} · {formatDate(c.lastTestedAt, false)}
+              </Typography.Text>
+            )}
+            {c.testOverdue && <Tag color="red">{t('grc:fields.testOverdue')}</Tag>}
+          </Space>
+        ),
       },
       {
         key: 'assessed',

@@ -73,7 +73,10 @@
     "textEn": "النص (إنجليزي)",
     "textAr": "النص (عربي)",
     "residualHint": "اتركه فارغًا حتى تُقيَّم الضوابط — يُطبَّق التقييم الكامن",
-    "operatingEffectiveness": "الفعالية المختبرة"
+    "operatingEffectiveness": "الفعالية المختبرة",
+    "selfAssessed": "الفعالية حسب التقييم الذاتي",
+    "counts": "(المعتمدة)",
+    "testOverdue": "الاختبار متأخر"
   },
   "status": {
     "DRAFT": "مسودة",
@@ -126,7 +129,8 @@
     "keyOnly": "الضوابط الرئيسية فقط",
     "cell": "خلية الخريطة الحرارية: الاحتمالية {{likelihood}}، الأثر {{impact}} ({{matrix}})",
     "clear": "مسح عوامل التصفية",
-    "process": "مرتبط بالعملية"
+    "process": "مرتبط بالعملية",
+    "testOverdue": "نتيجة اختبار متأخرة"
   },
   "detail": {
     "linkedSteps": "خطوات العمليات المرتبطة",
@@ -193,7 +197,11 @@
       "RESIDUAL_PAIR": "الاحتمالية والأثر المتبقيان يُدخلان معًا",
       "INVALID_URL": "يجب أن يبدأ بـ http:// أو https://",
       "INVALID_KEY": "مفتاح غير صالح"
-    }
+    },
+    "pendingApproval_one": "تعديل واحد على عنصر نشط بانتظار الاعتماد.",
+    "pendingApproval_other": "{{count}} تعديلات على عناصر نشطة بانتظار الاعتماد كدفعة واحدة.",
+    "willNeedApproval_one": "صف واحد يعدّل عنصرًا نشطًا وسينتظر الاعتماد.",
+    "willNeedApproval_other": "{{count}} صفوف تعدّل عناصر نشطة وستنتظر الاعتماد كدفعة واحدة؛ تُستورد العناصر الجديدة كمسودات."
   },
   "matrix": {
     "likelihood": "الاحتمالية",
@@ -257,7 +265,8 @@
       "requirementsWithoutControls": "متطلبات بلا ضوابط",
       "stepsWithRiskNoControl": "خطوات بها مخاطر دون ضوابط",
       "processesWithRiskNoControl": "عمليات بها مخاطر دون ضوابط",
-      "overdueReviews": "مراجعات متأخرة"
+      "overdueReviews": "مراجعات متأخرة",
+      "testsOverdue": "نتائج اختبار أقدم من دورة اختبار"
     },
     "heatHint_zero": "لا توجد مخاطر نشطة.",
     "heatHint_one": "خطر نشط واحد. انقر خلية لعرض مخاطرها.",

@@ -1214,3 +1214,46 @@ decode-uri-component 0.2.2`, also on `main`; no MinIO release avoids it. Root `p
   its residual position only while at least one active mitigating control has a reviewed test result of effective or
   partly effective; otherwise it is shown at its inherent rating. The stored ratings never change.
 - **Viewer role**: Viewers stay read-only except answering questionnaires sent to them (`surveys.respond`).
+
+## D-104 — No deletion of active risks / controls; Excel imports through change approval (Phase 4.2, 2026-10-30)
+
+Product owner decision (PR #14, decision 1), closing the gap left in D-098:
+
+- **Deletion**: active and retired risks and controls cannot be deleted (`409 RETIRE_INSTEAD`), by anyone; they are
+  retired (status RETIRED), which goes through change approval when it is on. Drafts can still be deleted (their
+  proposer or a `grc.admin`). Requirements are unchanged (`grc.admin` deletes).
+- **Excel import while change approval is on** (risks / controls): rows that change an active or retired item become
+  pending changes that share one **batch** (`GrcChange.batchId`); rows that change nothing are skipped; new items are
+  imported as **drafts**; a row for an item that already has a pending change is refused in the validation report
+  (`CHANGE_PENDING`), so nothing is imported while it is there. The report shows how many rows wait for approval
+  (dry run: an estimate). Approvers get one notification per import (`GRC_CHANGE`, kind `batch`) and approve or reject
+  the whole batch in My tasks (`POST /grc/changes/batches/:batchId/decision`, every change of the batch that waits for
+  the caller; the per-change rules — steps, four-eyes — still apply). With approval off, imports apply directly and
+  are audited as before.
+
+## D-105 — Both effectiveness values; "test overdue" (Phase 4.2, 2026-10-30)
+
+Product owner decision (PR #14, decision 6), confirming D-099 with two additions:
+
+- The control page shows the **self-assessed** and the **tested** effectiveness side by side and marks which one
+  counts (the tested one once a test was reviewed).
+- **Test overdue**: a tested result older than one test cycle — the shortest frequency of the control's active test
+  plans (monthly 1, quarterly 3, every six months 6, annually / on demand 12 months; 12 months without a plan) — still
+  counts but is flagged "Test overdue" on the control, in the control register (filter `testOverdue`) and as a coverage
+  tile on the risk dashboard ("Tested results older than one test cycle").
+
+## D-106 — Product owner decisions on Phase 4.2 (2026-10-30)
+
+1. Imports and deletions: see D-104.
+2. **Change approval** stays **off by default** in the product. The **base seed** (every installation, once) creates
+   the workflow **"GRC change approval"** — one step, role Risk & Compliance Officer, rule ANY — and preselects it in
+   the setting. At go-live it is switched on for risks and controls (DEPLOYMENT.md §6 step 9, SECURITY.md §7).
+3. **Audit visibility** stays as in D-101. Sharing the final report with the owners of the processes in scope is in
+   BACKLOG.
+4. **Viewers** keep `surveys.respond` and may update the issue actions assigned to them. The server checks the
+   assignment, not only the permission: a response belongs to its recipient (404 for anybody else, also for uploads
+   and the feedback diagram); an action is updated only by its owner, the issue owner or an issue manager (403
+   otherwise; others do not see the issue at all). Permission tests cover both.
+5. **Feedback-request answers** stay process comments signed by the respondent; each starts with a label naming the
+   campaign — "[Feedback request] <campaign title>" (Arabic: «[طلب ملاحظات]»).
+6. Tested effectiveness replaces the self-assessed one: see D-105.

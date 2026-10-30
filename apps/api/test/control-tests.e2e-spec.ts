@@ -161,6 +161,20 @@ describe('Control testing (e2e)', () => {
     });
     // The tested result counts: the risk is no longer effectively controlled.
     expect((await officer.get(`/grc/risks/${riskId}`)).body.item.effectivelyControlled).toBe(false);
+    expect(control.testOverdue).toBe(false);
+    // A tested result older than one test cycle (quarterly plan) still counts but is flagged.
+    await ctx.prisma.control.update({
+      where: { objectId: controlId },
+      data: { lastTestedAt: new Date(Date.now() - 120 * 86_400_000) },
+    });
+    const stale = (await officer.get(`/grc/controls/${controlId}`)).body.item;
+    expect(stale).toMatchObject({ operatingEffectiveness: 'NOT_EFFECTIVE', testOverdue: true });
+    expect(
+      (await officer.get('/grc/controls?testOverdue=true')).body.items.map(
+        (c: { id: string }) => c.id,
+      ),
+    ).toEqual([controlId]);
+    expect((await officer.get('/grc/dashboard')).body.coverage.testsOverdue).toBe(1);
     const timeline = (await officer.get(`/grc/items/${controlId}/timeline`)).body;
     expect(timeline[0].changes.operatingEffectiveness).toEqual({
       from: 'NOT_ASSESSED',

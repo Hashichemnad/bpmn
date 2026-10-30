@@ -11,6 +11,7 @@ import {
   isOverdue,
   needsChangeApproval,
   testedResidual,
+  isTestOverdue,
   rateRisk,
   ratingBand,
   resolveGrcSettings,
@@ -341,5 +342,16 @@ describe('tested residual (Phase 4.2)', () => {
         operatingEffectiveness: 'NOT_ASSESSED',
       }),
     ).toBe(true);
+  });
+});
+
+describe('test overdue (D-105)', () => {
+  const now = new Date('2026-10-30T00:00:00Z');
+  it('uses the shortest active plan cycle, a year without a plan', () => {
+    expect(isTestOverdue('2026-06-01', ['QUARTERLY'], now)).toBe(true);
+    expect(isTestOverdue('2026-09-01', ['QUARTERLY', 'ANNUAL'], now)).toBe(false);
+    expect(isTestOverdue('2026-01-01', [], now)).toBe(false);
+    expect(isTestOverdue('2025-09-01', [], now)).toBe(true);
+    expect(isTestOverdue(null, ['MONTHLY'], now)).toBe(false);
   });
 });

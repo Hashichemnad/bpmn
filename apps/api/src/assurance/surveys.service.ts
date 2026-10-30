@@ -770,7 +770,11 @@ export class SurveysService implements OnModuleInit {
       data: {
         entityType: 'PROCESS',
         entityId: c.processId!,
-        body: [`${ar ? c.titleAr || c.titleEn : c.titleEn || c.titleAr}`, ...lines].join('\n'),
+        // Labelled with the campaign, so the comment is recognisable as a feedback-request answer (D-106).
+        body: [
+          `[${ar ? 'طلب ملاحظات' : 'Feedback request'}] ${ar ? c.titleAr || c.titleEn : c.titleEn || c.titleAr}`,
+          ...lines,
+        ].join('\n'),
         createdById: user.id,
       },
     });

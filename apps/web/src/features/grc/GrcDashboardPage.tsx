@@ -159,6 +159,12 @@ export function GrcDashboardPage() {
       value: d.coverage.overdueReviews,
       to: registerLink('/grc/risks', { overdue: 'true', status: 'ACTIVE' }),
     },
+    {
+      key: 'testsOverdue',
+      value: d.coverage.testsOverdue,
+      to: registerLink('/grc/controls', { testOverdue: 'true', status: 'ACTIVE' }),
+      danger: true,
+    },
   ];
 
   const openRow = (r: GrcBreakdownRow) => {

@@ -67,7 +67,12 @@
       "effectiveness": "الفعالية",
       "riskIds": "المخاطر",
       "requirementIds": "المتطلبات"
-    }
+    },
+    "batch_one": "تعديل مستورد واحد بانتظار اعتمادك.",
+    "batch_other": "{{count}} تعديلات من استيراد Excel واحد بانتظار اعتمادك.",
+    "approveAll": "اعتماد الكل",
+    "rejectAll": "رفض الكل",
+    "import": "استيراد Excel"
   },
   "nav": {
     "tests": "اختبارات الضوابط",

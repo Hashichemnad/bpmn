@@ -40,8 +40,10 @@ export function useGrcAccess() {
     canAdmin: can(PERMISSIONS.GRC_ADMIN),
     canComment: can(PERMISSIONS.GRC_READ) && can(PERMISSIONS.COMMENTS_WRITE),
     canChange: (i: { createdById: string | null; status: GrcStatus }) => canEdit || ownDraft(i),
-    canDelete: (i: { createdById: string | null; status: GrcStatus }) =>
-      can(PERMISSIONS.GRC_ADMIN) || ownDraft(i),
+    /** Active and retired risks / controls are retired, never deleted (D-104). */
+    canDelete: (i: { createdById: string | null; status: GrcStatus; type?: string }) =>
+      (i.type === 'REQUIREMENT' || i.status === 'DRAFT') &&
+      (can(PERMISSIONS.GRC_ADMIN) || ownDraft(i)),
   };
 }
 

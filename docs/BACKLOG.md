@@ -10,13 +10,14 @@ where they belong; move items into the plan when that phase starts.
 
 ## Phase 4.2 follow-ups (noted during the work)
 
-- Change approval: also route Excel imports and deletions of active items (today applied directly by editors,
-  audited); a "changes" history tab listing approved / rejected proposals per item; approval of requirement changes.
+- Change approval: a "changes" history tab listing approved / rejected proposals per item; approval of requirement changes.
 - Control testing: sampling helper (random selection from an uploaded population list); copy the last test's
   samples; test plans for several controls at once; tests in the portal for testers without the workspace.
 - Issues: link several risks / controls / steps to one issue; issue import / export (Excel); a "managers" view of
   the team's overdue items; SLA by severity (default due date).
-- Audits: annual plan approval workflow; time budgets and actual hours per auditor; audit report template upload
+- Audits: an option to **share the final audit report with the owners of the processes in scope** (product owner,
+  D-106; today audits are visible to Internal Audit, Risk & Compliance editors and Auditors only); annual plan
+  approval workflow; time budgets and actual hours per auditor; audit report template upload
   (company Word styles, shared with the handbook backlog item); findings repository across years; follow-up audits
   that re-test agreed actions; audit universe weighting beyond residual risk (last audit age, regulatory weight).
 - Questionnaires: question library and import / export of questionnaires; anonymous surveys; scoring bands per

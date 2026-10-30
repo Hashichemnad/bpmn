@@ -1054,6 +1054,8 @@ model GrcChange {
   /// [{ field, from, to }] at submission (the visual before / after).
   fields         Json
   comment        String          @default("")
+  /// Changes from one Excel import share a batch and are approved or rejected together (D-104).
+  batchId        String?         @db.Uuid
   workflowId     String?         @db.Uuid
   workflowNameEn String          @default("")
   workflowNameAr String          @default("")
@@ -1067,6 +1069,7 @@ model GrcChange {
 
   @@index([objectId, status])
   @@index([status])
+  @@index([batchId])
 }
 
 model GrcChangeTask {

@@ -277,6 +277,7 @@ zod / UUID pipe; file uploads are checked in the service (allow-list, content sn
 | GET    | `/grc/changes/:id`                           | `grc.read`                                                | param `id`                          | default    |
 | POST   | `/grc/changes/:id/decision`                  | `grc.read` + `reviews.decide`                             | body, param `id`                    | default    |
 | POST   | `/grc/changes/:id/withdraw`                  | `grc.edit`                                                | param `id`                          | default    |
+| POST   | `/grc/changes/batches/:batchId/decision`     | `grc.read` + `reviews.decide`                             | body, param `batchId`               | default    |
 | GET    | `/grc/controls`                              | `grc.read`                                                | query                               | default    |
 | POST   | `/grc/controls`                              | any of `grc.edit`, `grc.propose`                          | body                                | default    |
 | DELETE | `/grc/controls/:id`                          | any of `grc.edit`, `grc.propose`                          | param `id`                          | default    |
@@ -506,6 +507,8 @@ already the default; check them anyway if you changed the setup.
 - [ ] Leaver process includes "deactivate in ProcessHub" until automatic de-provisioning exists.
 - [ ] Database, file storage and the API are not reachable from outside (only the web container is published) _(prod stack: only Caddy on 80/443; database and storage on an internal network)_.
 - [ ] Daily backups with an off-site copy, and one restore tested (`docs/DEPLOYMENT.md` §7–8).
+- [ ] Settings → Risk & Compliance → Approval of changes **on** for risks and controls with the workflow
+      "GRC change approval", and at least two Risk & Compliance Officers (DEPLOYMENT.md §6 step 9, D-106).
 
 ## 8. External penetration test checklist
 

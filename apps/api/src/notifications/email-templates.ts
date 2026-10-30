@@ -247,6 +247,10 @@ export const KIND_TEMPLATES: Record<Locale, Record<string, { subject: string; bo
       subject: 'Reminder — questionnaire: {title}',
       body: 'The questionnaire “{title}” closes on {due}. Please answer it if you have not done so yet.',
     },
+    'GRC_CHANGE:batch': {
+      subject: 'Approval requested: imported changes of risks and controls',
+      body: '{actor} imported changes of active risks or controls from Excel. They wait for your approval in My tasks (approve or reject them together).',
+    },
   },
   ar: {
     'GRC_CHANGE:requested': {
@@ -360,6 +364,10 @@ export const KIND_TEMPLATES: Record<Locale, Record<string, { subject: string; bo
     'SURVEY:reminder': {
       subject: 'تذكير — استبيان: {title}',
       body: 'يُغلق الاستبيان «{title}» في {due}. يرجى الإجابة عليه إن لم تفعل بعد.',
+    },
+    'GRC_CHANGE:batch': {
+      subject: 'طلب اعتماد: تعديلات مستوردة على المخاطر والضوابط',
+      body: 'استورد {actor} تعديلات على مخاطر أو ضوابط نشطة من Excel. تنتظر اعتمادك في مهامي (اعتمادها أو رفضها معًا).',
     },
   },
 };

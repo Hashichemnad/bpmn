@@ -359,7 +359,8 @@
       "AUDIT_disagreed": "لم يوافق {{actor}} على النتيجة {{title}}",
       "SURVEY": "استبيان: {{title}}",
       "SURVEY_invited": "يرجى الإجابة على الاستبيان {{title}} (قبل {{due}})",
-      "SURVEY_reminder": "تذكير: يُغلق الاستبيان {{title}} في {{due}}"
+      "SURVEY_reminder": "تذكير: يُغلق الاستبيان {{title}} في {{due}}",
+      "GRC_CHANGE_batch": "استورد {{actor}} تعديلات على المخاطر والضوابط تحتاج اعتمادك"
     }
   },
   "prefs": {

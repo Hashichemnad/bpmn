@@ -82,7 +82,8 @@ describe('Seed (e2e)', () => {
     });
     expect(uncovered.residualLikelihood! * uncovered.residualImpact!).toBeGreaterThanOrEqual(16);
     expect(uncovered.controls.every((c) => c.control.effectiveness === 'NOT_ASSESSED')).toBe(true);
-    expect(await ctx.prisma.workflow.count()).toBe(2);
+    // Two demo workflows + the base "GRC change approval" workflow (D-106).
+    expect(await ctx.prisma.workflow.count()).toBe(3);
     // AI assistant: suggestion chips for the demo, disabled until a key is entered.
     const ai = await ctx.prisma.setting.findUniqueOrThrow({ where: { key: 'ai' } });
     expect(ai.value).toMatchObject({ enabled: false, apiKeySealed: null });

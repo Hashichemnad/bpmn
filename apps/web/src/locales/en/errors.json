@@ -168,5 +168,6 @@
   "PROPOSAL_DECIDED": "This proposal has already been decided.",
   "OPTIONS_REQUIRED": "A choice question needs at least two options.",
   "CONDITION_ON_LATER_QUESTION": "A question can only depend on an earlier question.",
-  "INVALID_LINK": "Rating questions propose a likelihood or impact; single-choice questions an effectiveness."
+  "INVALID_LINK": "Rating questions propose a likelihood or impact; single-choice questions an effectiveness.",
+  "RETIRE_INSTEAD": "Active risks and controls cannot be deleted. Retire them instead."
 }

@@ -77,6 +77,21 @@ export function useDecideGrcChange() {
   });
 }
 
+export function useDecideGrcBatch() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ batchId, decision }: { batchId: string; decision: 'APPROVE' | 'REJECT' }) =>
+      api<GrcChangeDto[]>(`/grc/changes/batches/${batchId}/decision`, {
+        method: 'POST',
+        body: { decision },
+      }),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: grcKeys.all });
+      void qc.invalidateQueries({ queryKey: assuranceKeys.all });
+    },
+  });
+}
+
 export function useWithdrawGrcChange() {
   const qc = useQueryClient();
   return useMutation({

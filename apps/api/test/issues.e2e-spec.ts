@@ -173,4 +173,30 @@ describe('Issues and actions (e2e)', () => {
     const detail = (await officer.get(`/issues/${issue.id}`)).body;
     expect(detail.escalatedAt).not.toBeNull();
   });
+
+  it('Viewers change only the actions assigned to them (D-106)', async () => {
+    const issue = (
+      await raise({
+        actions: [
+          { titleEn: 'Mine', ownerId: doerId },
+          { titleEn: 'Not mine', ownerId },
+        ],
+      }).expect(201)
+    ).body;
+    const [mine, other] = issue.actions;
+    await doer.patch(`/issues/actions/${mine.id}`).send({ progress: 20 }).expect(200);
+    await doer.patch(`/issues/actions/${other.id}`).send({ progress: 20 }).expect(403);
+    await doer
+      .post(`/issues/actions/${other.id}/files`)
+      .attach('file', Buffer.from('%PDF-1.4 x'), { filename: 'x.pdf' })
+      .expect(403);
+    await doer.post(`/issues/${issue.id}/transition`).send({ action: 'READY' }).expect(403);
+    await doer.patch(`/issues/${issue.id}`).send({ titleEn: 'x' }).expect(403);
+    // Another Viewer without an action does not even see the issue.
+    await viewer.patch(`/issues/actions/${mine.id}`).send({ progress: 50 }).expect(404);
+    await viewer.get(`/issues/${issue.id}`).expect(404);
+    expect(
+      (await ctx.prisma.issueAction.findUniqueOrThrow({ where: { id: other.id } })).progress,
+    ).toBe(0);
+  });
 });

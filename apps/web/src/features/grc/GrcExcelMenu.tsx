@@ -91,6 +91,7 @@ function ImportModal({
           setReport(r);
           if (r.imported) {
             message.success(t('grc:excel.imported', { created: r.created, updated: r.updated }));
+            if (r.pending) message.info(t('grc:excel.pendingApproval', { count: r.pending }));
             onClose();
           }
         },
@@ -148,6 +149,11 @@ function ImportModal({
               updated: report.updated,
             })}
           </Typography.Paragraph>
+          {report.pending > 0 && !report.imported && (
+            <Typography.Paragraph type="warning" data-testid="grc-import-pending">
+              {t('grc:excel.willNeedApproval', { count: report.pending })}
+            </Typography.Paragraph>
+          )}
           {report.errors.length ? (
             <>
               <Alert

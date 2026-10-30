@@ -139,6 +139,16 @@ describe('Questionnaires and surveys (e2e)', () => {
     const responseId = task[0].id;
     await outsider.get(`/surveys/responses/${responseId}`).expect(404); // not a recipient
     await owner.get(`/surveys/responses/${responseId}`).expect(404); // somebody else's response
+    // Answering is checked against the recipient, not only the permission (D-106).
+    await owner
+      .put(`/surveys/responses/${responseId}`)
+      .send({ answers: { known: 'YES' } })
+      .expect(404);
+    await owner
+      .post(`/surveys/responses/${responseId}/files`)
+      .attach('file', Buffer.from('%PDF-1.4 x'), { filename: 'x.pdf' })
+      .expect(404);
+    await outsider.get(`/surveys/responses/${responseId}/diagram`).expect(404);
     const mine = (await viewer.get(`/surveys/responses/${responseId}`).expect(200)).body;
     expect(mine).toMatchObject({ status: 'OPENED', canAnswer: true });
 
@@ -288,6 +298,7 @@ describe('Questionnaires and surveys (e2e)', () => {
     const comments = (await modeler.get(`/comments/processes/${processId}`).expect(200)).body;
     const body = JSON.stringify(comments);
     expect(body).toContain('Approval is missing');
+    expect(body).toContain('[Feedback request] Feedback: S.01 Purchasing');
     expect(body).toContain('4/5');
     // The requester sees the results; others do not.
     await modeler.get(`/surveys/campaigns/${c.id}/results`).expect(200);

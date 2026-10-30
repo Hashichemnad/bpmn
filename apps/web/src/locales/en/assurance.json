@@ -67,7 +67,12 @@
       "effectiveness": "Effectiveness",
       "riskIds": "Risks",
       "requirementIds": "Requirements"
-    }
+    },
+    "batch_one": "{{count}} imported change waits for your approval.",
+    "batch_other": "{{count}} imported changes from one Excel import wait for your approval.",
+    "approveAll": "Approve all",
+    "rejectAll": "Reject all",
+    "import": "Excel import"
   },
   "nav": {
     "tests": "Control tests",

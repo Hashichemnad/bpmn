@@ -344,7 +344,8 @@
       "AUDIT_disagreed": "{{actor}} did not agree to the finding {{title}}",
       "SURVEY": "Questionnaire: {{title}}",
       "SURVEY_invited": "Please answer the questionnaire {{title}} (by {{due}})",
-      "SURVEY_reminder": "Reminder: the questionnaire {{title}} closes on {{due}}"
+      "SURVEY_reminder": "Reminder: the questionnaire {{title}} closes on {{due}}",
+      "GRC_CHANGE_batch": "{{actor}} imported changes of risks and controls that need your approval"
     }
   },
   "prefs": {

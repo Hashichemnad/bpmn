@@ -2,6 +2,7 @@ import { Body, Controller, Get, HttpCode, Param, Post, Query } from '@nestjs/com
 import { ApiTags } from '@nestjs/swagger';
 import {
   PERMISSIONS,
+  grcChangeBatchDecisionSchema,
   grcChangeDecisionSchema,
   grcChangeListQuerySchema,
   type GrcChangeDecisionInput,
@@ -25,6 +26,19 @@ export class GrcChangesController {
     @CurrentUser() user: AuthUser,
   ) {
     return this.changes.list(q, user);
+  }
+
+  /** Approve or reject all changes of an Excel import batch that wait for the caller (D-104). */
+  @Post('batches/:batchId/decision')
+  @HttpCode(200)
+  @RequirePermissions(PERMISSIONS.GRC_READ, PERMISSIONS.REVIEWS_DECIDE)
+  decideBatch(
+    @Param('batchId', UuidPipe()) batchId: string,
+    @Body(new ZodPipe(grcChangeBatchDecisionSchema)) body: GrcChangeDecisionInput,
+    @CurrentUser() user: AuthUser,
+    @ReqMeta() meta: RequestMeta,
+  ) {
+    return this.changes.decideBatch(batchId, body, user, meta);
   }
 
   @Get(':id')

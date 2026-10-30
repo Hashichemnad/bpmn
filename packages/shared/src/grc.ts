@@ -495,6 +495,11 @@ export const controlListQuerySchema = listBase.extend({
     .enum(['true', 'false'])
     .transform((v) => v === 'true')
     .optional(),
+  /** Controls whose tested result is older than one test cycle (D-105). */
+  testOverdue: z
+    .enum(['true', 'false'])
+    .transform((v) => v === 'true')
+    .optional(),
   /** Key controls that are not assessed or not effective. */
   keyAttention: z
     .enum(['true', 'false'])
@@ -623,6 +628,8 @@ export interface ControlDto extends GrcBaseDto {
   /** Result of the last reviewed control test (Phase 4.2); NOT_ASSESSED until one is reviewed. */
   operatingEffectiveness: ControlEffectiveness;
   lastTestedAt: string | null;
+  /** The tested result is older than one test cycle: it still counts, flagged "test overdue" (D-105). */
+  testOverdue: boolean;
   risks: (GrcRef & { rating: RiskRating })[];
   requirements: GrcRef[];
 }
@@ -705,6 +712,8 @@ export interface GrcDashboardDto {
     stepsWithRiskNoControl: number;
     processesWithRiskNoControl: number;
     overdueReviews: number;
+    /** Active controls whose tested result is older than one test cycle (Phase 4.2, D-105). */
+    testsOverdue: number;
   };
   /** Drill-down: departments (organisation scope), processes (department scope) or steps. */
   breakdown: { level: 'department' | 'process' | 'step'; rows: GrcBreakdownRow[] };
@@ -729,6 +738,9 @@ export interface GrcImportReportDto {
   rows: number;
   created: number;
   updated: number;
+  /** Rows changing an active item while change approval is on: pending changes of one batch (D-104). */
+  pending: number;
+  batchId: string | null;
   errors: GrcImportRowIssue[];
   imported: boolean;
 }
@@ -973,6 +985,9 @@ export interface GrcChangeFieldDto {
 export interface GrcChangeDto {
   id: string;
   object: GrcRef;
+  /** Excel import batch (approved or rejected together), with the number of its changes. */
+  batchId: string | null;
+  batchSize: number;
   status: GrcChangeStatus;
   fields: GrcChangeFieldDto[];
   comment: string;
@@ -998,3 +1013,35 @@ export interface GrcChangeDto {
   /** The caller submitted it (or administers Risk & Compliance) and it is pending. */
   canWithdraw: boolean;
 }
+
+/** Months of one test cycle per test frequency (on demand: a year). */
+const CYCLE_MONTHS: Record<string, number> = {
+  MONTHLY: 1,
+  QUARTERLY: 3,
+  SEMI_ANNUAL: 6,
+  ANNUAL: 12,
+  AD_HOC: 12,
+};
+
+/**
+ * Whether a tested result is older than one test cycle (D-105): the shortest frequency of the
+ * control's active test plans (a year without a plan). The result still counts; it is flagged.
+ */
+export function isTestOverdue(
+  lastTestedAt: string | Date | null | undefined,
+  planFrequencies: string[],
+  now = new Date(),
+): boolean {
+  if (!lastTestedAt) return false;
+  const months = planFrequencies.length
+    ? Math.min(...planFrequencies.map((f) => CYCLE_MONTHS[f] ?? 12))
+    : 12;
+  const due = new Date(lastTestedAt);
+  due.setUTCMonth(due.getUTCMonth() + months);
+  return due.getTime() < now.getTime();
+}
+
+export const grcChangeBatchDecisionSchema = z.object({
+  decision: z.enum(['APPROVE', 'REJECT']),
+  comment: z.string().trim().max(2000).optional(),
+});

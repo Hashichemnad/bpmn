@@ -110,12 +110,19 @@ Verification on 2026-10-30: shared 147, web 79, API 359 tests pass; Playwright 3
 --prod` clean (7 moderate, unchanged). **Not verified here:** the Docker image builds — Docker Hub answered
 429 Too Many Requests for the base images in this sandbox (the build steps themselves, `pnpm build`, pass).
 
+- [x] 7. Product owner decisions on the pull request (D-104 – D-106): active / retired risks and controls cannot be
+      deleted (retire instead); Excel imports with change approval on → one batch of pending changes (approve /
+      reject together in My tasks, one notification), new rows as drafts, `CHANGE_PENDING` rows refused; base-seed
+      workflow "GRC change approval" (preselected, approval still off) + go-live step in DEPLOYMENT.md / SECURITY.md;
+      Viewer assignment checks with permission tests; feedback comments labelled "[Feedback request] <campaign>";
+      control page shows self-assessed and tested effectiveness, "Test overdue" flag, register filter and coverage
+      tile. Tests: shared 1, API +4 (grc-changes 2, issues 1, control-tests / surveys / grc / seed extended),
+      Playwright assertion for the two values.
+
 ### Next (continue here)
 
-1. Review and merge the pull request `phase-4-2-grc-assurance` → `main`; build the Docker images in CI.
-2. Product-owner decisions listed in the pull request (approval routing of imports, Viewer action owners, audit
-   visibility, default of the change approval).
-3. Then Phase 4.3 (EA, KPIs, Salesforce, Oracle overlay — BACKLOG).
+1. Review and merge the pull request `phase-4-2-grc-assurance` → `main` (CI builds the Docker images).
+2. Then Phase 4.3 (EA, KPIs, Salesforce, Oracle overlay — BACKLOG).
 
 ## Previous state — 2026-10-30 (Phase 4 — Part 1: GRC core, branch `phase-4-1-grc`, done — awaiting review)
 

@@ -5,6 +5,7 @@ import {
   extractBpmnLabels,
   isEffectiveControl,
   isOverdue,
+  isTestOverdue,
   rateRisk,
   riskScore,
   testedResidual,
@@ -40,7 +41,7 @@ import {
 } from '@processhub/shared';
 import { PrismaService } from '../prisma/prisma.service';
 import { AuditService } from '../audit/audit.service';
-import { badRequest, forbidden, notFound } from '../common/app-exception';
+import { badRequest, conflict, forbidden, notFound } from '../common/app-exception';
 import type { AuthUser, RequestMeta } from '../common/auth-user';
 import { elementLabel } from '../models/bpmn-xml';
 import { GrcSettingsService } from './grc-settings.service';
@@ -83,6 +84,7 @@ const controlInclude = {
   _count: { select: { links: { where: activeLinks } } },
   control: {
     include: {
+      testPlans: { where: { active: true, deletedAt: null }, select: { frequency: true } },
       department: deptRef,
       system: { select: { id: true, code: true, nameEn: true, nameAr: true, deletedAt: true } },
       risks: {
@@ -212,6 +214,13 @@ export function toControlDto(o: ControlRow, settings: GrcSettings): ControlDto {
     lastAssessedAt: iso(c.lastAssessedAt),
     operatingEffectiveness: c.operatingEffectiveness,
     lastTestedAt: iso(c.lastTestedAt),
+    testOverdue:
+      c.status === 'ACTIVE' &&
+      c.operatingEffectiveness !== 'NOT_ASSESSED' &&
+      isTestOverdue(
+        c.lastTestedAt,
+        c.testPlans.map((p) => p.frequency),
+      ),
     risks: c.risks
       .filter((x) => !x.risk.object.deletedAt)
       .map((x) => ({
@@ -299,13 +308,18 @@ export interface GrcChangeGate {
     input: UpdateRiskInput | UpdateControlInput,
     actor: AuthUser,
     meta: RequestMeta,
-  ): Promise<GrcItemDetailDto | null>;
+    opts?: { batchId?: string },
+  ): Promise<GrcItemDetailDto | null | 'UNCHANGED'>;
   pending(id: string, actor?: AuthUser): Promise<GrcChangeDto | null>;
 }
 
-/** Options of an update: `approved` applies an approved change (no new approval round). */
+/**
+ * Options of an update: `approved` applies an approved change (no new approval round);
+ * `batchId` groups the changes of one Excel import (D-104).
+ */
 export interface GrcUpdateOptions {
   approved?: boolean;
+  batchId?: string;
 }
 
 @Injectable()
@@ -580,7 +594,8 @@ export class GrcService {
     const before = await this.prisma.risk.findUniqueOrThrow({ where: { objectId: id } });
     if (!opts.approved) {
       this.assertMayChange(o, before.status, actor, input);
-      const pending = await this.gate?.submit('RISK', id, before.status, input, actor, meta);
+      const pending = await this.gate?.submit('RISK', id, before.status, input, actor, meta, opts);
+      if (pending === 'UNCHANGED') return this.getRisk(id, actor);
       if (pending) return pending as GrcItemDetailDto<RiskDto>;
     }
     const settings = await this.settings.get();
@@ -744,6 +759,7 @@ export class GrcService {
     });
     let items = rows.map((r) => toControlDto(r, settings));
     if (q.overdue !== undefined) items = items.filter((r) => r.overdue === q.overdue);
+    if (q.testOverdue !== undefined) items = items.filter((r) => r.testOverdue === q.testOverdue);
     return page(
       items,
       q,
@@ -863,7 +879,16 @@ export class GrcService {
       if (input.riskIds?.length) await this.assertOwnDrafts(input.riskIds, actor);
     }
     if (!opts.approved) {
-      const pending = await this.gate?.submit('CONTROL', id, before.status, input, actor, meta);
+      const pending = await this.gate?.submit(
+        'CONTROL',
+        id,
+        before.status,
+        input,
+        actor,
+        meta,
+        opts,
+      );
+      if (pending === 'UNCHANGED') return this.getControl(id, actor);
       if (pending) return pending as GrcItemDetailDto<ControlDto>;
     }
     await this.prisma.$transaction(async (tx) => {
@@ -1209,6 +1234,9 @@ export class GrcService {
     const status = await this.statusOf(id, type);
     const ownDraft = o.createdById === actor.id && status === 'DRAFT';
     if (!actor.permissions.has(PERMISSIONS.GRC_ADMIN) && !ownDraft) throw forbidden();
+    // Active (and retired) risks and controls are retired, never deleted (D-104).
+    if (type !== 'REQUIREMENT' && status !== 'DRAFT')
+      throw conflict('RETIRE_INSTEAD', 'Retire the item instead of deleting it');
     await this.prisma.$transaction(async (tx) => {
       const removed = await tx.objectLink.deleteMany({ where: { repoObjectId: id } });
       await tx.repoObject.update({

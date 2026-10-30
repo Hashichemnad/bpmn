@@ -240,8 +240,14 @@ describe('Risk & Compliance (e2e)', () => {
     // Proposers delete their own drafts only; admins anything.
     await owner.delete(`/grc/risks/${active.id}`).expect(403);
     await owner.delete(`/grc/controls/${ctl.id}`).expect(204);
-    await officer.delete(`/grc/risks/${active.id}`).expect(204);
-    await officer.get(`/grc/risks/${active.id}`).expect(404);
+    // Active items are retired, never deleted (D-104).
+    await officer
+      .delete(`/grc/risks/${active.id}`)
+      .expect(409)
+      .expect((res) => expect(res.body.code).toBe('RETIRE_INSTEAD'));
+    await officer.patch(`/grc/risks/${active.id}`).send({ status: 'RETIRED' }).expect(200);
+    await officer.delete(`/grc/risks/${active.id}`).expect(409);
+    await officer.get(`/grc/risks/${active.id}`).expect(200);
   });
 
   it('read-only roles read, Viewers see nothing, settings need grc.admin', async () => {
@@ -341,9 +347,15 @@ describe('Risk & Compliance (e2e)', () => {
     const after = (await modeler.get(`/grc/processes/${processId}`).expect(200)).body.items;
     expect(after.map((i: { id: string }) => i.id)).toEqual([req.id]);
 
-    // Deleting a risk removes its links.
-    await officer.delete(`/grc/risks/${r.id}`).expect(204);
-    expect(await ctx.prisma.objectLink.count({ where: { repoObjectId: r.id } })).toBe(0);
+    // Deleting a (draft) risk removes its links; active ones cannot be deleted.
+    await officer.delete(`/grc/risks/${r.id}`).expect(409);
+    const draft = (await risk(officer, { code: 'R-DRAFT', status: 'DRAFT' }).expect(201)).body.item;
+    await officer
+      .post(`/processes/${processId}/links`)
+      .send({ bpmnElementId: 'Task_Order', repoObjectId: draft.id })
+      .expect(201);
+    await officer.delete(`/grc/risks/${draft.id}`).expect(204);
+    expect(await ctx.prisma.objectLink.count({ where: { repoObjectId: draft.id } })).toBe(0);
   });
 
   /** Workbook with a header row and data rows. */

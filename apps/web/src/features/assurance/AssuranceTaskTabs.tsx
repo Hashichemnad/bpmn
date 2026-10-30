@@ -1,10 +1,11 @@
 import { Link } from 'react-router-dom';
-import { Badge, Table, Typography, type TabsProps } from 'antd';
+import { Badge, Table, Tag, Typography, type TabsProps } from 'antd';
 import { useTranslation } from 'react-i18next';
 import type { AssuranceTasksDto, ControlTestDto, GrcChangeDto, IssueDto } from '@processhub/shared';
 import { IssueStatusTag, SeverityTag } from './assurance-tags';
 import { AssigneeLabel, TestStatusTag } from './assurance-tags';
 import { useAssuranceTasks } from '@/api/assurance';
+import { BatchDecision } from './BatchDecision';
 import { useFormatDate, useLocalized } from '@/components/i18n-helpers';
 import { grcItemPath } from '@/features/grc/grc-helpers';
 
@@ -38,43 +39,56 @@ export function useAssuranceTaskTabs(portal = false): {
   const person = (u: GrcChangeDto['submittedBy']) => (u ? loc(u) || u.email : '—');
 
   const items: NonNullable<TabsProps['items']> = [];
+  const batches = [...new Set(d.grcChanges.map((c) => c.batchId).filter((v): v is string => !!v))];
   if (d.grcChanges.length) {
     items.push({
       key: 'grcChanges',
       label: label('grcChanges', t('assurance:changes.tabTitle')),
       children: (
-        <Table
-          rowKey="id"
-          size="middle"
-          pagination={false}
-          dataSource={d.grcChanges}
-          columns={[
-            {
-              title: t('assurance:changes.item'),
-              render: (_, c) => (
-                <Link to={grcItemPath(c.object.type, c.object.id)}>
-                  {c.object.code && <span dir="ltr">{c.object.code} </span>}
-                  {loc(c.object)}
-                </Link>
-              ),
-            },
-            {
-              title: t('assurance:changes.fieldsChanged'),
-              render: (_, c) =>
-                c.fields
-                  .map((f) => t(`assurance:changes.fields.${f.field}`, { defaultValue: f.field }))
-                  .join(', '),
-            },
-            {
-              title: t('assurance:changes.proposedBy'),
-              render: (_, c) => (
-                <Typography.Text>
-                  {person(c.submittedBy)} · {formatDate(c.submittedAt)}
-                </Typography.Text>
-              ),
-            },
-          ]}
-        />
+        <>
+          {batches.map((b) => (
+            <BatchDecision
+              key={b}
+              batchId={b}
+              count={d.grcChanges.filter((c) => c.batchId === b).length}
+            />
+          ))}
+          <Table
+            rowKey="id"
+            size="middle"
+            pagination={false}
+            dataSource={d.grcChanges}
+            columns={[
+              {
+                title: t('assurance:changes.item'),
+                render: (_, c) => (
+                  <Link to={grcItemPath(c.object.type, c.object.id)}>
+                    {c.object.code && <span dir="ltr">{c.object.code} </span>}
+                    {loc(c.object)}
+                  </Link>
+                ),
+              },
+              {
+                title: t('assurance:changes.fieldsChanged'),
+                render: (_, c) =>
+                  c.fields
+                    .map((f) => t(`assurance:changes.fields.${f.field}`, { defaultValue: f.field }))
+                    .join(', '),
+              },
+              {
+                title: t('assurance:changes.proposedBy'),
+                render: (_, c) => (
+                  <Typography.Text>
+                    {person(c.submittedBy)} · {formatDate(c.submittedAt)}
+                    {c.batchId && (
+                      <Tag style={{ marginInlineStart: 6 }}>{t('assurance:changes.import')}</Tag>
+                    )}
+                  </Typography.Text>
+                ),
+              },
+            ]}
+          />
+        </>
       ),
     });
   }

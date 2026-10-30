@@ -1,3 +1,4 @@
+import ExcelJS from 'exceljs';
 import { DEFAULT_GRC_SETTINGS } from '@processhub/shared';
 import { createApp, createUser, loggedIn, resetDb, type Client, type TestContext } from './helpers';
 
@@ -167,5 +168,92 @@ describe('GRC change approval (e2e)', () => {
     ]);
     await approver.post(`/grc/changes/${pending.id}/decision`).send({ decision: 'APPROVE' });
     expect((await officer.get(`/grc/controls/${c}`)).body.item.effectiveness).toBe('EFFECTIVE');
+  });
+
+  it('Excel import: changes of active items become one batch to approve together; new rows are drafts', async () => {
+    const id = await newRisk(); // R-1, active
+    const r2 = (
+      await officer
+        .post('/grc/risks')
+        .send({
+          code: 'R-2',
+          nameEn: 'Theft',
+          category: 'FRAUD',
+          inherentLikelihood: 2,
+          inherentImpact: 2,
+        })
+        .expect(201)
+    ).body.item.id;
+    await enable(officer);
+    const wb = new ExcelJS.Workbook();
+    const ws = wb.addWorksheet('Risks');
+    ws.addRow([
+      'Code',
+      'Title (English)',
+      'Category (key)',
+      'Inherent likelihood (1-5)',
+      'Inherent impact (1-5)',
+    ]);
+    ws.addRow(['R-1', 'Fraud (renamed)', 'FRAUD', 4, 4]);
+    ws.addRow(['R-2', 'Theft', 'FRAUD', 3, 2]);
+    ws.addRow(['R-3', 'Bribery', 'FRAUD', 2, 5]);
+    const file = Buffer.from(await wb.xlsx.writeBuffer());
+    const dry = (await officer.post('/grc/import/risks').attach('file', file, 'r.xlsx').expect(200))
+      .body;
+    expect(dry).toMatchObject({ created: 1, updated: 2, pending: 2, imported: false });
+    const done = (
+      await officer
+        .post('/grc/import/risks?dryRun=false')
+        .attach('file', file, 'r.xlsx')
+        .expect(200)
+    ).body;
+    expect(done).toMatchObject({ created: 1, updated: 0, pending: 2, imported: true });
+    expect(done.batchId).toBeTruthy();
+    // Current values stay; the new item is a draft.
+    expect((await officer.get(`/grc/risks/${id}`)).body.item.nameEn).toBe('Fraud');
+    const r3 = await ctx.prisma.repoObject.findFirstOrThrow({
+      where: { code: 'R-3' },
+      include: { risk: true },
+    });
+    expect(r3.risk!.status).toBe('DRAFT');
+    // One notification for the whole import; a second import is refused while changes wait.
+    expect(
+      await ctx.prisma.notification.count({ where: { type: 'GRC_CHANGE', userId: approverId } }),
+    ).toBe(1);
+    const again = (
+      await officer.post('/grc/import/risks').attach('file', file, 'r.xlsx').expect(200)
+    ).body;
+    expect(again.errors.filter((e: { code: string }) => e.code === 'CHANGE_PENDING')).toHaveLength(
+      2,
+    );
+    const mine = (await approver.get('/grc/changes?mine=true').expect(200)).body;
+    expect(mine).toHaveLength(2);
+    expect(mine[0]).toMatchObject({ batchId: done.batchId, batchSize: 2 });
+    await officer
+      .post(`/grc/changes/batches/${done.batchId}/decision`)
+      .send({ decision: 'APPROVE' })
+      .expect(403);
+    const decided = (
+      await approver
+        .post(`/grc/changes/batches/${done.batchId}/decision`)
+        .send({ decision: 'APPROVE' })
+        .expect(200)
+    ).body;
+    expect(decided.map((c: { status: string }) => c.status)).toEqual(['APPROVED', 'APPROVED']);
+    expect((await officer.get(`/grc/risks/${id}`)).body.item.nameEn).toBe('Fraud (renamed)');
+    expect((await officer.get(`/grc/risks/${r2}`)).body.item.inherentLikelihood).toBe(3);
+  });
+
+  it('active risks are retired through approval and never deleted; drafts can be deleted', async () => {
+    const id = await newRisk();
+    await enable(officer);
+    await officer.delete(`/grc/risks/${id}`).expect(409);
+    const c = (await officer.patch(`/grc/risks/${id}`).send({ status: 'RETIRED' }).expect(200)).body
+      .pendingChange;
+    await approver.post(`/grc/changes/${c.id}/decision`).send({ decision: 'APPROVE' }).expect(200);
+    expect((await officer.get(`/grc/risks/${id}`)).body.item.status).toBe('RETIRED');
+    await officer.delete(`/grc/risks/${id}`).expect(409);
+    const draft = await newRisk('DRAFT');
+    await officer.delete(`/grc/risks/${draft}`).expect(204);
   });
 });

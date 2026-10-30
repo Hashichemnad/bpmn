@@ -4,6 +4,7 @@ import {
   heatMap,
   isEffectiveControl,
   isOverdue,
+  isTestOverdue,
   rateRisk,
   residualOrInherent,
   testedResidual,
@@ -66,7 +67,14 @@ export class GrcDashboardService {
       }),
       this.prisma.repoObject.findMany({
         where: { type: 'CONTROL', deletedAt: null, control: { status: 'ACTIVE' } },
-        include: { links: linkSelect, control: true },
+        include: {
+          links: linkSelect,
+          control: {
+            include: {
+              testPlans: { where: { active: true, deletedAt: null }, select: { frequency: true } },
+            },
+          },
+        },
       }),
       this.prisma.repoObject.findMany({
         where: { type: 'REQUIREMENT', deletedAt: null, requirement: { status: 'ACTIVE' } },
@@ -171,6 +179,14 @@ export class GrcDashboardService {
         overdueReviews:
           risks.filter((r) => isOverdue(r.o.risk!.nextReviewAt)).length +
           controls.filter((c) => isOverdue(c.control!.nextReviewAt)).length,
+        testsOverdue: controls.filter(
+          (c) =>
+            c.control!.operatingEffectiveness !== 'NOT_ASSESSED' &&
+            isTestOverdue(
+              c.control!.lastTestedAt,
+              c.control!.testPlans.map((p) => p.frequency),
+            ),
+        ).length,
       },
       breakdown,
     };

@@ -1,6 +1,8 @@
 import type { Prisma, PrismaClient } from '@prisma/client';
 import {
   CONCLUSION_EFFECTIVENESS,
+  SETTING_KEYS,
+  resolveGrcSettings,
   testPeriod,
   type QuestionnaireDefinition,
 } from '@processhub/shared';
@@ -617,4 +619,48 @@ export async function seedAssuranceDemo(
   console.log(
     'Seeded assurance demo data: 2 test plans, 3 tests, 2 issues, 1 audit engagement with 2 findings, 1 RCSA campaign.',
   );
+}
+
+/** Name of the ready-made workflow for changes of active risks and controls (D-106). */
+export const GRC_CHANGE_WORKFLOW_NAME_EN = 'GRC change approval';
+const SEEDED_KEY = 'grc.changeWorkflowSeeded';
+
+/**
+ * Base seed (every installation, D-106): a one-step workflow "GRC change approval" (any Risk &
+ * Compliance Officer) preselected in Settings → Risk & Compliance. Change approval itself stays
+ * off. Created once: if an administrator deletes it, it is not created again.
+ */
+export async function ensureGrcChangeWorkflow(prisma: PrismaClient, adminId: string | null) {
+  if (await prisma.setting.findUnique({ where: { key: SEEDED_KEY } })) return;
+  const workflow = await prisma.workflow.create({
+    data: {
+      nameEn: GRC_CHANGE_WORKFLOW_NAME_EN,
+      nameAr: 'اعتماد تعديلات المخاطر والامتثال',
+      descriptionEn:
+        'Changes of active risks and controls: one approval by any Risk & Compliance Officer.',
+      descriptionAr: 'تعديلات المخاطر والضوابط النشطة: اعتماد واحد من أي مسؤول مخاطر وامتثال.',
+      steps: [
+        {
+          nameEn: 'Risk & Compliance Officer',
+          nameAr: 'مسؤول المخاطر والامتثال',
+          rule: 'ANY',
+          assignees: [{ type: 'ROLE', roleKey: 'RISK_OFFICER' }],
+        },
+      ],
+      createdById: adminId,
+      updatedById: adminId,
+    },
+  });
+  const grc = await prisma.setting.findUnique({ where: { key: SETTING_KEYS.GRC } });
+  const value = resolveGrcSettings(grc?.value);
+  if (!value.changeApproval.workflowId) {
+    const next = { ...value, changeApproval: { ...value.changeApproval, workflowId: workflow.id } };
+    await prisma.setting.upsert({
+      where: { key: SETTING_KEYS.GRC },
+      create: { key: SETTING_KEYS.GRC, value: next },
+      update: { value: next },
+    });
+  }
+  await prisma.setting.create({ data: { key: SEEDED_KEY, value: { workflowId: workflow.id } } });
+  console.log(`Created the workflow "${GRC_CHANGE_WORKFLOW_NAME_EN}" (change approval stays off).`);
 }

@@ -76,8 +76,8 @@ export class GrcChangesService implements OnModuleInit {
 
   onModuleInit() {
     this.grc.setChangeGate({
-      submit: (type, id, status, input, actor, meta) =>
-        this.submitIfNeeded(type, id, status, input, actor, meta),
+      submit: (type, id, status, input, actor, meta, opts) =>
+        this.submitIfNeeded(type, id, status, input, actor, meta, opts?.batchId),
       pending: async (id, actor) => {
         const row = await this.prisma.grcChange.findFirst({
           where: { objectId: id, status: 'PENDING' },
@@ -132,7 +132,8 @@ export class GrcChangesService implements OnModuleInit {
     input: Input,
     actor: AuthUser,
     meta: RequestMeta,
-  ): Promise<GrcItemDetailDto | null> {
+    batchId?: string,
+  ): Promise<GrcItemDetailDto | null | 'UNCHANGED'> {
     const settings = await this.settings.get();
     if (!needsChangeApproval(type, status, settings)) return null;
     if (await this.prisma.grcChange.count({ where: { objectId: id, status: 'PENDING' } }))
@@ -141,7 +142,11 @@ export class GrcChangesService implements OnModuleInit {
     const fields: GrcChangeFieldDto[] = Object.entries(input)
       .filter(([k, v]) => k !== 'comment' && v !== undefined && !same(before[k], v))
       .map(([field, to]) => ({ field, from: norm(before[field]), to: norm(to) }));
-    if (!fields.length) throw badRequest('NO_CHANGES', 'Nothing would change');
+    if (!fields.length) {
+      // An import row that changes nothing is simply skipped.
+      if (batchId) return 'UNCHANGED';
+      throw badRequest('NO_CHANGES', 'Nothing would change');
+    }
 
     const wid =
       settings.changeApproval.workflowId ?? (await this.workflows.settings()).defaultWorkflowId;
@@ -194,6 +199,7 @@ export class GrcChangesService implements OnModuleInit {
           proposed: input as Prisma.InputJsonValue,
           fields: fields as unknown as Prisma.InputJsonValue,
           comment: input.comment ?? '',
+          batchId: batchId ?? null,
           workflowId: workflow.id,
           workflowNameEn: workflow.nameEn,
           workflowNameAr: workflow.nameAr,
@@ -214,14 +220,35 @@ export class GrcChangesService implements OnModuleInit {
           entityType: ENTITY[type],
           entityId: id,
           userId: actor.id,
-          summary: { changeId: c.id, fields, workflow: workflow.nameEn || workflow.nameAr },
+          summary: {
+            changeId: c.id,
+            fields,
+            workflow: workflow.nameEn || workflow.nameAr,
+            ...(batchId ? { batchId } : {}),
+          },
           meta,
         },
         tx,
       );
       return c;
     });
-    await this.notify(type, object, 'requested', steps[0].assigneeIds, actor, steps[0]);
+    if (batchId)
+      // One notification per approver for the whole import.
+      await this.notifications.notify({
+        userIds: steps[0].assigneeIds,
+        type: 'GRC_CHANGE',
+        actorId: actor.id,
+        params: {
+          kind: 'batch',
+          itemType: type,
+          titleEn: 'Excel import',
+          titleAr: 'استيراد Excel',
+          ...actorParams(actor),
+        },
+        link: '/tasks?tab=grcChanges',
+        dedupeKey: `GRC_CHANGE:batch:${batchId}`,
+      });
+    else await this.notify(type, object, 'requested', steps[0].assigneeIds, actor, steps[0]);
     void change;
     return type === 'RISK' ? this.grc.getRisk(id, actor) : this.grc.getControl(id, actor);
   }
@@ -378,6 +405,30 @@ export class GrcChangesService implements OnModuleInit {
     return this.get(id, actor);
   }
 
+  /** Approves or rejects every pending change of an import batch that waits for the caller. */
+  async decideBatch(
+    batchId: string,
+    input: GrcChangeDecisionInput,
+    actor: AuthUser,
+    meta: RequestMeta,
+  ) {
+    const rows = await this.prisma.grcChange.findMany({
+      where: { batchId, status: 'PENDING', object: { deletedAt: null } },
+      include: { tasks: true },
+      orderBy: { submittedAt: 'asc' },
+    });
+    const mine = rows.filter((c) =>
+      c.tasks.some(
+        (t) => t.assigneeId === actor.id && t.stepIndex === c.currentStep && t.status === 'PENDING',
+      ),
+    );
+    if (!mine.length)
+      throw new AppException(HttpStatus.FORBIDDEN, 'NOT_YOUR_TASK', 'No open approval for you');
+    const results: GrcChangeDto[] = [];
+    for (const c of mine) results.push(await this.decide(c.id, input, actor, meta));
+    return results;
+  }
+
   private close(change: ChangeRow, status: GrcChangeStatus) {
     return this.prisma.$transaction([
       this.prisma.grcChange.update({
@@ -433,6 +484,16 @@ export class GrcChangesService implements OnModuleInit {
       this.statusOf(rows.map((r) => r.objectId)),
     ]);
     const userById = new Map<string, UserRef>(users.map((u) => [u.id, u]));
+    const batchIds = [...new Set(rows.map((r) => r.batchId).filter((v): v is string => !!v))];
+    const batchSizes = new Map(
+      (
+        await this.prisma.grcChange.groupBy({
+          by: ['batchId'],
+          where: { batchId: { in: batchIds } },
+          _count: { _all: true },
+        })
+      ).map((g) => [g.batchId!, g._count._all]),
+    );
     const label = new Map<string, { en: string; ar: string }>([
       ...users.map((u) => [u.id, { en: u.nameEn || u.email, ar: u.nameAr || u.email }] as const),
       ...departments.map((d) => [d.id, { en: d.nameEn, ar: d.nameAr }] as const),
@@ -465,6 +526,8 @@ export class GrcChangesService implements OnModuleInit {
           status: statuses.get(r.objectId) ?? 'ACTIVE',
         },
         status: r.status as GrcChangeStatus,
+        batchId: r.batchId,
+        batchSize: r.batchId ? (batchSizes.get(r.batchId) ?? 1) : 1,
         fields: (r.fields as unknown as GrcChangeFieldDto[]).map((f) => ({
           field: f.field,
           from: show(f.field, f.from),

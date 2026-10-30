@@ -146,6 +146,8 @@ test('a control test is planned, performed with evidence, signed off and updates
   await expect(page.locator('body')).toContainText('Reviewed');
   await page.goto(`/grc/controls/${controlId}`);
   await expect(page.getByTestId('control-testing')).toContainText('Partly effective');
+  // Both values are shown; the tested one counts.
+  await expect(page.getByTestId('tested-effectiveness')).toContainText('Partly effective');
 });
 
 /** Picks a user in a UserSelect (searchable directory). */
