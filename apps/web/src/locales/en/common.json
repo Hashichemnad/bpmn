@@ -48,7 +48,13 @@
     "portal": "Portal",
     "portalHint": "Open the Knowledge Portal (published content)",
     "aiUsage": "AI usage",
-    "dictionary": "Dictionary"
+    "dictionary": "Dictionary",
+    "grcGroup": "Risk & Compliance",
+    "grcDashboard": "Risk dashboard",
+    "risks": "Risk register",
+    "controls": "Control library",
+    "requirements": "Requirements",
+    "grcSettings": "Risk & Compliance"
   },
   "auth": {
     "subtitle": "Sign in to continue",

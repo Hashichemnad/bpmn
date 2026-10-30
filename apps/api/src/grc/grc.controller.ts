@@ -9,10 +9,24 @@ import {
   Post,
   Put,
   Query,
+  Res,
+  StreamableFile,
+  UploadedFile,
+  UseInterceptors,
 } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
+import type { Response } from 'express';
+import { z } from 'zod';
 import { ApiTags } from '@nestjs/swagger';
 import {
+  GRC_IMPORT_KINDS,
+  GRC_IMPORT_MAX_BYTES,
   PERMISSIONS,
+  grcExportQuerySchema,
+  grcImportQuerySchema,
+  type GrcExportQuery,
+  type GrcImportKind,
+  type GrcImportQuery,
   controlListQuerySchema,
   createControlSchema,
   createRequirementSchema,
@@ -46,6 +60,20 @@ import type { AuthUser, RequestMeta } from '../common/auth-user';
 import { UuidPipe, ZodPipe } from '../common/zod.pipe';
 import { GrcService } from './grc.service';
 import { GrcSettingsService } from './grc-settings.service';
+import { GrcExcelService, type GrcFile } from './grc-excel.service';
+
+const kindSchema = z.enum(GRC_IMPORT_KINDS);
+
+function download(res: Response, file: GrcFile) {
+  res.set({
+    'Content-Type': file.contentType,
+    'Content-Length': String(file.data.length),
+    'Content-Disposition': `attachment; filename="${file.fileName}"`,
+    'X-Content-Type-Options': 'nosniff',
+    'Cache-Control': 'no-store',
+  });
+  return new StreamableFile(file.data);
+}
 
 const READ = PERMISSIONS.GRC_READ;
 /** Proposers create drafts and change their own drafts; editors anything (checked in the service). */
@@ -57,7 +85,49 @@ export class GrcController {
   constructor(
     private readonly grc: GrcService,
     private readonly settings: GrcSettingsService,
+    private readonly excel: GrcExcelService,
   ) {}
+
+  // ---------- Excel ----------
+
+  @Get('export/:kind')
+  @RequirePermissions(READ)
+  async export(
+    @Param('kind', new ZodPipe(kindSchema)) kind: GrcImportKind,
+    @Query(new ZodPipe(grcExportQuerySchema)) q: GrcExportQuery,
+    @CurrentUser() user: AuthUser,
+    @ReqMeta() meta: RequestMeta,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    return download(res, await this.excel.export(kind, q.locale, user, meta));
+  }
+
+  @Get('template/:kind')
+  @RequirePermissions(PERMISSIONS.GRC_EDIT)
+  async template(
+    @Param('kind', new ZodPipe(kindSchema)) kind: GrcImportKind,
+    @Query(new ZodPipe(grcExportQuerySchema)) q: GrcExportQuery,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    return download(res, await this.excel.template(kind, q.locale));
+  }
+
+  /** Validates (dryRun, default) or imports an Excel register; nothing is imported on errors. */
+  @Post('import/:kind')
+  @HttpCode(200)
+  @RequirePermissions(PERMISSIONS.GRC_EDIT)
+  @UseInterceptors(
+    FileInterceptor('file', { limits: { fileSize: GRC_IMPORT_MAX_BYTES, files: 1 } }),
+  )
+  import(
+    @Param('kind', new ZodPipe(kindSchema)) kind: GrcImportKind,
+    @Query(new ZodPipe(grcImportQuerySchema)) q: GrcImportQuery,
+    @UploadedFile() file: Express.Multer.File | undefined,
+    @CurrentUser() user: AuthUser,
+    @ReqMeta() meta: RequestMeta,
+  ) {
+    return this.excel.import(kind, file, q.dryRun, user, meta);
+  }
 
   // ---------- Settings ----------
 

@@ -123,5 +123,18 @@
   "INVALID_STEP_ATTRIBUTES": "Some step attributes are invalid (times, frequency and cost must be numbers of 0 or more).",
   "REPORT_TOO_LARGE": "The branch has too many processes for one handbook. Choose a smaller branch.",
   "INVALID_IMAGE": "A diagram image could not be read.",
-  "CONVENTIONS_NOT_MET": "The process does not meet {{count}} required modeling convention(s). Open the diagram’s Validation panel to see and fix them, save a version, then submit again."
+  "CONVENTIONS_NOT_MET": "The process does not meet {{count}} required modeling convention(s). Open the diagram’s Validation panel to see and fix them, save a version, then submit again.",
+  "USE_GRC_REGISTER": "Risks, controls and requirements are managed in Risk & Compliance.",
+  "INVALID_CATEGORY": "Choose one of the configured risk categories.",
+  "INVALID_DEPARTMENT": "The department does not exist.",
+  "INVALID_RISK_REFERENCE": "One of the risks does not exist.",
+  "INVALID_CONTROL_REFERENCE": "One of the controls does not exist.",
+  "INVALID_REQUIREMENT_REFERENCE": "One of the requirements does not exist.",
+  "INVALID_SYSTEM_REFERENCE": "The IT system does not exist.",
+  "PARENT_REQUIRED": "Sections and clauses must belong to a source document.",
+  "INVALID_PARENT_LEVEL": "Sections belong to a source document; clauses to a source or a section.",
+  "INVALID_FILE_TYPE": "The file is not an Excel workbook (.xlsx).",
+  "EMPTY_FILE": "The file has no sheet.",
+  "MISSING_CODE_COLUMN": "The sheet needs a \"Code\" column.",
+  "TOO_MANY_ROWS": "At most 2,000 rows per import."
 }

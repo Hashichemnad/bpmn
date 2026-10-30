@@ -147,6 +147,7 @@ function base(o: RiskRow | ControlRow | RequirementRow, ext: { department: unkno
     owner: o.owner ?? null,
     department: (ext.department as RiskDto['department']) ?? null,
     stepCount: o._count.links,
+    createdById: o.createdById,
     createdAt: o.createdAt.toISOString(),
     updatedAt: o.updatedAt.toISOString(),
   };

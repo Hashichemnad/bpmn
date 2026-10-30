@@ -21,8 +21,15 @@ Steps (tick as they are committed; a new session continues at the first unticked
       comments, settings, per-process view); GRC editors link GRC items without model rights; `/objects` refuses
       GRC types (`USE_GRC_REGISTER`). Shared `grc.ts` (schemas, ratings, settings). Tests: shared 7, API 6 (+
       authorisation matrix covers the new tables), SECURITY.md route table regenerated.
-- [ ] 2. GRC workspace: menu "Risk & Compliance", registers with filters, detail pages (relations, steps,
-      timeline, comments), forms EN/AR, Excel import / export, risk matrix settings.
+- [x] 2. GRC workspace: menu "Risk & Compliance" (dashboard link lands in step 4), risk register, control
+      library, requirements (filters in the URL: search, status, category, rating, department, owner, overdue,
+      coverage toggles, heat-map cell, process; sorting; paging), detail pages (ratings, both matrices,
+      relations, linked steps → modeler deep link, assessment timeline + comments), create / edit / propose
+      forms EN/AR, Excel export / template / import with validation report (API `/grc/export|template|import`,
+      audited `EXPORT` / `IMPORT`), Settings → Risk & Compliance (bands, matrix labels, categories, portal
+      visibility, reminder days, live preview). Library objects of GRC types redirect to their GRC page. Demo
+      seed `seed-grc.ts` (10 risks, 12 controls, 6 requirements, links incl. published links; demo user
+      `risk@processhub.local`) — done early to have data for the UI. Tests: API import / export 1, seed, i18n keys.
 - [ ] 3. Modeler and portal: step panel "Risks & Controls", badges + warning, colour-by views, portal setting,
       handbook section.
 - [ ] 4. Dashboards: heat maps (org / department / process, drill-down), coverage dashboard, RCM export.

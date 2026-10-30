@@ -236,6 +236,8 @@ zod / UUID pipe; file uploads are checked in the service (allow-list, content sn
 | DELETE | `/grc/controls/:id`                          | any of `grc.edit`, `grc.propose`                          | param `id`                          | default    |
 | GET    | `/grc/controls/:id`                          | `grc.read`                                                | param `id`                          | default    |
 | PATCH  | `/grc/controls/:id`                          | any of `grc.edit`, `grc.propose`                          | body, param `id`                    | default    |
+| GET    | `/grc/export/:kind`                          | `grc.read`                                                | param `kind`, query                 | default    |
+| POST   | `/grc/import/:kind`                          | `grc.edit`                                                | file, param `kind`, query           | default    |
 | POST   | `/grc/items/:id/comments`                    | `grc.read` + `comments.write`                             | body, param `id`                    | default    |
 | GET    | `/grc/items/:id/timeline`                    | `grc.read`                                                | param `id`                          | default    |
 | GET    | `/grc/processes/:id`                         | `grc.read` + `processes.read`                             | param `id`                          | default    |
@@ -251,6 +253,7 @@ zod / UUID pipe; file uploads are checked in the service (allow-list, content sn
 | PATCH  | `/grc/risks/:id`                             | any of `grc.edit`, `grc.propose`                          | body, param `id`                    | default    |
 | GET    | `/grc/settings`                              | any of `grc.read`, `processes.read`                       | —                                   | default    |
 | PUT    | `/grc/settings`                              | `grc.admin`                                               | body                                | default    |
+| GET    | `/grc/template/:kind`                        | `grc.edit`                                                | param `kind`, query                 | default    |
 | GET    | `/health`                                    | **public**                                                | —                                   | skip       |
 | GET    | `/integrations/git`                          | `settings.manage`                                         | —                                   | default    |
 | PUT    | `/integrations/git`                          | `settings.manage`                                         | body                                | default    |

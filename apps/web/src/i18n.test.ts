@@ -36,6 +36,17 @@ import {
   SSO_PROVIDERS,
 } from '@processhub/shared';
 import { CONVENTION_RULES, THEME_KINDS } from '@processhub/shared';
+import {
+  CONTROL_EFFECTIVENESS,
+  CONTROL_FREQUENCIES,
+  CONTROL_NATURES,
+  CONTROL_TYPES,
+  GRC_OBJECT_TYPES,
+  GRC_PORTAL_VISIBILITY,
+  GRC_STATUSES,
+  REQUIREMENT_LEVELS,
+  RISK_RESPONSES,
+} from '@processhub/shared';
 import { resources } from './i18n';
 import { BADGE_KINDS } from './features/modeler/badges';
 import { PALETTE_ENTRIES, PALETTE_GROUPS, READY_STEPS } from './features/modeler/palette-entries';
@@ -104,6 +115,22 @@ describe('translations', () => {
         `objects:edit.${o}`,
       ]),
       ...LINK_RELATIONS.map((r) => `objects:relations.${r}`),
+      // Risk & Compliance (Phase 4.1)
+      ...GRC_OBJECT_TYPES.flatMap((g) => [
+        `grc:types.${g}`,
+        ...['title', 'subtitle', 'empty', 'new', 'edit', 'propose'].map(
+          (k) => `grc:register.${g}.${k}`,
+        ),
+      ]),
+      ...GRC_STATUSES.map((v) => `grc:status.${v}`),
+      ...RISK_RESPONSES.map((v) => `grc:response.${v}`),
+      ...CONTROL_TYPES.map((v) => `grc:controlType.${v}`),
+      ...CONTROL_NATURES.map((v) => `grc:nature.${v}`),
+      ...CONTROL_FREQUENCIES.map((v) => `grc:frequency.${v}`),
+      ...CONTROL_EFFECTIVENESS.map((v) => `grc:effectiveness.${v}`),
+      ...REQUIREMENT_LEVELS.map((v) => `grc:level.${v}`),
+      ...GRC_PORTAL_VISIBILITY.map((v) => `grc:settings.portalOption.${v}`),
+      ...['CREATED', 'ASSESSMENT', 'STATUS', 'COMMENT'].map((v) => `grc:activity.${v}`),
       ...['ROLE', 'SYSTEM', 'DOCUMENT'].flatMap((o) => [
         `objects:library.${o}.title`,
         `objects:library.${o}.subtitle`,

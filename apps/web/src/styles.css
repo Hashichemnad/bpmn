@@ -2487,3 +2487,85 @@ textarea.ant-input[dir='rtl'] {
   padding-block-start: 4px !important;
   color: #b91c1c;
 }
+
+/* ---------- Risk & Compliance (Phase 4.1) ---------- */
+.ph-risk-matrix {
+  inline-size: 100%;
+  max-inline-size: 560px;
+}
+.ph-risk-matrix-grid,
+.ph-risk-matrix-row {
+  inline-size: 100%;
+}
+.ph-risk-matrix-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.ph-risk-matrix-row {
+  display: grid;
+  grid-template-columns: minmax(90px, 1.3fr) repeat(5, minmax(40px, 1fr));
+  gap: 4px;
+}
+.ph-risk-matrix-label {
+  font-size: 12px;
+  color: rgba(0, 0, 0, 0.65);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  line-height: 1.2;
+}
+.ph-risk-matrix-label span {
+  font-weight: 600;
+}
+.ph-risk-matrix-label.is-col {
+  justify-content: flex-start;
+  text-align: center;
+  flex-direction: column;
+  font-size: 11px;
+  overflow-wrap: anywhere;
+}
+.ph-risk-matrix-cell {
+  min-block-size: 40px;
+  border: 0;
+  border-radius: 6px;
+  font-weight: 600;
+  font-size: 15px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: inherit;
+}
+button.ph-risk-matrix-cell {
+  cursor: pointer;
+}
+button.ph-risk-matrix-cell:hover,
+button.ph-risk-matrix-cell:focus-visible {
+  outline: 2px solid #1f1f1f;
+  outline-offset: 1px;
+}
+.ph-risk-matrix-cell.is-selected {
+  outline: 3px solid #1677ff;
+  outline-offset: 1px;
+}
+.ph-risk-matrix-axis {
+  font-size: 12px;
+  color: rgba(0, 0, 0, 0.45);
+}
+.ph-risk-matrix-axis-x {
+  text-align: center;
+  font-size: 12px;
+  color: rgba(0, 0, 0, 0.45);
+}
+.ph-grc-timeline .ant-timeline-item-content {
+  margin-block-end: 4px;
+}
+.ph-grc-change {
+  font-size: 13px;
+}
+
+.ph-grc-matrices {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 24px;
+}

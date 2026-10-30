@@ -61,8 +61,20 @@ describe('Seed (e2e)', () => {
       ['modeler@processhub.local', 'MODELER'],
       ['owner@processhub.local', 'PROCESS_OWNER'],
       ['reviewer@processhub.local', 'REVIEWER'],
+      ['risk@processhub.local', 'RISK_OFFICER'],
       ['viewer@processhub.local', 'VIEWER'],
     ]);
+    // Phase 4.1: risks, controls and requirements linked to steps, incl. a critical residual
+    // risk without an effective control.
+    expect(await ctx.prisma.risk.count()).toBe(10);
+    expect(await ctx.prisma.control.count()).toBe(12);
+    expect(await ctx.prisma.requirement.count()).toBe(6);
+    const uncovered = await ctx.prisma.risk.findFirstOrThrow({
+      where: { object: { code: 'RSK-02' } },
+      include: { controls: { include: { control: true } } },
+    });
+    expect(uncovered.residualLikelihood! * uncovered.residualImpact!).toBeGreaterThanOrEqual(16);
+    expect(uncovered.controls.every((c) => c.control.effectiveness === 'NOT_ASSESSED')).toBe(true);
     expect(await ctx.prisma.workflow.count()).toBe(2);
     // AI assistant: suggestion chips for the demo, disabled until a key is entered.
     const ai = await ctx.prisma.setting.findUniqueOrThrow({ where: { key: 'ai' } });

@@ -1,3 +1,4 @@
+import ExcelJS from 'exceljs';
 import { DEFAULT_GRC_SETTINGS, PROCESS_ELEMENT_ID } from '@processhub/shared';
 import {
   createApp,
@@ -340,5 +341,134 @@ describe('Risk & Compliance (e2e)', () => {
     // Deleting a risk removes its links.
     await officer.delete(`/grc/risks/${r.id}`).expect(204);
     expect(await ctx.prisma.objectLink.count({ where: { repoObjectId: r.id } })).toBe(0);
+  });
+
+  /** Workbook with a header row and data rows. */
+  async function xlsx(header: string[], rows: (string | number)[][]) {
+    const wb = new ExcelJS.Workbook();
+    const ws = wb.addWorksheet('Sheet');
+    ws.addRow(header);
+    rows.forEach((r) => ws.addRow(r));
+    return Buffer.from(await wb.xlsx.writeBuffer());
+  }
+
+  /** Reads a binary response body into a Buffer. */
+  const binary = (r: import('node:stream').Readable, cb: (e: Error | null, b: Buffer) => void) => {
+    const chunks: Buffer[] = [];
+    r.on('data', (c: Buffer) => chunks.push(c));
+    r.on('end', () => cb(null, Buffer.concat(chunks)));
+  };
+
+  it('exports registers, validates imports before importing and upserts by code', async () => {
+    const existing = (await risk(officer).expect(201)).body.item;
+    await officer.post('/grc/controls').send({ code: 'C-01', nameEn: 'Quotations' }).expect(201);
+    await officer
+      .post('/grc/requirements')
+      .send({ code: 'PL', nameEn: 'Procurement law' })
+      .expect(201);
+
+    // Template and export (Arabic headers, right-to-left sheet).
+    const template = await officer
+      .get('/grc/template/risks?locale=ar')
+      .buffer(true)
+      .parse(binary as never)
+      .expect(200);
+    expect(template.headers['content-type']).toContain('spreadsheetml');
+    const wb = new ExcelJS.Workbook();
+    await wb.xlsx.load(template.body);
+    expect(wb.worksheets[0].views[0]).toMatchObject({ rightToLeft: true });
+    expect(wb.worksheets[0].getRow(1).getCell(1).value).toBe('الرمز');
+    expect(wb.worksheets[0].rowCount).toBe(1);
+    const exported = await auditor
+      .get('/grc/export/risks')
+      .buffer(true)
+      .parse(binary as never)
+      .expect(200);
+    await wb.xlsx.load(exported.body);
+    expect(wb.worksheets[0].getRow(2).getCell(1).value).toBe('R-01');
+    await auditor.get('/grc/template/risks').expect(403);
+
+    const header = [
+      'Code',
+      'Title (English)',
+      'Category (key)',
+      'Inherent likelihood (1-5)',
+      'Inherent impact (1-5)',
+      'Controls (codes; separated)',
+      'Owner (e-mail)',
+    ];
+    const bad = await xlsx(header, [
+      ['R-02', 'Duplicate invoices', 'FINANCIAL', 3, 9, 'C-01', 'officer@test.local'],
+      ['R-03', 'Bribery', 'NOPE', 2, 2, 'C-99', 'nobody@test.local'],
+      ['R-04', '', 'FINANCIAL', 2, 2, '', ''],
+      ['R-02', 'Again', 'FINANCIAL', 2, 2, '', ''],
+    ]);
+    const report = (
+      await officer
+        .post('/grc/import/risks?dryRun=false')
+        .attach('file', bad, 'risks.xlsx')
+        .expect(200)
+    ).body;
+    expect(report.imported).toBe(false);
+    expect(report.errors).toEqual(
+      expect.arrayContaining([
+        { row: 2, column: 'inherentImpact', code: 'INVALID_RATING' },
+        { row: 3, column: 'category', code: 'INVALID_CATEGORY' },
+        { row: 3, column: 'controls', code: 'UNKNOWN_CONTROL' },
+        { row: 3, column: 'owner', code: 'UNKNOWN_USER' },
+        { row: 4, column: 'nameEn', code: 'NAME_REQUIRED' },
+        { row: 5, column: 'code', code: 'DUPLICATE_IN_FILE' },
+      ]),
+    );
+    expect(await ctx.prisma.risk.count()).toBe(1);
+
+    const good = await xlsx(header, [
+      ['R-01', 'Split orders (renamed)', 'FRAUD', 5, 5, 'C-01', ''],
+      ['R-02', 'Duplicate invoices', 'FINANCIAL', 3, 4, 'C-01', 'officer@test.local'],
+    ]);
+    const dry = (
+      await officer.post('/grc/import/risks').attach('file', good, 'risks.xlsx').expect(200)
+    ).body;
+    expect(dry).toMatchObject({ rows: 2, created: 1, updated: 1, errors: [], imported: false });
+    const done = (
+      await officer
+        .post('/grc/import/risks?dryRun=false')
+        .attach('file', good, 'risks.xlsx')
+        .expect(200)
+    ).body;
+    expect(done.imported).toBe(true);
+    const updated = (await officer.get(`/grc/risks/${existing.id}`).expect(200)).body.item;
+    expect(updated).toMatchObject({
+      nameEn: 'Split orders (renamed)',
+      inherentLikelihood: 5,
+      controls: [{ code: 'C-01' }],
+    });
+    expect((await officer.get('/grc/risks?q=R-02').expect(200)).body.items[0]).toMatchObject({
+      owner: { email: 'officer@test.local' },
+    });
+    expect(await ctx.prisma.auditLog.count({ where: { action: 'IMPORT' } })).toBe(1);
+
+    // Requirements: parents in the same file come first; not an Excel file is refused.
+    const reqs = await xlsx(
+      ['Code', 'Title (English)', 'Level', 'Parent (code)'],
+      [
+        ['PL-1.1', 'Clause 1.1', 'CLAUSE', 'PL-1'],
+        ['PL-1', 'Section 1', 'SECTION', 'PL'],
+      ],
+    );
+    const imported = (
+      await officer
+        .post('/grc/import/requirements?dryRun=false')
+        .attach('file', reqs, 'reqs.xlsx')
+        .expect(200)
+    ).body;
+    expect(imported).toMatchObject({ created: 2, errors: [], imported: true });
+    const clause = (await officer.get('/grc/requirements?q=PL-1.1').expect(200)).body.items[0];
+    expect(clause.parent).toMatchObject({ code: 'PL-1' });
+    await officer
+      .post('/grc/import/requirements')
+      .attach('file', Buffer.from('code,name'), 'x.xlsx')
+      .expect(400);
+    await modeler.post('/grc/import/risks').attach('file', good, 'risks.xlsx').expect(403);
   });
 });

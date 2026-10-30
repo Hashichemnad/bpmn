@@ -514,6 +514,8 @@ interface GrcBaseDto {
   overdue: boolean;
   /** Linked steps (and process-level links) in active processes. */
   stepCount: number;
+  /** Proposer: may change and delete the item while it is a draft. */
+  createdById: string | null;
   createdAt: string;
   updatedAt: string;
 }

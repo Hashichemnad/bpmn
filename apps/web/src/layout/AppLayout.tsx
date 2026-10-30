@@ -34,6 +34,10 @@ import {
   TeamOutlined,
   UserOutlined,
   ThunderboltOutlined,
+  HeatMapOutlined,
+  AlertOutlined,
+  SafetyOutlined,
+  BankOutlined,
 } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
 import { PERMISSIONS, type Locale } from '@processhub/shared';
@@ -153,6 +157,34 @@ export function AppLayout() {
         ],
       });
     }
+    if (can(PERMISSIONS.GRC_READ)) {
+      list.push({
+        type: 'group',
+        label: t('nav.grcGroup'),
+        children: [
+          {
+            key: '/grc/dashboard',
+            icon: <HeatMapOutlined />,
+            label: <Link to="/grc/dashboard">{t('nav.grcDashboard')}</Link>,
+          },
+          {
+            key: '/grc/risks',
+            icon: <AlertOutlined />,
+            label: <Link to="/grc/risks">{t('nav.risks')}</Link>,
+          },
+          {
+            key: '/grc/controls',
+            icon: <SafetyOutlined />,
+            label: <Link to="/grc/controls">{t('nav.controls')}</Link>,
+          },
+          {
+            key: '/grc/requirements',
+            icon: <BankOutlined />,
+            label: <Link to="/grc/requirements">{t('nav.requirements')}</Link>,
+          },
+        ],
+      });
+    }
     if (can(PERMISSIONS.OBJECTS_READ)) {
       list.push({
         type: 'group',
@@ -224,6 +256,13 @@ export function AppLayout() {
         label: <Link to="/settings/conventions">{t('nav.conventions')}</Link>,
       });
     }
+    if (can(PERMISSIONS.GRC_ADMIN)) {
+      admin.push({
+        key: '/settings/grc',
+        icon: <AlertOutlined />,
+        label: <Link to="/settings/grc">{t('nav.grcSettings')}</Link>,
+      });
+    }
     if (can(PERMISSIONS.PORTAL_MANAGE)) {
       admin.push({
         key: '/settings/portal',
@@ -257,12 +296,17 @@ export function AppLayout() {
       '/library/systems',
       '/library/documents',
       '/library/dictionary',
+      '/grc/dashboard',
+      '/grc/risks',
+      '/grc/controls',
+      '/grc/requirements',
       '/admin/users',
       '/admin/departments',
       '/admin/audit',
       '/settings/workflows',
       '/settings/conventions',
       '/settings/portal',
+      '/settings/grc',
       '/settings',
     ].find((k) => p.startsWith(k));
     return match ? [match] : [];
