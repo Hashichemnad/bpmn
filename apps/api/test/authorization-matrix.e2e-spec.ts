@@ -165,6 +165,12 @@ describe('Authorisation matrix (e2e)', () => {
         }),
       ),
       gitItem: '00000000-0000-4000-8000-000000000000',
+      // Phase 4.2 records from the demo seed.
+      controlTest: await anyId(p.controlTest.findFirst()),
+      issue: await anyId(p.issue.findFirst()),
+      engagement: await anyId(p.auditEngagement.findFirst()),
+      campaign: await anyId(p.surveyCampaign.findFirst()),
+      grcChange: '00000000-0000-4000-8000-000000000000',
     });
   });
 
@@ -193,6 +199,7 @@ describe('Authorisation matrix (e2e)', () => {
       requirements: ids.requirement,
       items: ids.risk,
       processes: ids.process,
+      changes: ids.grcChange,
     };
     const byPrefix: Record<string, string> = {
       processes: ids.process,
@@ -210,6 +217,10 @@ describe('Authorisation matrix (e2e)', () => {
       integrations: ids.gitItem,
       portal: type === 'processes' ? ids.process : ids.page,
       governance: type === 'processes' ? ids.process : ids.page,
+      'control-tests': ids.controlTest,
+      issues: ids.issue,
+      audits: ids.engagement,
+      surveys: ids.campaign,
     };
     return path
       .replace(':type', type)
@@ -286,6 +297,23 @@ describe('Authorisation matrix (e2e)', () => {
   it('Reviewers cannot change anything except adding comments and their own review decisions', async () => {
     const reviewer = await loggedIn(ctx.app, 'reviewer@processhub.local', DEMO_PASSWORD);
     await sweep(reviewer, [...SELF_SERVICE, ...REVIEWER_ALLOWED]);
+  });
+
+  it('Modelers (GRC readers) cannot change any assurance record (Phase 4.2)', async () => {
+    const modeler = await loggedIn(ctx.app, 'modeler@processhub.local', DEMO_PASSWORD);
+    const assurance =
+      /^(POST|PUT|PATCH|DELETE) \/(grc\/changes|control-tests|issues|audits|surveys|assurance)(\/|$)/;
+    const before = await fingerprint();
+    const succeeded: string[] = [];
+    for (const r of mutating().filter((x) => assurance.test(`${x.method} ${x.path}`))) {
+      for (const url of urls(r.path)) {
+        const call = modeler[r.method.toLowerCase() as 'post' | 'put' | 'patch' | 'delete'](url);
+        const res = await call.send({});
+        if (res.status < 400) succeeded.push(`${r.method} ${r.path} → ${res.status}`);
+      }
+    }
+    expect(succeeded).toEqual([]);
+    expect(await fingerprint()).toEqual(before);
   });
 
   it('Viewers cannot read any workspace endpoint (only the portal and their own data)', async () => {

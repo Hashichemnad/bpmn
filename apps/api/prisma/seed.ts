@@ -19,6 +19,7 @@ import { ensureDemoEmailSettings, seedGovernanceDemo } from './seed-governance';
 import { seedAiDemo, seedAiDemoContent } from './seed-ai';
 import { seedDictionaryDemo } from './seed-dictionary';
 import { seedGrcDemo } from './seed-grc';
+import { seedAssuranceDemo } from './seed-assurance';
 
 const prisma = new PrismaClient();
 
@@ -423,6 +424,7 @@ export async function main() {
     await seedAiDemoContent(prisma, adminId);
     await seedDictionaryDemo(prisma, adminId);
     await seedGrcDemo(prisma, adminId);
+    await seedAssuranceDemo(prisma, adminId);
   }
 }
 
