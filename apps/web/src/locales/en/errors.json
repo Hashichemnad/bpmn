@@ -175,5 +175,15 @@
   "INVALID_DATA_OBJECT": "Choose a data object from the list.",
   "SAME_APPLICATION": "Source and target must be different applications.",
   "CAPABILITY_TOO_DEEP": "The capability map has at most three levels.",
-  "CAPABILITY_HAS_CHILDREN": "Delete or move the sub-capabilities first."
+  "CAPABILITY_HAS_CHILDREN": "Delete or move the sub-capabilities first.",
+  "SALESFORCE_OWNED": "This value comes from Salesforce and is read-only in ProcessHub.",
+  "INVALID_PERIOD": "The period does not match the KPI's frequency (e.g. 2026-03, 2026-Q1, 2026).",
+  "FUTURE_PERIOD": "Values can only be entered for periods that have started.",
+  "FREQUENCY_HAS_VALUES": "The frequency cannot change once values are recorded.",
+  "CALCULATION_REQUIRED": "Calculated KPIs need a measure and a process.",
+  "NOT_CALCULATED": "This KPI is not calculated from a process.",
+  "NO_CALCULATED_VALUE": "The process model has no values for this calculation yet.",
+  "OBJECTIVE_HAS_CHILDREN": "Delete or move the sub-objectives first.",
+  "INVALID_OBJECTIVE": "Choose an objective from the list.",
+  "USE_KPI_REGISTER": "KPIs are managed in the KPI catalogue (Performance)."
 }

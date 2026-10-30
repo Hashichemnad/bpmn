@@ -46,6 +46,8 @@ import {
   SwapOutlined,
   DatabaseOutlined,
   NodeIndexOutlined,
+  LineChartOutlined,
+  AimOutlined,
 } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
 import { PERMISSIONS, type Locale } from '@processhub/shared';
@@ -60,6 +62,7 @@ import { GlobalSearch } from '@/features/search/GlobalSearch';
 import { NotificationBell } from '@/features/notifications/NotificationBell';
 import { assuranceTaskCount, useAssuranceTasks } from '@/api/assurance';
 import { useMyTasks } from '@/api/governance';
+import { useKpiTasks } from '@/api/kpi';
 
 const { Header, Sider, Content } = Layout;
 
@@ -101,6 +104,7 @@ export function AppLayout() {
 
   const tasks = useMyTasks();
   const assurance = useAssuranceTasks(!!user);
+  const kpiTasks = useKpiTasks(!!user && canAny(PERMISSIONS.KPI_MEASURE, PERMISSIONS.KPI_EDIT));
   const taskCount = tasks.data
     ? tasks.data.reviews.length +
       tasks.data.toPublish.length +
@@ -108,7 +112,8 @@ export function AppLayout() {
       tasks.data.dueReviews.length +
       tasks.data.grcReviews.length +
       tasks.data.feedback.length +
-      assuranceTaskCount(assurance.data)
+      assuranceTaskCount(assurance.data) +
+      (kpiTasks.data?.length ?? 0)
     : 0;
 
   const items = useMemo<MenuProps['items']>(() => {
@@ -227,6 +232,29 @@ export function AppLayout() {
                 },
               ]
             : []),
+        ],
+      });
+    }
+    if (can(PERMISSIONS.KPI_READ)) {
+      list.push({
+        type: 'group',
+        label: t('kpi:nav.group'),
+        children: [
+          {
+            key: '/kpis/dashboard',
+            icon: <LineChartOutlined />,
+            label: <Link to="/kpis/dashboard">{t('kpi:nav.dashboard')}</Link>,
+          },
+          {
+            key: '/kpis',
+            icon: <DashboardOutlined />,
+            label: <Link to="/kpis">{t('kpi:nav.kpis')}</Link>,
+          },
+          {
+            key: '/kpis/objectives',
+            icon: <AimOutlined />,
+            label: <Link to="/kpis/objectives">{t('kpi:nav.objectives')}</Link>,
+          },
         ],
       });
     }

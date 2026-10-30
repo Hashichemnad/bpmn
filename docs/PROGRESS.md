@@ -32,9 +32,17 @@ Steps (tick as they are committed; a new session continues at the first unticked
       `landscape-layout.ts`, RTL, export SVG / PNG); Traceability page; "Impact analysis" tab on the application;
       modeler "Colour by → Application lifecycle"; handbook option "Systems and data". Tests: API +1, web +3
       (layout 2, colour-by 1), Playwright +1.
-- [ ] 3. KPIs (M12): KPI table on the KPI library objects (migration), objectives, relations, measurements with
-      evidence, owner reminders, Excel import, calculated process KPIs, permissions `kpi.read` / `kpi.edit` /
-      `kpi.measure`.
+- [x] 3. KPIs (M12, D-111 – D-113): `Kpi` 1:1 on the KPI library objects (migration backfills; `/objects` refuses
+      KPI), `KpiPeriodTarget`, `KpiMeasurement`, `StrategicObjective`, `KpiObjective` / `KpiCapability` / `KpiRisk`
+      (key risk indicators); step / process links via `MEASURES`; shared `kpi.ts` (periods, `kpiRag`, calculated
+      process KPIs); permissions `kpi.read` / `kpi.edit` / `kpi.measure` (owners); API `/kpis` (catalogue, values,
+      evidence via the assurance file store, recalculate, objectives, process view, tasks, settings, Excel for
+      kpis / measurements / objectives), `KpiScheduler` reminders (notification `KPI`). Web: Performance menu
+      (KPIs register with status + sparkline, KPI page with Recharts chart, value entry with status preview and
+      evidence, objectives tree, settings modal), My tasks "KPI values to enter". Demo seed `seed-ea-kpi.ts`
+      (12 applications, 10 interfaces, 7 data objects, 17 capabilities, 2 objectives, 8 KPIs × 12 months, KRI on
+      RSK-03) — pulled forward from step 6 for the e2e tests. Tests: shared 3, API 5 (`kpi.e2e-spec.ts`),
+      Playwright 1 (`kpi.spec.ts`).
 - [ ] 4. KPI dashboards: scorecard, KPI detail chart, process performance, KPI badge and colour-by, portal setting.
 - [ ] 5. Salesforce KPI link (off by default): settings, encrypted credentials, mapping, preview, apply, scheduled
       sync, sync log, notifications; mocked API in tests; DEPLOYMENT.md setup.

@@ -1,0 +1,158 @@
+{
+  "nav": {
+    "group": "Performance",
+    "dashboard": "KPI dashboard",
+    "kpis": "KPIs",
+    "objectives": "Strategic objectives"
+  },
+  "register": {
+    "title": "KPI catalogue",
+    "subtitle": "Key performance indicators with targets, thresholds, owners and actual values",
+    "new": "New KPI",
+    "edit": "Edit KPI",
+    "empty": "No KPIs yet",
+    "deleteConfirm": "Delete this KPI? Its links to processes and steps are removed.",
+    "dueOnly": "Value due",
+    "settings": "KPI settings"
+  },
+  "objectives": {
+    "title": "Strategic objectives",
+    "subtitle": "The objectives the KPIs contribute to",
+    "new": "New objective",
+    "edit": "Edit objective",
+    "empty": "No objectives yet",
+    "deleteConfirm": "Delete this objective?",
+    "kpis": "KPIs"
+  },
+  "fields": {
+    "code": "Code",
+    "name": "KPI",
+    "definitionEn": "Definition (English)",
+    "definitionAr": "Definition (Arabic)",
+    "formulaEn": "Formula / calculation (English)",
+    "formulaAr": "Formula / calculation (Arabic)",
+    "unit": "Unit",
+    "direction": "Direction",
+    "frequency": "Frequency",
+    "target": "Target",
+    "greenThreshold": "Green from",
+    "redThreshold": "Red from",
+    "thresholdHint": "Green from this value (default: the target), red from the red value, amber in between",
+    "baseline": "Baseline",
+    "baselinePeriod": "Baseline period",
+    "owner": "Owner",
+    "department": "Department",
+    "dataSource": "Data source",
+    "status": "Status",
+    "calculatedMetric": "Calculated from",
+    "calculatedProcess": "Process",
+    "objectives": "Objectives",
+    "capabilities": "Capabilities",
+    "risks": "Key risk indicator of",
+    "processes": "Processes measured",
+    "periodTargets": "Targets per period",
+    "period": "Period",
+    "actual": "Actual",
+    "latest": "Latest",
+    "trend": "Trend",
+    "value": "Value",
+    "comment": "Comment",
+    "evidence": "Evidence",
+    "source": "Source",
+    "updatedBy": "Entered by",
+    "parent": "Parent objective",
+    "steps": "Steps",
+    "step": "Step",
+    "process": "Process",
+    "wholeProcess": "Whole process"
+  },
+  "direction": {
+    "HIGHER_IS_BETTER": "Higher is better",
+    "LOWER_IS_BETTER": "Lower is better"
+  },
+  "frequency": {
+    "MONTHLY": "Monthly",
+    "QUARTERLY": "Quarterly",
+    "ANNUAL": "Annual"
+  },
+  "dataSource": {
+    "MANUAL": "Manual entry",
+    "EXCEL": "Excel import",
+    "SALESFORCE": "Salesforce",
+    "CALCULATED": "Calculated from the process"
+  },
+  "status": {
+    "DRAFT": "Draft",
+    "ACTIVE": "Active",
+    "RETIRED": "Retired"
+  },
+  "rag": {
+    "GREEN": "On target",
+    "AMBER": "Watch",
+    "RED": "Off target",
+    "none": "No value"
+  },
+  "metric": {
+    "DURATION_MINUTES": "Planned duration of the main path (minutes)",
+    "WAITING_MINUTES": "Waiting time of the main path (minutes)",
+    "COST_PER_EXECUTION": "Cost per execution of the main path",
+    "HANDOVERS": "Handovers between lanes",
+    "AUTOMATION_RATE": "Automation rate (system steps, %)"
+  },
+  "detail": {
+    "definition": "Definition",
+    "measurements": "Measurements",
+    "history": "History",
+    "links": "Processes and steps",
+    "noLinks": "Not linked to a process yet",
+    "noValues": "No values yet",
+    "enterValue": "Enter value",
+    "recalculate": "Record current value",
+    "calculatedNow": "Current value from the model: {{value}}",
+    "uploadEvidence": "Add evidence",
+    "due": "Value for {{period}} is due",
+    "deleteValueConfirm": "Delete this value?",
+    "salesforce": "Source: Salesforce",
+    "lastSync": "Last sync {{when}}",
+    "openInSalesforce": "Open in Salesforce",
+    "lockedHint": "Fields from Salesforce are read-only here.",
+    "measurementsExcel": "Values (Excel)"
+  },
+  "measure": {
+    "title": "Enter actual value — {{name}}",
+    "period": "Period",
+    "value": "Actual value ({{unit}})",
+    "comment": "Comment",
+    "evidence": "Evidence (optional)",
+    "statusPreview": "Status with this value"
+  },
+  "tasks": {
+    "tab": "KPI values to enter",
+    "period": "Period",
+    "enter": "Enter value",
+    "overdue": "Overdue"
+  },
+  "settings": {
+    "title": "KPI settings",
+    "showInPortal": "Show KPIs in the portal",
+    "showInPortalHint": "A process page in the Knowledge Portal lists the KPIs of the process with their latest status.",
+    "reminders": "Remind owners when a value is due"
+  },
+  "calculated": {
+    "title": "Calculated process KPIs",
+    "hint": "From the step attributes of the working model (main path)",
+    "duration": "Planned duration",
+    "waiting": "Waiting time",
+    "cost": "Cost per execution",
+    "handovers": "Handovers between lanes",
+    "automation": "Automation rate",
+    "none": "—"
+  },
+  "filters": {
+    "search": "Search code or name",
+    "allObjectives": "All objectives"
+  },
+  "period": {
+    "quarter": "Q{{q}} {{year}}"
+  }
+}

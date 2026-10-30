@@ -1,0 +1,158 @@
+{
+  "nav": {
+    "group": "الأداء",
+    "dashboard": "لوحة مؤشرات الأداء",
+    "kpis": "مؤشرات الأداء",
+    "objectives": "الأهداف الاستراتيجية"
+  },
+  "register": {
+    "title": "كتالوج مؤشرات الأداء",
+    "subtitle": "مؤشرات الأداء الرئيسية بمستهدفاتها وحدودها ومالكيها وقيمها الفعلية",
+    "new": "مؤشر جديد",
+    "edit": "تعديل المؤشر",
+    "empty": "لا توجد مؤشرات بعد",
+    "deleteConfirm": "حذف هذا المؤشر؟ ستُزال روابطه بالعمليات والخطوات.",
+    "dueOnly": "قيمة مستحقة",
+    "settings": "إعدادات المؤشرات"
+  },
+  "objectives": {
+    "title": "الأهداف الاستراتيجية",
+    "subtitle": "الأهداف التي تُسهم فيها المؤشرات",
+    "new": "هدف جديد",
+    "edit": "تعديل الهدف",
+    "empty": "لا توجد أهداف بعد",
+    "deleteConfirm": "حذف هذا الهدف؟",
+    "kpis": "المؤشرات"
+  },
+  "fields": {
+    "code": "الرمز",
+    "name": "المؤشر",
+    "definitionEn": "التعريف (إنجليزي)",
+    "definitionAr": "التعريف (عربي)",
+    "formulaEn": "المعادلة / طريقة الحساب (إنجليزي)",
+    "formulaAr": "المعادلة / طريقة الحساب (عربي)",
+    "unit": "الوحدة",
+    "direction": "الاتجاه",
+    "frequency": "دورية القياس",
+    "target": "المستهدف",
+    "greenThreshold": "أخضر من",
+    "redThreshold": "أحمر من",
+    "thresholdHint": "أخضر ابتداءً من هذه القيمة (افتراضيًا المستهدف)، وأحمر ابتداءً من القيمة الحمراء، وكهرماني بينهما",
+    "baseline": "خط الأساس",
+    "baselinePeriod": "فترة خط الأساس",
+    "owner": "المالك",
+    "department": "الإدارة",
+    "dataSource": "مصدر البيانات",
+    "status": "الحالة",
+    "calculatedMetric": "يُحسب من",
+    "calculatedProcess": "العملية",
+    "objectives": "الأهداف",
+    "capabilities": "القدرات",
+    "risks": "مؤشر خطر رئيسي لـ",
+    "processes": "العمليات المقيسة",
+    "periodTargets": "المستهدفات حسب الفترة",
+    "period": "الفترة",
+    "actual": "الفعلي",
+    "latest": "آخر قيمة",
+    "trend": "الاتجاه",
+    "value": "القيمة",
+    "comment": "تعليق",
+    "evidence": "الأدلة",
+    "source": "المصدر",
+    "updatedBy": "أدخلها",
+    "parent": "الهدف الأعلى",
+    "steps": "الخطوات",
+    "step": "الخطوة",
+    "process": "العملية",
+    "wholeProcess": "العملية كاملة"
+  },
+  "direction": {
+    "HIGHER_IS_BETTER": "الأعلى أفضل",
+    "LOWER_IS_BETTER": "الأقل أفضل"
+  },
+  "frequency": {
+    "MONTHLY": "شهري",
+    "QUARTERLY": "ربع سنوي",
+    "ANNUAL": "سنوي"
+  },
+  "dataSource": {
+    "MANUAL": "إدخال يدوي",
+    "EXCEL": "استيراد من Excel",
+    "SALESFORCE": "Salesforce",
+    "CALCULATED": "محسوب من العملية"
+  },
+  "status": {
+    "DRAFT": "مسودة",
+    "ACTIVE": "نشط",
+    "RETIRED": "موقوف"
+  },
+  "rag": {
+    "GREEN": "ضمن المستهدف",
+    "AMBER": "تحت المراقبة",
+    "RED": "خارج المستهدف",
+    "none": "لا توجد قيمة"
+  },
+  "metric": {
+    "DURATION_MINUTES": "المدة المخططة للمسار الرئيسي (دقائق)",
+    "WAITING_MINUTES": "وقت الانتظار في المسار الرئيسي (دقائق)",
+    "COST_PER_EXECUTION": "تكلفة التنفيذ للمسار الرئيسي",
+    "HANDOVERS": "عمليات التسليم بين المسارات",
+    "AUTOMATION_RATE": "نسبة الأتمتة (خطوات النظام، %)"
+  },
+  "detail": {
+    "definition": "التعريف",
+    "measurements": "القياسات",
+    "history": "السجل",
+    "links": "العمليات والخطوات",
+    "noLinks": "غير مرتبط بعملية بعد",
+    "noValues": "لا توجد قيم بعد",
+    "enterValue": "إدخال قيمة",
+    "recalculate": "تسجيل القيمة الحالية",
+    "calculatedNow": "القيمة الحالية من النموذج: {{value}}",
+    "uploadEvidence": "إضافة دليل",
+    "due": "قيمة الفترة {{period}} مستحقة",
+    "deleteValueConfirm": "حذف هذه القيمة؟",
+    "salesforce": "المصدر: Salesforce",
+    "lastSync": "آخر مزامنة {{when}}",
+    "openInSalesforce": "فتح في Salesforce",
+    "lockedHint": "الحقول القادمة من Salesforce للقراءة فقط هنا.",
+    "measurementsExcel": "القيم (Excel)"
+  },
+  "measure": {
+    "title": "إدخال القيمة الفعلية — {{name}}",
+    "period": "الفترة",
+    "value": "القيمة الفعلية ({{unit}})",
+    "comment": "تعليق",
+    "evidence": "دليل (اختياري)",
+    "statusPreview": "الحالة بهذه القيمة"
+  },
+  "tasks": {
+    "tab": "قيم مؤشرات مطلوب إدخالها",
+    "period": "الفترة",
+    "enter": "إدخال القيمة",
+    "overdue": "متأخرة"
+  },
+  "settings": {
+    "title": "إعدادات المؤشرات",
+    "showInPortal": "إظهار المؤشرات في البوابة",
+    "showInPortalHint": "تعرض صفحة العملية في بوابة المعرفة مؤشرات العملية مع آخر حالة لها.",
+    "reminders": "تذكير المالكين عند استحقاق قيمة"
+  },
+  "calculated": {
+    "title": "مؤشرات العملية المحسوبة",
+    "hint": "من خصائص الخطوات في النموذج الحالي (المسار الرئيسي)",
+    "duration": "المدة المخططة",
+    "waiting": "وقت الانتظار",
+    "cost": "تكلفة التنفيذ",
+    "handovers": "عمليات التسليم بين المسارات",
+    "automation": "نسبة الأتمتة",
+    "none": "—"
+  },
+  "filters": {
+    "search": "ابحث بالرمز أو الاسم",
+    "allObjectives": "كل الأهداف"
+  },
+  "period": {
+    "quarter": "الربع {{q}} {{year}}"
+  }
+}

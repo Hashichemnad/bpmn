@@ -33,6 +33,7 @@ export function ExcelMenu({
   title,
   canImport,
   useImport,
+  label,
 }: {
   /** e.g. `/ea` → `/ea/export/<kind>`, `/ea/template/<kind>`, `/ea/import/<kind>`. */
   basePath: string;
@@ -41,6 +42,8 @@ export function ExcelMenu({
   title: string;
   canImport: boolean;
   useImport: () => ImportMutation;
+  /** Button text (default "Excel"). */
+  label?: string;
 }) {
   const { t } = useTranslation();
   const { locale } = useLocale();
@@ -89,7 +92,7 @@ export function ExcelMenu({
         }}
       >
         <Button icon={<FileExcelOutlined />} data-testid={`excel-${kind}`}>
-          {t('grc:excel.menu')}
+          {label ?? t('grc:excel.menu')}
         </Button>
       </Dropdown>
       {importing && (

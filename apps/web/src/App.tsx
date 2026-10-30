@@ -72,6 +72,9 @@ import { CapabilitiesPage } from '@/features/ea/CapabilitiesPage';
 import { SystemsLibraryRoute } from '@/features/ea/SystemsLibraryRoute';
 import { LandscapePage } from '@/features/ea/LandscapePage';
 import { TraceabilityPage } from '@/features/ea/TraceabilityPage';
+import { KpisPage } from '@/features/kpi/KpisPage';
+import { KpiDetailPage } from '@/features/kpi/KpiDetailPage';
+import { ObjectivesPage } from '@/features/kpi/ObjectivesPage';
 
 const P = PERMISSIONS;
 
@@ -375,6 +378,30 @@ export const routes: RouteObject[] = [
                     element: (
                       <RequirePermission all={[P.EA_READ]}>
                         <DataObjectsPage />
+                      </RequirePermission>
+                    ),
+                  },
+                  {
+                    path: 'kpis',
+                    element: (
+                      <RequirePermission all={[P.KPI_READ]}>
+                        <KpisPage />
+                      </RequirePermission>
+                    ),
+                  },
+                  {
+                    path: 'kpis/objectives',
+                    element: (
+                      <RequirePermission all={[P.KPI_READ]}>
+                        <ObjectivesPage />
+                      </RequirePermission>
+                    ),
+                  },
+                  {
+                    path: 'kpis/:id',
+                    element: (
+                      <RequirePermission all={[P.KPI_READ]}>
+                        <KpiDetailPage />
                       </RequirePermission>
                     ),
                   },

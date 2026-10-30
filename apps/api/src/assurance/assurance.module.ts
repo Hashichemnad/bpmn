@@ -52,6 +52,12 @@ import { AssuranceSettingsController, IssuesController } from './issues.controll
     SurveysService,
     AssuranceDashboardService,
   ],
-  exports: [GrcChangesService, ControlTestsService, AssuranceScheduler, IssuesService],
+  exports: [
+    GrcChangesService,
+    ControlTestsService,
+    AssuranceScheduler,
+    IssuesService,
+    AssuranceFilesService,
+  ],
 })
 export class AssuranceModule {}

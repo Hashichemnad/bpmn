@@ -1326,3 +1326,55 @@ is audited (entity types `Application`, `AppInterface`, `DataObject`, `Capabilit
   **Application lifecycle** (the worst lifecycle of the step's applications; steps using phasing-out systems stand
   out). **Process handbook**: optional section **"Systems and data"** (application, lifecycle, steps supported, data
   objects with CRUD and ★ for the system of record) for users with `ea.read`.
+
+## D-111 — KPI table on the KPI library objects; objectives and relations (Phase 4.3, 2026-10-30)
+
+The plain KPI library object type is replaced by a full KPI definition the same way as risks (D-089) and applications
+(D-107): table `Kpi` one-to-one with a `RepoObject` of type `KPI`. Code, bilingual name, definition (the object's
+description) and owner stay on the object; `Kpi` holds formula (EN / AR), unit, direction (higher / lower is better),
+frequency (monthly / quarterly / annual), target, green and red thresholds, baseline (+ period), department, data
+source (manual / Excel / Salesforce / calculated), status (draft / active / retired), the calculated metric and
+process, and the Salesforce fields of step 5. The migration creates a `Kpi` row for every existing KPI object (same
+id, so links stay); later ones get theirs lazily. KPI objects can no longer be created or changed through
+`/objects` (`USE_KPI_REGISTER`).
+
+- **Per-period targets** (`KpiPeriodTarget`) override target / thresholds for one period.
+- **Relations**: process and step via the existing `ObjectLink` relation `MEASURES` (process-level = `#process`),
+  capability (`KpiCapability`), strategic objective (`KpiObjective`; `StrategicObjective` is a simple bilingual tree
+  with owner and order), risk = **key risk indicator** (`KpiRisk`).
+- **Status** (shared `kpiRag`): higher is better — at or above green (default: the target) GREEN, at or below red RED,
+  between AMBER; lower is better mirrored; without a red threshold everything short of green is RED; no target and no
+  green threshold — no status. Computed, never stored, so a threshold change re-colours the history.
+- **Calculated process KPIs** (shared `calculatedProcessKpis`, from the B2 step attributes of the working model, main
+  path as in the process totals): planned duration, waiting time, cost per execution, handovers between lanes on the
+  main path, automation rate (system steps ÷ steps). Shown on the process page / modeler; a KPI with data source
+  "calculated" records the current value for the due period on "Record current value".
+
+## D-112 — KPI permissions, measurements, reminders and evidence (Phase 4.3, 2026-10-30)
+
+- Permissions `kpi.read` (catalogue, dashboards, process KPIs), `kpi.edit` (define KPIs and objectives, any value,
+  Excel import of the catalogue, KPI settings) and `kpi.measure` (enter values of **the KPIs one owns** — checked on
+  the server against `RepoObject.ownerId`). `kpi.read` for every workspace role, `kpi.measure` for Process Owners,
+  `kpi.edit` for Admins (and Super Admins) only — a dedicated "Performance Officer" role was not requested (open
+  question in the pull request).
+- **Measurements** (`KpiMeasurement`, unique per KPI and period `2026-03` / `2026-Q1` / `2026`, period must match the
+  frequency and have started), with comment, source and full audit history (create / update / delete, `SYNC` for
+  Salesforce). Values of Salesforce KPIs cannot be entered or deleted in ProcessHub. A frequency change is refused
+  once values exist.
+- **Evidence** reuses the assurance file store (`AssuranceFile` owner type `KPI_MEASUREMENT`: allow-list, magic
+  bytes, size limit; download `/assurance/files/:id` for `kpi.read` holders, upload / delete for whoever may enter
+  the value).
+- **Due values**: the last completed period of an active manual / Excel KPI without a value is "due": My tasks tab
+  "KPI values to enter" (`GET /kpis/tasks`) and one reminder per KPI and period from the `KpiScheduler` (notification
+  type `KPI`, kind `due`, EN / AR e-mail; Setting `kpi.reminders`).
+- **Excel** (`/kpis/export|template|import/:kind`, kinds kpis, measurements, objectives): the catalogue and the
+  objectives for `kpi.edit`; measurements also for owners (rows of other people's KPIs are reported `NOT_OWNER`);
+  imported values have source "Excel import".
+
+## D-113 — Charts: Recharts (Phase 4.3, 2026-10-30)
+
+The web app had no chart library (Phase 4.1 / 4.2 dashboards use Ant Design tiles and bars). The KPI detail line
+chart (actuals vs per-period target, green / red threshold lines, points coloured by status) uses **Recharts 2.15**
+— a proven, MIT-licensed React library built on SVG (no canvas), small enough, and without new runtime services.
+Arabic: the x axis is reversed and the y axis moves to the right; numbers and periods via `Intl`. Sparklines in
+tables and the landscape diagram stay plain SVG.

@@ -353,6 +353,26 @@ zod / UUID pipe; file uploads are checked in the service (allow-list, content sn
 | DELETE | `/issues/actions/:id`                        | authenticated                                             | param `id`                          | default    |
 | PATCH  | `/issues/actions/:id`                        | authenticated                                             | body, param `id`                    | default    |
 | POST   | `/issues/actions/:id/files`                  | authenticated                                             | file, param `id`                    | default    |
+| GET    | `/kpis`                                      | `kpi.read`                                                | query                               | default    |
+| POST   | `/kpis`                                      | `kpi.edit`                                                | body                                | default    |
+| DELETE | `/kpis/:id`                                  | `kpi.edit`                                                | param `id`                          | default    |
+| GET    | `/kpis/:id`                                  | `kpi.read`                                                | param `id`                          | default    |
+| PATCH  | `/kpis/:id`                                  | `kpi.edit`                                                | body, param `id`                    | default    |
+| PUT    | `/kpis/:id/measurements`                     | any of `kpi.edit`, `kpi.measure`                          | body, param `id`                    | default    |
+| DELETE | `/kpis/:id/measurements/:measurementId`      | any of `kpi.edit`, `kpi.measure`                          | param `id`, param `measurementId`   | default    |
+| POST   | `/kpis/:id/recalculate`                      | `kpi.edit`                                                | param `id`                          | default    |
+| GET    | `/kpis/export/:kind`                         | `kpi.read`                                                | param `kind`, query                 | default    |
+| POST   | `/kpis/import/:kind`                         | any of `kpi.edit`, `kpi.measure`                          | file, param `kind`, query           | default    |
+| POST   | `/kpis/measurements/:measurementId/files`    | any of `kpi.edit`, `kpi.measure`                          | file, param `measurementId`         | default    |
+| GET    | `/kpis/objectives`                           | `kpi.read`                                                | —                                   | default    |
+| POST   | `/kpis/objectives`                           | `kpi.edit`                                                | body                                | default    |
+| DELETE | `/kpis/objectives/:id`                       | `kpi.edit`                                                | param `id`                          | default    |
+| PATCH  | `/kpis/objectives/:id`                       | `kpi.edit`                                                | body, param `id`                    | default    |
+| GET    | `/kpis/processes/:processId`                 | `kpi.read`                                                | param `processId`                   | default    |
+| GET    | `/kpis/settings`                             | any of `kpi.read`, `portal.manage`                        | —                                   | default    |
+| PUT    | `/kpis/settings`                             | `kpi.edit`                                                | body                                | default    |
+| GET    | `/kpis/tasks`                                | any of `kpi.edit`, `kpi.measure`                          | —                                   | default    |
+| GET    | `/kpis/template/:kind`                       | any of `kpi.edit`, `kpi.measure`                          | param `kind`, query                 | default    |
 | GET    | `/notifications`                             | authenticated                                             | query                               | default    |
 | POST   | `/notifications/:id/read`                    | authenticated                                             | param `id`                          | default    |
 | GET    | `/notifications/preferences`                 | authenticated                                             | —                                   | default    |

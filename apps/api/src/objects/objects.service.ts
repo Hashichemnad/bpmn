@@ -171,6 +171,8 @@ export class ObjectsService {
   async create(input: CreateObjectInput, actor: AuthUser, meta: RequestMeta) {
     // Risks, controls and requirements have their own register (Risk & Compliance, D-089).
     if (isGrcObjectType(input.type)) throw badRequest('USE_GRC_REGISTER');
+    // KPIs have their own register (Phase 4.3, D-111).
+    if (input.type === 'KPI') throw badRequest('USE_KPI_REGISTER');
     const approver = actor.permissions.has(PERMISSIONS.DICTIONARY_APPROVE);
     const status: ObjectStatus =
       input.type !== 'TERM' ? 'APPROVED' : approver ? (input.status ?? 'APPROVED') : 'DRAFT';
@@ -243,6 +245,7 @@ export class ObjectsService {
     const before = await this.prisma.repoObject.findFirst({ where: { id, deletedAt: null } });
     if (!before) throw notFound('Object');
     if (isGrcObjectType(before.type)) throw badRequest('USE_GRC_REGISTER');
+    if (before.type === 'KPI') throw badRequest('USE_KPI_REGISTER');
     this.assertMayChange(before, actor);
     const nameEn = input.nameEn ?? before.nameEn;
     const nameAr = input.nameAr ?? before.nameAr;
@@ -346,6 +349,7 @@ export class ObjectsService {
     const o = await this.prisma.repoObject.findFirst({ where: { id, deletedAt: null } });
     if (!o) throw notFound('Object');
     if (isGrcObjectType(o.type)) throw badRequest('USE_GRC_REGISTER');
+    if (o.type === 'KPI') throw badRequest('USE_KPI_REGISTER');
     this.assertMayChange(o, actor);
     await this.prisma.$transaction(async (tx) => {
       const removed = await tx.objectLink.deleteMany({ where: { repoObjectId: id } });

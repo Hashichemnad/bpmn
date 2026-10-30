@@ -64,6 +64,8 @@ describe('Route security declarations', () => {
       'POST /grc/import/:kind file',
       'POST /issues/:id/files file',
       'POST /issues/actions/:id/files file',
+      'POST /kpis/import/:kind file',
+      'POST /kpis/measurements/:measurementId/files file',
       'POST /pages/:id/attachments file',
       'POST /settings/logo file',
       'POST /surveys/responses/:id/files file',

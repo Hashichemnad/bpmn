@@ -207,7 +207,9 @@
       "UNKNOWN_KPI": "Unknown KPI code",
       "UNKNOWN_OBJECTIVE": "Unknown objective code",
       "INVALID_NUMBER": "Not a number",
-      "INVALID_PERIOD": "Not a period of this KPI (e.g. 2026-03, 2026-Q1, 2026)"
+      "INVALID_PERIOD": "Not a period of this KPI (e.g. 2026-03, 2026-Q1, 2026)",
+      "NOT_OWNER": "You may only import values of KPIs you own",
+      "SALESFORCE_OWNED": "Values come from Salesforce"
     },
     "pendingApproval_one": "{{count}} change of an active item waits for approval.",
     "pendingApproval_other": "{{count}} changes of active items wait for approval as one batch.",

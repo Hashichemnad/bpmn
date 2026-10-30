@@ -9,7 +9,14 @@ import type { AuthUser, RequestMeta } from '../common/auth-user';
 import { detectAttachmentType, safeFileName } from '../docs/attachment-type';
 
 export type FileOwnerType =
-  'CONTROL_TEST' | 'ISSUE' | 'ISSUE_ACTION' | 'AUDIT_ITEM' | 'AUDIT_FINDING' | 'SURVEY_RESPONSE';
+  | 'CONTROL_TEST'
+  | 'ISSUE'
+  | 'ISSUE_ACTION'
+  | 'AUDIT_ITEM'
+  | 'AUDIT_FINDING'
+  | 'SURVEY_RESPONSE'
+  /** Evidence of a KPI measurement (Phase 4.3). */
+  | 'KPI_MEASUREMENT';
 
 /** Who may read / add / remove the files of an owner record (registered by each feature). */
 export interface FileAccess {

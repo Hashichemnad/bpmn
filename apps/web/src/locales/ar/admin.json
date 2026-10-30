@@ -145,7 +145,10 @@
       "Application": "تطبيق",
       "AppInterface": "واجهة",
       "DataObject": "كائن بيانات",
-      "Capability": "قدرة"
+      "Capability": "قدرة",
+      "Kpi": "مؤشر أداء",
+      "KpiMeasurement": "قيمة مؤشر",
+      "StrategicObjective": "هدف استراتيجي"
     }
   },
   "settings": {

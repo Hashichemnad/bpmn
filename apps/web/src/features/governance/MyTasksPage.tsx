@@ -18,6 +18,7 @@ import { useOpenNotification } from '@/features/notifications/use-open-notificat
 import { ItemTitle } from './ItemTitle';
 import { FeedbackManageModal } from './FeedbackManageModal';
 import { useAssuranceTaskTabs } from '@/features/assurance/AssuranceTaskTabs';
+import { useKpiTaskTabs } from '@/features/kpi/KpiTaskTabs';
 
 type TabKey =
   'reviews' | 'toPublish' | 'returned' | 'dueReviews' | 'grcReviews' | 'mentions' | 'feedback';
@@ -33,6 +34,7 @@ export function MyTasksPage() {
   const openNotification = useOpenNotification();
   const [feedback, setFeedback] = useState<FeedbackDto | null>(null);
   const assurance = useAssuranceTaskTabs();
+  const kpiTasks = useKpiTaskTabs();
   const name = (u: { nameEn: string; nameAr: string; email: string } | null) =>
     u ? loc(u) || u.email : '—';
 
@@ -370,6 +372,7 @@ export function MyTasksPage() {
               ),
             },
             ...assurance.items,
+            ...kpiTasks.items,
           ]}
         />
       </Card>

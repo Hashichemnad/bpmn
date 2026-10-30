@@ -145,7 +145,10 @@
       "Application": "Application",
       "AppInterface": "Interface",
       "DataObject": "Data object",
-      "Capability": "Capability"
+      "Capability": "Capability",
+      "Kpi": "KPI",
+      "KpiMeasurement": "KPI value",
+      "StrategicObjective": "Strategic objective"
     }
   },
   "settings": {

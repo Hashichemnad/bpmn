@@ -79,6 +79,12 @@ export const PERMISSIONS = {
   EA_EDIT: 'ea.edit',
   /** Delete architecture items. */
   EA_ADMIN: 'ea.admin',
+  /** KPIs, strategic objectives, measurements and dashboards (read). Phase 4.3. */
+  KPI_READ: 'kpi.read',
+  /** Define KPIs and objectives, enter any measurement, Excel import, KPI settings. */
+  KPI_EDIT: 'kpi.edit',
+  /** Enter the measurements of the KPIs one owns. */
+  KPI_MEASURE: 'kpi.measure',
 } as const;
 export type Permission = (typeof PERMISSIONS)[keyof typeof PERMISSIONS];
 export const ALL_PERMISSIONS: Permission[] = Object.values(PERMISSIONS);
@@ -143,6 +149,8 @@ export const SYSTEM_ROLES: Record<
       P.CONTROLS_TEST,
       P.SURVEYS_RESPOND,
       P.EA_READ,
+      P.KPI_READ,
+      P.KPI_MEASURE,
     ],
   },
   MODELER: {
@@ -161,12 +169,20 @@ export const SYSTEM_ROLES: Record<
       P.GRC_PROPOSE,
       P.SURVEYS_RESPOND,
       P.EA_READ,
+      P.KPI_READ,
     ],
   },
   REVIEWER: {
     nameEn: 'Reviewer',
     nameAr: 'مراجع',
-    permissions: [...READ_REPOSITORY, P.USERS_READ, P.GRC_READ, P.SURVEYS_RESPOND, P.EA_READ],
+    permissions: [
+      ...READ_REPOSITORY,
+      P.USERS_READ,
+      P.GRC_READ,
+      P.SURVEYS_RESPOND,
+      P.EA_READ,
+      P.KPI_READ,
+    ],
   },
   AUDITOR: {
     nameEn: 'Auditor',
@@ -186,6 +202,7 @@ export const SYSTEM_ROLES: Record<
       P.GRC_READ,
       P.SURVEYS_RESPOND,
       P.EA_READ,
+      P.KPI_READ,
     ],
   },
   RISK_OFFICER: {
@@ -206,6 +223,7 @@ export const SYSTEM_ROLES: Record<
       P.SURVEYS_MANAGE,
       P.SURVEYS_RESPOND,
       P.EA_READ,
+      P.KPI_READ,
     ],
   },
   INTERNAL_AUDIT: {
@@ -223,6 +241,7 @@ export const SYSTEM_ROLES: Record<
       P.SURVEYS_MANAGE,
       P.SURVEYS_RESPOND,
       P.EA_READ,
+      P.KPI_READ,
     ],
   },
   ENTERPRISE_ARCHITECT: {
@@ -238,6 +257,7 @@ export const SYSTEM_ROLES: Record<
       P.EA_READ,
       P.EA_EDIT,
       P.EA_ADMIN,
+      P.KPI_READ,
     ],
   },
   VIEWER: {
@@ -395,6 +415,9 @@ export const AUDIT_ENTITY_TYPES = [
   'AppInterface',
   'DataObject',
   'Capability',
+  'Kpi',
+  'KpiMeasurement',
+  'StrategicObjective',
 ] as const;
 export type AuditEntityType = (typeof AUDIT_ENTITY_TYPES)[number];
 
@@ -417,6 +440,10 @@ export const SETTING_KEYS = {
   GRC: 'grc',
   /** Assurance (Phase 4.2): issue severity scale, escalation. */
   ASSURANCE: 'assurance',
+  /** KPIs (Phase 4.3): portal visibility, reminders. */
+  KPI: 'kpi',
+  /** Salesforce KPI link (Phase 4.3): connection (secret sealed), mapping, schedule. */
+  SALESFORCE: 'integrations.salesforce',
 } as const;
 
 /** Logo upload limits. */
@@ -628,6 +655,8 @@ export const NOTIFICATION_TYPES = [
   'AUDIT',
   /** Questionnaire to answer: invited / reminder (params.kind). */
   'SURVEY',
+  /** KPI value due / overdue for the owner; Salesforce sync failed for Super Admins (params.kind). */
+  'KPI',
 ] as const;
 export type NotificationType = (typeof NOTIFICATION_TYPES)[number];
 

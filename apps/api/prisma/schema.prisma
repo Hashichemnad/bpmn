@@ -214,23 +214,24 @@ model User {
 
   roles             UserRole[]
   refreshTokens     RefreshToken[]
-  ownedProcesses    Process[]         @relation("ProcessOwner")
-  ownedSpaces       Space[]           @relation("SpaceOwner")
+  ownedProcesses    Process[]            @relation("ProcessOwner")
+  ownedSpaces       Space[]              @relation("SpaceOwner")
   auditLogs         AuditLog[]
   pageDrafts        PageDraft[]
-  ownedPages        Page[]            @relation("PageOwner")
+  ownedPages        Page[]               @relation("PageOwner")
   jobRoles          UserJobRole[]
   notifications     Notification[]
   aiUsage           AiUsage[]
   recoveryCodes     MfaRecoveryCode[]
-  ownedObjects      RepoObject[]      @relation("ObjectOwner")
+  ownedObjects      RepoObject[]         @relation("ObjectOwner")
   grcActivities     GrcActivity[]
-  assuranceEvents   AssuranceEvent[]  @relation("AssuranceEventAuthor")
-  appsOwned         Application[]     @relation("AppBusinessOwner")
-  appsIt            Application[]     @relation("AppItOwner")
-  interfacesOwned   AppInterface[]    @relation("InterfaceOwner")
-  dataObjectsOwned  DataObject[]      @relation("DataObjectOwner")
-  capabilitiesOwned Capability[]      @relation("CapabilityOwner")
+  assuranceEvents   AssuranceEvent[]     @relation("AssuranceEventAuthor")
+  appsOwned         Application[]        @relation("AppBusinessOwner")
+  appsIt            Application[]        @relation("AppItOwner")
+  interfacesOwned   AppInterface[]       @relation("InterfaceOwner")
+  dataObjectsOwned  DataObject[]         @relation("DataObjectOwner")
+  capabilitiesOwned Capability[]         @relation("CapabilityOwner")
+  objectivesOwned   StrategicObjective[] @relation("ObjectiveOwner")
 
   @@unique([ssoIssuer, ssoSubject])
   @@index([departmentId])
@@ -326,6 +327,7 @@ model Department {
   controls     Control[]
   requirements Requirement[]
   applications Application[]
+  kpis         Kpi[]
 
   @@index([parentId])
 }
@@ -361,11 +363,12 @@ model Process {
   updatedById   String?         @db.Uuid
   deletedAt     DateTime?
 
-  model        ProcessModel?
-  versions     ProcessVersion[]
-  links        ObjectLink[]
-  pageLinks    PageLink[]
-  capabilities CapabilityProcess[]
+  model          ProcessModel?
+  versions       ProcessVersion[]
+  links          ObjectLink[]
+  pageLinks      PageLink[]
+  capabilities   CapabilityProcess[]
+  calculatedKpis Kpi[]               @relation("KpiCalculatedProcess")
 
   @@index([parentId, sortOrder])
   @@index([category])
@@ -439,6 +442,8 @@ model RepoObject {
   grcChanges     GrcChange[]
   /// Application catalogue details of a SYSTEM object (Phase 4.3, D-107).
   application    Application?
+  /// KPI details of a KPI object (Phase 4.3, D-111).
+  kpi            Kpi?
 
   @@index([type, status])
 }
@@ -468,6 +473,8 @@ model Risk {
   reminderSentFor    DateTime?
 
   controls RiskControl[]
+  /// Key risk indicators (Phase 4.3).
+  kpis     KpiRisk[]
 
   @@index([status])
   @@index([departmentId])
@@ -1715,6 +1722,7 @@ model Capability {
 
   processes    CapabilityProcess[]
   applications CapabilityApplication[]
+  kpis         KpiCapability[]
 
   @@index([parentId, sortOrder])
 }
@@ -1739,4 +1747,161 @@ model CapabilityApplication {
 
   @@id([capabilityId, applicationId])
   @@index([applicationId])
+}
+
+// ---------- KPIs (M12, Phase 4.3 — D-111) ----------
+
+enum KpiDirection {
+  HIGHER_IS_BETTER
+  LOWER_IS_BETTER
+}
+
+enum KpiFrequency {
+  MONTHLY
+  QUARTERLY
+  ANNUAL
+}
+
+enum KpiDataSource {
+  MANUAL
+  EXCEL
+  SALESFORCE
+  CALCULATED
+}
+
+enum KpiStatus {
+  DRAFT
+  ACTIVE
+  RETIRED
+}
+
+/// KPI definition; code, bilingual name, definition (description) and owner live on the RepoObject (type KPI),
+/// so links to processes and steps (relation MEASURES) keep working (D-111).
+model Kpi {
+  objectId            String        @id @db.Uuid
+  object              RepoObject    @relation(fields: [objectId], references: [id], onDelete: Cascade)
+  formulaEn           String        @default("")
+  formulaAr           String        @default("")
+  unit                String        @default("")
+  direction           KpiDirection  @default(HIGHER_IS_BETTER)
+  frequency           KpiFrequency  @default(MONTHLY)
+  target              Float?
+  /// Green from this value (default: the target); red from `redThreshold`; amber between.
+  greenThreshold      Float?
+  redThreshold        Float?
+  baseline            Float?
+  baselinePeriod      String?
+  departmentId        String?       @db.Uuid
+  department          Department?   @relation(fields: [departmentId], references: [id], onDelete: SetNull)
+  dataSource          KpiDataSource @default(MANUAL)
+  status              KpiStatus     @default(ACTIVE)
+  calculatedMetric    String?
+  calculatedProcessId String?       @db.Uuid
+  calculatedProcess   Process?      @relation("KpiCalculatedProcess", fields: [calculatedProcessId], references: [id], onDelete: SetNull)
+  /// Salesforce (step 5): record id of the measure, record URL, last sync, fields owned by Salesforce.
+  salesforceId        String?       @unique
+  salesforceUrl       String?
+  lastSyncedAt        DateTime?
+  lockedFields        String[]      @default([])
+  /// Last period for which the owner was reminded (one reminder per period).
+  reminderSentFor     String?
+
+  periodTargets KpiPeriodTarget[]
+  measurements  KpiMeasurement[]
+  objectives    KpiObjective[]
+  capabilities  KpiCapability[]
+  risks         KpiRisk[]
+
+  @@index([status])
+  @@index([departmentId])
+}
+
+/// Target and thresholds of one period (override the KPI's own values).
+model KpiPeriodTarget {
+  kpiId          String @db.Uuid
+  kpi            Kpi    @relation(fields: [kpiId], references: [objectId], onDelete: Cascade)
+  period         String
+  target         Float?
+  greenThreshold Float?
+  redThreshold   Float?
+
+  @@id([kpiId, period])
+}
+
+/// Actual value of a KPI for one period ("2026-03", "2026-Q1", "2026").
+model KpiMeasurement {
+  id           String        @id @default(uuid()) @db.Uuid
+  kpiId        String        @db.Uuid
+  kpi          Kpi           @relation(fields: [kpiId], references: [objectId], onDelete: Cascade)
+  period       String
+  periodStart  DateTime
+  value        Float
+  comment      String        @default("")
+  source       KpiDataSource @default(MANUAL)
+  salesforceId String?
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  createdById  String?       @db.Uuid
+  updatedById  String?       @db.Uuid
+
+  @@unique([kpiId, period])
+  @@index([kpiId, periodStart])
+}
+
+/// Strategic objectives (a simple bilingual hierarchy).
+model StrategicObjective {
+  id            String               @id @default(uuid()) @db.Uuid
+  code          String?
+  nameEn        String               @default("")
+  nameAr        String               @default("")
+  descriptionEn String               @default("")
+  descriptionAr String               @default("")
+  parentId      String?              @db.Uuid
+  parent        StrategicObjective?  @relation("ObjectiveTree", fields: [parentId], references: [id], onDelete: SetNull)
+  children      StrategicObjective[] @relation("ObjectiveTree")
+  ownerId       String?              @db.Uuid
+  owner         User?                @relation("ObjectiveOwner", fields: [ownerId], references: [id], onDelete: SetNull)
+  sortOrder     Int                  @default(0)
+  salesforceId  String?              @unique
+  lastSyncedAt  DateTime?
+  createdAt     DateTime             @default(now())
+  updatedAt     DateTime             @updatedAt
+  createdById   String?              @db.Uuid
+  updatedById   String?              @db.Uuid
+  deletedAt     DateTime?
+
+  kpis KpiObjective[]
+
+  @@index([parentId, sortOrder])
+}
+
+model KpiObjective {
+  kpiId       String             @db.Uuid
+  kpi         Kpi                @relation(fields: [kpiId], references: [objectId], onDelete: Cascade)
+  objectiveId String             @db.Uuid
+  objective   StrategicObjective @relation(fields: [objectiveId], references: [id], onDelete: Cascade)
+
+  @@id([kpiId, objectiveId])
+  @@index([objectiveId])
+}
+
+model KpiCapability {
+  kpiId        String     @db.Uuid
+  kpi          Kpi        @relation(fields: [kpiId], references: [objectId], onDelete: Cascade)
+  capabilityId String     @db.Uuid
+  capability   Capability @relation(fields: [capabilityId], references: [id], onDelete: Cascade)
+
+  @@id([kpiId, capabilityId])
+  @@index([capabilityId])
+}
+
+/// Key risk indicator: the KPI signals the risk.
+model KpiRisk {
+  kpiId  String @db.Uuid
+  kpi    Kpi    @relation(fields: [kpiId], references: [objectId], onDelete: Cascade)
+  riskId String @db.Uuid
+  risk   Risk   @relation(fields: [riskId], references: [objectId], onDelete: Cascade)
+
+  @@id([kpiId, riskId])
+  @@index([riskId])
 }
