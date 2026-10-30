@@ -3,15 +3,26 @@
 Ideas and follow-ups noted during development, outside the current phase scope. Group by the phase
 where they belong; move items into the plan when that phase starts.
 
-## Phase 4.2 / 4.3 — after GRC core (Phase 4.1)
+## Phase 4.3 — after GRC assurance (Phase 4.2)
 
-- Control testing cycles and evidence (test plans, samples, results, attachments), issues and action plans,
-  audit management, compliance questionnaires / surveys.
-- **Phase 4.2 (decided D-097):** optional approval of changes to active risks and controls through the Phase 3
-  governance workflows (configurable per object type, default off; needs versions and review rounds for library
-  objects — D-094). Not needed before go-live.
-- IT architecture (applications, interfaces, data objects — M11), KPIs and dashboards (M12), Salesforce KPI link,
-  Oracle Fusion Risk Management overlay.
+- IT architecture (applications, interfaces, data objects, capability map — M11), KPIs and dashboards (M12),
+  Salesforce KPI link, Oracle Fusion Risk Management overlay.
+
+## Phase 4.2 follow-ups (noted during the work)
+
+- Change approval: also route Excel imports and deletions of active items (today applied directly by editors,
+  audited); a "changes" history tab listing approved / rejected proposals per item; approval of requirement changes.
+- Control testing: sampling helper (random selection from an uploaded population list); copy the last test's
+  samples; test plans for several controls at once; tests in the portal for testers without the workspace.
+- Issues: link several risks / controls / steps to one issue; issue import / export (Excel); a "managers" view of
+  the team's overdue items; SLA by severity (default due date).
+- Audits: annual plan approval workflow; time budgets and actual hours per auditor; audit report template upload
+  (company Word styles, shared with the handbook backlog item); findings repository across years; follow-up audits
+  that re-test agreed actions; audit universe weighting beyond residual risk (last audit age, regulatory weight).
+- Questionnaires: question library and import / export of questionnaires; anonymous surveys; scoring bands per
+  questionnaire; per-department comparison of results; reminders more than once; campaigns in the portal for
+  external recipients (e-mail links).
+- Dashboards: trends over time (monthly snapshots); PDF export.
 - Ratings are computed in memory for lists and dashboards (D-089); store scores if registers grow far beyond a few
   thousand items. Heat map of a single risk's history (trend), risk appetite per category.
 - Portal: a requirement view per process (only process-level requirements; currently not shown in the portal).

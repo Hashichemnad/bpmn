@@ -64,9 +64,30 @@ content in every lifecycle state, comments, notifications and portal feedback.
 | `modeler@processhub.local` | Modeler / Editor (Maha) | Workspace — drafts and comments |
 | `auditor@processhub.local` | Auditor (Adel) | Workspace, read-only — drafts, history, reviews, audit log, AI usage, Risk & Compliance (read) |
 | `risk@processhub.local` | Risk & Compliance Officer (Rana) | Risk & Compliance — registers, dashboard, settings; rest of the workspace read-only |
+| `audit@processhub.local` | Internal Audit (Iman) | Audits — audit plan, engagements, findings; tests and reviews controls; rest read-only |
 
 Demo users are only created on a demo installation (`SEED_DEMO_DATA=true`, the default). **Emails** sent by
 the demo installation go to the bundled **Mailpit** at **http://localhost:8025** — nothing leaves the machine.
+
+### A short tour of Phase 4.2 — assurance (control testing, issues, audits, questionnaires)
+
+- As `risk@processhub.local`: **Risk & Compliance → Assurance dashboard** shows control tests done / due /
+  overdue and % effective by department and process, open issues by severity and age, the audit plan and survey
+  response rates — every figure opens the filtered list; Excel export in English or Arabic. **Control tests** lists
+  the demo tests: the failed CTL-01 test (samples, evidence, reviewed conclusion) set the control's *tested
+  effectiveness* to "Not effective"; the **Risk dashboard** heat map has the toggle *Using tested effectiveness*.
+  **Issues & actions** → ISS-0001 (raised from that test) with its action plan; **Questionnaires** → the purchasing
+  self-assessment campaign with results, Excel export and rating proposals to accept or dismiss. Settings →
+  Risk & Compliance: *Approval of changes* routes changes of active risks / controls through a workflow, and the
+  issue severity scale and escalation.
+- As `owner@processhub.local`: **My tasks** has a control test to perform, issue actions, an audit finding to
+  answer (agreeing creates an issue) and the self-assessment questionnaire. On a process, **Request feedback**
+  sends a short questionnaire with the draft diagram; answers arrive as comments on the process.
+- As `audit@processhub.local`: **Audits** — the audit universe ranked by residual risk, the annual plan, and the
+  engagement *Procurement and purchase approvals* (work programme, two findings, management responses, **Audit
+  report** as Word in English or Arabic).
+- As `viewer@processhub.local`: questionnaires and issue actions sent to Viewers appear under **My tasks** in the
+  portal.
 
 ### A short tour of Phase 4.1 — Risk & Compliance
 

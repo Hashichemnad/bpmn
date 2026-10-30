@@ -89,8 +89,9 @@ System roles (extensible, permission-based underneath):
 | Modeler / Editor | Create and edit drafts |
 | Reviewer | Review and comment, approve where assigned |
 | Auditor | Read-only workspace: drafts, history, reviews, audit log, Risk & Compliance — no edit, comment, approve or publish |
-| Risk & Compliance Officer | Risks, controls, requirements: create, assess, link to steps, import, settings; rest of the workspace read-only |
-| Viewer | Knowledge Portal only (published content, read-only) |
+| Risk & Compliance Officer | Risks, controls, requirements: create, assess, link to steps, import, settings; control tests, issues, questionnaires; rest of the workspace read-only |
+| Internal Audit | Audit universe, plan, engagements, work programmes, findings; tests and reviews controls; questionnaires; rest read-only |
+| Viewer | Knowledge Portal only (published content, read-only); answers questionnaires sent to them and their own issue actions |
 
 Permissions are checked **on the server** for every request (NestJS guards). The UI hides what the user cannot do, but never relies on that for security.
 
@@ -192,6 +193,18 @@ Phase 4.1 additions (DECISIONS D-089 – D-095):
 - Process-level links use element id `#process`; permissions `grc.read`, `grc.propose`, `grc.edit`, `grc.admin`;
   system role `RISK_OFFICER`; notification `GRC_REVIEW`; audit actions `IMPORT`, `ASSESS`; Setting `grc`
 - Shared `packages/shared/src/grc.ts` (schemas, ratings, per-step coverage, control-gap rules); AI feature `CONTROL_GAPS`
+
+Phase 4.2 additions (DECISIONS D-098 – D-103):
+
+- `GrcChange` + `GrcChangeTask` (approval of changes to active risks / controls; Setting `grc.changeApproval`)
+- `Control.operatingEffectiveness` + `lastTestedAt`; `ControlTestPlan`, `ControlTest` (samples, conclusion, four-eyes)
+- `Issue` + `IssueAction` (sources, severity scale in Setting `assurance`, verification, accepted risk, escalation);
+  `Department.managerId`
+- `AuditEngagement`, `AuditWorkItem`, `AuditFinding` (management response → issue); role `INTERNAL_AUDIT`
+- `Questionnaire`, `SurveyCampaign`, `SurveyResponse`, `SurveyProposal` (RCSA proposals, process feedback)
+- Generic `AssuranceFile` (evidence) and `AssuranceEvent` (history and comments); permissions `controls.test`,
+  `controls.review`, `issues.manage`, `audit.manage`, `surveys.manage`, `surveys.respond`; notifications
+  `GRC_CHANGE`, `CONTROL_TEST`, `ISSUE`, `AUDIT`, `SURVEY`; shared `packages/shared/src/assurance.ts`
 
 ## 10. Definition of Done (every phase)
 
