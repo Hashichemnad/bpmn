@@ -40,14 +40,15 @@ with no per-user licensing. Target: 50–500 users on a single server.
 | 2 | M5 Wiki, M6 Version control, M7 Git integration | ✅ Done (merged into `main`) |
 | 3 | M8 Governance, M9 Knowledge Portal | ✅ Done (merged into `main`) |
 | AI | M16 AI Assistant (after Phase 3) | ✅ Done (merged into `main`) |
-| 4 | M10 GRC, M11 EA, M12 KPIs + Salesforce | ⬜ |
+| 4.1 | M10 GRC core: risks, controls, requirements linked to process steps; heat maps, coverage dashboard, RCM export, reminders, AI control-gap check | 🟡 In progress on branch `phase-4-1-grc` |
+| 4.2 / 4.3 | M10 control testing, issues and audits; M11 EA; M12 KPIs + Salesforce | ⬜ |
 | 5 | M13 Mining, M14 Execution, simulation | ⬜ |
-| 6 | Hardening: SSO, performance, security review fixes, deployment guide | 🟡 In progress — part 1 (security review, `docs/SECURITY.md`) and part 2 (production stack, backups, `docs/DEPLOYMENT.md`) merged; part 3 (SSO with Entra ID / OIDC, TOTP two-factor) merged; part 4 (product owner decisions: 2FA for admins, break-glass, roles in ProcessHub, 24 h sessions, Node 22) done on branch `phase-6-part-4` |
 | Design A | Modeler design upgrade — Part A: look and feel (colour theme as BPMN-in-Color, renderer, colour picker, fonts/RTL, apply theme) | ✅ Done (merged into `main`, D-067 – D-073) |
 | Design B1 | Modeler design — Part B1: full-screen workspace and modeling productivity (palette, ready-made steps, zoom/mini-map, align, auto-layout, lane roles, badges, portal diagram, print layout) | ✅ Done (merged into `main`, D-074 – D-081); Part B2 in BACKLOG |
-| Design B2 | Modeler design — Part B2: smarter modeling and reports (Playwright e2e in CI, Dictionary with label autocomplete, Quick Model, step attributes and "colour by", handbook / RACI / object reports, modeling conventions) | 🟡 Done on branch `modeler-design-b2` (D-083 – D-088), awaiting review |
+| Design B2 | Modeler design — Part B2: smarter modeling and reports (Playwright e2e in CI, Dictionary with label autocomplete, Quick Model, step attributes and "colour by", handbook / RACI / object reports, modeling conventions) | ✅ Done (merged into `main`, D-083 – D-088) |
 | Deps | zod 3 → 4 (high advisory GHSA-mrhx-c7xc-m3w5, D-082) | ✅ Done (merged into `main`) |
 | — | M15 Migration of existing documentation (after system is ready) | ⬜ |
+| 6 | Hardening: SSO, performance, security review fixes, deployment guide | 🟡 Parts 1–4 merged into `main` (security review `docs/SECURITY.md`, production stack and backups `docs/DEPLOYMENT.md`, SSO with Entra ID / OIDC and TOTP 2FA, product owner decisions: 2FA for admins, break-glass, roles in ProcessHub, 24 h sessions, Node 22). Remaining: final performance / polish session — moved to the end of the roadmap |
 
 Update this table and `docs/PROGRESS.md` at the end of every session.
 

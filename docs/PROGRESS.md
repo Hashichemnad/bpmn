@@ -2,7 +2,30 @@
 
 Read this together with `CLAUDE.md` at the start of every session.
 
-## Current state — 2026-10-29 (Modeler design — Part B2: smarter modeling and reports, branch `modeler-design-b2`)
+## Current state — 2026-10-30 (Phase 4 — Part 1: GRC core, branch `phase-4-1-grc`)
+
+Everything up to Modeler design Part B2 is merged into `main`. This branch builds module M10 core: risks,
+controls and requirements linked to process steps (DOF RFP §4.5). Phase 4.2 / 4.3 items are in BACKLOG.
+
+Local setup used by this session: PostgreSQL 16 (`service postgresql start`; role `processhub` /
+`devpassword`, databases `processhub`, `processhub_test`).
+
+Steps (tick as they are committed; a new session continues at the first unticked one):
+
+- [x] 0. CLAUDE.md phase table (B2 and Phase 6 part 4 merged; Phase 6 remainder moved to the end), this plan.
+- [ ] 1. Data model and permissions: `Risk`, `Control`, `Requirement` tables (1:1 with a `RepoObject` row),
+      relations, assessment history, process-level links, permissions `grc.*`, role Risk & Compliance Officer,
+      API module `grc` with guards and tests.
+- [ ] 2. GRC workspace: menu "Risk & Compliance", registers with filters, detail pages (relations, steps,
+      timeline, comments), forms EN/AR, Excel import / export, risk matrix settings.
+- [ ] 3. Modeler and portal: step panel "Risks & Controls", badges + warning, colour-by views, portal setting,
+      handbook section.
+- [ ] 4. Dashboards: heat maps (org / department / process, drill-down), coverage dashboard, RCM export.
+- [ ] 5. Reviews and notifications: next-review reminders, overdue flags, My tasks, optional approval.
+- [ ] 6. AI control-gap check.
+- [ ] 7. Demo data, e2e tests, screenshots, docs, verification, pull request.
+
+## Previous state — 2026-10-29 (Modeler design — Part B2: smarter modeling and reports, branch `modeler-design-b2`)
 
 Everything up to Modeler design Part B1 and the zod 4 upgrade is merged into `main`. Part B2 adds browser
 tests in CI, a Dictionary with label autocomplete, Quick Model (table entry), step attributes with "colour by"
