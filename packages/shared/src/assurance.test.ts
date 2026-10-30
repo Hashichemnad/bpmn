@@ -1,5 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import {
+  ageBucket,
+  answerProblems,
+  engagementMove,
+  isQuestionVisible,
+  issueTransition,
+  issueTransitionSchema,
+  questionnaireDefinitionSchema,
+  scoreAnswers,
   createTestPlanSchema,
   sampleSizeFor,
   suggestConclusion,
@@ -53,5 +61,103 @@ describe('control testing (Phase 4.2)', () => {
     );
     expect(testReviewSchema.safeParse({ decision: 'RETURN' }).success).toBe(false);
     expect(testReviewSchema.safeParse({ decision: 'APPROVE' }).success).toBe(true);
+  });
+});
+
+describe('issues and audits (Phase 4.2)', () => {
+  it('allows issue transitions only from the right status', () => {
+    expect(issueTransition('OPEN', 'READY')).toBe('READY_FOR_VERIFICATION');
+    expect(issueTransition('READY_FOR_VERIFICATION', 'VERIFY')).toBe('CLOSED');
+    expect(issueTransition('OPEN', 'VERIFY')).toBeNull();
+    expect(issueTransition('CLOSED', 'REOPEN')).toBe('IN_PROGRESS');
+    expect(ageBucket(10)).toBe('0-30');
+    expect(ageBucket(95)).toBe('90+');
+    expect(issueTransitionSchema.safeParse({ action: 'ACCEPT_RISK' }).success).toBe(false);
+  });
+
+  it('moves engagements one stage at a time', () => {
+    expect(engagementMove('PLANNED', 'FIELDWORK')).toBe(true);
+    expect(engagementMove('PLANNED', 'REPORTING')).toBe(false);
+    expect(engagementMove('FOLLOW_UP', 'REPORTING')).toBe(true);
+  });
+});
+
+describe('questionnaires (Phase 4.2)', () => {
+  const def = questionnaireDefinitionSchema.parse({
+    sections: [
+      {
+        id: 's',
+        questions: [
+          { id: 'known', type: 'YES_NO_NA', textEn: 'Known?', required: true, weight: 2 },
+          {
+            id: 'why',
+            type: 'TEXT',
+            textEn: 'Why not?',
+            required: true,
+            showIf: { questionId: 'known', equals: ['NO'] },
+          },
+          {
+            id: 'pick',
+            type: 'SINGLE',
+            textEn: 'Pick',
+            weight: 1,
+            options: [
+              { id: 'a', en: 'A', score: 2 },
+              { id: 'b', en: 'B', score: 0 },
+            ],
+          },
+          { id: 'rate', type: 'RATING', textEn: 'Rate', weight: 1 },
+        ],
+      },
+    ],
+  });
+
+  it('shows conditional questions and checks required answers', () => {
+    expect(isQuestionVisible(def.sections[0].questions[1], { known: 'YES' })).toBe(false);
+    expect(answerProblems(def, { known: 'NO' })).toEqual([{ questionId: 'why', code: 'REQUIRED' }]);
+    expect(answerProblems(def, { known: 'YES', pick: 'z', rate: 7 })).toEqual([
+      { questionId: 'pick', code: 'INVALID' },
+      { questionId: 'rate', code: 'INVALID' },
+    ]);
+  });
+
+  it('scores weighted answers, skipping N/A', () => {
+    expect(scoreAnswers(def, { known: 'YES', pick: 'a', rate: 5 })).toEqual({
+      score: 2 + 2 + 5,
+      maxScore: 2 + 2 + 5,
+      percent: 100,
+    });
+    expect(scoreAnswers(def, { known: 'NA', pick: 'b', rate: 1 })?.maxScore).toBe(7);
+  });
+
+  it('refuses conditions on later questions and invalid self-assessment links', () => {
+    const bad = {
+      sections: [
+        {
+          id: 's',
+          questions: [
+            { id: 'a', type: 'TEXT', textEn: 'A', showIf: { questionId: 'b', equals: ['x'] } },
+            { id: 'b', type: 'TEXT', textEn: 'B' },
+          ],
+        },
+      ],
+    };
+    expect(questionnaireDefinitionSchema.safeParse(bad).success).toBe(false);
+    const link = {
+      sections: [
+        {
+          id: 's',
+          questions: [
+            {
+              id: 'a',
+              type: 'TEXT',
+              textEn: 'A',
+              link: { objectId: '0f8fad5b-d9cb-469f-a165-70867728950e', field: 'LIKELIHOOD' },
+            },
+          ],
+        },
+      ],
+    };
+    expect(questionnaireDefinitionSchema.safeParse(link).success).toBe(false);
   });
 });

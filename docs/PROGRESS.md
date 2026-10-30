@@ -71,14 +71,28 @@ Steps (tick as they are committed; a new session continues at the first unticked
       status steps), finding page for response owners (`/grc/findings/:id`, portal `/portal/findings/:id`), My tasks
       "Audit findings to answer". Tests: API 1 (`audits.e2e-spec.ts`, incl. report in both languages and the universe),
       e-mail templates 1, Playwright 1.
-- [ ] 4. Questionnaires and surveys: builder, campaigns, responses, results and Excel, RCSA proposals, compliance
-      self-assessment, "Request feedback" on a process.
+- [x] 4. Questionnaires and surveys (D-102): `Questionnaire` (bilingual, purpose GENERAL / RCSA / COMPLIANCE /
+      PROCESS_FEEDBACK, definition = sections of questions: single / multiple choice, rating 1–5, yes/no/NA, text,
+      number, date, file upload; required, scoring weights and option scores, conditional show/hide on an earlier
+      answer, RCSA link to a risk's residual likelihood / impact or a control's effectiveness), `SurveyCampaign`
+      (definition snapshot, audience users / roles / departments limited to `surveys.respond` holders, dates, reminder
+      days, department or process assessed; Draft → Open → Closed, closes itself after the end date),
+      `SurveyResponse` (Sent → Opened → Submitted, answers, weighted score, file answers as `AssuranceFile`),
+      `SurveyProposal` (RCSA answers → proposals a GRC officer accepts — applied through the normal risk / control
+      update, so the change approval applies — or dismisses). Results per question (counts, averages, texts), Excel
+      export EN / AR (responses + summary sheets, right-to-left), audited `EXPORT`. "Request feedback" on a process
+      (editors of the process or survey managers): built-in short questionnaire, launched at once, recipients see the
+      read-only working (draft) diagram, each submission becomes a comment on the process. Notification `SURVEY`
+      (invited / reminder). Web: Questionnaires (campaigns + questionnaires), builder with preview, campaign page
+      (launch / close, tracking, results, proposals, Excel), response page in the workspace (`/surveys/:id`) and the
+      portal (`/portal/surveys/:id`), My tasks / portal tasks "Questionnaires to answer", "Request feedback" on the
+      process page. Tests: shared 5, API 2 (`surveys.e2e-spec.ts`), Playwright 1.
 - [ ] 5. Assurance dashboard and the heat-map toggle "using tested effectiveness".
 - [ ] 6. Permissions sweep, demo seed, screenshots EN / AR, sample audit report, docs, pull request.
 
 ### Next (continue here)
 
-Step 4 — questionnaires and surveys.
+Step 5 — assurance dashboard and the heat-map toggle "using tested effectiveness".
 
 ## Previous state — 2026-10-30 (Phase 4 — Part 1: GRC core, branch `phase-4-1-grc`, done — awaiting review)
 

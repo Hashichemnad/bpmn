@@ -595,6 +595,8 @@ export const NOTIFICATION_TYPES = [
   'ISSUE',
   /** Audit engagement / finding: added to the team, response requested, response given (params.kind). */
   'AUDIT',
+  /** Questionnaire to answer: invited / reminder (params.kind). */
+  'SURVEY',
 ] as const;
 export type NotificationType = (typeof NOTIFICATION_TYPES)[number];
 

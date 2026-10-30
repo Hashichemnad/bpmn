@@ -72,7 +72,8 @@
   "nav": {
     "tests": "اختبارات الضوابط",
     "issues": "الملاحظات والإجراءات",
-    "audits": "التدقيق"
+    "audits": "التدقيق",
+    "surveys": "الاستبيانات"
   },
   "anyone": "أي شخص بدور {{role}}",
   "unassigned": "المخاطر والامتثال",
@@ -84,7 +85,8 @@
     "issues": "ملاحظاتي",
     "issueActions": "إجراءاتي",
     "issuesToVerify": "ملاحظات للتحقق",
-    "findingsToAnswer": "نتائج تدقيق بانتظار ردك"
+    "findingsToAnswer": "نتائج تدقيق بانتظار ردك",
+    "surveys": "استبيانات للإجابة"
   },
   "evidence": {
     "title": "الأدلة",
@@ -411,5 +413,127 @@
       "ACCEPTED": "موافق",
       "DISAGREED": "غير موافق"
     }
+  },
+  "surveys": {
+    "title": "الاستبيانات والمسوح",
+    "subtitle": "التقييمات الذاتية وفحوص الامتثال وحملات الملاحظات: أنشئ الاستبيانات وأرسلها وتابع الإجابات.",
+    "newQuestionnaire": "استبيان جديد",
+    "newCampaign": "حملة جديدة",
+    "campaigns": "الحملات",
+    "questionnaires": "الاستبيانات",
+    "campaign": "الحملة",
+    "questionnaire": "الاستبيان",
+    "purpose": "الغرض",
+    "period": "الفترة",
+    "responseRate": "نسبة الاستجابة",
+    "proposals": "مقترحات التقييم",
+    "questions": "الأسئلة",
+    "questionnaireSaved": "تم حفظ الاستبيان",
+    "build": "الإنشاء",
+    "preview": "معاينة",
+    "addSection": "إضافة قسم",
+    "addQuestion": "إضافة سؤال",
+    "addOption": "إضافة خيار",
+    "sectionEn": "عنوان القسم (إنجليزي)",
+    "sectionAr": "عنوان القسم (عربي)",
+    "untitled": "سؤال بلا عنوان",
+    "textEn": "السؤال (إنجليزي)",
+    "textAr": "السؤال (عربي)",
+    "optionEn": "الخيار (إنجليزي)",
+    "optionAr": "الخيار (عربي)",
+    "score": "الدرجة",
+    "weight": "الوزن",
+    "required": "إلزامي",
+    "showIf": "يظهر فقط عندما",
+    "equals": "يكون أحد",
+    "link": "تقييم ذاتي: يقترح",
+    "noQuestions": "لا توجد أسئلة بعد.",
+    "types": {
+      "SINGLE": "اختيار واحد",
+      "MULTIPLE": "اختيار متعدد",
+      "RATING": "تقييم 1–5",
+      "YES_NO_NA": "نعم / لا / لا ينطبق",
+      "TEXT": "نص",
+      "NUMBER": "رقم",
+      "DATE": "تاريخ",
+      "FILE": "رفع ملف"
+    },
+    "yesNo": {
+      "YES": "نعم",
+      "NO": "لا",
+      "NA": "لا ينطبق"
+    },
+    "fields": {
+      "LIKELIHOOD": "الاحتمالية المتبقية لخطر",
+      "IMPACT": "الأثر المتبقي لخطر",
+      "EFFECTIVENESS": "فعالية ضابط"
+    },
+    "purposes": {
+      "GENERAL": "استبيان عام",
+      "RCSA": "التقييم الذاتي للمخاطر والضوابط",
+      "COMPLIANCE": "التقييم الذاتي للامتثال",
+      "PROCESS_FEEDBACK": "ملاحظات على عملية"
+    },
+    "qStatus": {
+      "DRAFT": "مسودة",
+      "ACTIVE": "نشط",
+      "ARCHIVED": "مؤرشف"
+    },
+    "status": {
+      "DRAFT": "مسودة",
+      "OPEN": "مفتوحة",
+      "CLOSED": "مغلقة"
+    },
+    "progress": {
+      "SENT": "مرسل",
+      "OPENED": "مفتوح",
+      "SUBMITTED": "مقدَّم"
+    },
+    "proposalStatus": {
+      "PENDING": "بانتظار",
+      "ACCEPTED": "مقبول",
+      "DISMISSED": "مرفوض"
+    },
+    "problem": {
+      "REQUIRED": "يرجى الإجابة على هذا السؤال.",
+      "INVALID": "هذه الإجابة غير صحيحة."
+    },
+    "users": "المستخدمون",
+    "roles": "كل من لديه الأدوار",
+    "departments": "كل من في الإدارات",
+    "titleDefault": "فارغ: عنوان الاستبيان.",
+    "reminderDays": "التذكير (أيام قبل النهاية)",
+    "forDepartment": "الإدارة المقيَّمة",
+    "forProcess": "العملية",
+    "audience": "المستلمون",
+    "launch": "إطلاق",
+    "close": "إغلاق",
+    "results": "النتائج",
+    "responses": "الردود",
+    "respondent": "المستجيب",
+    "submittedAt": "تاريخ التقديم",
+    "answers": "الإجابات",
+    "average": "المتوسط",
+    "averageScore": "متوسط النتيجة",
+    "noAnswers": "لا توجد إجابات بعد.",
+    "filesCount_one": "ملف واحد",
+    "filesCount_other": "{{count}} ملفات",
+    "accept": "قبول",
+    "dismiss": "رفض",
+    "requestFeedback": "طلب ملاحظات",
+    "feedbackSent": "تم طلب الملاحظات. ستظهر الإجابات في تعليقات العملية.",
+    "answerBy": "الإجابة قبل",
+    "messageEn": "الرسالة (إنجليزي)",
+    "messageAr": "الرسالة (عربي)",
+    "dueBy": "يرجى الإجابة قبل {{date}}",
+    "thanks": "شكرًا — قُدّم في {{date}}.",
+    "closed": "هذا الاستبيان مغلق.",
+    "diagramOf": "مخطط المسودة:",
+    "noDiagram": "لا يوجد مخطط للعملية بعد.",
+    "saveDraft": "حفظ كمسودة",
+    "submit": "تقديم",
+    "saved": "تم حفظ الإجابات",
+    "submitted": "تم تقديم الإجابات",
+    "fixProblems": "ما زالت بعض الأسئلة تحتاج إلى إجابة."
   }
 }

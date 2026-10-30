@@ -420,6 +420,27 @@ zod / UUID pipe; file uploads are checked in the service (allow-list, content sn
 | GET    | `/spaces/:spaceId/pages`                     | `docs.read`                                               | param `spaceId`                     | default    |
 | POST   | `/spaces/:spaceId/pages`                     | `docs.read` + `docs.edit`                                 | body, param `spaceId`               | default    |
 | GET    | `/spaces/:spaceId/trash`                     | `docs.read` + `docs.edit`                                 | param `spaceId`                     | default    |
+| GET    | `/surveys/campaigns`                         | any of `surveys.manage`, `processes.read`                 | query                               | default    |
+| POST   | `/surveys/campaigns`                         | `surveys.manage`                                          | body                                | default    |
+| DELETE | `/surveys/campaigns/:id`                     | `surveys.manage`                                          | param `id`                          | default    |
+| GET    | `/surveys/campaigns/:id`                     | any of `surveys.manage`, `processes.read`                 | param `id`                          | default    |
+| PATCH  | `/surveys/campaigns/:id`                     | `surveys.manage`                                          | body, param `id`                    | default    |
+| POST   | `/surveys/campaigns/:id/close`               | any of `surveys.manage`, `processes.read`                 | param `id`                          | default    |
+| GET    | `/surveys/campaigns/:id/export`              | any of `surveys.manage`, `processes.read`                 | param `id`, query                   | default    |
+| POST   | `/surveys/campaigns/:id/launch`              | any of `surveys.manage`, `processes.read`                 | param `id`                          | default    |
+| GET    | `/surveys/campaigns/:id/proposals`           | any of `surveys.manage`, `grc.edit`                       | param `id`                          | default    |
+| GET    | `/surveys/campaigns/:id/results`             | any of `surveys.manage`, `processes.read`                 | param `id`                          | default    |
+| POST   | `/surveys/feedback-requests`                 | `processes.read`                                          | body                                | default    |
+| POST   | `/surveys/proposals/:id/decision`            | `grc.edit`                                                | body, param `id`                    | default    |
+| GET    | `/surveys/questionnaires`                    | `surveys.manage`                                          | —                                   | default    |
+| POST   | `/surveys/questionnaires`                    | `surveys.manage`                                          | body                                | default    |
+| DELETE | `/surveys/questionnaires/:id`                | `surveys.manage`                                          | param `id`                          | default    |
+| GET    | `/surveys/questionnaires/:id`                | `surveys.manage`                                          | param `id`                          | default    |
+| PATCH  | `/surveys/questionnaires/:id`                | `surveys.manage`                                          | body, param `id`                    | default    |
+| GET    | `/surveys/responses/:id`                     | `surveys.respond`                                         | param `id`                          | default    |
+| PUT    | `/surveys/responses/:id`                     | `surveys.respond`                                         | body, param `id`                    | default    |
+| GET    | `/surveys/responses/:id/diagram`             | `surveys.respond`                                         | param `id`                          | default    |
+| POST   | `/surveys/responses/:id/files`               | `surveys.respond`                                         | file, param `id`                    | default    |
 | GET    | `/tasks`                                     | authenticated                                             | —                                   | default    |
 | GET    | `/templates`                                 | `docs.read`                                               | —                                   | default    |
 | POST   | `/templates`                                 | `docs.manage`                                             | body                                | default    |

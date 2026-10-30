@@ -248,5 +248,41 @@ export function useAssuranceTaskTabs(portal = false): {
         />
       ),
     });
+  if (d.surveys.length)
+    items.push({
+      key: 'surveys',
+      label: label('surveys', t('assurance:tasks.surveys')),
+      children: (
+        <Table
+          rowKey="id"
+          size="middle"
+          pagination={false}
+          dataSource={d.surveys}
+          data-testid="tasks-surveys"
+          columns={[
+            {
+              title: t('assurance:surveys.questionnaire'),
+              render: (_, r) => (
+                <Link to={portal ? `/portal/surveys/${r.id}` : `/surveys/${r.id}`}>
+                  {loc(r.campaign, 'title')}
+                </Link>
+              ),
+            },
+            {
+              title: t('assurance:surveys.purpose'),
+              render: (_, r) => t(`assurance:surveys.purposes.${r.campaign.purpose}`),
+            },
+            {
+              title: t('assurance:issues.statusLabel'),
+              render: (_, r) => t(`assurance:surveys.progress.${r.status}`),
+            },
+            {
+              title: t('assurance:surveys.answerBy'),
+              render: (_, r) => formatDate(r.campaign.endAt, false),
+            },
+          ]}
+        />
+      ),
+    });
   return { items, counts };
 }

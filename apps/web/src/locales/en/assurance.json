@@ -72,7 +72,8 @@
   "nav": {
     "tests": "Control tests",
     "issues": "Issues & actions",
-    "audits": "Audits"
+    "audits": "Audits",
+    "surveys": "Questionnaires"
   },
   "anyone": "Anyone with the role {{role}}",
   "unassigned": "Risk & Compliance",
@@ -84,7 +85,8 @@
     "issues": "My issues",
     "issueActions": "My actions",
     "issuesToVerify": "Issues to verify",
-    "findingsToAnswer": "Audit findings to answer"
+    "findingsToAnswer": "Audit findings to answer",
+    "surveys": "Questionnaires to answer"
   },
   "evidence": {
     "title": "Evidence",
@@ -411,5 +413,127 @@
       "ACCEPTED": "Agreed",
       "DISAGREED": "Not agreed"
     }
+  },
+  "surveys": {
+    "title": "Questionnaires and surveys",
+    "subtitle": "Self-assessments, compliance checks and feedback campaigns: build questionnaires, send them, follow the answers.",
+    "newQuestionnaire": "New questionnaire",
+    "newCampaign": "New campaign",
+    "campaigns": "Campaigns",
+    "questionnaires": "Questionnaires",
+    "campaign": "Campaign",
+    "questionnaire": "Questionnaire",
+    "purpose": "Purpose",
+    "period": "Period",
+    "responseRate": "Response rate",
+    "proposals": "Rating proposals",
+    "questions": "Questions",
+    "questionnaireSaved": "Questionnaire saved",
+    "build": "Build",
+    "preview": "Preview",
+    "addSection": "Add section",
+    "addQuestion": "Add question",
+    "addOption": "Add option",
+    "sectionEn": "Section title (English)",
+    "sectionAr": "Section title (Arabic)",
+    "untitled": "Untitled question",
+    "textEn": "Question (English)",
+    "textAr": "Question (Arabic)",
+    "optionEn": "Option (English)",
+    "optionAr": "Option (Arabic)",
+    "score": "Score",
+    "weight": "Weight",
+    "required": "Required",
+    "showIf": "Show only when",
+    "equals": "is one of",
+    "link": "Self-assessment: propose",
+    "noQuestions": "No questions yet.",
+    "types": {
+      "SINGLE": "Single choice",
+      "MULTIPLE": "Multiple choice",
+      "RATING": "Rating 1–5",
+      "YES_NO_NA": "Yes / No / N/A",
+      "TEXT": "Text",
+      "NUMBER": "Number",
+      "DATE": "Date",
+      "FILE": "File upload"
+    },
+    "yesNo": {
+      "YES": "Yes",
+      "NO": "No",
+      "NA": "N/A"
+    },
+    "fields": {
+      "LIKELIHOOD": "Residual likelihood of a risk",
+      "IMPACT": "Residual impact of a risk",
+      "EFFECTIVENESS": "Effectiveness of a control"
+    },
+    "purposes": {
+      "GENERAL": "General survey",
+      "RCSA": "Risk & control self-assessment",
+      "COMPLIANCE": "Compliance self-assessment",
+      "PROCESS_FEEDBACK": "Process feedback"
+    },
+    "qStatus": {
+      "DRAFT": "Draft",
+      "ACTIVE": "Active",
+      "ARCHIVED": "Archived"
+    },
+    "status": {
+      "DRAFT": "Draft",
+      "OPEN": "Open",
+      "CLOSED": "Closed"
+    },
+    "progress": {
+      "SENT": "Sent",
+      "OPENED": "Opened",
+      "SUBMITTED": "Submitted"
+    },
+    "proposalStatus": {
+      "PENDING": "Pending",
+      "ACCEPTED": "Accepted",
+      "DISMISSED": "Dismissed"
+    },
+    "problem": {
+      "REQUIRED": "Please answer this question.",
+      "INVALID": "This answer is not valid."
+    },
+    "users": "Users",
+    "roles": "Everyone with the roles",
+    "departments": "Everyone in the departments",
+    "titleDefault": "Empty: the questionnaire title.",
+    "reminderDays": "Remind (days before the end)",
+    "forDepartment": "Department assessed",
+    "forProcess": "Process",
+    "audience": "Recipients",
+    "launch": "Launch",
+    "close": "Close",
+    "results": "Results",
+    "responses": "Responses",
+    "respondent": "Respondent",
+    "submittedAt": "Submitted",
+    "answers": "Answers",
+    "average": "Average",
+    "averageScore": "Average score",
+    "noAnswers": "No answers yet.",
+    "filesCount_one": "{{count}} file",
+    "filesCount_other": "{{count}} files",
+    "accept": "Accept",
+    "dismiss": "Dismiss",
+    "requestFeedback": "Request feedback",
+    "feedbackSent": "Feedback requested. The answers will appear in the comments of the process.",
+    "answerBy": "Answer by",
+    "messageEn": "Message (English)",
+    "messageAr": "Message (Arabic)",
+    "dueBy": "Please answer by {{date}}",
+    "thanks": "Thank you — submitted on {{date}}.",
+    "closed": "This questionnaire is closed.",
+    "diagramOf": "Draft diagram:",
+    "noDiagram": "The process has no diagram yet.",
+    "saveDraft": "Save draft",
+    "submit": "Submit",
+    "saved": "Answers saved",
+    "submitted": "Answers submitted",
+    "fixProblems": "Some questions still need an answer."
   }
 }

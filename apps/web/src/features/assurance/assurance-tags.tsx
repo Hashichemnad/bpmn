@@ -2,6 +2,7 @@ import { Tag } from 'antd';
 import { useTranslation } from 'react-i18next';
 import type {
   AssigneeDto,
+  CampaignStatus,
   ControlTestStatus,
   EngagementStatus,
   IssueStatus,
@@ -88,4 +89,10 @@ export function ResponseTag({ value }: { value: ResponseStatus }) {
   const { t } = useTranslation();
   const colour = { PENDING: 'default', ACCEPTED: 'green', DISAGREED: 'red' }[value];
   return <Tag color={colour}>{t(`assurance:audits.response.${value}`)}</Tag>;
+}
+
+export function CampaignStatusTag({ status }: { status: CampaignStatus }) {
+  const { t } = useTranslation();
+  const colour = { DRAFT: 'default', OPEN: 'blue', CLOSED: 'green' }[status];
+  return <Tag color={colour}>{t(`assurance:surveys.status.${status}`)}</Tag>;
 }

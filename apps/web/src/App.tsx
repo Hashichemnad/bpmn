@@ -59,6 +59,10 @@ import { PortalTasksPage } from '@/features/assurance/PortalTasksPage';
 import { AuditPlanPage } from '@/features/assurance/AuditPlanPage';
 import { EngagementPage } from '@/features/assurance/EngagementPage';
 import { FindingPage } from '@/features/assurance/FindingPage';
+import { SurveysPage } from '@/features/assurance/SurveysPage';
+import { QuestionnaireBuilderPage } from '@/features/assurance/QuestionnaireBuilderPage';
+import { CampaignPage } from '@/features/assurance/CampaignPage';
+import { SurveyResponsePage } from '@/features/assurance/SurveyResponsePage';
 
 const P = PERMISSIONS;
 
@@ -115,6 +119,7 @@ export const routes: RouteObject[] = [
               { path: 'tasks', element: <PortalTasksPage /> },
               { path: 'issues/:id', element: <IssuePage portal /> },
               { path: 'findings/:id', element: <FindingPage portal /> },
+              { path: 'surveys/:id', element: <SurveyResponsePage portal /> },
               { path: 'profile', element: <ProfilePage /> },
               { path: '*', element: <NotFound /> },
             ],
@@ -277,6 +282,25 @@ export const routes: RouteObject[] = [
                   },
                   // Response owners answer their finding without the audit workspace.
                   { path: 'grc/findings/:id', element: <FindingPage /> },
+                  {
+                    path: 'grc/surveys',
+                    element: (
+                      <RequirePermission all={[P.SURVEYS_MANAGE]}>
+                        <SurveysPage />
+                      </RequirePermission>
+                    ),
+                  },
+                  {
+                    path: 'grc/surveys/questionnaires/:id',
+                    element: (
+                      <RequirePermission all={[P.SURVEYS_MANAGE]}>
+                        <QuestionnaireBuilderPage />
+                      </RequirePermission>
+                    ),
+                  },
+                  // Process feedback requests are also followed by the editors of the process.
+                  { path: 'grc/surveys/campaigns/:id', element: <CampaignPage /> },
+                  { path: 'surveys/:id', element: <SurveyResponsePage /> },
                   {
                     path: 'settings/grc',
                     element: (

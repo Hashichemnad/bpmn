@@ -1390,3 +1390,104 @@ model AuditFinding {
   @@unique([engagementId, code])
   @@index([responseOwnerId])
 }
+
+/// A reusable questionnaire (Phase 4.2, D-102): sections of typed questions, bilingual.
+model Questionnaire {
+  id            String           @id @default(uuid()) @db.Uuid
+  titleEn       String           @default("")
+  titleAr       String           @default("")
+  descriptionEn String           @default("")
+  descriptionAr String           @default("")
+  /// GENERAL | RCSA | COMPLIANCE | PROCESS_FEEDBACK
+  purpose       String           @default("GENERAL")
+  /// { sections: [{ id, titleEn, titleAr, questions: [...] }] }
+  definition    Json
+  /// DRAFT | ACTIVE | ARCHIVED
+  status        String           @default("DRAFT")
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+  createdById   String?          @db.Uuid
+  updatedById   String?          @db.Uuid
+  deletedAt     DateTime?
+  campaigns     SurveyCampaign[]
+}
+
+/// A questionnaire sent to users, roles or departments for a period.
+model SurveyCampaign {
+  id                 String           @id @default(uuid()) @db.Uuid
+  questionnaireId    String?          @db.Uuid
+  questionnaire      Questionnaire?   @relation(fields: [questionnaireId], references: [id], onDelete: SetNull)
+  titleEn            String           @default("")
+  titleAr            String           @default("")
+  purpose            String           @default("GENERAL")
+  /// Message to the recipients (default: the questionnaire description).
+  descriptionEn      String           @default("")
+  descriptionAr      String           @default("")
+  /// Snapshot of the questionnaire when the campaign was created.
+  definition         Json
+  /// DRAFT | OPEN | CLOSED
+  status             String           @default("DRAFT")
+  /// { userIds, roleKeys, departmentIds }
+  audience           Json             @default("{}")
+  startAt            DateTime?
+  endAt              DateTime?
+  reminderDaysBefore Int              @default(3)
+  /// Feedback on a (draft) process / compliance self-assessment of a department.
+  processId          String?          @db.Uuid
+  departmentId       String?          @db.Uuid
+  launchedAt         DateTime?
+  closedAt           DateTime?
+  createdAt          DateTime         @default(now())
+  updatedAt          DateTime         @updatedAt
+  createdById        String?          @db.Uuid
+  updatedById        String?          @db.Uuid
+  deletedAt          DateTime?
+  responses          SurveyResponse[]
+  proposals          SurveyProposal[]
+
+  @@index([status, endAt])
+  @@index([processId])
+}
+
+/// One recipient's answers: Sent → Opened → Submitted.
+model SurveyResponse {
+  id             String         @id @default(uuid()) @db.Uuid
+  campaignId     String         @db.Uuid
+  campaign       SurveyCampaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  userId         String         @db.Uuid
+  /// SENT | OPENED | SUBMITTED
+  status         String         @default("SENT")
+  /// { questionId: value }
+  answers        Json           @default("{}")
+  score          Float?
+  maxScore       Float?
+  openedAt       DateTime?
+  submittedAt    DateTime?
+  reminderSentAt DateTime?
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+
+  @@unique([campaignId, userId])
+  @@index([userId, status])
+}
+
+/// A rating / effectiveness proposed by a self-assessment answer, for a Risk & Compliance officer.
+model SurveyProposal {
+  id          String         @id @default(uuid()) @db.Uuid
+  campaignId  String         @db.Uuid
+  campaign    SurveyCampaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  responseId  String         @db.Uuid
+  questionId  String
+  objectId    String         @db.Uuid
+  /// LIKELIHOOD | IMPACT | EFFECTIVENESS
+  field       String
+  value       String
+  /// PENDING | ACCEPTED | DISMISSED
+  status      String         @default("PENDING")
+  decidedById String?        @db.Uuid
+  decidedAt   DateTime?
+  createdAt   DateTime       @default(now())
+
+  @@index([campaignId, status])
+  @@index([objectId])
+}

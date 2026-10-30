@@ -39,6 +39,7 @@ import {
   SafetyOutlined,
   BankOutlined,
   ExperimentOutlined,
+  FormOutlined,
   IssuesCloseOutlined,
 } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
@@ -207,6 +208,15 @@ export function AppLayout() {
                 },
               ]
             : []),
+          ...(can(PERMISSIONS.SURVEYS_MANAGE)
+            ? [
+                {
+                  key: '/grc/surveys',
+                  icon: <FormOutlined />,
+                  label: <Link to="/grc/surveys">{t('assurance:nav.surveys')}</Link>,
+                },
+              ]
+            : []),
         ],
       });
     }
@@ -328,6 +338,7 @@ export function AppLayout() {
       '/grc/tests',
       '/grc/issues',
       '/grc/audits',
+      '/grc/surveys',
       '/admin/users',
       '/admin/departments',
       '/admin/audit',

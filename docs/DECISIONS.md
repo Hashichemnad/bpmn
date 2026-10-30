@@ -1180,3 +1180,25 @@ decode-uri-component 0.2.2`, also on `main`; no MinIO release avoids it. Root `p
 - **Report**: `.docx` generated on the server with the same `docx` library and style as the B2 handbook (cover with
   organisation name and logo, executive summary, objective, scope table, findings table coloured by rating, each finding
   with trace and management response), English or Arabic right-to-left; downloads are audited (`EXPORT`).
+
+## D-102 — Questionnaires, campaigns, self-assessment proposals and process feedback (Phase 4.2, 2026-10-30)
+
+- **Definition as JSON**: a questionnaire is one JSON definition (sections → questions) validated by a shared zod
+  schema, not tables per question: questions are always read and written together, and campaigns keep a snapshot so a
+  later edit of the questionnaire never changes a running campaign. Conditions may only refer to an earlier question.
+- **Who**: `surveys.manage` (Risk & Compliance officers, Internal Audit, admins) builds questionnaires and runs
+  campaigns; `surveys.respond` (every role, Viewers included) answers what was sent to them — the audience is resolved
+  to active users holding `surveys.respond` when the campaign is launched and fixed from then on. Respondents only ever
+  see their own response (404 otherwise). Viewers answer in the portal (`/portal/surveys/:id`).
+- **Scoring**: rating = value × weight (max 5 × weight), yes / no = weight / 0 (N/A not counted), choices = option
+  score × weight (max: best option, or the sum of positive options for multiple choice); hidden questions do not count.
+- **Self-assessment (RCSA)**: a rating question may propose a risk's residual likelihood or impact, a single-choice
+  question (options effective / partly / not effective) a control's effectiveness. Submissions create proposals; a
+  Risk & Compliance officer (`grc.edit`) accepts them through the normal update (with the change approval of D-098
+  when it is on; the other residual value is kept) or dismisses them. Answers never change ratings by themselves.
+- **Process feedback**: "Request feedback" is open to the editors of the process (and survey managers); it uses a
+  built-in four-question questionnaire, launches at once and gives recipients — also without the workspace — a
+  read-only view of the working (draft) diagram through their response only. Each submission is posted as a comment
+  on the process (Comments panel), authored by the respondent; the requester follows the campaign and its results.
+- **Reminders**: once per recipient, `reminderDaysBefore` days before the end; campaigns close themselves the day after
+  their end date (assurance scheduler).

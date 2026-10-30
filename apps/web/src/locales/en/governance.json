@@ -341,7 +341,10 @@
       "AUDIT_team": "You are on the audit team of {{title}}",
       "AUDIT_response": "Your management response is requested: {{title}}",
       "AUDIT_agreed": "{{actor}} agreed to the finding {{title}}",
-      "AUDIT_disagreed": "{{actor}} did not agree to the finding {{title}}"
+      "AUDIT_disagreed": "{{actor}} did not agree to the finding {{title}}",
+      "SURVEY": "Questionnaire: {{title}}",
+      "SURVEY_invited": "Please answer the questionnaire {{title}} (by {{due}})",
+      "SURVEY_reminder": "Reminder: the questionnaire {{title}} closes on {{due}}"
     }
   },
   "prefs": {
@@ -366,7 +369,8 @@
       "GRC_CHANGE": "Changes of risks and controls (approvals)",
       "CONTROL_TEST": "Control tests (assigned, due, reviews)",
       "ISSUE": "Issues and actions (assigned, due, escalations)",
-      "AUDIT": "Audit engagements and findings"
+      "AUDIT": "Audit engagements and findings",
+      "SURVEY": "Questionnaires to answer"
     }
   },
   "feedback": {

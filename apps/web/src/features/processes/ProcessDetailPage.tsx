@@ -45,6 +45,7 @@ import { useRelatedPages } from '@/api/docs';
 import { useComments, useGovernance } from '@/api/governance';
 import { GovernancePanel } from '@/features/governance/GovernancePanel';
 import { CommentsPanel } from '@/features/comments/CommentsPanel';
+import { RequestFeedbackModal } from '@/features/assurance/CampaignFormModal';
 
 type Tab = 'overview' | 'subprocesses' | 'objects' | 'docs' | 'comments' | 'model';
 
@@ -67,6 +68,7 @@ export function ProcessDetailPage() {
   const [modalState, setModalState] = useState<'edit' | 'sub' | null>(null);
   const [docOpen, setDocOpen] = useState(false);
   const [report, setReport] = useState<ReportKind | null>(null);
+  const [feedbackRequest, setFeedbackRequest] = useState(false);
   const tab = (params.get('tab') as Tab) || 'overview';
 
   const linksByObject = useMemo(() => {
@@ -317,6 +319,11 @@ export function ProcessDetailPage() {
                 {t('edit')}
               </Button>
             )}
+            {(p.canEdit || can(PERMISSIONS.SURVEYS_MANAGE)) && p.hasModel && (
+              <Button data-testid="request-feedback" onClick={() => setFeedbackRequest(true)}>
+                {t('assurance:surveys.requestFeedback')}
+              </Button>
+            )}
             {actionItems.length > 0 && (
               <Dropdown menu={{ items: actionItems }} trigger={['click']}>
                 <Button>
@@ -327,6 +334,9 @@ export function ProcessDetailPage() {
           </>
         }
       />
+      {feedbackRequest && (
+        <RequestFeedbackModal processId={p.id} onClose={() => setFeedbackRequest(false)} />
+      )}
       <Tabs
         activeKey={tab}
         onChange={(k) => setParams(k === 'overview' ? {} : { tab: k })}

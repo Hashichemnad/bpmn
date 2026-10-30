@@ -156,5 +156,17 @@
   "FINDING_ANSWERED": "This finding has already been answered.",
   "INVALID_WORK_ITEM": "The work item no longer exists.",
   "ACTION_REQUIRED": "Describe the agreed action.",
-  "TARGET_DATE_REQUIRED": "Choose a target date."
+  "TARGET_DATE_REQUIRED": "Choose a target date.",
+  "ANSWERS_INVALID": "Some answers are missing or invalid.",
+  "ALREADY_SUBMITTED": "This questionnaire has already been submitted.",
+  "CAMPAIGN_CLOSED": "The campaign is closed.",
+  "CAMPAIGN_LAUNCHED": "The campaign has already been launched.",
+  "NO_RECIPIENTS": "Nobody in the chosen recipients can answer questionnaires.",
+  "END_IN_PAST": "The end date has already passed.",
+  "INVALID_QUESTIONNAIRE": "The questionnaire no longer exists.",
+  "QUESTIONNAIRE_ARCHIVED": "The questionnaire is archived.",
+  "PROPOSAL_DECIDED": "This proposal has already been decided.",
+  "OPTIONS_REQUIRED": "A choice question needs at least two options.",
+  "CONDITION_ON_LATER_QUESTION": "A question can only depend on an earlier question.",
+  "INVALID_LINK": "Rating questions propose a likelihood or impact; single-choice questions an effectiveness."
 }

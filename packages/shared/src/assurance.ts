@@ -26,6 +26,10 @@ export interface AssuranceTasksDto {
   issuesToVerify: IssueDto[];
   /** Audit findings waiting for the user's management response. */
   findingsToAnswer: AuditFindingDto[];
+  /** Questionnaires the user has not submitted yet (open campaigns). */
+  surveys: (Pick<MyResponseDto, 'id' | 'status'> & {
+    campaign: Pick<CampaignDto, 'id' | 'titleEn' | 'titleAr' | 'purpose' | 'endAt'>;
+  })[];
 }
 
 // ---------- Control testing (step 1, D-099) ----------
@@ -909,4 +913,431 @@ export interface AuditUniverseRow {
   lastAuditedAt: string | null;
   /** Engagements of the requested year covering it. */
   planned: Pick<AuditEngagementDto, 'id' | 'code' | 'status'>[];
+}
+
+// ---------- Questionnaires and surveys (step 4, D-102) ----------
+
+export const QUESTION_TYPES = [
+  'SINGLE',
+  'MULTIPLE',
+  'RATING',
+  'YES_NO_NA',
+  'TEXT',
+  'NUMBER',
+  'DATE',
+  'FILE',
+] as const;
+export type QuestionType = (typeof QUESTION_TYPES)[number];
+
+export const SURVEY_PURPOSES = ['GENERAL', 'RCSA', 'COMPLIANCE', 'PROCESS_FEEDBACK'] as const;
+export type SurveyPurpose = (typeof SURVEY_PURPOSES)[number];
+export const QUESTIONNAIRE_STATUSES = ['DRAFT', 'ACTIVE', 'ARCHIVED'] as const;
+export type QuestionnaireStatus = (typeof QUESTIONNAIRE_STATUSES)[number];
+export const CAMPAIGN_STATUSES = ['DRAFT', 'OPEN', 'CLOSED'] as const;
+export type CampaignStatus = (typeof CAMPAIGN_STATUSES)[number];
+export const RESPONSE_PROGRESS = ['SENT', 'OPENED', 'SUBMITTED'] as const;
+export type ResponseProgress = (typeof RESPONSE_PROGRESS)[number];
+export const PROPOSAL_FIELDS = ['LIKELIHOOD', 'IMPACT', 'EFFECTIVENESS'] as const;
+export type ProposalField = (typeof PROPOSAL_FIELDS)[number];
+export const PROPOSAL_STATUSES = ['PENDING', 'ACCEPTED', 'DISMISSED'] as const;
+export type ProposalStatus = (typeof PROPOSAL_STATUSES)[number];
+
+export const MAX_SECTIONS = 20;
+export const MAX_QUESTIONS = 200;
+export const MAX_OPTIONS = 30;
+
+const shortId = z
+  .string()
+  .trim()
+  .min(1)
+  .max(40)
+  .regex(/^[A-Za-z0-9_-]+$/, 'INVALID_KEY');
+const label = (max: number) => z.string().trim().max(max).default('');
+
+export const questionSchema = z.object({
+  id: shortId,
+  type: z.enum(QUESTION_TYPES),
+  textEn: label(1000),
+  textAr: label(1000),
+  helpEn: label(2000).optional(),
+  helpAr: label(2000).optional(),
+  required: z.boolean().default(false),
+  /** Scoring weight (0 = not scored). */
+  weight: z.number().min(0).max(100).default(0),
+  options: z
+    .array(
+      z.object({
+        id: shortId,
+        en: label(300),
+        ar: label(300),
+        score: z.number().min(-100).max(100).default(0),
+      }),
+    )
+    .max(MAX_OPTIONS)
+    .default([]),
+  /** Shown only when the answer of another (earlier) question is one of these values. */
+  showIf: z
+    .object({ questionId: shortId, equals: z.array(z.string().max(100)).min(1).max(30) })
+    .nullable()
+    .optional(),
+  /**
+   * Risk & control self-assessment: a RATING answer proposes the residual likelihood / impact of a
+   * risk; a SINGLE answer whose option ids are effectiveness values proposes a control's effectiveness.
+   */
+  link: z
+    .object({ objectId: z.guid(), field: z.enum(PROPOSAL_FIELDS) })
+    .nullable()
+    .optional(),
+});
+export type Question = z.infer<typeof questionSchema>;
+
+export const questionnaireDefinitionSchema = z
+  .object({
+    sections: z
+      .array(
+        z.object({
+          id: shortId,
+          titleEn: label(300),
+          titleAr: label(300),
+          questions: z.array(questionSchema).max(MAX_QUESTIONS),
+        }),
+      )
+      .min(1)
+      .max(MAX_SECTIONS),
+  })
+  .superRefine((d, ctx) => {
+    const ids = d.sections.flatMap((s) => s.questions.map((q) => q.id));
+    if (new Set(ids).size !== ids.length)
+      ctx.addIssue({ code: 'custom', path: ['sections'], message: 'DUPLICATE_KEY' });
+    if (ids.length > MAX_QUESTIONS)
+      ctx.addIssue({ code: 'custom', path: ['sections'], message: 'TOO_MANY_QUESTIONS' });
+    const seen = new Set<string>();
+    d.sections.forEach((s, si) =>
+      s.questions.forEach((q, qi) => {
+        const path = ['sections', si, 'questions', qi];
+        if (!q.textEn && !q.textAr)
+          ctx.addIssue({ code: 'custom', path: [...path, 'textEn'], message: 'NAME_REQUIRED' });
+        if ((q.type === 'SINGLE' || q.type === 'MULTIPLE') && q.options.length < 2)
+          ctx.addIssue({ code: 'custom', path: [...path, 'options'], message: 'OPTIONS_REQUIRED' });
+        if (q.showIf && !seen.has(q.showIf.questionId))
+          ctx.addIssue({
+            code: 'custom',
+            path: [...path, 'showIf'],
+            message: 'CONDITION_ON_LATER_QUESTION',
+          });
+        if (q.link?.field === 'EFFECTIVENESS' && q.type !== 'SINGLE')
+          ctx.addIssue({ code: 'custom', path: [...path, 'link'], message: 'INVALID_LINK' });
+        if (q.link && q.link.field !== 'EFFECTIVENESS' && q.type !== 'RATING')
+          ctx.addIssue({ code: 'custom', path: [...path, 'link'], message: 'INVALID_LINK' });
+        seen.add(q.id);
+      }),
+    );
+  });
+export type QuestionnaireDefinition = z.infer<typeof questionnaireDefinitionSchema>;
+
+/** An answer: option id(s), a rating 1–5, YES / NO / NA, text, number, ISO date or file ids. */
+export type Answer = string | number | string[] | null;
+export type Answers = Record<string, Answer>;
+
+const allQuestions = (d: QuestionnaireDefinition) => d.sections.flatMap((s) => s.questions);
+
+/** Whether a question is shown for the answers given so far (conditional show / hide). */
+export function isQuestionVisible(q: Question, answers: Answers): boolean {
+  if (!q.showIf) return true;
+  const a = answers[q.showIf.questionId];
+  const values = Array.isArray(a) ? a : a === null || a === undefined ? [] : [String(a)];
+  return values.some((v) => q.showIf!.equals.includes(String(v)));
+}
+
+/** Problems of a submission: required visible questions without an answer, invalid values. */
+export function answerProblems(d: QuestionnaireDefinition, answers: Answers) {
+  const problems: { questionId: string; code: 'REQUIRED' | 'INVALID' }[] = [];
+  for (const q of allQuestions(d)) {
+    if (!isQuestionVisible(q, answers)) continue;
+    const a = answers[q.id];
+    const empty = a === null || a === undefined || a === '' || (Array.isArray(a) && !a.length);
+    if (empty) {
+      if (q.required) problems.push({ questionId: q.id, code: 'REQUIRED' });
+      continue;
+    }
+    const opts = q.options.map((o) => o.id);
+    const ok =
+      q.type === 'SINGLE'
+        ? typeof a === 'string' && opts.includes(a)
+        : q.type === 'MULTIPLE'
+          ? Array.isArray(a) && a.every((v) => opts.includes(v))
+          : q.type === 'RATING'
+            ? typeof a === 'number' && Number.isInteger(a) && a >= 1 && a <= 5
+            : q.type === 'YES_NO_NA'
+              ? a === 'YES' || a === 'NO' || a === 'NA'
+              : q.type === 'NUMBER'
+                ? typeof a === 'number' && Number.isFinite(a)
+                : q.type === 'DATE'
+                  ? typeof a === 'string' && !Number.isNaN(Date.parse(a))
+                  : q.type === 'FILE'
+                    ? Array.isArray(a) && a.length <= 10
+                    : typeof a === 'string' && a.length <= 10000;
+    if (!ok) problems.push({ questionId: q.id, code: 'INVALID' });
+  }
+  return problems;
+}
+
+/** Weighted score of the visible answers (null when nothing is scored). */
+export function scoreAnswers(d: QuestionnaireDefinition, answers: Answers) {
+  let score = 0;
+  let max = 0;
+  for (const q of allQuestions(d)) {
+    if (!q.weight || !isQuestionVisible(q, answers)) continue;
+    const a = answers[q.id];
+    if (q.type === 'RATING') {
+      max += 5 * q.weight;
+      if (typeof a === 'number') score += a * q.weight;
+    } else if (q.type === 'YES_NO_NA') {
+      if (a === 'NA') continue;
+      max += q.weight;
+      if (a === 'YES') score += q.weight;
+    } else if (q.type === 'SINGLE' || q.type === 'MULTIPLE') {
+      const best =
+        q.type === 'SINGLE'
+          ? Math.max(0, ...q.options.map((o) => o.score))
+          : q.options.reduce((n, o) => n + Math.max(0, o.score), 0);
+      max += best * q.weight;
+      const chosen = Array.isArray(a) ? a : typeof a === 'string' ? [a] : [];
+      score +=
+        q.options.filter((o) => chosen.includes(o.id)).reduce((n, o) => n + o.score, 0) * q.weight;
+    }
+  }
+  return max ? { score, maxScore: max, percent: Math.round((score / max) * 100) } : null;
+}
+
+/** RCSA proposals of a submission (linked questions with an answer). */
+export function proposalsFromAnswers(d: QuestionnaireDefinition, answers: Answers) {
+  const out: { questionId: string; objectId: string; field: ProposalField; value: string }[] = [];
+  for (const q of allQuestions(d)) {
+    if (!q.link || !isQuestionVisible(q, answers)) continue;
+    const a = answers[q.id];
+    if (q.link.field === 'EFFECTIVENESS') {
+      if (typeof a === 'string' && ['EFFECTIVE', 'PARTLY', 'NOT_EFFECTIVE'].includes(a))
+        out.push({ questionId: q.id, objectId: q.link.objectId, field: 'EFFECTIVENESS', value: a });
+    } else if (typeof a === 'number') {
+      out.push({
+        questionId: q.id,
+        objectId: q.link.objectId,
+        field: q.link.field,
+        value: String(a),
+      });
+    }
+  }
+  return out;
+}
+
+/** The short built-in questionnaire of "Request feedback" on a process. */
+export const PROCESS_FEEDBACK_DEFINITION: QuestionnaireDefinition = {
+  sections: [
+    {
+      id: 'feedback',
+      titleEn: 'Your feedback on the process',
+      titleAr: 'ملاحظاتك على العملية',
+      questions: [
+        {
+          id: 'clarity',
+          type: 'RATING',
+          textEn: 'How clear is the process as drawn?',
+          textAr: 'ما مدى وضوح العملية كما هي مرسومة؟',
+          required: true,
+          weight: 1,
+          options: [],
+        },
+        {
+          id: 'matches',
+          type: 'YES_NO_NA',
+          textEn: 'Does it match how the work is done today?',
+          textAr: 'هل تطابق طريقة العمل الحالية؟',
+          required: true,
+          weight: 1,
+          options: [],
+        },
+        {
+          id: 'differences',
+          type: 'TEXT',
+          textEn: 'What is different or missing?',
+          textAr: 'ما المختلف أو الناقص؟',
+          required: false,
+          weight: 0,
+          options: [],
+          showIf: { questionId: 'matches', equals: ['NO'] },
+        },
+        {
+          id: 'suggestions',
+          type: 'TEXT',
+          textEn: 'Other suggestions',
+          textAr: 'اقتراحات أخرى',
+          required: false,
+          weight: 0,
+          options: [],
+        },
+      ],
+    },
+  ],
+};
+
+export const audienceSchema = z.object({
+  userIds: ids.default([]),
+  roleKeys: z.array(z.enum(SYSTEM_ROLE_KEYS)).max(20).default([]),
+  departmentIds: ids.default([]),
+});
+export type Audience = z.infer<typeof audienceSchema>;
+
+const questionnaireFields = {
+  titleEn: text(300),
+  titleAr: text(300),
+  descriptionEn: text(5000),
+  descriptionAr: text(5000),
+  purpose: z.enum(SURVEY_PURPOSES).optional(),
+  definition: questionnaireDefinitionSchema.optional(),
+  status: z.enum(QUESTIONNAIRE_STATUSES).optional(),
+};
+export const createQuestionnaireSchema = z
+  .object({ ...questionnaireFields, definition: questionnaireDefinitionSchema })
+  .superRefine(issueTitle);
+export type CreateQuestionnaireInput = z.infer<typeof createQuestionnaireSchema>;
+export const updateQuestionnaireSchema = z.object(questionnaireFields).superRefine((v, ctx) => {
+  if (v.titleEn !== undefined || v.titleAr !== undefined) issueTitle(v, ctx);
+});
+export type UpdateQuestionnaireInput = z.infer<typeof updateQuestionnaireSchema>;
+
+const campaignFields = {
+  titleEn: text(300),
+  titleAr: text(300),
+  audience: audienceSchema.optional(),
+  startAt: dateOnly.nullable().optional(),
+  endAt: dateOnly.nullable().optional(),
+  reminderDaysBefore: z.number().int().min(0).max(60).optional(),
+  processId: z.guid().nullable().optional(),
+  departmentId: z.guid().nullable().optional(),
+};
+/** The title defaults to the questionnaire's. */
+export const createCampaignSchema = z.object({ ...campaignFields, questionnaireId: z.guid() });
+export type CreateCampaignInput = z.infer<typeof createCampaignSchema>;
+export const updateCampaignSchema = z.object(campaignFields);
+export type UpdateCampaignInput = z.infer<typeof updateCampaignSchema>;
+
+/** "Request feedback" on a process: a campaign of the built-in questionnaire, launched at once. */
+export const feedbackRequestSchema = z.object({
+  processId: z.guid(),
+  audience: audienceSchema,
+  endAt: dateOnly,
+  messageEn: text(1000),
+  messageAr: text(1000),
+});
+export type FeedbackRequestInput = z.infer<typeof feedbackRequestSchema>;
+
+export const saveAnswersSchema = z.object({
+  answers: z.record(
+    z.string().max(40),
+    z.union([z.string().max(10000), z.number(), z.array(z.string().max(100)).max(50), z.null()]),
+  ),
+  submit: z.boolean().default(false),
+});
+export type SaveAnswersInput = z.infer<typeof saveAnswersSchema>;
+
+export const proposalDecisionSchema = z.object({ decision: z.enum(['ACCEPT', 'DISMISS']) });
+export type ProposalDecisionInput = z.infer<typeof proposalDecisionSchema>;
+
+export interface QuestionnaireDto {
+  id: string;
+  titleEn: string;
+  titleAr: string;
+  descriptionEn: string;
+  descriptionAr: string;
+  purpose: SurveyPurpose;
+  definition: QuestionnaireDefinition;
+  status: QuestionnaireStatus;
+  questionCount: number;
+  campaignCount: number;
+  updatedAt: string;
+}
+
+export interface CampaignDto {
+  id: string;
+  questionnaireId: string | null;
+  titleEn: string;
+  titleAr: string;
+  purpose: SurveyPurpose;
+  status: CampaignStatus;
+  audience: Audience;
+  audienceLabels: { users: UserRef[]; departments: DepartmentRef[] };
+  startAt: string | null;
+  endAt: string | null;
+  reminderDaysBefore: number;
+  process: IssueLinkRef | null;
+  department: DepartmentRef | null;
+  launchedAt: string | null;
+  closedAt: string | null;
+  counts: Record<ResponseProgress, number>;
+  /** Submitted / sent (0–100). */
+  responseRate: number;
+  pendingProposals: number;
+  createdAt: string;
+}
+
+export interface CampaignDetailDto extends CampaignDto {
+  definition: QuestionnaireDefinition;
+  responses: {
+    id: string;
+    user: UserRef;
+    status: ResponseProgress;
+    openedAt: string | null;
+    submittedAt: string | null;
+    score: number | null;
+    maxScore: number | null;
+  }[];
+}
+
+/** Aggregated answers of one question (results dashboard). */
+export interface QuestionResultDto {
+  questionId: string;
+  type: QuestionType;
+  answered: number;
+  /** Option id / YES / NO / NA / rating "1"…"5" → count. */
+  counts: Record<string, number>;
+  average: number | null;
+  texts: string[];
+  files: number;
+}
+
+export interface CampaignResultsDto {
+  campaignId: string;
+  counts: Record<ResponseProgress, number>;
+  responseRate: number;
+  averageScorePercent: number | null;
+  questions: QuestionResultDto[];
+}
+
+export interface SurveyProposalDto {
+  id: string;
+  questionId: string;
+  object: GrcRef;
+  field: ProposalField;
+  value: string;
+  /** The value in force now. */
+  current: string | null;
+  status: ProposalStatus;
+  respondent: UserRef | null;
+  createdAt: string;
+}
+
+/** The caller's own response with the questionnaire (respondent view). */
+export interface MyResponseDto {
+  id: string;
+  campaign: Pick<
+    CampaignDto,
+    'id' | 'titleEn' | 'titleAr' | 'purpose' | 'status' | 'endAt' | 'process'
+  > & { definition: QuestionnaireDefinition; descriptionEn: string; descriptionAr: string };
+  status: ResponseProgress;
+  answers: Answers;
+  files: AssuranceFileDto[];
+  submittedAt: string | null;
+  /** Open campaign and not yet submitted. */
+  canAnswer: boolean;
 }

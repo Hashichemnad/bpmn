@@ -65,6 +65,7 @@ describe('Route security declarations', () => {
       'POST /issues/actions/:id/files file',
       'POST /pages/:id/attachments file',
       'POST /settings/logo file',
+      'POST /surveys/responses/:id/files file',
     ]);
   });
 

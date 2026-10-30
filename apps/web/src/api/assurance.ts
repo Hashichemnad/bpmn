@@ -1,5 +1,18 @@
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type {
+  AssuranceFileDto,
+  CampaignDetailDto,
+  CampaignDto,
+  CampaignResultsDto,
+  CreateCampaignInput,
+  CreateQuestionnaireInput,
+  FeedbackRequestInput,
+  MyResponseDto,
+  QuestionnaireDto,
+  SaveAnswersInput,
+  SurveyProposalDto,
+  UpdateCampaignInput,
+  UpdateQuestionnaireInput,
   AuditEngagementDetailDto,
   AuditEngagementDto,
   AuditFindingDto,
@@ -405,5 +418,155 @@ export function useEngagementAction(engagementId: string) {
         qc.setQueryData(auditKeys.one(engagementId), data);
       done();
     },
+  });
+}
+
+// ---------- Questionnaires and surveys ----------
+
+export const surveyKeys = {
+  questionnaires: ['assurance', 'surveys', 'questionnaires'] as const,
+  questionnaire: (id: string) => ['assurance', 'surveys', 'questionnaire', id] as const,
+  campaigns: (q: Record<string, unknown>) => ['assurance', 'surveys', 'campaigns', q] as const,
+  campaign: (id: string) => ['assurance', 'surveys', 'campaign', id] as const,
+  results: (id: string) => ['assurance', 'surveys', 'results', id] as const,
+  proposals: (id: string) => ['assurance', 'surveys', 'proposals', id] as const,
+  response: (id: string) => ['assurance', 'surveys', 'response', id] as const,
+};
+
+export const useQuestionnaires = () =>
+  useQuery({
+    queryKey: surveyKeys.questionnaires,
+    queryFn: () => api<QuestionnaireDto[]>('/surveys/questionnaires'),
+  });
+
+export const useQuestionnaire = (id: string | undefined) =>
+  useQuery({
+    queryKey: surveyKeys.questionnaire(id ?? ''),
+    queryFn: () => api<QuestionnaireDto>(`/surveys/questionnaires/${id}`),
+    enabled: !!id,
+  });
+
+export function useSaveQuestionnaire() {
+  const done = useInvalidateAll();
+  return useMutation({
+    mutationFn: ({
+      id,
+      body,
+    }: {
+      id?: string;
+      body: CreateQuestionnaireInput | UpdateQuestionnaireInput;
+    }) =>
+      id
+        ? api<QuestionnaireDto>(`/surveys/questionnaires/${id}`, { method: 'PATCH', body })
+        : api<QuestionnaireDto>('/surveys/questionnaires', { method: 'POST', body }),
+    onSuccess: done,
+  });
+}
+
+export const useCampaigns = (q: Record<string, unknown>, enabled = true) =>
+  useQuery({
+    queryKey: surveyKeys.campaigns(q),
+    queryFn: () => api<CampaignDto[]>(`/surveys/campaigns?${qs(q)}`),
+    enabled,
+  });
+
+export const useCampaign = (id: string | undefined) =>
+  useQuery({
+    queryKey: surveyKeys.campaign(id ?? ''),
+    queryFn: () => api<CampaignDetailDto>(`/surveys/campaigns/${id}`),
+    enabled: !!id,
+  });
+
+export const useCampaignResults = (id: string | undefined) =>
+  useQuery({
+    queryKey: surveyKeys.results(id ?? ''),
+    queryFn: () => api<CampaignResultsDto>(`/surveys/campaigns/${id}/results`),
+    enabled: !!id,
+  });
+
+export const useCampaignProposals = (id: string | undefined, enabled = true) =>
+  useQuery({
+    queryKey: surveyKeys.proposals(id ?? ''),
+    queryFn: () => api<SurveyProposalDto[]>(`/surveys/campaigns/${id}/proposals`),
+    enabled: !!id && enabled,
+  });
+
+/** Campaign actions: create, update, launch, close, delete, feedback request, proposal decisions. */
+export function useCampaignAction() {
+  const done = useInvalidateAll();
+  return useMutation({
+    mutationFn: (
+      a:
+        | { kind: 'create'; body: CreateCampaignInput }
+        | { kind: 'update'; id: string; body: UpdateCampaignInput }
+        | { kind: 'launch' | 'close' | 'delete'; id: string }
+        | { kind: 'feedback'; body: FeedbackRequestInput }
+        | { kind: 'decide'; id: string; decision: 'ACCEPT' | 'DISMISS' },
+    ): Promise<unknown> => {
+      switch (a.kind) {
+        case 'create':
+          return api<CampaignDetailDto>('/surveys/campaigns', { method: 'POST', body: a.body });
+        case 'update':
+          return api(`/surveys/campaigns/${a.id}`, { method: 'PATCH', body: a.body });
+        case 'launch':
+        case 'close':
+          return api(`/surveys/campaigns/${a.id}/${a.kind}`, { method: 'POST' });
+        case 'delete':
+          return api(`/surveys/campaigns/${a.id}`, { method: 'DELETE' });
+        case 'feedback':
+          return api<CampaignDetailDto>('/surveys/feedback-requests', {
+            method: 'POST',
+            body: a.body,
+          });
+        case 'decide':
+          return api(`/surveys/proposals/${a.id}/decision`, {
+            method: 'POST',
+            body: { decision: a.decision },
+          });
+      }
+    },
+    onSuccess: done,
+  });
+}
+
+export const useMyResponse = (id: string | undefined) =>
+  useQuery({
+    queryKey: surveyKeys.response(id ?? ''),
+    queryFn: () => api<MyResponseDto>(`/surveys/responses/${id}`),
+    enabled: !!id,
+  });
+
+export const useResponseDiagram = (id: string | undefined, enabled: boolean) =>
+  useQuery({
+    queryKey: ['assurance', 'surveys', 'diagram', id ?? ''],
+    queryFn: () => api<{ bpmnXml: string }>(`/surveys/responses/${id}/diagram`),
+    enabled: !!id && enabled,
+  });
+
+export function useSaveAnswers(id: string) {
+  const qc = useQueryClient();
+  const done = useInvalidateAll();
+  return useMutation({
+    mutationFn: (body: SaveAnswersInput) =>
+      api<MyResponseDto>(`/surveys/responses/${id}`, { method: 'PUT', body }),
+    onSuccess: (r) => {
+      qc.setQueryData(surveyKeys.response(id), r);
+      done();
+    },
+  });
+}
+
+export function useUploadAnswerFile(id: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (file: File) => {
+      const form = new FormData();
+      form.append('file', file);
+      return api<AssuranceFileDto>(`/surveys/responses/${id}/files`, {
+        method: 'POST',
+        body: form,
+      });
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: surveyKeys.response(id) }),
   });
 }

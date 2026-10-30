@@ -270,3 +270,58 @@ test('an audit engagement records a finding, management agrees and the report do
   await page.getByRole('menuitem', { name: 'English' }).click();
   expect((await download).suggestedFilename()).toMatch(/AUD-\d{4}-\d{2}.*\.docx$/);
 });
+
+test('a questionnaire is built, sent to a Viewer, answered in the portal and the results show', async ({
+  page,
+}) => {
+  await login(page, DEMO.risk);
+  await page.goto('/grc/surveys');
+  await page.getByTestId('new-questionnaire').click();
+  await page.getByTestId('q-title-en').fill(`Policy awareness ${stamp}`);
+  await page.getByTestId('q-title-ar').fill(`الوعي بالسياسات ${stamp}`);
+  await page.getByTestId('add-question-0').click();
+  await page.locator('.ant-collapse-header').last().click();
+  const editor = page.locator('[data-testid^="editor-"]').last();
+  await editor.locator('[data-testid^="text-en-"]').fill('Do you know the purchasing policy?');
+  await editor.locator('[data-testid^="type-"]').click();
+  await page
+    .locator(
+      '.ant-select-dropdown:not(.ant-select-dropdown-hidden) .ant-select-item-option[title="Yes / No / N/A"]',
+    )
+    .click();
+  await page.getByTestId('questionnaire-save').click();
+  await expect(page).toHaveURL(/\/grc\/surveys\/questionnaires\/[0-9a-f-]+$/);
+  const questionnaireId = page.url().split('/').pop()!;
+
+  const viewer = (
+    await apiCall<{ id: string; email: string }[]>(page, 'GET', `/users/directory?q=${DEMO.viewer}`)
+  ).data.find((u) => u.email === DEMO.viewer)!;
+  const campaign = await apiCall<{ id: string }>(page, 'POST', '/surveys/campaigns', {
+    questionnaireId,
+    audience: { userIds: [viewer.id] },
+    endAt: '2027-12-31',
+  });
+  expect(campaign.status).toBe(201);
+  await page.goto(`/grc/surveys/campaigns/${campaign.data.id}`);
+  await page.getByTestId('campaign-launch').click();
+  await expect(page.locator('body')).toContainText('Open');
+
+  // The Viewer answers in the portal.
+  await login(page, DEMO.viewer);
+  await page.goto('/portal/tasks');
+  await page
+    .getByTestId('tasks-surveys')
+    .getByRole('link', { name: `Policy awareness ${stamp}` })
+    .click();
+  await expect(page).toHaveURL(/\/portal\/surveys\//);
+  await page.getByTestId('survey-form').getByText('Yes', { exact: true }).click();
+  await page.getByTestId('survey-submit').click();
+  await expect(page.locator('body')).toContainText('Thank you');
+
+  await login(page, DEMO.risk);
+  await page.goto(`/grc/surveys/campaigns/${campaign.data.id}`);
+  await expect(page.getByTestId('survey-results')).toContainText(
+    'Do you know the purchasing policy?',
+  );
+  await expect(page.locator('.ant-statistic').first()).toContainText('100');
+});

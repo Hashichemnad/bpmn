@@ -200,6 +200,10 @@ export async function createApp(): Promise<TestContext> {
 }
 
 const TABLES = [
+  'SurveyProposal',
+  'SurveyResponse',
+  'SurveyCampaign',
+  'Questionnaire',
   'AuditFinding',
   'AuditWorkItem',
   'AuditEngagement',

@@ -53,6 +53,7 @@ export function Home() {
 const PORTAL_EQUIVALENTS: [RegExp, string][] = [
   [/^\/grc\/issues\/([^/]+)$/, '/portal/issues/$1'],
   [/^\/grc\/findings\/([^/]+)$/, '/portal/findings/$1'],
+  [/^\/surveys\/([^/]+)$/, '/portal/surveys/$1'],
 ];
 
 export function WorkspaceOnly() {

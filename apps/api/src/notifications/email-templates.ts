@@ -70,6 +70,7 @@ const TEMPLATES: Record<Locale, Record<NotificationType, Template>> = {
     CONTROL_TEST: BY_KIND,
     ISSUE: BY_KIND,
     AUDIT: BY_KIND,
+    SURVEY: BY_KIND,
   },
   ar: {
     REVIEW_REQUESTED: {
@@ -124,6 +125,7 @@ const TEMPLATES: Record<Locale, Record<NotificationType, Template>> = {
     CONTROL_TEST: BY_KIND,
     ISSUE: BY_KIND,
     AUDIT: BY_KIND,
+    SURVEY: BY_KIND,
   },
 };
 
@@ -237,6 +239,14 @@ export const KIND_TEMPLATES: Record<Locale, Record<string, { subject: string; bo
       subject: 'Finding not agreed: {title}',
       body: '{actor} did not agree to the audit finding “{title}”: {comment}',
     },
+    'SURVEY:invited': {
+      subject: 'Questionnaire: {title}',
+      body: 'You are asked to answer the questionnaire “{title}” by {due}.',
+    },
+    'SURVEY:reminder': {
+      subject: 'Reminder — questionnaire: {title}',
+      body: 'The questionnaire “{title}” closes on {due}. Please answer it if you have not done so yet.',
+    },
   },
   ar: {
     'GRC_CHANGE:requested': {
@@ -342,6 +352,14 @@ export const KIND_TEMPLATES: Record<Locale, Record<string, { subject: string; bo
     'AUDIT:disagreed': {
       subject: 'لم تتم الموافقة على النتيجة: {title}',
       body: 'لم يوافق {actor} على نتيجة التدقيق «{title}»: {comment}',
+    },
+    'SURVEY:invited': {
+      subject: 'استبيان: {title}',
+      body: 'يُطلب منك الإجابة على الاستبيان «{title}» قبل {due}.',
+    },
+    'SURVEY:reminder': {
+      subject: 'تذكير — استبيان: {title}',
+      body: 'يُغلق الاستبيان «{title}» في {due}. يرجى الإجابة عليه إن لم تفعل بعد.',
     },
   },
 };
