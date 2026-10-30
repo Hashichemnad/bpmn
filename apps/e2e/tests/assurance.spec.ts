@@ -325,3 +325,25 @@ test('a questionnaire is built, sent to a Viewer, answered in the portal and the
   );
   await expect(page.locator('.ant-statistic').first()).toContainText('100');
 });
+
+test('the assurance dashboard drills down to lists and the heat map uses tested effectiveness', async ({
+  page,
+}) => {
+  await login(page, DEMO.risk);
+  await page.goto('/grc/assurance');
+  await expect(page.getByTestId('tile-tests-done')).toBeVisible();
+  await expect(page.getByTestId('issues-by-severity')).toBeVisible();
+  await expect(page.getByTestId('audit-progress')).toBeVisible();
+  await page.getByTestId('tile-issues-open').click();
+  await expect(page).toHaveURL(/\/grc\/issues\?.*open=true/);
+  await page.goto('/grc/assurance');
+  await page.getByTestId('tile-tests-done').click();
+  await expect(page).toHaveURL(/\/grc\/tests\?.*open=false/);
+
+  await page.goto('/grc/dashboard');
+  await page.getByTestId('grc-tested-toggle').click();
+  await expect(page).toHaveURL(/tested=true/);
+  await expect(page.getByTestId('grc-heatmap-residual')).toContainText(
+    'Residual (tested effectiveness)',
+  );
+});

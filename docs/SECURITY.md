@@ -176,6 +176,8 @@ zod / UUID pipe; file uploads are checked in the service (allow-list, content sn
 | POST   | `/ai/summarise`                              | authenticated                                             | body                                | default    |
 | POST   | `/ai/translate`                              | authenticated                                             | body                                | default    |
 | GET    | `/ai/usage`                                  | `ai.usage.read`                                           | query                               | default    |
+| GET    | `/assurance/dashboard`                       | any of `grc.read`, `audit.manage`, `issues.manage`        | query                               | default    |
+| GET    | `/assurance/dashboard/export`                | any of `grc.read`, `audit.manage`, `issues.manage`        | query                               | default    |
 | DELETE | `/assurance/files/:id`                       | authenticated                                             | param `id`                          | default    |
 | GET    | `/assurance/files/:id`                       | authenticated                                             | param `id`                          | default    |
 | GET    | `/assurance/settings`                        | any of `grc.read`, `issues.manage`, `audit.manage`        | —                                   | default    |

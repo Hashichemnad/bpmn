@@ -10,6 +10,7 @@ import {
   isEffectiveControl,
   isOverdue,
   needsChangeApproval,
+  testedResidual,
   rateRisk,
   ratingBand,
   resolveGrcSettings,
@@ -295,5 +296,50 @@ describe('approval of changes (Phase 4.2)', () => {
       reminderDaysBefore: 7,
       changeApproval: { enabled: false },
     });
+  });
+});
+
+describe('tested residual (Phase 4.2)', () => {
+  const r = { inherentLikelihood: 5, inherentImpact: 4, residualLikelihood: 2, residualImpact: 2 };
+  it('keeps the residual only with a control tested (partly) effective', () => {
+    expect(testedResidual(r, [{ status: 'ACTIVE', operatingEffectiveness: 'PARTLY' }])).toEqual({
+      likelihood: 2,
+      impact: 2,
+    });
+    expect(
+      testedResidual(r, [{ status: 'ACTIVE', operatingEffectiveness: 'NOT_EFFECTIVE' }]),
+    ).toEqual({
+      likelihood: 5,
+      impact: 4,
+    });
+    expect(testedResidual(r, [{ status: 'RETIRED', operatingEffectiveness: 'EFFECTIVE' }])).toEqual(
+      {
+        likelihood: 5,
+        impact: 4,
+      },
+    );
+  });
+  it('uses the tested result of a control when it has one', () => {
+    expect(
+      isEffectiveControl({
+        status: 'ACTIVE',
+        effectiveness: 'EFFECTIVE',
+        operatingEffectiveness: 'NOT_EFFECTIVE',
+      }),
+    ).toBe(false);
+    expect(
+      isEffectiveControl({
+        status: 'ACTIVE',
+        effectiveness: 'NOT_ASSESSED',
+        operatingEffectiveness: 'PARTLY',
+      }),
+    ).toBe(true);
+    expect(
+      isEffectiveControl({
+        status: 'ACTIVE',
+        effectiveness: 'EFFECTIVE',
+        operatingEffectiveness: 'NOT_ASSESSED',
+      }),
+    ).toBe(true);
   });
 });

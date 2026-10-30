@@ -243,6 +243,25 @@ export function rateRisk(r: RiskRatingInput, bands: GrcBand[]): RiskRating {
   };
 }
 
+/**
+ * Residual position "using tested effectiveness" (Phase 4.2, D-103): the residual rating assumes
+ * the controls work, so it counts only while at least one active mitigating control has a
+ * reviewed test result of effective or partly effective; otherwise the inherent rating stands.
+ */
+export function testedResidual(
+  r: RiskRatingInput,
+  controls: { status: GrcStatus; operatingEffectiveness?: ControlEffectiveness | null }[],
+): { likelihood: number; impact: number } {
+  const tested = controls.some(
+    (c) =>
+      c.status === 'ACTIVE' &&
+      (c.operatingEffectiveness === 'EFFECTIVE' || c.operatingEffectiveness === 'PARTLY'),
+  );
+  return tested
+    ? residualOrInherent(r)
+    : { likelihood: r.inherentLikelihood, impact: r.inherentImpact };
+}
+
 /** Matrix of counts: `cells[likelihood-1][impact-1]`. */
 export function heatMap(points: { likelihood: number; impact: number }[]): number[][] {
   const cells = Array.from({ length: 5 }, () => Array.from({ length: 5 }, () => 0));
@@ -450,7 +469,7 @@ export const riskListQuerySchema = listBase.extend({
     .string()
     .regex(/^[1-5],[1-5]$/)
     .optional(),
-  matrix: z.enum(['inherent', 'residual']).default('residual'),
+  matrix: z.enum(['inherent', 'residual', 'tested']).default('residual'),
   /** Coverage filters. */
   withoutControls: z
     .enum(['true', 'false'])
@@ -501,6 +520,11 @@ export type GrcCommentInput = z.infer<typeof grcCommentSchema>;
 export const grcDashboardQuerySchema = z.object({
   departmentId: id.optional(),
   processId: id.optional(),
+  /** Phase 4.2: residual heat map "using tested effectiveness" (D-103). */
+  tested: z
+    .enum(['true', 'false'])
+    .transform((v) => v === 'true')
+    .optional(),
 });
 export type GrcDashboardQuery = z.infer<typeof grcDashboardQuerySchema>;
 

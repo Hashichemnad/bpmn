@@ -6,6 +6,7 @@ import {
   isOverdue,
   rateRisk,
   residualOrInherent,
+  testedResidual,
   type GrcBreakdownRow,
   type GrcDashboardDto,
   type GrcDashboardQuery,
@@ -138,7 +139,18 @@ export class GrcDashboardService {
             impact: r.o.risk!.inherentImpact,
           })),
         ),
-        residual: heatMap(risks.map((r) => residualOrInherent(r.o.risk!))),
+        residual: heatMap(
+          risks.map((r) =>
+            q.tested
+              ? testedResidual(
+                  r.o.risk!,
+                  r.o
+                    .risk!.controls.filter((c) => !c.control.object.deletedAt)
+                    .map((c) => c.control),
+                )
+              : residualOrInherent(r.o.risk!),
+          ),
+        ),
         total: risks.length,
       },
       coverage: {

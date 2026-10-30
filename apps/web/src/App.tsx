@@ -63,6 +63,7 @@ import { SurveysPage } from '@/features/assurance/SurveysPage';
 import { QuestionnaireBuilderPage } from '@/features/assurance/QuestionnaireBuilderPage';
 import { CampaignPage } from '@/features/assurance/CampaignPage';
 import { SurveyResponsePage } from '@/features/assurance/SurveyResponsePage';
+import { AssuranceDashboardPage } from '@/features/assurance/AssuranceDashboardPage';
 
 const P = PERMISSIONS;
 
@@ -235,6 +236,14 @@ export const routes: RouteObject[] = [
                     element: (
                       <RequirePermission all={[P.GRC_READ]}>
                         <GrcDetailPage key="REQUIREMENT" type="REQUIREMENT" />
+                      </RequirePermission>
+                    ),
+                  },
+                  {
+                    path: 'grc/assurance',
+                    element: (
+                      <RequirePermission any={[P.GRC_READ, P.AUDIT_MANAGE, P.ISSUES_MANAGE]}>
+                        <AssuranceDashboardPage />
                       </RequirePermission>
                     ),
                   },

@@ -193,7 +193,7 @@ describe('Questionnaires and surveys (e2e)', () => {
       })
       .expect(200);
     const wb = new ExcelJS.Workbook();
-    await wb.xlsx.load(xlsx.body as Buffer);
+    await wb.xlsx.load(xlsx.body as never);
     expect(wb.worksheets.map((w) => w.name)).toEqual(['الردود', 'الملخص']);
     expect(wb.worksheets[0].views[0].rightToLeft).toBe(true);
     expect(wb.worksheets[0].rowCount).toBe(3);

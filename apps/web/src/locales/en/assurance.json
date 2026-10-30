@@ -73,7 +73,8 @@
     "tests": "Control tests",
     "issues": "Issues & actions",
     "audits": "Audits",
-    "surveys": "Questionnaires"
+    "surveys": "Questionnaires",
+    "dashboard": "Assurance dashboard"
   },
   "anyone": "Anyone with the role {{role}}",
   "unassigned": "Risk & Compliance",
@@ -535,5 +536,38 @@
     "saved": "Answers saved",
     "submitted": "Answers submitted",
     "fixProblems": "Some questions still need an answer."
+  },
+  "dashboard": {
+    "title": "Assurance dashboard",
+    "subtitle": "Control testing, issues and actions, the audit plan and survey response rates — click a figure to open the list.",
+    "tested": "Using tested effectiveness",
+    "testedHint": "The residual rating counts only when at least one of the risk's active controls was tested effective (or partly effective); otherwise the risk is shown at its inherent rating.",
+    "testedMatrix": "Residual (tested effectiveness)",
+    "noTests": "No control tests in this scope.",
+    "department": "Department",
+    "process": "Process",
+    "done": "Tests done",
+    "due": "Tests due",
+    "overdue": "Overdue",
+    "awaitingReview": "Awaiting review",
+    "effective": "Tested effective",
+    "byDepartment": "Control tests by department",
+    "byProcess": "Control tests by process",
+    "openIssues": "Open issues",
+    "overdueIssues": "Overdue issues",
+    "overdueActions": "Overdue actions",
+    "acceptedRisks": "Accepted risks",
+    "bySeverity": "Open issues by severity",
+    "byAge": "Open issues by age",
+    "auditPlan": "Audit plan {{year}}",
+    "open": "Open",
+    "findingsPending_one": "{{count}} finding waiting for a management response",
+    "findingsPending_other": "{{count}} findings waiting for a management response",
+    "lateEngagements_one": "{{count}} engagement late",
+    "lateEngagements_other": "{{count}} engagements late",
+    "findingsByRating": "Findings by rating",
+    "surveys": "Survey campaigns",
+    "allDepartments": "All departments",
+    "allProcesses": "All processes"
   }
 }

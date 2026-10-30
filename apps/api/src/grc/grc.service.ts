@@ -7,6 +7,7 @@ import {
   isOverdue,
   rateRisk,
   riskScore,
+  testedResidual,
   type BpmnElementLabel,
   type ControlDto,
   type ControlEffectiveness,
@@ -395,12 +396,17 @@ export class GrcService {
     if (q.inherentRating) items = items.filter((r) => r.rating.inherentBand === q.inherentRating);
     if (q.cell) {
       const [l, i] = q.cell.split(',').map(Number);
-      items = items.filter((r) =>
-        q.matrix === 'inherent'
-          ? r.inherentLikelihood === l && r.inherentImpact === i
-          : (r.residualLikelihood ?? r.inherentLikelihood) === l &&
-            (r.residualImpact ?? r.inherentImpact) === i,
-      );
+      items = items.filter((r) => {
+        if (q.matrix === 'inherent') return r.inherentLikelihood === l && r.inherentImpact === i;
+        const p =
+          q.matrix === 'tested'
+            ? testedResidual(r, r.controls)
+            : {
+                likelihood: r.residualLikelihood ?? r.inherentLikelihood,
+                impact: r.residualImpact ?? r.inherentImpact,
+              };
+        return p.likelihood === l && p.impact === i;
+      });
     }
     if (q.withoutControls !== undefined)
       items = items.filter((r) => (r.controls.length === 0) === q.withoutControls);

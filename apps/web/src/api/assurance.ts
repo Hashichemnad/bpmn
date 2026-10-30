@@ -1,5 +1,6 @@
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type {
+  AssuranceDashboardDto,
   AssuranceFileDto,
   CampaignDetailDto,
   CampaignDto,
@@ -570,3 +571,12 @@ export function useUploadAnswerFile(id: string) {
     onSuccess: () => qc.invalidateQueries({ queryKey: surveyKeys.response(id) }),
   });
 }
+
+// ---------- Dashboard ----------
+
+export const useAssuranceDashboard = (q: Record<string, unknown>) =>
+  useQuery({
+    queryKey: ['assurance', 'dashboard', q],
+    queryFn: () => api<AssuranceDashboardDto>(`/assurance/dashboard?${qs(q)}`),
+    placeholderData: keepPreviousData,
+  });

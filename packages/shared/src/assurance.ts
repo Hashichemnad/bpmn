@@ -1341,3 +1341,70 @@ export interface MyResponseDto {
   /** Open campaign and not yet submitted. */
   canAnswer: boolean;
 }
+
+// ---------- Assurance dashboard (step 5, D-103) ----------
+
+export const assuranceDashboardQuerySchema = z.object({
+  departmentId: z.guid().optional(),
+  processId: z.guid().optional(),
+  year: z.coerce.number().int().min(2000).max(2100).optional(),
+});
+export type AssuranceDashboardQuery = z.infer<typeof assuranceDashboardQuerySchema>;
+
+export const assuranceExportQuerySchema = assuranceDashboardQuerySchema.extend({
+  locale: z.enum(['en', 'ar']).default('en'),
+});
+
+export interface TestBreakdownRow {
+  id: string;
+  code: string | null;
+  nameEn: string;
+  nameAr: string;
+  done: number;
+  due: number;
+  overdue: number;
+  /** Reviewed tests concluded effective (incl. with exceptions), percent of reviewed; null = none. */
+  effectivePercent: number | null;
+}
+
+export interface AssuranceDashboardDto {
+  year: number;
+  tests: {
+    /** Reviewed or closed in the year. */
+    done: number;
+    /** Open and not yet due. */
+    due: number;
+    overdue: number;
+    awaitingReview: number;
+    effectivePercent: number | null;
+    byConclusion: Record<string, number>;
+    byDepartment: TestBreakdownRow[];
+    byProcess: TestBreakdownRow[];
+  };
+  issues: {
+    open: number;
+    overdue: number;
+    bySeverity: Record<string, number>;
+    byAge: Record<string, number>;
+    actionsOverdue: number;
+    acceptedRisks: number;
+  };
+  audits: {
+    /** Engagements of the year per status. */
+    byStatus: Record<string, number>;
+    total: number;
+    /** Closed or in follow-up / total, percent. */
+    progressPercent: number;
+    late: number;
+    findingsByRating: Record<string, number>;
+    findingsPendingResponse: number;
+  };
+  surveys: {
+    campaigns: Pick<
+      CampaignDto,
+      'id' | 'titleEn' | 'titleAr' | 'status' | 'responseRate' | 'counts' | 'purpose'
+    >[];
+    /** Submitted / sent of the open and recent campaigns. */
+    responseRate: number;
+  };
+}

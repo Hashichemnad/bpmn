@@ -7,6 +7,7 @@ import { AuditsController } from './audits.controller';
 import { AuditReportService } from './audit-report.service';
 import { SurveysService } from './surveys.service';
 import { SurveysController } from './surveys.controller';
+import { AssuranceDashboardService } from './assurance-dashboard.service';
 import { GrcChangesService } from './grc-changes.service';
 import { GrcChangesController } from './grc-changes.controller';
 import { AssuranceController } from './assurance.controller';
@@ -49,6 +50,7 @@ import { AssuranceSettingsController, IssuesController } from './issues.controll
     AuditsService,
     AuditReportService,
     SurveysService,
+    AssuranceDashboardService,
   ],
   exports: [GrcChangesService, ControlTestsService, AssuranceScheduler, IssuesService],
 })

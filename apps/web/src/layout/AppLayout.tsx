@@ -40,6 +40,7 @@ import {
   BankOutlined,
   ExperimentOutlined,
   FormOutlined,
+  FundOutlined,
   IssuesCloseOutlined,
 } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
@@ -173,6 +174,11 @@ export function AppLayout() {
             key: '/grc/dashboard',
             icon: <HeatMapOutlined />,
             label: <Link to="/grc/dashboard">{t('nav.grcDashboard')}</Link>,
+          },
+          {
+            key: '/grc/assurance',
+            icon: <FundOutlined />,
+            label: <Link to="/grc/assurance">{t('assurance:nav.dashboard')}</Link>,
           },
           {
             key: '/grc/risks',
@@ -332,6 +338,7 @@ export function AppLayout() {
       '/library/documents',
       '/library/dictionary',
       '/grc/dashboard',
+      '/grc/assurance',
       '/grc/risks',
       '/grc/controls',
       '/grc/requirements',

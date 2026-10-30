@@ -87,12 +87,19 @@ Steps (tick as they are committed; a new session continues at the first unticked
       (launch / close, tracking, results, proposals, Excel), response page in the workspace (`/surveys/:id`) and the
       portal (`/portal/surveys/:id`), My tasks / portal tasks "Questionnaires to answer", "Request feedback" on the
       process page. Tests: shared 5, API 2 (`surveys.e2e-spec.ts`), Playwright 1.
-- [ ] 5. Assurance dashboard and the heat-map toggle "using tested effectiveness".
+- [x] 5. Assurance dashboard (D-103): `GET /assurance/dashboard` (scope organisation / department / process, year):
+      control tests done / due / overdue / awaiting review, % tested effective, by department and by process; open
+      and overdue issues, by severity and age (0–30 / 31–60 / 61–90 / 90+ days), overdue actions, accepted risks;
+      audit plan progress (engagements per status, late), findings by rating and pending responses; campaign
+      response rates. Every tile / bar opens the filtered list; Excel export EN / AR (`/assurance/dashboard/export`,
+      audited). Risk dashboard heat map toggle "Using tested effectiveness" (`/grc/dashboard?tested=true`, register
+      filter `matrix=tested`, shared `testedResidual`). Web: "Assurance dashboard" in the Risk & Compliance menu.
+      Tests: shared 2, API 1 (`assurance-dashboard.e2e-spec.ts`), Playwright 1.
 - [ ] 6. Permissions sweep, demo seed, screenshots EN / AR, sample audit report, docs, pull request.
 
 ### Next (continue here)
 
-Step 5 — assurance dashboard and the heat-map toggle "using tested effectiveness".
+Step 6 — permissions sweep, demo seed, screenshots, sample report, docs, pull request.
 
 ## Previous state — 2026-10-30 (Phase 4 — Part 1: GRC core, branch `phase-4-1-grc`, done — awaiting review)
 

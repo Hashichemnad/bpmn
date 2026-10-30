@@ -1202,3 +1202,15 @@ decode-uri-component 0.2.2`, also on `main`; no MinIO release avoids it. Root `p
   on the process (Comments panel), authored by the respondent; the requester follows the campaign and its results.
 - **Reminders**: once per recipient, `reminderDaysBefore` days before the end; campaigns close themselves the day after
   their end date (assurance scheduler).
+
+## D-103 — Assurance dashboard and the "tested effectiveness" heat map (Phase 4.2, 2026-10-30)
+
+- **Dashboard scope** as on the risk dashboard: organisation, a department (tests of controls owned by the department
+  or linked to its processes; issues of its processes or the department; engagements and campaigns covering it) or a
+  process. "Done" = tests reviewed or closed in the selected year; "due" / "overdue" = open tests (planned, in
+  progress, returned) before / after their due date; % effective = reviewed tests not concluded "not effective".
+  Readable by `grc.read`, `audit.manage` and `issues.manage` holders; every figure links to the matching filtered list.
+- **Tested heat map**: the residual rating assumes the controls work. With "Using tested effectiveness" a risk keeps
+  its residual position only while at least one active mitigating control has a reviewed test result of effective or
+  partly effective; otherwise it is shown at its inherent rating. The stored ratings never change.
+- **Viewer role**: Viewers stay read-only except answering questionnaires sent to them (`surveys.respond`).
