@@ -24,6 +24,8 @@ export interface AssuranceTasksDto {
   })[];
   /** Issues ready for verification the user may verify. */
   issuesToVerify: IssueDto[];
+  /** Audit findings waiting for the user's management response. */
+  findingsToAnswer: AuditFindingDto[];
 }
 
 // ---------- Control testing (step 1, D-099) ----------
@@ -657,4 +659,254 @@ export interface IssueDetailDto extends IssueDto {
   actions: IssueActionDto[];
   files: AssuranceFileDto[];
   events: AssuranceEventDto[];
+}
+
+// ---------- Audit management (step 3, D-101) ----------
+
+export const ENGAGEMENT_STATUSES = [
+  'PLANNED',
+  'FIELDWORK',
+  'REPORTING',
+  'FOLLOW_UP',
+  'CLOSED',
+] as const;
+export type EngagementStatus = (typeof ENGAGEMENT_STATUSES)[number];
+
+export const WORK_ITEM_STATUSES = ['OPEN', 'DONE', 'NOT_APPLICABLE'] as const;
+export type WorkItemStatus = (typeof WORK_ITEM_STATUSES)[number];
+export const WORK_ITEM_RESULTS = ['SATISFACTORY', 'EXCEPTION'] as const;
+export type WorkItemResult = (typeof WORK_ITEM_RESULTS)[number];
+
+export const RESPONSE_STATUSES = ['PENDING', 'ACCEPTED', 'DISAGREED'] as const;
+export type ResponseStatus = (typeof RESPONSE_STATUSES)[number];
+
+/** Engagements move one stage forward or back; closing needs every finding answered. */
+export function engagementMove(from: EngagementStatus, to: EngagementStatus): boolean {
+  return Math.abs(ENGAGEMENT_STATUSES.indexOf(from) - ENGAGEMENT_STATUSES.indexOf(to)) === 1;
+}
+
+const ids = z
+  .array(z.guid())
+  .max(200)
+  .transform((l) => [...new Set(l)]);
+
+const engagementFields = {
+  year: z.number().int().min(2000).max(2100),
+  titleEn: text(300),
+  titleAr: text(300),
+  objectiveEn: text(5000),
+  objectiveAr: text(5000),
+  scopeEn: text(5000),
+  scopeAr: text(5000),
+  leadId: z.guid().nullable().optional(),
+  teamIds: ids.optional(),
+  plannedStart: dateOnly.nullable().optional(),
+  plannedEnd: dateOnly.nullable().optional(),
+  processIds: ids.optional(),
+  departmentIds: ids.optional(),
+  riskIds: ids.optional(),
+  controlIds: ids.optional(),
+  requirementIds: ids.optional(),
+  summaryEn: text(10000),
+  summaryAr: text(10000),
+};
+
+export const createEngagementSchema = z.object(engagementFields).superRefine(issueTitle);
+export type CreateEngagementInput = z.infer<typeof createEngagementSchema>;
+export const updateEngagementSchema = z
+  .object({ ...engagementFields, year: engagementFields.year.optional() })
+  .superRefine((v, ctx) => {
+    if (v.titleEn !== undefined || v.titleAr !== undefined) issueTitle(v, ctx);
+  });
+export type UpdateEngagementInput = z.infer<typeof updateEngagementSchema>;
+
+export const engagementStatusSchema = z.object({
+  status: z.enum(ENGAGEMENT_STATUSES),
+  comment: z.string().trim().max(2000).default(''),
+});
+export type EngagementStatusInput = z.infer<typeof engagementStatusSchema>;
+
+export const workItemSchema = z.object({
+  titleEn: text(300),
+  titleAr: text(300),
+  procedure: z.array(bilingualStep).max(MAX_TEST_STEPS).optional(),
+  /** A control of the scope; its test procedure is copied when no procedure is given. */
+  controlId: z.guid().nullable().optional(),
+  status: z.enum(WORK_ITEM_STATUSES).optional(),
+  result: z.enum(WORK_ITEM_RESULTS).nullable().optional(),
+  notes: text(10000),
+  assigneeId: z.guid().nullable().optional(),
+});
+export type WorkItemInput = z.infer<typeof workItemSchema>;
+
+const findingFields = {
+  titleEn: text(300),
+  titleAr: text(300),
+  rating: scaleKey.optional(),
+  conditionEn: text(5000),
+  conditionAr: text(5000),
+  criteriaEn: text(5000),
+  criteriaAr: text(5000),
+  requirementId: z.guid().nullable().optional(),
+  causeEn: text(5000),
+  causeAr: text(5000),
+  effectEn: text(5000),
+  effectAr: text(5000),
+  recommendationEn: text(5000),
+  recommendationAr: text(5000),
+  processId: z.guid().nullable().optional(),
+  bpmnElementId: z.string().trim().max(200).nullable().optional(),
+  riskId: z.guid().nullable().optional(),
+  controlId: z.guid().nullable().optional(),
+  workItemId: z.guid().nullable().optional(),
+  responseOwnerId: z.guid().nullable().optional(),
+};
+export const createFindingSchema = z
+  .object({ ...findingFields, rating: scaleKey })
+  .superRefine(issueTitle);
+export type CreateFindingInput = z.infer<typeof createFindingSchema>;
+export const updateFindingSchema = z.object(findingFields).superRefine((v, ctx) => {
+  if (v.titleEn !== undefined || v.titleAr !== undefined) issueTitle(v, ctx);
+});
+export type UpdateFindingInput = z.infer<typeof updateFindingSchema>;
+
+/** Management response: agree with an action plan (creates an issue) or disagree with a reason. */
+export const findingResponseSchema = z
+  .object({
+    status: z.enum(['ACCEPTED', 'DISAGREED']),
+    agreedActionEn: text(5000),
+    agreedActionAr: text(5000),
+    targetDate: dateOnly.nullable().optional(),
+    ownerId: z.guid().nullable().optional(),
+    comment: z.string().trim().max(5000).default(''),
+  })
+  .superRefine((v, ctx) => {
+    if (v.status === 'ACCEPTED' && !v.agreedActionEn && !v.agreedActionAr)
+      ctx.addIssue({ code: 'custom', path: ['agreedActionEn'], message: 'ACTION_REQUIRED' });
+    if (v.status === 'ACCEPTED' && !v.targetDate)
+      ctx.addIssue({ code: 'custom', path: ['targetDate'], message: 'TARGET_DATE_REQUIRED' });
+    if (v.status === 'DISAGREED' && !v.comment)
+      ctx.addIssue({ code: 'custom', path: ['comment'], message: 'COMMENT_REQUIRED' });
+  });
+export type FindingResponseInput = z.infer<typeof findingResponseSchema>;
+
+export const engagementListQuerySchema = z.object({
+  year: z.coerce.number().int().min(2000).max(2100).optional(),
+  status: z.enum(ENGAGEMENT_STATUSES).optional(),
+  q: z.string().trim().max(200).optional(),
+  processId: z.guid().optional(),
+  departmentId: z.guid().optional(),
+});
+export type EngagementListQuery = z.infer<typeof engagementListQuerySchema>;
+
+export const auditReportQuerySchema = z.object({ locale: z.enum(['en', 'ar']).default('en') });
+
+export interface AuditEngagementDto {
+  id: string;
+  code: string;
+  year: number;
+  titleEn: string;
+  titleAr: string;
+  objectiveEn: string;
+  objectiveAr: string;
+  scopeEn: string;
+  scopeAr: string;
+  status: EngagementStatus;
+  lead: UserRef | null;
+  team: UserRef[];
+  plannedStart: string | null;
+  plannedEnd: string | null;
+  actualStart: string | null;
+  actualEnd: string | null;
+  scope: {
+    processes: IssueLinkRef[];
+    departments: DepartmentRef[];
+    risks: IssueLinkRef[];
+    controls: IssueLinkRef[];
+    requirements: IssueLinkRef[];
+  };
+  summaryEn: string;
+  summaryAr: string;
+  itemCount: number;
+  itemsDone: number;
+  findingCount: number;
+  /** Findings per rating key. */
+  findingsByRating: Record<string, number>;
+  /** Planned end passed and not in reporting yet. */
+  late: boolean;
+  canManage: boolean;
+  updatedAt: string;
+}
+
+export interface AuditWorkItemDto {
+  id: string;
+  titleEn: string;
+  titleAr: string;
+  procedure: { en: string; ar: string }[];
+  control: IssueLinkRef | null;
+  status: WorkItemStatus;
+  result: WorkItemResult | null;
+  notes: string;
+  assignee: UserRef | null;
+  files: AssuranceFileDto[];
+}
+
+export interface AuditFindingDto {
+  id: string;
+  engagementId: string;
+  engagement: Pick<AuditEngagementDto, 'id' | 'code' | 'titleEn' | 'titleAr' | 'status'>;
+  code: string;
+  titleEn: string;
+  titleAr: string;
+  rating: string;
+  conditionEn: string;
+  conditionAr: string;
+  criteriaEn: string;
+  criteriaAr: string;
+  requirement: IssueLinkRef | null;
+  causeEn: string;
+  causeAr: string;
+  effectEn: string;
+  effectAr: string;
+  recommendationEn: string;
+  recommendationAr: string;
+  process: IssueLinkRef | null;
+  bpmnElementId: string | null;
+  elementLabel: { nameEn: string; nameAr: string } | null;
+  risk: IssueLinkRef | null;
+  control: IssueLinkRef | null;
+  workItemId: string | null;
+  responseStatus: ResponseStatus;
+  responseOwner: UserRef | null;
+  agreedActionEn: string;
+  agreedActionAr: string;
+  targetDate: string | null;
+  responseComment: string;
+  respondedAt: string | null;
+  issue: { id: string; code: string; status: IssueStatus } | null;
+  files: AssuranceFileDto[];
+  /** The caller is the response owner (or manages audits) and the response is pending. */
+  canRespond: boolean;
+}
+
+export interface AuditEngagementDetailDto extends AuditEngagementDto {
+  items: AuditWorkItemDto[];
+  findings: AuditFindingDto[];
+  events: AssuranceEventDto[];
+}
+
+/** One process or department of the audit universe. */
+export interface AuditUniverseRow {
+  kind: 'PROCESS' | 'DEPARTMENT';
+  id: string;
+  code: string | null;
+  nameEn: string;
+  nameAr: string;
+  /** Highest residual score of its active risks (0 = no risks). */
+  priorityScore: number;
+  priorityBand: string | null;
+  riskCount: number;
+  lastAuditedAt: string | null;
+  /** Engagements of the requested year covering it. */
+  planned: Pick<AuditEngagementDto, 'id' | 'code' | 'status'>[];
 }

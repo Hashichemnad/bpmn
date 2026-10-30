@@ -3,7 +3,9 @@ import { useTranslation } from 'react-i18next';
 import type {
   AssigneeDto,
   ControlTestStatus,
+  EngagementStatus,
   IssueStatus,
+  ResponseStatus,
   TestConclusion,
 } from '@processhub/shared';
 import { useAssuranceSettings } from '@/api/assurance';
@@ -67,4 +69,23 @@ export function SeverityTag({ value }: { value: string }) {
       {s ? loc(s) : value}
     </Tag>
   );
+}
+
+const ENGAGEMENT_COLOUR: Record<EngagementStatus, string> = {
+  PLANNED: 'default',
+  FIELDWORK: 'blue',
+  REPORTING: 'purple',
+  FOLLOW_UP: 'orange',
+  CLOSED: 'green',
+};
+
+export function EngagementStatusTag({ status }: { status: EngagementStatus }) {
+  const { t } = useTranslation();
+  return <Tag color={ENGAGEMENT_COLOUR[status]}>{t(`assurance:audits.status.${status}`)}</Tag>;
+}
+
+export function ResponseTag({ value }: { value: ResponseStatus }) {
+  const { t } = useTranslation();
+  const colour = { PENDING: 'default', ACCEPTED: 'green', DISAGREED: 'red' }[value];
+  return <Tag color={colour}>{t(`assurance:audits.response.${value}`)}</Tag>;
 }

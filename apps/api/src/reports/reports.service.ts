@@ -247,7 +247,7 @@ export class ReportsService {
     });
   }
 
-  private async orgSettings() {
+  async orgSettings() {
     const rows = await this.prisma.setting.findMany({
       where: { key: { in: [SETTING_KEYS.ORG_NAME_EN, SETTING_KEYS.ORG_NAME_AR] } },
     });
@@ -259,7 +259,7 @@ export class ReportsService {
   }
 
   /** The organisation logo when it is a PNG or JPEG (SVG / WebP logos are left out). */
-  private async logo(): Promise<ReportImage | null> {
+  async logo(): Promise<ReportImage | null> {
     const row = await this.prisma.setting.findUnique({ where: { key: SETTING_KEYS.LOGO } });
     const value = row?.value as { key?: string; contentType?: string } | undefined;
     if (!value?.key || !['image/png', 'image/jpeg'].includes(value.contentType ?? '')) return null;

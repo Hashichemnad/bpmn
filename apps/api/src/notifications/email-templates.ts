@@ -64,11 +64,12 @@ const TEMPLATES: Record<Locale, Record<NotificationType, Template>> = {
     },
     GRC_REVIEW: {
       subject: 'Risk & Compliance review due: {code} {title}',
-      body: '“{title}” ({code}) is due for review on {due}. Please reassess it in Risk & Compliance.',
+      body: '“{title}” is due for review on {due}. Please reassess it in Risk & Compliance.',
     },
     GRC_CHANGE: BY_KIND,
     CONTROL_TEST: BY_KIND,
     ISSUE: BY_KIND,
+    AUDIT: BY_KIND,
   },
   ar: {
     REVIEW_REQUESTED: {
@@ -117,11 +118,12 @@ const TEMPLATES: Record<Locale, Record<NotificationType, Template>> = {
     },
     GRC_REVIEW: {
       subject: 'موعد مراجعة المخاطر والامتثال: {code} {title}',
-      body: 'موعد مراجعة «{title}» ({code}) هو {due}. يرجى إعادة تقييمه في قسم المخاطر والامتثال.',
+      body: 'موعد مراجعة «{title}» هو {due}. يرجى إعادة تقييمه في قسم المخاطر والامتثال.',
     },
     GRC_CHANGE: BY_KIND,
     CONTROL_TEST: BY_KIND,
     ISSUE: BY_KIND,
+    AUDIT: BY_KIND,
   },
 };
 
@@ -129,7 +131,7 @@ const TEMPLATES: Record<Locale, Record<NotificationType, Template>> = {
  * Phase 4.2 notification types share one template each; the text depends on `params.kind`
  * (e.g. GRC_CHANGE requested / approved / rejected).
  */
-const KIND_TEMPLATES: Record<Locale, Record<string, { subject: string; body: string }>> = {
+export const KIND_TEMPLATES: Record<Locale, Record<string, { subject: string; body: string }>> = {
   en: {
     'GRC_CHANGE:requested': {
       subject: 'Approval requested: change of {title}',
@@ -218,6 +220,22 @@ const KIND_TEMPLATES: Record<Locale, Record<string, { subject: string; body: str
     'ISSUE:action_escalated': {
       subject: 'Escalation: overdue action {step}',
       body: 'The action “{step}” of the issue “{title}” was due on {due} and is not done.',
+    },
+    'AUDIT:team': {
+      subject: 'Audit engagement: {title}',
+      body: 'You are on the team of the audit engagement “{title}”.',
+    },
+    'AUDIT:response': {
+      subject: 'Management response requested: {title}',
+      body: 'Please respond to the audit finding “{title}”: agree with an action and a target date, or explain why not.',
+    },
+    'AUDIT:agreed': {
+      subject: 'Finding agreed: {title}',
+      body: '{actor} agreed to the audit finding “{title}”; an issue with the action was created.',
+    },
+    'AUDIT:disagreed': {
+      subject: 'Finding not agreed: {title}',
+      body: '{actor} did not agree to the audit finding “{title}”: {comment}',
     },
   },
   ar: {
@@ -308,6 +326,22 @@ const KIND_TEMPLATES: Record<Locale, Record<string, { subject: string; body: str
     'ISSUE:action_escalated': {
       subject: 'تصعيد: إجراء متأخر {step}',
       body: 'كان موعد الإجراء «{step}» من الملاحظة «{title}» في {due} ولم يُنجز.',
+    },
+    'AUDIT:team': {
+      subject: 'مهمة تدقيق: {title}',
+      body: 'أنت ضمن فريق مهمة التدقيق «{title}».',
+    },
+    'AUDIT:response': {
+      subject: 'مطلوب رد الإدارة: {title}',
+      body: 'يرجى الرد على نتيجة التدقيق «{title}»: الموافقة مع إجراء وتاريخ مستهدف، أو توضيح سبب عدم الموافقة.',
+    },
+    'AUDIT:agreed': {
+      subject: 'تمت الموافقة على النتيجة: {title}',
+      body: 'وافق {actor} على نتيجة التدقيق «{title}»، وأُنشئت ملاحظة بالإجراء.',
+    },
+    'AUDIT:disagreed': {
+      subject: 'لم تتم الموافقة على النتيجة: {title}',
+      body: 'لم يوافق {actor} على نتيجة التدقيق «{title}»: {comment}',
     },
   },
 };
@@ -406,10 +440,9 @@ export function templateValues(
       CONCLUSIONS[locale][String(params.conclusion ?? '')] ?? String(params.conclusion ?? ''),
   };
   const kindTpl = KIND_TEMPLATES[locale][`${type}:${String(params.kind ?? '')}`];
-  if (kindTpl) {
-    values.kindSubject = fill(kindTpl.subject, values);
-    values.kindBody = fill(kindTpl.body, values);
-  }
+  // Unknown kinds fall back to the item's title (never an empty e-mail).
+  values.kindSubject = kindTpl ? fill(kindTpl.subject, values) : values.title;
+  values.kindBody = kindTpl ? fill(kindTpl.body, values) : values.title;
   if (type === 'REVIEW_OVERDUE') {
     values.overdue = fill(
       OVERDUE[locale][params.kind === 'periodic' ? 'periodic' : 'task'],

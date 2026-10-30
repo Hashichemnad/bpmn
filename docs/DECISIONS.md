@@ -1156,3 +1156,27 @@ decode-uri-component 0.2.2`, also on `main`; no MinIO release avoids it. Root `p
 - **Escalation**: owners are reminded before the due date and when overdue (issues and actions); after `escalationDays`
   the issue / action is escalated once to the manager of the owner's department (new `Department.managerId`), to the
   Risk & Compliance officers, or both (setting); without a manager the officers are always told.
+
+## D-101 — Audit management and the Internal Audit role (Phase 4.2, 2026-10-30)
+
+- **Role**: new system role **Internal Audit** (`INTERNAL_AUDIT`) with `audit.manage`, `controls.test`,
+  `controls.review`, `surveys.manage`, `grc.read` and the usual read bundle. The existing read-only **Auditor** role is
+  unchanged in spirit: it reads audits (through its `audit.read`) but changes nothing.
+- **Who sees audits**: `audit.manage`, Risk & Compliance editors (`grc.edit`) and `audit.read` holders. Audit content is
+  more sensitive than the registers, so `grc.read` alone (process owners, modelers, reviewers) is not enough.
+  A finding's **response owner** opens that one finding (`/grc/findings/:id`, or in the portal) and answers it without
+  any audit permission.
+- **Universe and plan**: the universe is computed (no extra table): every process (not archived) and department, with
+  the highest residual score of its active risks (linked to the process, or owned by / linked to processes of the
+  department) as the priority, the latest actual end of a reporting / follow-up / closed engagement covering it as
+  "last audited", and the engagements of the selected year. The annual plan is the list of engagements of a year.
+- **Lifecycle**: Planned → Fieldwork (sets the actual start) → Reporting (sets the actual end and asks every response
+  owner for a response) → Follow-up → Closed; one stage at a time, back or forward; closing needs every finding answered.
+  Closed engagements are read-only.
+- **Findings → issues**: "Agree" needs an action and a target date and creates an `Issue` (source AUDIT_FINDING,
+  severity = finding rating, owner = the chosen action owner, due = target date, one action) that carries the
+  finding's process, step, risk, control and requirement — the root-cause trace the RFP asks for; the issue links back
+  to the finding. An agreed finding can no longer be edited (`FINDING_AGREED`). "Disagree" needs a reason.
+- **Report**: `.docx` generated on the server with the same `docx` library and style as the B2 handbook (cover with
+  organisation name and logo, executive summary, objective, scope table, findings table coloured by rating, each finding
+  with trace and management response), English or Arabic right-to-left; downloads are audited (`EXPORT`).

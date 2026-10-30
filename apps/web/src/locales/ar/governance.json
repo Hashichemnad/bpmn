@@ -351,7 +351,12 @@
       "ISSUE_escalated": "تصعيد — ملاحظة متأخرة: {{title}}",
       "ISSUE_action_due": "موعد الإجراء {{due}}: {{step}}",
       "ISSUE_action_overdue": "إجراء متأخر (الموعد {{due}}): {{step}}",
-      "ISSUE_action_escalated": "تصعيد — إجراء متأخر: {{step}} ({{title}})"
+      "ISSUE_action_escalated": "تصعيد — إجراء متأخر: {{step}} ({{title}})",
+      "AUDIT": "تدقيق: {{title}}",
+      "AUDIT_team": "أنت ضمن فريق تدقيق {{title}}",
+      "AUDIT_response": "مطلوب رد الإدارة منك: {{title}}",
+      "AUDIT_agreed": "وافق {{actor}} على النتيجة {{title}}",
+      "AUDIT_disagreed": "لم يوافق {{actor}} على النتيجة {{title}}"
     }
   },
   "prefs": {
@@ -375,7 +380,8 @@
       "GRC_REVIEW": "مواعيد مراجعة المخاطر والامتثال",
       "GRC_CHANGE": "تعديلات المخاطر والضوابط (الاعتمادات)",
       "CONTROL_TEST": "اختبارات الضوابط (الإسناد والمواعيد والمراجعات)",
-      "ISSUE": "الملاحظات والإجراءات (الإسناد والمواعيد والتصعيد)"
+      "ISSUE": "الملاحظات والإجراءات (الإسناد والمواعيد والتصعيد)",
+      "AUDIT": "مهام ونتائج التدقيق"
     }
   },
   "feedback": {

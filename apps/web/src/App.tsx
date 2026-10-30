@@ -56,6 +56,9 @@ import { ControlTestPage } from '@/features/assurance/ControlTestPage';
 import { IssuesPage } from '@/features/assurance/IssuesPage';
 import { IssuePage } from '@/features/assurance/IssuePage';
 import { PortalTasksPage } from '@/features/assurance/PortalTasksPage';
+import { AuditPlanPage } from '@/features/assurance/AuditPlanPage';
+import { EngagementPage } from '@/features/assurance/EngagementPage';
+import { FindingPage } from '@/features/assurance/FindingPage';
 
 const P = PERMISSIONS;
 
@@ -111,6 +114,7 @@ export const routes: RouteObject[] = [
               { path: 'notifications', element: <NotificationsPage /> },
               { path: 'tasks', element: <PortalTasksPage /> },
               { path: 'issues/:id', element: <IssuePage portal /> },
+              { path: 'findings/:id', element: <FindingPage portal /> },
               { path: 'profile', element: <ProfilePage /> },
               { path: '*', element: <NotFound /> },
             ],
@@ -255,6 +259,24 @@ export const routes: RouteObject[] = [
                   },
                   // Owners of an issue or an action reach it without the registers (checked on the server).
                   { path: 'grc/issues/:id', element: <IssuePage /> },
+                  {
+                    path: 'grc/audits',
+                    element: (
+                      <RequirePermission any={[P.AUDIT_MANAGE, P.GRC_EDIT, P.AUDIT_READ]}>
+                        <AuditPlanPage />
+                      </RequirePermission>
+                    ),
+                  },
+                  {
+                    path: 'grc/audits/:id',
+                    element: (
+                      <RequirePermission any={[P.AUDIT_MANAGE, P.GRC_EDIT, P.AUDIT_READ]}>
+                        <EngagementPage />
+                      </RequirePermission>
+                    ),
+                  },
+                  // Response owners answer their finding without the audit workspace.
+                  { path: 'grc/findings/:id', element: <FindingPage /> },
                   {
                     path: 'settings/grc',
                     element: (

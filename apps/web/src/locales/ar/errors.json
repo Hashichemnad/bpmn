@@ -148,5 +148,13 @@
   "INVALID_SEVERITY": "اختر درجة خطورة من المقياس.",
   "INVALID_SOURCE": "لم يعد مصدر الملاحظة موجودًا.",
   "SOURCE_REQUIRED": "اختر مصدر الملاحظة.",
-  "INVALID_PROCESS": "لم تعد العملية موجودة."
+  "INVALID_PROCESS": "لم تعد العملية موجودة.",
+  "FINDINGS_UNANSWERED": "تحتاج كل نتيجة إلى رد الإدارة قبل إغلاق المهمة.",
+  "ENGAGEMENT_CLOSED": "المهمة مغلقة.",
+  "ENGAGEMENT_STARTED": "يمكن حذف المهام المخططة فقط.",
+  "FINDING_AGREED": "تُتابع النتيجة الموافق عليها عبر ملاحظتها ولا يمكن تعديلها.",
+  "FINDING_ANSWERED": "تم الرد على هذه النتيجة.",
+  "INVALID_WORK_ITEM": "لم يعد بند العمل موجودًا.",
+  "ACTION_REQUIRED": "صف الإجراء المتفق عليه.",
+  "TARGET_DATE_REQUIRED": "اختر تاريخًا مستهدفًا."
 }

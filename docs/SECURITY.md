@@ -184,6 +184,25 @@ zod / UUID pipe; file uploads are checked in the service (allow-list, content sn
 | DELETE | `/attachments/:id`                           | `docs.read` + `docs.edit`                                 | param `id`                          | default    |
 | GET    | `/attachments/:id/content`                   | `docs.read`                                               | param `id`                          | default    |
 | GET    | `/audit-logs`                                | `audit.read`                                              | query                               | default    |
+| GET    | `/audits`                                    | any of `audit.manage`, `grc.edit`, `audit.read`           | query                               | default    |
+| POST   | `/audits`                                    | `audit.manage`                                            | body                                | default    |
+| DELETE | `/audits/:id`                                | `audit.manage`                                            | param `id`                          | default    |
+| GET    | `/audits/:id`                                | any of `audit.manage`, `grc.edit`, `audit.read`           | param `id`                          | default    |
+| PATCH  | `/audits/:id`                                | `audit.manage`                                            | body, param `id`                    | default    |
+| POST   | `/audits/:id/comments`                       | `audit.manage`                                            | body, param `id`                    | default    |
+| POST   | `/audits/:id/findings`                       | `audit.manage`                                            | body, param `id`                    | default    |
+| POST   | `/audits/:id/items`                          | `audit.manage`                                            | body, param `id`                    | default    |
+| GET    | `/audits/:id/report`                         | any of `audit.manage`, `grc.edit`, `audit.read`           | param `id`, query                   | default    |
+| POST   | `/audits/:id/status`                         | `audit.manage`                                            | body, param `id`                    | default    |
+| DELETE | `/audits/findings/:id`                       | `audit.manage`                                            | param `id`                          | default    |
+| GET    | `/audits/findings/:id`                       | authenticated                                             | param `id`                          | default    |
+| PATCH  | `/audits/findings/:id`                       | `audit.manage`                                            | body, param `id`                    | default    |
+| POST   | `/audits/findings/:id/files`                 | `audit.manage`                                            | file, param `id`                    | default    |
+| POST   | `/audits/findings/:id/response`              | authenticated                                             | body, param `id`                    | default    |
+| DELETE | `/audits/items/:id`                          | `audit.manage`                                            | param `id`                          | default    |
+| PATCH  | `/audits/items/:id`                          | `audit.manage`                                            | body, param `id`                    | default    |
+| POST   | `/audits/items/:id/files`                    | `audit.manage`                                            | file, param `id`                    | default    |
+| GET    | `/audits/universe`                           | any of `audit.manage`, `grc.edit`, `audit.read`           | query                               | default    |
 | POST   | `/auth/change-password`                      | authenticated                                             | body                                | login      |
 | GET    | `/auth/csrf`                                 | **public**                                                | —                                   | default    |
 | POST   | `/auth/login`                                | **public**                                                | body                                | login      |

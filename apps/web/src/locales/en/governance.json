@@ -336,7 +336,12 @@
       "ISSUE_escalated": "Escalation — overdue issue: {{title}}",
       "ISSUE_action_due": "Action due on {{due}}: {{step}}",
       "ISSUE_action_overdue": "Action overdue (due {{due}}): {{step}}",
-      "ISSUE_action_escalated": "Escalation — overdue action: {{step}} ({{title}})"
+      "ISSUE_action_escalated": "Escalation — overdue action: {{step}} ({{title}})",
+      "AUDIT": "Audit: {{title}}",
+      "AUDIT_team": "You are on the audit team of {{title}}",
+      "AUDIT_response": "Your management response is requested: {{title}}",
+      "AUDIT_agreed": "{{actor}} agreed to the finding {{title}}",
+      "AUDIT_disagreed": "{{actor}} did not agree to the finding {{title}}"
     }
   },
   "prefs": {
@@ -360,7 +365,8 @@
       "GRC_REVIEW": "Risk & Compliance review dates",
       "GRC_CHANGE": "Changes of risks and controls (approvals)",
       "CONTROL_TEST": "Control tests (assigned, due, reviews)",
-      "ISSUE": "Issues and actions (assigned, due, escalations)"
+      "ISSUE": "Issues and actions (assigned, due, escalations)",
+      "AUDIT": "Audit engagements and findings"
     }
   },
   "feedback": {

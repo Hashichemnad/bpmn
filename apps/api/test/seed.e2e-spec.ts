@@ -57,6 +57,7 @@ describe('Seed (e2e)', () => {
       include: { roles: { include: { role: true } } },
     });
     expect(demo.map((u) => [u.email, u.roles[0].role.key]).sort()).toEqual([
+      ['audit@processhub.local', 'INTERNAL_AUDIT'],
       ['auditor@processhub.local', 'AUDITOR'],
       ['modeler@processhub.local', 'MODELER'],
       ['owner@processhub.local', 'PROCESS_OWNER'],

@@ -1,6 +1,10 @@
 import { Module } from '@nestjs/common';
 import { GrcModule } from '../grc/grc.module';
 import { GovernanceModule } from '../governance/governance.module';
+import { ReportsModule } from '../reports/reports.module';
+import { AuditsService } from './audits.service';
+import { AuditsController } from './audits.controller';
+import { AuditReportService } from './audit-report.service';
 import { GrcChangesService } from './grc-changes.service';
 import { GrcChangesController } from './grc-changes.controller';
 import { AssuranceController } from './assurance.controller';
@@ -20,13 +24,14 @@ import { AssuranceSettingsController, IssuesController } from './issues.controll
  * actions, audit management, questionnaires and the assurance dashboard.
  */
 @Module({
-  imports: [GrcModule, GovernanceModule],
+  imports: [GrcModule, GovernanceModule, ReportsModule],
   controllers: [
     GrcChangesController,
     AssuranceController,
     ControlTestsController,
     AssuranceSettingsController,
     IssuesController,
+    AuditsController,
   ],
   providers: [
     GrcChangesService,
@@ -38,6 +43,8 @@ import { AssuranceSettingsController, IssuesController } from './issues.controll
     AssuranceScheduler,
     AssuranceSettingsService,
     IssuesService,
+    AuditsService,
+    AuditReportService,
   ],
   exports: [GrcChangesService, ControlTestsService, AssuranceScheduler, IssuesService],
 })

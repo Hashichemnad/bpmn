@@ -10,6 +10,7 @@ export const DEMO = {
   owner: 'owner@processhub.local',
   modeler: 'modeler@processhub.local',
   risk: 'risk@processhub.local',
+  audit: 'audit@processhub.local',
 };
 const PASSWORD = process.env.E2E_DEMO_PASSWORD ?? 'Demo-Password1';
 

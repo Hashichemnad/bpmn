@@ -148,5 +148,13 @@
   "INVALID_SEVERITY": "Choose a severity from the scale.",
   "INVALID_SOURCE": "The source of the issue no longer exists.",
   "SOURCE_REQUIRED": "Choose the source of the issue.",
-  "INVALID_PROCESS": "The process no longer exists."
+  "INVALID_PROCESS": "The process no longer exists.",
+  "FINDINGS_UNANSWERED": "Every finding needs a management response before the engagement is closed.",
+  "ENGAGEMENT_CLOSED": "The engagement is closed.",
+  "ENGAGEMENT_STARTED": "Only planned engagements can be deleted.",
+  "FINDING_AGREED": "An agreed finding is followed up through its issue and can no longer be changed.",
+  "FINDING_ANSWERED": "This finding has already been answered.",
+  "INVALID_WORK_ITEM": "The work item no longer exists.",
+  "ACTION_REQUIRED": "Describe the agreed action.",
+  "TARGET_DATE_REQUIRED": "Choose a target date."
 }

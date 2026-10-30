@@ -1,5 +1,16 @@
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type {
+  AuditEngagementDetailDto,
+  AuditEngagementDto,
+  AuditFindingDto,
+  AuditUniverseRow,
+  CreateEngagementInput,
+  CreateFindingInput,
+  EngagementStatusInput,
+  FindingResponseInput,
+  UpdateEngagementInput,
+  UpdateFindingInput,
+  WorkItemInput,
   AssuranceSettings,
   AssuranceTasksDto,
   CreateIssueInput,
@@ -277,6 +288,121 @@ export function useIssueAction(issueId: string) {
     onSuccess: (data) => {
       if (data && typeof data === 'object' && 'code' in data && 'actions' in data)
         qc.setQueryData(issueKeys.one(issueId), data);
+      done();
+    },
+  });
+}
+
+// ---------- Audits ----------
+
+export const auditKeys = {
+  universe: (year: number) => ['assurance', 'audits', 'universe', year] as const,
+  list: (q: Record<string, unknown>) => ['assurance', 'audits', 'list', q] as const,
+  one: (id: string) => ['assurance', 'audits', 'one', id] as const,
+  finding: (id: string) => ['assurance', 'audits', 'finding', id] as const,
+};
+
+export const useAuditUniverse = (year: number) =>
+  useQuery({
+    queryKey: auditKeys.universe(year),
+    queryFn: () => api<AuditUniverseRow[]>(`/audits/universe?year=${year}`),
+  });
+
+export const useEngagements = (q: Record<string, unknown>) =>
+  useQuery({
+    queryKey: auditKeys.list(q),
+    queryFn: () => api<AuditEngagementDto[]>(`/audits?${qs(q)}`),
+    placeholderData: keepPreviousData,
+  });
+
+export const useEngagement = (id: string | undefined) =>
+  useQuery({
+    queryKey: auditKeys.one(id ?? ''),
+    queryFn: () => api<AuditEngagementDetailDto>(`/audits/${id}`),
+    enabled: !!id,
+  });
+
+export const useFinding = (id: string | undefined) =>
+  useQuery({
+    queryKey: auditKeys.finding(id ?? ''),
+    queryFn: () => api<AuditFindingDto>(`/audits/findings/${id}`),
+    enabled: !!id,
+  });
+
+export function useSaveEngagement() {
+  const done = useInvalidateAll();
+  return useMutation({
+    mutationFn: ({
+      id,
+      body,
+    }: {
+      id?: string;
+      body: CreateEngagementInput | UpdateEngagementInput;
+    }) =>
+      id
+        ? api<AuditEngagementDetailDto>(`/audits/${id}`, { method: 'PATCH', body })
+        : api<AuditEngagementDetailDto>('/audits', { method: 'POST', body }),
+    onSuccess: done,
+  });
+}
+
+/** Engagement actions: status, comments, work items, findings, responses and evidence. */
+export function useEngagementAction(engagementId: string) {
+  const qc = useQueryClient();
+  const done = useInvalidateAll();
+  return useMutation({
+    mutationFn: (
+      a:
+        | { kind: 'status'; body: EngagementStatusInput }
+        | { kind: 'comment'; body: string }
+        | { kind: 'addItem'; body: WorkItemInput }
+        | { kind: 'updateItem'; id: string; body: WorkItemInput }
+        | { kind: 'removeItem'; id: string }
+        | { kind: 'addFinding'; body: CreateFindingInput }
+        | { kind: 'updateFinding'; id: string; body: UpdateFindingInput }
+        | { kind: 'removeFinding'; id: string }
+        | { kind: 'respond'; id: string; body: FindingResponseInput }
+        | { kind: 'itemFile' | 'findingFile'; id: string; file: File }
+        | { kind: 'delete' },
+    ): Promise<unknown> => {
+      const form = (file: File) => {
+        const f = new FormData();
+        f.append('file', file);
+        return f;
+      };
+      switch (a.kind) {
+        case 'status':
+          return api(`/audits/${engagementId}/status`, { method: 'POST', body: a.body });
+        case 'comment':
+          return api(`/audits/${engagementId}/comments`, {
+            method: 'POST',
+            body: { body: a.body },
+          });
+        case 'addItem':
+          return api(`/audits/${engagementId}/items`, { method: 'POST', body: a.body });
+        case 'updateItem':
+          return api(`/audits/items/${a.id}`, { method: 'PATCH', body: a.body });
+        case 'removeItem':
+          return api(`/audits/items/${a.id}`, { method: 'DELETE' });
+        case 'addFinding':
+          return api(`/audits/${engagementId}/findings`, { method: 'POST', body: a.body });
+        case 'updateFinding':
+          return api(`/audits/findings/${a.id}`, { method: 'PATCH', body: a.body });
+        case 'removeFinding':
+          return api(`/audits/findings/${a.id}`, { method: 'DELETE' });
+        case 'respond':
+          return api(`/audits/findings/${a.id}/response`, { method: 'POST', body: a.body });
+        case 'itemFile':
+          return api(`/audits/items/${a.id}/files`, { method: 'POST', body: form(a.file) });
+        case 'findingFile':
+          return api(`/audits/findings/${a.id}/files`, { method: 'POST', body: form(a.file) });
+        case 'delete':
+          return api(`/audits/${engagementId}`, { method: 'DELETE' });
+      }
+    },
+    onSuccess: (data) => {
+      if (data && typeof data === 'object' && 'findings' in data && 'items' in data)
+        qc.setQueryData(auditKeys.one(engagementId), data);
       done();
     },
   });

@@ -213,3 +213,60 @@ test('an issue with an action plan is worked by its owner and verified by the ra
   await page.getByTestId('issue-VERIFY').click();
   await expect(page.locator('.ant-page-header, body')).toContainText('Closed');
 });
+
+test('an audit engagement records a finding, management agrees and the report downloads', async ({
+  page,
+}) => {
+  await login(page, DEMO.audit);
+  await page.goto('/grc/audits');
+  await page.getByRole('button', { name: 'New engagement' }).click();
+  const form = page.getByTestId('engagement-form');
+  await form.locator('#titleEn').fill(`Procurement audit ${stamp}`);
+  await form.locator('#titleAr').fill(`تدقيق المشتريات ${stamp}`);
+  await page.locator('.ant-modal').getByRole('button', { name: 'Save' }).click();
+  await expect(page).toHaveURL(/\/grc\/audits\/[0-9a-f-]+$/);
+  const engagementUrl = page.url();
+
+  await page.getByRole('tab', { name: /Findings/ }).click();
+  await page.getByTestId('add-finding').click();
+  const finding = page.getByTestId('finding-form');
+  await finding.locator('#titleEn').fill(`Approvals after delivery ${stamp}`);
+  await finding
+    .locator('#conditionEn')
+    .fill('Purchase orders were approved after the goods arrived.');
+  await finding
+    .locator('#recommendationEn')
+    .fill('Block goods receipts without an approved order.');
+  await pickUser(page, finding, 'responseOwnerId', DEMO.owner);
+  await page.locator('.ant-modal').getByRole('button', { name: 'Save' }).click();
+  await expect(page.getByTestId('finding-F-01')).toContainText(`Approvals after delivery ${stamp}`);
+  await page.getByTestId('engagement-next').click(); // fieldwork
+  await expect(page.getByTestId('engagement-next')).toContainText('Reporting');
+  await page.getByTestId('engagement-next').click(); // reporting
+  await expect(page.getByTestId('engagement-next')).toContainText('Follow-up');
+
+  // Management (the process owner) agrees from My tasks; an issue is created.
+  await login(page, DEMO.owner);
+  await page.goto('/tasks?tab=findingsToAnswer');
+  await page
+    .getByTestId('tasks-findings')
+    .getByRole('link', { name: new RegExp(`Approvals after delivery ${stamp}`) })
+    .click();
+  await page.getByTestId('respond-F-01').click();
+  const response = page.getByTestId('response-form');
+  await response.locator('#agreedActionEn').fill('Add a system block on goods receipts');
+  await response.locator('#target').click();
+  await page.keyboard.type('2027-03-31');
+  await page.keyboard.press('Enter');
+  await page.locator('.ant-modal').getByRole('button', { name: 'OK' }).click();
+  await expect(page.getByTestId('finding-F-01')).toContainText('Agreed');
+  await expect(page.getByTestId('finding-F-01')).toContainText(/ISS-\d{4}/);
+
+  // The report downloads as Word.
+  await login(page, DEMO.audit);
+  await page.goto(engagementUrl);
+  await page.getByTestId('audit-report').hover();
+  const download = page.waitForEvent('download');
+  await page.getByRole('menuitem', { name: 'English' }).click();
+  expect((await download).suggestedFilename()).toMatch(/AUD-\d{4}-\d{2}.*\.docx$/);
+});

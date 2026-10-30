@@ -50,7 +50,10 @@ export function Home() {
 
 /** Pages only for users with workspace access; Viewers are sent to the portal. */
 /** Workspace pages that people without the workspace open in the portal (from notifications). */
-const PORTAL_EQUIVALENTS: [RegExp, string][] = [[/^\/grc\/issues\/([^/]+)$/, '/portal/issues/$1']];
+const PORTAL_EQUIVALENTS: [RegExp, string][] = [
+  [/^\/grc\/issues\/([^/]+)$/, '/portal/issues/$1'],
+  [/^\/grc\/findings\/([^/]+)$/, '/portal/findings/$1'],
+];
 
 export function WorkspaceOnly() {
   const { canAny } = useAuth();

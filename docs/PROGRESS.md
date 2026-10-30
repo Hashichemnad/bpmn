@@ -55,8 +55,22 @@ Steps (tick as they are committed; a new session continues at the first unticked
       Settings card "Issues"; My tasks tabs (my issues / my actions / to verify); portal "My tasks" + `/portal/issues/:id`
       for action owners without the workspace (workspace links redirect there). Tests: API 3 (`issues.e2e-spec.ts`),
       Playwright 1.
-- [ ] 3. Audit management: universe, annual plan and engagements (role Internal Audit, `audit.manage`), work
-      programme, findings → issues, report .docx (EN / AR).
+- [x] 3. Audit management (D-101): audit universe (`GET /audits/universe?year`: processes and departments ranked by the
+      highest residual score of their active risks, last audited, engagements of the year), `AuditEngagement`
+      (AUD-YYYY-NN, bilingual title / objective / scope / summary, scope = processes, departments, risks, controls,
+      requirements, lead + team, planned / actual dates, Planned → Fieldwork → Reporting → Follow-up → Closed, one step
+      at a time, closing needs every finding answered), `AuditWorkItem` (checklist / test steps, "test a control" copies
+      its current test procedure, status, result, working notes, evidence), `AuditFinding` (F-01 …, rating from the
+      severity scale, condition / criteria (+ requirement) / cause / effect / recommendation, trace to process, step,
+      risk, control, work item; management response owner). Responses: agree (action + target date → an `Issue`
+      with the action, source AUDIT_FINDING, same trace) or disagree (reason). Audit report `.docx` (cover, summary,
+      objective, scope, findings table, findings with trace and management responses; Arabic right-to-left), audited
+      `EXPORT`. Role `INTERNAL_AUDIT` (+ demo user `audit@processhub.local`); audits readable by `audit.manage`,
+      `grc.edit` and `audit.read` (Auditors). Notification `AUDIT` (team / response / agreed / disagreed). Web: Audits
+      (plan + universe with "Plan engagement"), engagement page (overview, work programme, findings, report EN / AR,
+      status steps), finding page for response owners (`/grc/findings/:id`, portal `/portal/findings/:id`), My tasks
+      "Audit findings to answer". Tests: API 1 (`audits.e2e-spec.ts`, incl. report in both languages and the universe),
+      e-mail templates 1, Playwright 1.
 - [ ] 4. Questionnaires and surveys: builder, campaigns, responses, results and Excel, RCSA proposals, compliance
       self-assessment, "Request feedback" on a process.
 - [ ] 5. Assurance dashboard and the heat-map toggle "using tested effectiveness".
@@ -64,7 +78,7 @@ Steps (tick as they are committed; a new session continues at the first unticked
 
 ### Next (continue here)
 
-Step 3 — audit management (findings register an issue source through `IssuesService.registerSource`).
+Step 4 — questionnaires and surveys.
 
 ## Previous state — 2026-10-30 (Phase 4 — Part 1: GRC core, branch `phase-4-1-grc`, done — awaiting review)
 

@@ -198,6 +198,15 @@ export function AppLayout() {
             icon: <IssuesCloseOutlined />,
             label: <Link to="/grc/issues">{t('assurance:nav.issues')}</Link>,
           },
+          ...(canAny(PERMISSIONS.AUDIT_MANAGE, PERMISSIONS.GRC_EDIT, PERMISSIONS.AUDIT_READ)
+            ? [
+                {
+                  key: '/grc/audits',
+                  icon: <AuditOutlined />,
+                  label: <Link to="/grc/audits">{t('assurance:nav.audits')}</Link>,
+                },
+              ]
+            : []),
         ],
       });
     }
@@ -295,7 +304,7 @@ export function AppLayout() {
     }
     if (admin.length) list.push({ type: 'group', label: t('nav.administration'), children: admin });
     return list;
-  }, [can, t, taskCount]);
+  }, [can, canAny, t, taskCount]);
 
   const selected = useMemo(() => {
     const p = location.pathname;
@@ -318,6 +327,7 @@ export function AppLayout() {
       '/grc/requirements',
       '/grc/tests',
       '/grc/issues',
+      '/grc/audits',
       '/admin/users',
       '/admin/departments',
       '/admin/audit',

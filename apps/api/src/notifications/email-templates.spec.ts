@@ -1,5 +1,5 @@
 import { NOTIFICATION_TYPES } from '@processhub/shared';
-import { renderEmail } from './email-templates';
+import { KIND_TEMPLATES, renderEmail } from './email-templates';
 import { effectivePrefs } from './notifications.service';
 
 describe('notification emails', () => {
@@ -68,5 +68,23 @@ describe('notification emails', () => {
     const p = effectivePrefs({ MENTIONED: { inApp: true, email: false } });
     expect(p.MENTIONED).toEqual({ inApp: true, email: false });
     expect(p.PUBLISHED).toEqual({ inApp: true, email: true });
+  });
+
+  it('has a text for every kind of the Phase 4.2 types in both languages', () => {
+    for (const locale of ['en', 'ar'] as const) {
+      const keys = Object.keys(KIND_TEMPLATES[locale]);
+      expect(keys.sort()).toEqual(Object.keys(KIND_TEMPLATES.en).sort());
+      for (const key of keys) {
+        const [type, kind] = key.split(':');
+        const m = renderEmail(
+          type as never,
+          { ...params, kind, due: '2026-11-01', period: '2026-Q4' },
+          locale,
+          null,
+        );
+        expect(m.subject).not.toMatch(/\{\w+\}/);
+        expect(m.text).not.toMatch(/\{\w+\}/);
+      }
+    }
   });
 });

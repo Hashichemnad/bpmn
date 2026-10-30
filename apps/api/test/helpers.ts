@@ -200,6 +200,9 @@ export async function createApp(): Promise<TestContext> {
 }
 
 const TABLES = [
+  'AuditFinding',
+  'AuditWorkItem',
+  'AuditEngagement',
   'IssueAction',
   'Issue',
   'AssuranceEvent',

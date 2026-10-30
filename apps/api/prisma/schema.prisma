@@ -1275,3 +1275,118 @@ model IssueAction {
   @@index([issueId])
   @@index([ownerId])
 }
+
+/// An audit engagement of the annual audit plan (Phase 4.2, D-101):
+/// Planned → Fieldwork → Reporting → Follow-up → Closed.
+model AuditEngagement {
+  id             String          @id @default(uuid()) @db.Uuid
+  /// AUD-2026-01 …
+  code           String          @unique
+  year           Int
+  titleEn        String          @default("")
+  titleAr        String          @default("")
+  objectiveEn    String          @default("")
+  objectiveAr    String          @default("")
+  scopeEn        String          @default("")
+  scopeAr        String          @default("")
+  /// PLANNED | FIELDWORK | REPORTING | FOLLOW_UP | CLOSED
+  status         String          @default("PLANNED")
+  leadId         String?         @db.Uuid
+  teamIds        String[]        @db.Uuid
+  plannedStart   DateTime?
+  plannedEnd     DateTime?
+  actualStart    DateTime?
+  actualEnd      DateTime?
+  /// Scope: processes, departments, risks, controls, requirements.
+  processIds     String[]        @db.Uuid
+  departmentIds  String[]        @db.Uuid
+  riskIds        String[]        @db.Uuid
+  controlIds     String[]        @db.Uuid
+  requirementIds String[]        @db.Uuid
+  /// Executive summary of the report.
+  summaryEn      String          @default("")
+  summaryAr      String          @default("")
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  createdById    String?         @db.Uuid
+  updatedById    String?         @db.Uuid
+  deletedAt      DateTime?
+  items          AuditWorkItem[]
+  findings       AuditFinding[]
+
+  @@index([year, status])
+}
+
+/// A checklist item / test step of the work programme, optionally for a control.
+model AuditWorkItem {
+  id           String          @id @default(uuid()) @db.Uuid
+  engagementId String          @db.Uuid
+  engagement   AuditEngagement @relation(fields: [engagementId], references: [id], onDelete: Cascade)
+  sortOrder    Int             @default(0)
+  titleEn      String          @default("")
+  titleAr      String          @default("")
+  /// Test steps [{ en, ar }] (copied from the control's test procedure when chosen).
+  procedure    Json            @default("[]")
+  controlId    String?         @db.Uuid
+  /// OPEN | DONE | NOT_APPLICABLE
+  status       String          @default("OPEN")
+  /// SATISFACTORY | EXCEPTION
+  result       String?
+  /// Working notes.
+  notes        String          @default("")
+  assigneeId   String?         @db.Uuid
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
+  createdById  String?         @db.Uuid
+  deletedAt    DateTime?
+
+  @@index([engagementId])
+}
+
+/// An audit finding with the management response; an agreed finding creates an issue.
+model AuditFinding {
+  id               String          @id @default(uuid()) @db.Uuid
+  engagementId     String          @db.Uuid
+  engagement       AuditEngagement @relation(fields: [engagementId], references: [id], onDelete: Cascade)
+  /// F-01 … within the engagement.
+  code             String
+  titleEn          String          @default("")
+  titleAr          String          @default("")
+  /// Key of the severity scale (Setting `assurance`).
+  rating           String
+  conditionEn      String          @default("")
+  conditionAr      String          @default("")
+  criteriaEn       String          @default("")
+  criteriaAr       String          @default("")
+  requirementId    String?         @db.Uuid
+  causeEn          String          @default("")
+  causeAr          String          @default("")
+  effectEn         String          @default("")
+  effectAr         String          @default("")
+  recommendationEn String          @default("")
+  recommendationAr String          @default("")
+  processId        String?         @db.Uuid
+  bpmnElementId    String?
+  riskId           String?         @db.Uuid
+  controlId        String?         @db.Uuid
+  workItemId       String?         @db.Uuid
+  /// PENDING | ACCEPTED | DISAGREED
+  responseStatus   String          @default("PENDING")
+  responseOwnerId  String?         @db.Uuid
+  agreedActionEn   String          @default("")
+  agreedActionAr   String          @default("")
+  targetDate       DateTime?
+  responseComment  String          @default("")
+  respondedAt      DateTime?
+  respondedById    String?         @db.Uuid
+  /// The issue created when management agreed.
+  issueId          String?         @db.Uuid
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+  createdById      String?         @db.Uuid
+  updatedById      String?         @db.Uuid
+  deletedAt        DateTime?
+
+  @@unique([engagementId, code])
+  @@index([responseOwnerId])
+}

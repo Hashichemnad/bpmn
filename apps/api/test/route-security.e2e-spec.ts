@@ -57,6 +57,8 @@ describe('Route security declarations', () => {
     );
     // Uploads are checked in the service (allow-list, magic bytes, size) and by multer limits.
     expect(unvalidated.sort()).toEqual([
+      'POST /audits/findings/:id/files file',
+      'POST /audits/items/:id/files file',
       'POST /control-tests/:id/files file',
       'POST /grc/import/:kind file',
       'POST /issues/:id/files file',

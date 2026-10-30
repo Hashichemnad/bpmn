@@ -593,6 +593,8 @@ export const NOTIFICATION_TYPES = [
   'CONTROL_TEST',
   /** Issue / action assigned, due, overdue, escalated, ready for verification, closed (params.kind). */
   'ISSUE',
+  /** Audit engagement / finding: added to the team, response requested, response given (params.kind). */
+  'AUDIT',
 ] as const;
 export type NotificationType = (typeof NOTIFICATION_TYPES)[number];
 

@@ -212,5 +212,41 @@ export function useAssuranceTaskTabs(portal = false): {
       label: label('issuesToVerify', t('assurance:tasks.issuesToVerify')),
       children: issueTable(d.issuesToVerify, 'tasks-verify'),
     });
+  if (d.findingsToAnswer.length)
+    items.push({
+      key: 'findingsToAnswer',
+      label: label('findingsToAnswer', t('assurance:tasks.findingsToAnswer')),
+      children: (
+        <Table
+          rowKey="id"
+          size="middle"
+          pagination={false}
+          dataSource={d.findingsToAnswer}
+          data-testid="tasks-findings"
+          columns={[
+            {
+              title: t('assurance:audits.finding'),
+              render: (_, f) => (
+                <Link to={portal ? `/portal/findings/${f.id}` : `/grc/findings/${f.id}`}>
+                  <span dir="ltr">{f.code}</span> {loc(f, 'title')}
+                </Link>
+              ),
+            },
+            {
+              title: t('assurance:audits.engagement'),
+              render: (_, f) => (
+                <>
+                  <span dir="ltr">{f.engagement.code}</span> {loc(f.engagement, 'title')}
+                </>
+              ),
+            },
+            {
+              title: t('assurance:audits.rating'),
+              render: (_, f) => <SeverityTag value={f.rating} />,
+            },
+          ]}
+        />
+      ),
+    });
   return { items, counts };
 }
