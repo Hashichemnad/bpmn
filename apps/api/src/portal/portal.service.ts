@@ -1,3 +1,4 @@
+import { GrcSettingsService } from '../grc/grc-settings.service';
 import { Injectable } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import {
@@ -31,6 +32,7 @@ import {
   type ProcessCategory,
   type SpaceIcon,
   type TextDirection,
+  portalHiddenTypes,
 } from '@processhub/shared';
 import { PrismaService } from '../prisma/prisma.service';
 import { AuditService } from '../audit/audit.service';
@@ -65,6 +67,7 @@ export class PortalService {
     private readonly access: PortalAccessService,
     private readonly content: ContentService,
     private readonly workflows: WorkflowsService,
+    private readonly grcSettings: GrcSettingsService,
   ) {}
 
   // ---------- Settings ----------
@@ -263,6 +266,8 @@ export class PortalService {
     await this.access.assertAccess(user);
     const { pub, process } = await this.access.publicationOf('PROCESS', id, user);
     const p = process!;
+    // Risks and controls only as Settings → Risk & Compliance allows (default: none, D-092).
+    const hidden = portalHiddenTypes((await this.grcSettings.get()).portalVisibility);
     const [version, department, tree, links] = await Promise.all([
       this.prisma.processVersion.findUnique({
         where: { processId_versionNumber: { processId: id, versionNumber: pub.versionNumber } },
@@ -276,7 +281,10 @@ export class PortalService {
         : null,
       this.processTree(user),
       this.prisma.publishedLink.findMany({
-        where: { publicationId: pub.id, repoObject: { deletedAt: null } },
+        where: {
+          publicationId: pub.id,
+          repoObject: { deletedAt: null, type: { notIn: hidden } },
+        },
         include: {
           repoObject: {
             select: {

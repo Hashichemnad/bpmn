@@ -6,9 +6,11 @@ import type { BpmnInstance, ElementRegistry, Overlays } from './bpmn-types';
  * names, clicking it calls `onClick`. Used by the modeler workspace, the read-only preview and the
  * Knowledge Portal (published links only).
  */
-export type BadgeKind = 'ROLE' | 'SYSTEM' | 'DOCUMENT' | 'RISK' | 'CONTROL' | 'COMMENT';
+export type BadgeKind = 'ALERT' | 'ROLE' | 'SYSTEM' | 'DOCUMENT' | 'RISK' | 'CONTROL' | 'COMMENT';
 
 export const BADGE_KINDS: BadgeKind[] = [
+  /** High / critical residual risk without an effective control at the step (Phase 4.1). */
+  'ALERT',
   'ROLE',
   'SYSTEM',
   'DOCUMENT',
@@ -25,6 +27,7 @@ export interface BadgeItem {
 
 /** Static icons (16 × 16, stroked in the chip colour). */
 const ICONS: Record<BadgeKind, string> = {
+  ALERT: '<path d="M8 1.5 15 14H1z"/><path d="M8 6v3.5M8 11.6v.1"/>',
   ROLE: '<circle cx="8" cy="5" r="2.8"/><path d="M2.5 14c.8-3 3-4.5 5.5-4.5s4.7 1.5 5.5 4.5"/>',
   SYSTEM: '<rect x="2" y="2.5" width="12" height="8.5" rx="1.2"/><path d="M5.5 14h5M8 11v3"/>',
   DOCUMENT: '<path d="M4 1.5h5l3 3v10H4z"/><path d="M9 1.5v3h3M6 8.5h4M6 11h4"/>',

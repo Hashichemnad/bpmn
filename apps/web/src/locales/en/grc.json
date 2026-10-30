@@ -232,5 +232,10 @@
     "reset": "Restore defaults"
   },
   "yes": "Yes",
-  "no": "No"
+  "no": "No",
+  "panel": {
+    "tab": "Risks & Controls",
+    "linkExisting": "Link an existing item",
+    "link": "Link"
+  }
 }

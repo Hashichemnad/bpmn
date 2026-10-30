@@ -30,8 +30,11 @@ Steps (tick as they are committed; a new session continues at the first unticked
       visibility, reminder days, live preview). Library objects of GRC types redirect to their GRC page. Demo
       seed `seed-grc.ts` (10 risks, 12 controls, 6 requirements, links incl. published links; demo user
       `risk@processhub.local`) — done early to have data for the UI. Tests: API import / export 1, seed, i18n keys.
-- [ ] 3. Modeler and portal: step panel "Risks & Controls", badges + warning, colour-by views, portal setting,
-      handbook section.
+- [x] 3. Modeler and portal (D-092): side panel tab "Risks & Controls" (link / unlink, create or propose a
+      linked draft, ratings and effectiveness, alert), warning badge `ALERT` (modeler + preview), colour-by
+      "Residual risk rating" and "Risks without controls", portal visibility setting enforced on the server
+      (portal page + portal AI sources), handbook option "Risks and controls". Tests: shared 1, API 2 (portal
+      setting, handbook section).
 - [ ] 4. Dashboards: heat maps (org / department / process, drill-down), coverage dashboard, RCM export.
 - [ ] 5. Reviews and notifications: next-review reminders, overdue flags, My tasks, optional approval.
 - [ ] 6. AI control-gap check.

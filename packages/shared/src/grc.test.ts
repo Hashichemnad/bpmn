@@ -11,6 +11,7 @@ import {
   ratingBand,
   resolveGrcSettings,
   riskScore,
+  summariseSteps,
 } from './index';
 
 const bands = DEFAULT_GRC_SETTINGS.bands;
@@ -108,5 +109,85 @@ describe('GRC settings and inputs', () => {
     expect(createLinkSchema.safeParse({ bpmnElementId: '#other', repoObjectId: id }).success).toBe(
       false,
     );
+  });
+});
+
+describe('per-step coverage', () => {
+  const rating = (score: number, alert: boolean) => ({
+    inherentScore: score,
+    inherentBand: null,
+    residualScore: score,
+    residualBand: alert ? 'HIGH' : 'LOW',
+    alert,
+  });
+  const base = { code: null, nameEn: 'x', nameAr: '', descriptionEn: '', descriptionAr: '' };
+  it('flags high risks whose own controls are not effective and risks without any control', () => {
+    const s = summariseSteps([
+      {
+        ...base,
+        id: 'r1',
+        type: 'RISK',
+        status: 'ACTIVE',
+        linkId: 'l1',
+        bpmnElementId: 'A',
+        rating: rating(16, true),
+      },
+      {
+        ...base,
+        id: 'c1',
+        type: 'CONTROL',
+        status: 'ACTIVE',
+        linkId: 'l2',
+        bpmnElementId: 'A',
+        effectiveness: 'NOT_EFFECTIVE',
+      },
+      {
+        ...base,
+        id: 'r2',
+        type: 'RISK',
+        status: 'ACTIVE',
+        linkId: 'l3',
+        bpmnElementId: 'B',
+        rating: rating(12, true),
+        effectivelyControlled: true,
+      },
+      {
+        ...base,
+        id: 'c2',
+        type: 'CONTROL',
+        status: 'ACTIVE',
+        linkId: 'l4',
+        bpmnElementId: 'B',
+        effectiveness: 'EFFECTIVE',
+      },
+      {
+        ...base,
+        id: 'r3',
+        type: 'RISK',
+        status: 'ACTIVE',
+        linkId: 'l5',
+        bpmnElementId: 'C',
+        rating: rating(4, false),
+      },
+      {
+        ...base,
+        id: 'r4',
+        type: 'RISK',
+        status: 'RETIRED',
+        linkId: 'l6',
+        bpmnElementId: 'D',
+        rating: rating(25, true),
+      },
+    ]);
+    expect(s.get('A')).toMatchObject({
+      risks: 1,
+      controls: 1,
+      alert: true,
+      uncovered: false,
+      maxResidualScore: 16,
+    });
+    expect(s.get('B')).toMatchObject({ alert: false, uncovered: false });
+    expect(s.get('C')).toMatchObject({ alert: false, uncovered: true });
+    expect(s.has('D')).toBe(false);
   });
 });

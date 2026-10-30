@@ -1,5 +1,12 @@
+import { GrcSettingsService } from '../../grc/grc-settings.service';
 import { Injectable } from '@nestjs/common';
-import type { AiAnswerDto, AiPortalQuestionInput, AiSourceDto, Locale } from '@processhub/shared';
+import {
+  portalHiddenTypes,
+  type AiAnswerDto,
+  type AiPortalQuestionInput,
+  type AiSourceDto,
+  type Locale,
+} from '@processhub/shared';
 import { PrismaService } from '../../prisma/prisma.service';
 import type { AuthUser, RequestMeta } from '../../common/auth-user';
 import { PortalAccessService } from '../../governance/portal-access.service';
@@ -29,6 +36,7 @@ export class PortalQaService {
     private readonly prisma: PrismaService,
     private readonly gateway: AiGatewayService,
     private readonly portal: PortalAccessService,
+    private readonly grcSettings: GrcSettingsService,
   ) {}
 
   async prepare(
@@ -116,8 +124,9 @@ export class PortalQaService {
       select: { bpmnXml: true },
     });
     if (!version) return description;
+    const hidden = portalHiddenTypes((await this.grcSettings.get()).portalVisibility);
     const links = await this.prisma.publishedLink.findMany({
-      where: { publicationId: p.id, repoObject: { deletedAt: null } },
+      where: { publicationId: p.id, repoObject: { deletedAt: null, type: { notIn: hidden } } },
       select: {
         bpmnElementId: true,
         relation: true,

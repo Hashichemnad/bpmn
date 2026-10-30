@@ -1002,3 +1002,24 @@ matched to the library by name (spelling variants folded), an unknown role still
   endpoints are used with the governance lock (not while in review or archived; an approved / published process
   gets a new draft). Allowed: model editors of the process (with `grc.propose` for GRC items) — as before — and
   additionally `grc.edit` holders for GRC items on any process, without general model edit rights.
+
+## D-092 — Risks and controls in the modeler, portal and handbook (Phase 4.1, 2026-10-30)
+
+- **Modeler**: side panel tab "Risks & Controls" for the selected step (or the whole process when nothing is
+  selected): linked risks with residual rating, controls with key flag and effectiveness, requirements; link an
+  existing item, create (or, without `grc.edit`, propose as a draft) a risk / control that is linked to the step
+  at once; unlink. Hidden while the process is in review or archived (the server refuses too).
+- **Warning badge** `ALERT`: a step carries a high / critical residual risk (band flagged "alert") whose own
+  mitigating controls (risk ↔ control relation) include no active, (partly) effective control. Judged per risk,
+  not per step, so an effective control for a different risk on the same step does not hide the warning. Shown
+  in the modeler, the read-only preview and (as published links allow) the portal. Risk and control counts use
+  the existing B1 badges.
+- **Colour by** (view only, D-086 mechanics): "Residual risk rating" (highest residual band of the step's risks,
+  band colours) and "Risks without controls" (risk but no control at the step / risk with controls / no risk).
+  Offered to `grc.read` holders only. Shared `summariseSteps` computes both.
+- **Portal**: Setting `grc.portalVisibility` OFF (default) / CONTROLS / ALL, applied on the server to the published
+  links of the portal process page and to the portal AI assistant's sources. Behaviour change: risk and control
+  links that earlier phases showed in the portal are hidden until the setting is changed.
+- **Handbook**: optional "Risks and controls" section per process (step, type, item, residual rating or
+  effectiveness) from the links of the chosen source (working or published). GRC readers see every item; portal
+  users only what the portal setting shows.

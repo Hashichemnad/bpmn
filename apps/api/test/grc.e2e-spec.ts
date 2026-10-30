@@ -1,4 +1,5 @@
 import ExcelJS from 'exceljs';
+import JSZip from 'jszip';
 import { DEFAULT_GRC_SETTINGS, PROCESS_ELEMENT_ID } from '@processhub/shared';
 import {
   createApp,
@@ -470,5 +471,67 @@ describe('Risk & Compliance (e2e)', () => {
       .attach('file', Buffer.from('code,name'), 'x.xlsx')
       .expect(400);
     await modeler.post('/grc/import/risks').attach('file', good, 'risks.xlsx').expect(403);
+  });
+
+  it('shows linked controls and risks in the portal only as the setting allows', async () => {
+    const r = (await risk(officer).expect(201)).body.item;
+    const c = (await officer.post('/grc/controls').send({ nameEn: 'Check quotes' }).expect(201))
+      .body.item;
+    await modeler
+      .post(`/processes/${processId}/versions`)
+      .send({ bpmnXml: sampleBpmn(['Task_Order', 'Task_Approve']), changeNote: 'v1' })
+      .expect(201);
+    // Published as linked (publishing itself is covered by the governance tests).
+    const pub = await ctx.prisma.publication.create({
+      data: { entityType: 'PROCESS', entityId: processId, versionNumber: 1, titleEn: 'Purchasing' },
+    });
+    await ctx.prisma.publishedLink.createMany({
+      data: [r.id, c.id].map((repoObjectId) => ({
+        publicationId: pub.id,
+        bpmnElementId: 'Task_Approve',
+        repoObjectId,
+        relation: 'MITIGATES' as const,
+      })),
+    });
+    await ctx.prisma.process.update({ where: { id: processId }, data: { status: 'PUBLISHED' } });
+
+    const types = async () =>
+      (await viewer.get(`/portal/processes/${processId}`).expect(200)).body.links
+        .map((l: { object: { type: string } }) => l.object.type)
+        .sort();
+    expect(await types()).toEqual([]);
+    for (const [visibility, expected] of [
+      ['CONTROLS', ['CONTROL']],
+      ['ALL', ['CONTROL', 'RISK']],
+    ] as const) {
+      await officer
+        .put('/grc/settings')
+        .send({ ...DEFAULT_GRC_SETTINGS, portalVisibility: visibility })
+        .expect(200);
+      expect(await types()).toEqual(expected);
+    }
+  });
+
+  it('adds an optional "Risks and controls" section to the process handbook', async () => {
+    const r = (await risk(officer).expect(201)).body.item;
+    await officer
+      .post(`/processes/${processId}/links`)
+      .send({ bpmnElementId: 'Task_Approve', repoObjectId: r.id })
+      .expect(201);
+    const handbook = async (includeRisks: boolean) => {
+      const res = await modeler
+        .post('/reports/handbook')
+        .send({ processId, source: 'working', locale: 'en', includeRisks })
+        .buffer(true)
+        .parse(binary as never)
+        .expect(200);
+      const zip = await JSZip.loadAsync(res.body as Buffer);
+      return zip.file('word/document.xml')!.async('string');
+    };
+    const withRisks = await handbook(true);
+    expect(withRisks).toContain('Risks and controls');
+    expect(withRisks).toContain('R-01 Split purchase orders');
+    expect(withRisks).toContain('Critical · 16');
+    expect(await handbook(false)).not.toContain('Risks and controls');
   });
 });

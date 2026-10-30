@@ -279,7 +279,9 @@
     "CONTROL_one": "{{count}} control",
     "CONTROL_other": "{{count}} controls",
     "COMMENT_one": "{{count}} open comment",
-    "COMMENT_other": "{{count}} open comments"
+    "COMMENT_other": "{{count}} open comments",
+    "ALERT_one": "{{count}} high risk without an effective control",
+    "ALERT_other": "{{count}} high risks without an effective control"
   },
   "preview": {
     "title": "Diagram",
@@ -407,7 +409,9 @@
       "system": "IT system",
       "type": "Step type",
       "duration": "Planned duration",
-      "missing": "Missing information"
+      "missing": "Missing information",
+      "riskRating": "Residual risk rating",
+      "riskControl": "Risks without controls"
     },
     "categories": {
       "none": "Not set",
@@ -429,6 +433,11 @@
       "missing": {
         "complete": "Role and description set",
         "incomplete": "Information missing"
+      },
+      "riskControl": {
+        "noRisk": "No risk linked",
+        "uncovered": "Risk but no control",
+        "covered": "Risk with controls"
       }
     },
     "missingRole_one": "{{count}} step without a role",

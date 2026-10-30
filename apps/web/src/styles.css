@@ -2569,3 +2569,9 @@ button.ph-risk-matrix-cell:focus-visible {
   grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
   gap: 24px;
 }
+
+.ph-badge.ph-badge-alert {
+  background: #dc2626;
+  border-color: #dc2626;
+  color: #fff;
+}

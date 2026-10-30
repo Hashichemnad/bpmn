@@ -588,6 +588,8 @@ export interface ProcessGrcDto {
     bpmnElementId: string;
     /** Risks: residual rating; controls: effectiveness. */
     rating?: RiskRating;
+    /** Risks: at least one of its own mitigating controls is active and (partly) effective. */
+    effectivelyControlled?: boolean;
     effectiveness?: ControlEffectiveness;
     keyControl?: boolean;
     controlType?: ControlType;
@@ -649,4 +651,51 @@ export interface GrcImportReportDto {
   updated: number;
   errors: GrcImportRowIssue[];
   imported: boolean;
+}
+
+// ---------- Per-step coverage (badges, colour-by, gap check) ----------
+
+export interface StepGrcSummary {
+  risks: number;
+  controls: number;
+  requirements: number;
+  /** Highest residual score of the step's risks (null: no risk). */
+  maxResidualScore: number | null;
+  maxResidualBand: string | null;
+  /** A high / critical residual risk whose mitigating controls include no effective one. */
+  alert: boolean;
+  /** Risks but no control at all at this step. */
+  uncovered: boolean;
+}
+
+/** Summary of the risks and controls linked to each element of a process. */
+export function summariseSteps(items: ProcessGrcDto['items']): Map<string, StepGrcSummary> {
+  const out = new Map<string, StepGrcSummary>();
+  const byElement = new Map<string, ProcessGrcDto['items']>();
+  for (const i of items) {
+    if (i.status === 'RETIRED') continue;
+    byElement.set(i.bpmnElementId, [...(byElement.get(i.bpmnElementId) ?? []), i]);
+  }
+  for (const [elementId, list] of byElement) {
+    const risks = list.filter((i) => i.type === 'RISK');
+    const controls = list.filter((i) => i.type === 'CONTROL');
+    const top = risks
+      .filter((r) => r.rating)
+      .sort((a, b) => b.rating!.residualScore - a.rating!.residualScore)[0];
+    out.set(elementId, {
+      risks: risks.length,
+      controls: controls.length,
+      requirements: list.filter((i) => i.type === 'REQUIREMENT').length,
+      maxResidualScore: top?.rating?.residualScore ?? null,
+      maxResidualBand: top?.rating?.residualBand ?? null,
+      alert: risks.some((r) => r.rating?.alert && !r.effectivelyControlled),
+      uncovered: risks.length > 0 && controls.length === 0,
+    });
+  }
+  return out;
+}
+
+/** Library object types the Knowledge Portal leaves out for a visibility setting. */
+export function portalHiddenTypes(v: GrcPortalVisibility): GrcObjectType[] {
+  return v === 'ALL' ? [] : v === 'CONTROLS' ? ['RISK', 'REQUIREMENT'] : [...GRC_OBJECT_TYPES];
 }

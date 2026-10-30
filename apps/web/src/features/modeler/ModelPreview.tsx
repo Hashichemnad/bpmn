@@ -3,7 +3,9 @@ import { useNavigate } from 'react-router-dom';
 import { Button, Card, Empty, Flex, Space, Typography } from 'antd';
 import { EditOutlined, ExpandOutlined } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
-import type { ProcessDto } from '@processhub/shared';
+import { PERMISSIONS, summariseSteps, type ProcessDto } from '@processhub/shared';
+import { useAuth } from '@/auth/AuthProvider';
+import { useProcessGrc } from '@/api/grc';
 import { useLinks, useProcessModel } from '@/api/hooks';
 import { useComments } from '@/api/governance';
 import { useLocale } from '@/app/LocaleProvider';
@@ -13,7 +15,12 @@ import type { BpmnInstance, Canvas, DiagramElement, ElementRegistry, EventBus } 
 import { createDiagram, importDiagram } from './create-diagram';
 import { applyLanguage, normaliseDiagram } from './diagram';
 import { afterLayout, fitWidth } from './view';
-import { commentBadgeItems, linkBadgeItems, useDiagramOverlays } from './useDiagramOverlays';
+import {
+  commentBadgeItems,
+  grcAlertBadgeItems,
+  linkBadgeItems,
+  useDiagramOverlays,
+} from './useDiagramOverlays';
 
 /**
  * Model tab of the process page: read-only preview of the working model with badges, and the
@@ -27,6 +34,8 @@ export function ModelPreview({ process, elementId }: { process: ProcessDto; elem
   const model = useProcessModel(process.id);
   const links = useLinks(process.id);
   const comments = useComments('PROCESS', process.id);
+  const { can } = useAuth();
+  const grc = useProcessGrc(process.id, can(PERMISSIONS.GRC_READ));
   const ref = useRef<HTMLDivElement>(null);
   const [viewer, setViewer] = useState<BpmnInstance | null>(null);
   const [version, setVersion] = useState(0);
@@ -89,8 +98,9 @@ export function ModelPreview({ process, elementId }: { process: ProcessDto; elem
         loc,
       ),
       ...commentBadgeItems(comments.data ?? []),
+      ...grcAlertBadgeItems(summariseSteps(grc.data?.items ?? []), t('grc:detail.notControlled')),
     ],
-    [links.data, comments.data, loc],
+    [links.data, comments.data, loc, grc.data, t],
   );
   useDiagramOverlays({
     instance: viewer,

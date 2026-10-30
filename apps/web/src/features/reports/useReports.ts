@@ -10,6 +10,8 @@ import { diagramWidthFor, renderDiagramPng } from './render-diagram';
 export interface HandbookOptions {
   processId: string;
   includeChildren: boolean;
+  /** "Risks and controls" section (only what the user may see). */
+  includeRisks?: boolean;
   source?: ReportSource;
   locale: Locale;
 }
@@ -69,6 +71,7 @@ export function useReports() {
           body: {
             processId: o.processId,
             includeChildren: o.includeChildren,
+            includeRisks: !!o.includeRisks,
             source: plan.source,
             locale: o.locale,
             images,

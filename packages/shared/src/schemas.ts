@@ -839,6 +839,8 @@ export type HandbookPlanInput = z.infer<typeof handbookPlanSchema>;
 
 export const handbookSchema = handbookPlanSchema.extend({
   locale: localeSchema,
+  /** Optional "Risks and controls" section per process (Phase 4.1; only what the user may see). */
+  includeRisks: z.boolean().default(false),
   /** Diagram images rendered in the browser (PNG as base64), one per process. */
   images: z
     .array(

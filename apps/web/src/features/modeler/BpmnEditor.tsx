@@ -44,7 +44,10 @@ import 'bpmn-js/dist/assets/bpmn-font/css/bpmn-embedded.css';
 import {
   BPMN_MAX_BYTES,
   DEFAULT_DIAGRAM_THEME,
+  DEFAULT_GRC_SETTINGS,
+  PERMISSIONS,
   isFlowNode,
+  summariseSteps,
   validateBpmnGraph,
   type AiGeneratedProcessDto,
   type AiSuggestedLinkDto,
@@ -108,6 +111,8 @@ import { createDiagram, importDiagram as importDiagramXml } from './create-diagr
 import { themeModule, type ThemeState } from './theme';
 import { colourPickerModule, pickerColours, syncPickerColours } from './color-picker';
 import { ElementPanel } from './ElementPanel';
+import { GrcStepPanel } from '@/features/grc/GrcStepPanel';
+import { useGrcSettings, useProcessGrc } from '@/api/grc';
 import { VersionsDrawer } from './VersionsDrawer';
 import { useWorkspacePrefs } from './workspace-prefs';
 import { initialPanelState, panelReducer } from './panel-state';
@@ -119,7 +124,12 @@ import { LayoutToolbar } from './LayoutToolbar';
 import { ProcessPickerModal } from './ProcessPickerModal';
 import { MinimapModule, setMinimap } from './minimap';
 import { autoLayoutModule, runAutoLayout } from './auto-layout';
-import { commentBadgeItems, linkBadgeItems, useDiagramOverlays } from './useDiagramOverlays';
+import {
+  commentBadgeItems,
+  grcAlertBadgeItems,
+  linkBadgeItems,
+  useDiagramOverlays,
+} from './useDiagramOverlays';
 import type { ReadyStep } from './palette-entries';
 import { workspaceShortcut } from './keys';
 import { applyLabelSource, syncLabelRefMarkers } from './label-source';
@@ -137,7 +147,7 @@ import {
 import { ColourByLegend } from './ColourByLegend';
 import { ReportDialog, type ReportKind } from '@/features/reports/ReportDialog';
 
-type PanelTab = 'properties' | 'issues' | 'comments' | 'ai';
+type PanelTab = 'properties' | 'grc' | 'issues' | 'comments' | 'ai';
 
 interface Props {
   process: ProcessDto;
@@ -160,7 +170,7 @@ export function BpmnEditor({ process, focusElementId, readOnly = false, onClose 
   const { locale, dir } = useLocale();
   const dirRef = useRef(dir);
   dirRef.current = dir;
-  const { user } = useAuth();
+  const { user, can } = useAuth();
   const loc = useLocalized();
   const navigate = useNavigate();
   const formatDate = useFormatDate();
@@ -177,6 +187,10 @@ export function BpmnEditor({ process, focusElementId, readOnly = false, onClose 
   const { available: aiAvailable } = useAi();
   const versions = useVersions(process.id);
   const comments = useComments('PROCESS', process.id);
+  const canReadGrc = can(PERMISSIONS.GRC_READ);
+  const processGrc = useProcessGrc(process.id, canReadGrc);
+  const grcConfig = useGrcSettings(canReadGrc);
+  const grcSteps = useMemo(() => summariseSteps(processGrc.data?.items ?? []), [processGrc.data]);
   const autosaveTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
   const autosaveRef = useRef<() => Promise<boolean>>(async () => true);
 
@@ -280,8 +294,9 @@ export function BpmnEditor({ process, focusElementId, readOnly = false, onClose 
         loc,
       ),
       ...commentBadgeItems(comments.data ?? []),
+      ...grcAlertBadgeItems(grcSteps, t('grc:detail.notControlled')),
     ],
-    [links.data, comments.data, loc],
+    [links.data, comments.data, loc, grcSteps, t],
   );
   useDiagramOverlays({
     instance,
@@ -289,7 +304,15 @@ export function BpmnEditor({ process, focusElementId, readOnly = false, onClose 
     items: badgeItems,
     onBadge: (elementId, kind) => {
       const el = instanceRef.current?.get<ElementRegistry>('elementRegistry').get(elementId);
-      if (el) selectElement(el, kind === 'COMMENT' ? 'comments' : 'properties');
+      if (el)
+        selectElement(
+          el,
+          kind === 'COMMENT'
+            ? 'comments'
+            : canReadGrc && ['RISK', 'CONTROL', 'ALERT'].includes(kind)
+              ? 'grc'
+              : 'properties',
+        );
     },
     drill: { open: (target) => navigate(`/processes/${target}/model`) },
   });
@@ -312,6 +335,7 @@ export function BpmnEditor({ process, focusElementId, readOnly = false, onClose 
           links: links.data ?? [],
           locale,
           label: (key) => t(`modeler:colourBy.categories.${key.replace(':', '.')}`),
+          grc: { steps: grcSteps, bands: grcConfig.data?.bands ?? DEFAULT_GRC_SETTINGS.bands },
         });
         setLegend(result.legend);
         const lacks = [...result.missing.values()];
@@ -329,7 +353,7 @@ export function BpmnEditor({ process, focusElementId, readOnly = false, onClose 
       eventBus.off(['commandStack.changed', 'import.done'], apply);
       clearColourBy(instance);
     };
-  }, [instance, loaded, colourBy, links.data, locale, t]);
+  }, [instance, loaded, colourBy, links.data, locale, t, grcSteps, grcConfig.data]);
 
   // The colour theme (Settings → Branding) applies to new elements and the colour picker.
   const theme = settings.data?.diagramTheme;
@@ -1002,7 +1026,9 @@ export function BpmnEditor({ process, focusElementId, readOnly = false, onClose 
                   key: 'colourBy',
                   type: 'group' as const,
                   label: t('modeler:colourBy.title'),
-                  children: COLOUR_BY_MODES.map((mode) => ({
+                  children: COLOUR_BY_MODES.filter(
+                    (m) => canReadGrc || (m !== 'riskRating' && m !== 'riskControl'),
+                  ).map((mode) => ({
                     key: `colourBy-${mode}`,
                     label: t(`modeler:colourBy.modes.${mode}`),
                     icon:
@@ -1279,6 +1305,34 @@ export function BpmnEditor({ process, focusElementId, readOnly = false, onClose 
                       />
                     ),
                   },
+                  ...(canReadGrc
+                    ? [
+                        {
+                          key: 'grc',
+                          label: (
+                            <Space size={4}>
+                              {t('grc:panel.tab')}
+                              {[...grcSteps.values()].some((x) => x.alert) && (
+                                <Badge status="error" />
+                              )}
+                            </Space>
+                          ),
+                          children: (
+                            <GrcStepPanel
+                              processId={process.id}
+                              elementId={
+                                selected && selected.type !== 'bpmn:Process' ? selected.id : null
+                              }
+                              elementName={selected ? labelOf(selected.id) || selected.id : ''}
+                              canEditModel={process.canEditModel}
+                              locked={
+                                process.status === 'IN_REVIEW' || process.status === 'ARCHIVED'
+                              }
+                            />
+                          ),
+                        },
+                      ]
+                    : []),
                   {
                     key: 'issues',
                     label: (

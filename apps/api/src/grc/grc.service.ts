@@ -1214,7 +1214,27 @@ export class GrcService {
         repoObject: { deletedAt: null, type: { in: ['RISK', 'CONTROL', 'REQUIREMENT'] } },
       },
       include: {
-        repoObject: { include: { risk: true, control: true, requirement: true } },
+        repoObject: {
+          include: {
+            risk: {
+              include: {
+                controls: {
+                  include: {
+                    control: {
+                      select: {
+                        status: true,
+                        effectiveness: true,
+                        object: { select: { deletedAt: true } },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+            control: true,
+            requirement: true,
+          },
+        },
       },
       orderBy: { createdAt: 'asc' },
     });
@@ -1232,7 +1252,14 @@ export class GrcService {
           bpmnElementId: l.bpmnElementId,
           descriptionEn: o.descriptionEn,
           descriptionAr: o.descriptionAr,
-          ...(o.risk ? { rating: rateRisk(o.risk, settings.bands) } : {}),
+          ...(o.risk
+            ? {
+                rating: rateRisk(o.risk, settings.bands),
+                effectivelyControlled: o.risk.controls.some(
+                  (c) => !c.control.object.deletedAt && isEffectiveControl(c.control),
+                ),
+              }
+            : {}),
           ...(o.control
             ? {
                 effectiveness: o.control.effectiveness,

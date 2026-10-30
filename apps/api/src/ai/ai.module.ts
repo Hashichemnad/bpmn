@@ -1,3 +1,4 @@
+import { GrcModule } from '../grc/grc.module';
 import { Module } from '@nestjs/common';
 import { ProcessesModule } from '../processes/processes.module';
 import { GovernanceModule } from '../governance/governance.module';
@@ -18,7 +19,7 @@ import { PortalQaService } from './features/portal-qa.service';
 
 /** M16 AI Assistant: provider-agnostic gateway, settings, usage and the features. */
 @Module({
-  imports: [ProcessesModule, GovernanceModule, DocsModule],
+  imports: [ProcessesModule, GovernanceModule, DocsModule, GrcModule],
   controllers: [AiAdminController, AiController],
   providers: [
     AiSettingsService,
