@@ -212,19 +212,20 @@ model User {
   updatedById       String?     @db.Uuid
   deletedAt         DateTime?
 
-  roles          UserRole[]
-  refreshTokens  RefreshToken[]
-  ownedProcesses Process[]         @relation("ProcessOwner")
-  ownedSpaces    Space[]           @relation("SpaceOwner")
-  auditLogs      AuditLog[]
-  pageDrafts     PageDraft[]
-  ownedPages     Page[]            @relation("PageOwner")
-  jobRoles       UserJobRole[]
-  notifications  Notification[]
-  aiUsage        AiUsage[]
-  recoveryCodes  MfaRecoveryCode[]
-  ownedObjects   RepoObject[]      @relation("ObjectOwner")
-  grcActivities  GrcActivity[]
+  roles           UserRole[]
+  refreshTokens   RefreshToken[]
+  ownedProcesses  Process[]         @relation("ProcessOwner")
+  ownedSpaces     Space[]           @relation("SpaceOwner")
+  auditLogs       AuditLog[]
+  pageDrafts      PageDraft[]
+  ownedPages      Page[]            @relation("PageOwner")
+  jobRoles        UserJobRole[]
+  notifications   Notification[]
+  aiUsage         AiUsage[]
+  recoveryCodes   MfaRecoveryCode[]
+  ownedObjects    RepoObject[]      @relation("ObjectOwner")
+  grcActivities   GrcActivity[]
+  assuranceEvents AssuranceEvent[]  @relation("AssuranceEventAuthor")
 
   @@unique([ssoIssuer, ssoSubject])
   @@index([departmentId])
@@ -464,24 +465,29 @@ model Risk {
 
 /// Internal control; code, title, description and owner live on the RepoObject (type CONTROL).
 model Control {
-  objectId        String               @id @db.Uuid
-  object          RepoObject           @relation(fields: [objectId], references: [id], onDelete: Cascade)
-  controlType     ControlType          @default(PREVENTIVE)
-  nature          ControlNature        @default(MANUAL)
-  frequency       ControlFrequency     @default(PER_TRANSACTION)
-  departmentId    String?              @db.Uuid
-  department      Department?          @relation(fields: [departmentId], references: [id], onDelete: SetNull)
-  keyControl      Boolean              @default(false)
-  systemId        String?              @db.Uuid
-  system          RepoObject?          @relation("ControlSystem", fields: [systemId], references: [id], onDelete: SetNull)
-  effectiveness   ControlEffectiveness @default(NOT_ASSESSED)
-  status          GrcStatus            @default(DRAFT)
-  nextReviewAt    DateTime?
-  lastAssessedAt  DateTime?
-  reminderSentFor DateTime?
+  objectId               String               @id @db.Uuid
+  object                 RepoObject           @relation(fields: [objectId], references: [id], onDelete: Cascade)
+  controlType            ControlType          @default(PREVENTIVE)
+  nature                 ControlNature        @default(MANUAL)
+  frequency              ControlFrequency     @default(PER_TRANSACTION)
+  departmentId           String?              @db.Uuid
+  department             Department?          @relation(fields: [departmentId], references: [id], onDelete: SetNull)
+  keyControl             Boolean              @default(false)
+  systemId               String?              @db.Uuid
+  system                 RepoObject?          @relation("ControlSystem", fields: [systemId], references: [id], onDelete: SetNull)
+  effectiveness          ControlEffectiveness @default(NOT_ASSESSED)
+  /// Conclusion of the last reviewed control test (Phase 4.2, D-099); NOT_ASSESSED until then.
+  operatingEffectiveness ControlEffectiveness @default(NOT_ASSESSED)
+  lastTestedAt           DateTime?
+  status                 GrcStatus            @default(DRAFT)
+  nextReviewAt           DateTime?
+  lastAssessedAt         DateTime?
+  reminderSentFor        DateTime?
 
   risks        RiskControl[]
   requirements RequirementControl[]
+  testPlans    ControlTestPlan[]
+  tests        ControlTest[]
 
   @@index([status])
   @@index([departmentId])
@@ -1075,4 +1081,117 @@ model GrcChangeTask {
 
   @@index([assigneeId, status])
   @@index([changeId])
+}
+
+/// How a control is tested (Phase 4.2, D-099): procedure, type, sample size, frequency, people.
+model ControlTestPlan {
+  id              String        @id @default(uuid()) @db.Uuid
+  controlId       String        @db.Uuid
+  control         Control       @relation(fields: [controlId], references: [objectId], onDelete: Cascade)
+  /// DESIGN | OPERATING
+  testType        String
+  /// Bilingual test steps: [{ en, ar }]
+  procedure       Json          @default("[]")
+  sampleSize      Int           @default(1)
+  /// MONTHLY | QUARTERLY | SEMI_ANNUAL | ANNUAL | AD_HOC (default derived from the control frequency)
+  frequency       String
+  /// Tester / reviewer: a user, or anyone with a system role (optionally both empty: Risk & Compliance).
+  testerId        String?       @db.Uuid
+  testerRoleKey   String?
+  reviewerId      String?       @db.Uuid
+  reviewerRoleKey String?
+  /// Due date of the next scheduled test; the scheduler creates it `leadDays` before.
+  nextDueAt       DateTime?
+  leadDays        Int           @default(30)
+  active          Boolean       @default(true)
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  createdById     String?       @db.Uuid
+  updatedById     String?       @db.Uuid
+  deletedAt       DateTime?
+  tests           ControlTest[]
+
+  @@index([controlId])
+  @@index([active, nextDueAt])
+}
+
+/// One test instance: Planned → In progress → Submitted → Reviewed (or Returned) → Closed.
+model ControlTest {
+  id                String           @id @default(uuid()) @db.Uuid
+  planId            String?          @db.Uuid
+  plan              ControlTestPlan? @relation(fields: [planId], references: [id], onDelete: SetNull)
+  controlId         String           @db.Uuid
+  control           Control          @relation(fields: [controlId], references: [objectId], onDelete: Cascade)
+  testType          String
+  /// Period label, e.g. 2026-Q4 (scheduled) or the due date (manual).
+  period            String
+  dueAt             DateTime
+  /// PLANNED | IN_PROGRESS | SUBMITTED | RETURNED | REVIEWED | CLOSED
+  status            String           @default("PLANNED")
+  /// SCHEDULED | MANUAL
+  origin            String           @default("MANUAL")
+  procedure         Json             @default("[]")
+  sampleSize        Int              @default(1)
+  testerId          String?          @db.Uuid
+  testerRoleKey     String?
+  reviewerId        String?          @db.Uuid
+  reviewerRoleKey   String?
+  /// [{ ref, steps: (PASS|FAIL|NA|null)[], result: PASS|EXCEPTION|FAIL|null, note }]
+  samples           Json             @default("[]")
+  /// EFFECTIVE | EFFECTIVE_WITH_EXCEPTIONS | NOT_EFFECTIVE
+  conclusion        String?
+  testerComment     String           @default("")
+  reviewComment     String           @default("")
+  executedById      String?          @db.Uuid
+  reviewedById      String?          @db.Uuid
+  startedAt         DateTime?
+  submittedAt       DateTime?
+  reviewedAt        DateTime?
+  closedAt          DateTime?
+  /// Reminder bookkeeping (due soon / overdue sent for this due date).
+  dueNotifiedAt     DateTime?
+  overdueNotifiedAt DateTime?
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+  createdById       String?          @db.Uuid
+  deletedAt         DateTime?
+
+  @@index([controlId])
+  @@index([planId, dueAt])
+  @@index([status, dueAt])
+  @@index([testerId])
+  @@index([reviewerId])
+}
+
+/// Evidence and other files of assurance records (tests, issues, actions, audit items, answers).
+model AssuranceFile {
+  id          String    @id @default(uuid()) @db.Uuid
+  /// CONTROL_TEST | ISSUE | ISSUE_ACTION | AUDIT_ITEM | AUDIT_FINDING | SURVEY_RESPONSE
+  ownerType   String
+  ownerId     String    @db.Uuid
+  fileName    String
+  contentType String
+  size        Int
+  storageKey  String    @unique
+  createdAt   DateTime  @default(now())
+  createdById String?   @db.Uuid
+  deletedAt   DateTime?
+
+  @@index([ownerType, ownerId])
+}
+
+/// History and comments of assurance records (tests, issues, engagements …).
+model AssuranceEvent {
+  id          String   @id @default(uuid()) @db.Uuid
+  entityType  String
+  entityId    String   @db.Uuid
+  /// CREATED | STATUS | UPDATED | COMMENT | FILE
+  kind        String
+  changes     Json     @default("{}")
+  comment     String   @default("")
+  createdAt   DateTime @default(now())
+  createdById String?  @db.Uuid
+  createdBy   User?    @relation("AssuranceEventAuthor", fields: [createdById], references: [id], onDelete: SetNull)
+
+  @@index([entityType, entityId, createdAt])
 }

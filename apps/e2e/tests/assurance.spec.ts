@@ -6,6 +6,20 @@ import { DEMO, apiCall, login } from './helpers';
  * issues and actions, audit engagements, questionnaires and the assurance dashboard.
  */
 const stamp = Date.now().toString(36).toUpperCase();
+test.setTimeout(120_000);
+
+/** Opens an Ant Design select by test id and picks the option with this exact title. */
+async function choose(page: Page, testId: string, title: string) {
+  await page.getByTestId(testId).click();
+  const option = page
+    .locator('.ant-select-dropdown:not(.ant-select-dropdown-hidden)')
+    .last()
+    .locator(`.ant-select-item-option[title="${title}"]`);
+  await option.click();
+  await expect(page.locator('.ant-select-dropdown:not(.ant-select-dropdown-hidden)')).toHaveCount(
+    0,
+  );
+}
 
 /** Turns the approval of risk / control changes on (with the "any one reviewer" workflow) or off. */
 async function changeApproval(page: Page, enabled: boolean) {
@@ -60,4 +74,76 @@ test('a change of an active risk waits for approval and applies when a reviewer 
     await login(page, DEMO.risk);
     await changeApproval(page, false);
   }
+});
+
+test('a control test is planned, performed with evidence, signed off and updates the control', async ({
+  page,
+}) => {
+  await login(page, DEMO.risk);
+  const control = await apiCall<{ item: { id: string } }>(page, 'POST', '/grc/controls', {
+    code: `E2E-CT${stamp}`,
+    nameEn: `Tested control ${stamp}`,
+    nameAr: `ضابط مختبر ${stamp}`,
+    status: 'ACTIVE',
+    frequency: 'MONTHLY',
+  });
+  expect(control.status).toBe(201);
+  const controlId = control.data.item.id;
+  const owner = (
+    await apiCall<{ id: string; email: string }[]>(page, 'GET', `/users/directory?q=${DEMO.owner}`)
+  ).data.find((u) => u.email === DEMO.owner)!;
+  const plan = await apiCall(page, 'POST', '/control-tests/plans', {
+    controlId,
+    testType: 'OPERATING',
+    procedure: [
+      { en: 'Check the approval signature', ar: 'تحقق من توقيع الاعتماد' },
+      { en: 'Check the amount against the limit', ar: 'تحقق من المبلغ مقابل الحد' },
+    ],
+    sampleSize: 2,
+    frequency: 'QUARTERLY',
+    testerId: owner.id,
+    reviewerRoleKey: 'RISK_OFFICER',
+    nextDueAt: '2027-03-31',
+  });
+  expect(plan.status).toBe(201);
+
+  // "Test now" on the control page creates the test.
+  await page.goto(`/grc/controls/${controlId}`);
+  const card = page.getByTestId('control-testing');
+  await card.getByRole('button', { name: 'Test now' }).click();
+  await page.locator('.ant-modal').getByRole('button', { name: 'OK' }).click();
+  await expect(page).toHaveURL(/\/grc\/tests\//);
+  const testUrl = page.url();
+
+  // The tester performs it from My tasks.
+  await login(page, DEMO.owner);
+  await page.goto('/tasks?tab=testsToExecute');
+  await page
+    .getByTestId('tasks-tests-execute')
+    .getByRole('link', { name: `E2E-CT${stamp} Tested control ${stamp}` })
+    .click();
+  await page.getByTestId('test-start').click();
+  await choose(page, 'sample-result-0', 'Pass');
+  await choose(page, 'sample-result-1', 'Exception');
+  await choose(page, 'test-conclusion', 'Effective with exceptions');
+  await page
+    .getByTestId('evidence')
+    .locator('input[type=file]')
+    .setInputFiles({
+      name: 'evidence.pdf',
+      mimeType: 'application/pdf',
+      buffer: Buffer.from('%PDF-1.4 sample evidence'),
+    });
+  await expect(page.getByTestId('evidence')).toContainText('evidence.pdf');
+  await page.getByTestId('test-submit').click();
+  await expect(page.locator('body')).toContainText('Submitted');
+
+  // The Risk & Compliance officer signs it off (four-eyes: a different person).
+  await login(page, DEMO.risk);
+  await page.goto(testUrl);
+  await page.getByTestId('test-approve').click();
+  await page.locator('.ant-modal').getByRole('button', { name: 'OK' }).click();
+  await expect(page.locator('body')).toContainText('Reviewed');
+  await page.goto(`/grc/controls/${controlId}`);
+  await expect(page.getByTestId('control-testing')).toContainText('Partly effective');
 });

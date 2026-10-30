@@ -50,6 +50,10 @@ describe('Authorisation matrix (e2e)', () => {
     'GrcActivity',
     'GrcChange',
     'GrcChangeTask',
+    'ControlTestPlan',
+    'ControlTest',
+    'AssuranceFile',
+    'AssuranceEvent',
   ];
 
   async function fingerprint(): Promise<Record<string, string>> {

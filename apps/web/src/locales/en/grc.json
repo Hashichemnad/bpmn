@@ -72,7 +72,8 @@
     "commentHint": "Saved in the history with rating or effectiveness changes",
     "textEn": "Text (English)",
     "textAr": "Text (Arabic)",
-    "residualHint": "Leave empty until the controls are assessed — the inherent rating applies"
+    "residualHint": "Leave empty until the controls are assessed — the inherent rating applies",
+    "operatingEffectiveness": "Tested effectiveness"
   },
   "status": {
     "DRAFT": "Draft",

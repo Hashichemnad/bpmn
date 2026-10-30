@@ -315,7 +315,14 @@
       "GRC_CHANGE": "Change of {{title}}",
       "GRC_CHANGE_requested": "{{actor}} asks you to approve a change of {{title}}",
       "GRC_CHANGE_approved": "The change of {{title}} was approved",
-      "GRC_CHANGE_rejected": "{{actor}} rejected the change of {{title}}"
+      "GRC_CHANGE_rejected": "{{actor}} rejected the change of {{title}}",
+      "CONTROL_TEST": "Control test: {{title}}",
+      "CONTROL_TEST_assigned": "A control test is assigned to you: {{title}}",
+      "CONTROL_TEST_due": "Control test due on {{due}}: {{title}}",
+      "CONTROL_TEST_overdue": "Control test overdue (due {{due}}): {{title}}",
+      "CONTROL_TEST_submitted": "{{actor}} submitted a control test for your review: {{title}}",
+      "CONTROL_TEST_returned": "{{actor}} returned your control test: {{title}}",
+      "CONTROL_TEST_reviewed": "Your control test was signed off: {{title}}"
     }
   },
   "prefs": {
@@ -337,7 +344,8 @@
       "FEEDBACK_RECEIVED": "Portal feedback on my items",
       "FEEDBACK_UPDATED": "Updates on feedback I sent",
       "GRC_REVIEW": "Risk & Compliance review dates",
-      "GRC_CHANGE": "Changes of risks and controls (approvals)"
+      "GRC_CHANGE": "Changes of risks and controls (approvals)",
+      "CONTROL_TEST": "Control tests (assigned, due, reviews)"
     }
   },
   "feedback": {

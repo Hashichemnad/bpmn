@@ -253,9 +253,30 @@ export function heatMap(points: { likelihood: number; impact: number }[]): numbe
   return cells;
 }
 
-/** A control counts as effective protection when it is active and assessed (partly) effective. */
-export function isEffectiveControl(c: { status: GrcStatus; effectiveness: ControlEffectiveness }) {
-  return c.status === 'ACTIVE' && (c.effectiveness === 'EFFECTIVE' || c.effectiveness === 'PARTLY');
+/**
+ * The effectiveness that counts: the tested operating effectiveness once a test was reviewed
+ * (Phase 4.2, D-099), else the assessed effectiveness.
+ */
+export function currentEffectiveness(c: {
+  effectiveness: ControlEffectiveness;
+  operatingEffectiveness?: ControlEffectiveness | null;
+}): ControlEffectiveness {
+  return c.operatingEffectiveness && c.operatingEffectiveness !== 'NOT_ASSESSED'
+    ? c.operatingEffectiveness
+    : c.effectiveness;
+}
+
+/**
+ * A control counts as effective protection when it is active and (partly) effective — by its
+ * reviewed test result when it has one, else by its assessment.
+ */
+export function isEffectiveControl(c: {
+  status: GrcStatus;
+  effectiveness: ControlEffectiveness;
+  operatingEffectiveness?: ControlEffectiveness | null;
+}) {
+  const e = currentEffectiveness(c);
+  return c.status === 'ACTIVE' && (e === 'EFFECTIVE' || e === 'PARTLY');
 }
 
 /** The next review date has passed. */
@@ -557,7 +578,11 @@ export interface RiskDto extends GrcBaseDto {
   residualImpact: number | null;
   response: RiskResponse;
   rating: RiskRating;
-  controls: (GrcRef & { effectiveness: ControlEffectiveness; keyControl: boolean })[];
+  controls: (GrcRef & {
+    effectiveness: ControlEffectiveness;
+    operatingEffectiveness: ControlEffectiveness;
+    keyControl: boolean;
+  })[];
   /** At least one linked control is active and (partly) effective. */
   effectivelyControlled: boolean;
 }
@@ -571,6 +596,9 @@ export interface ControlDto extends GrcBaseDto {
   system: { id: string; code: string | null; nameEn: string; nameAr: string } | null;
   effectiveness: ControlEffectiveness;
   lastAssessedAt: string | null;
+  /** Result of the last reviewed control test (Phase 4.2); NOT_ASSESSED until one is reviewed. */
+  operatingEffectiveness: ControlEffectiveness;
+  lastTestedAt: string | null;
   risks: (GrcRef & { rating: RiskRating })[];
   requirements: GrcRef[];
 }

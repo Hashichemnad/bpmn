@@ -38,6 +38,7 @@ import {
   AlertOutlined,
   SafetyOutlined,
   BankOutlined,
+  ExperimentOutlined,
 } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
 import { PERMISSIONS, type Locale } from '@processhub/shared';
@@ -186,6 +187,11 @@ export function AppLayout() {
             icon: <BankOutlined />,
             label: <Link to="/grc/requirements">{t('nav.requirements')}</Link>,
           },
+          {
+            key: '/grc/tests',
+            icon: <ExperimentOutlined />,
+            label: <Link to="/grc/tests">{t('assurance:nav.tests')}</Link>,
+          },
         ],
       });
     }
@@ -304,6 +310,7 @@ export function AppLayout() {
       '/grc/risks',
       '/grc/controls',
       '/grc/requirements',
+      '/grc/tests',
       '/admin/users',
       '/admin/departments',
       '/admin/audit',

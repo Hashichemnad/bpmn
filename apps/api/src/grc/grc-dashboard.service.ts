@@ -53,6 +53,7 @@ export class GrcDashboardService {
                     select: {
                       status: true,
                       effectiveness: true,
+                      operatingEffectiveness: true,
                       object: { select: { deletedAt: true } },
                     },
                   },

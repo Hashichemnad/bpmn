@@ -68,5 +68,139 @@
       "riskIds": "المخاطر",
       "requirementIds": "المتطلبات"
     }
+  },
+  "nav": {
+    "tests": "اختبارات الضوابط"
+  },
+  "anyone": "أي شخص بدور {{role}}",
+  "unassigned": "المخاطر والامتثال",
+  "overdue": "متأخر",
+  "system": "النظام",
+  "tasks": {
+    "testsToExecute": "اختبارات ضوابط للتنفيذ",
+    "testsToReview": "اختبارات ضوابط للمراجعة"
+  },
+  "evidence": {
+    "title": "الأدلة",
+    "none": "لا توجد أدلة بعد.",
+    "add": "إضافة دليل",
+    "uploaded": "تمت إضافة الدليل",
+    "removeConfirm": "حذف هذا الملف؟"
+  },
+  "events": {
+    "title": "السجل والتعليقات",
+    "commentPlaceholder": "أضف تعليقًا…",
+    "add": "تعليق",
+    "status": "الحالة: {{from}} ← {{to}}",
+    "file": "أضيف دليل: {{name}}",
+    "CREATED": "أُنشئ",
+    "STATUS": "تغيرت الحالة",
+    "UPDATED": "حُدّث",
+    "COMMENT": "تعليق",
+    "FILE": "أضيف دليل"
+  },
+  "plans": {
+    "title": "خطط الاختبار",
+    "new": "خطة اختبار جديدة",
+    "edit": "تعديل خطة الاختبار",
+    "saved": "تم حفظ خطة الاختبار",
+    "empty": "لا توجد خطة اختبار بعد.",
+    "frequency": "تكرار الاختبار",
+    "frequencyHint": "مقترح وفق تكرار الضابط ({{value}}).",
+    "frequencies": {
+      "MONTHLY": "شهري",
+      "QUARTERLY": "ربع سنوي",
+      "SEMI_ANNUAL": "نصف سنوي",
+      "ANNUAL": "سنوي",
+      "AD_HOC": "عند الطلب"
+    },
+    "stepEn": "الخطوة (إنجليزي)",
+    "stepAr": "الخطوة (عربي)",
+    "addStep": "إضافة خطوة",
+    "orRole": "…أو أي شخص بالدور",
+    "nextDue": "الموعد التالي",
+    "leadDays": "إنشاء الاختبار (أيام قبل الموعد)",
+    "active": "نشطة",
+    "inactive": "غير نشطة",
+    "testNow": "اختبار الآن",
+    "deleteConfirm": "حذف خطة الاختبار؟ تبقى الاختبارات الحالية."
+  },
+  "tests": {
+    "title": "اختبارات الضوابط",
+    "subtitle": "اختبارات فعالية التصميم والتشغيل: المخطط لها، وقيد التنفيذ، وبانتظار المراجعة، والمنجزة.",
+    "cardTitle": "الاختبار",
+    "history": "الاختبارات",
+    "empty": "لا توجد اختبارات بعد.",
+    "search": "بحث في الضوابط",
+    "control": "الضابط",
+    "period": "الفترة",
+    "type": "نوع الاختبار",
+    "statusLabel": "الحالة",
+    "conclusionLabel": "النتيجة",
+    "due": "الموعد",
+    "tester": "المختبِر",
+    "reviewer": "المراجِع",
+    "sampleSize": "حجم العينة",
+    "procedure": "إجراء الاختبار",
+    "noProcedure": "لا توجد خطوات اختبار.",
+    "samples": "العينات والنتائج",
+    "sampleRef": "العينة",
+    "sampleResult": "النتيجة",
+    "note": "ملاحظة",
+    "addSample": "إضافة عينة",
+    "testerComment": "ملخص الاختبار (ما تم فحصه والاستثناءات)",
+    "reviewComment": "تعليق المراجِع",
+    "returnReason": "سبب إعادة الاختبار (مطلوب)",
+    "suggested": "المقترح وفق العينات: {{value}}",
+    "origin": "طريقة الإنشاء",
+    "origins": {
+      "SCHEDULED": "وفق جدول خطة الاختبار",
+      "MANUAL": "يدويًا"
+    },
+    "operatingEffectiveness": "الفعالية المختبرة",
+    "lastTested": "آخر اختبار {{date}}",
+    "start": "بدء الاختبار",
+    "submit": "تقديم للمراجعة",
+    "approve": "اعتماد",
+    "return": "إعادة للمختبِر",
+    "close": "إغلاق",
+    "saved": "تم حفظ النتائج",
+    "submitted": "قُدّم الاختبار للمراجعة",
+    "reviewed": "تم اعتماد الاختبار",
+    "returned": "أُعيد الاختبار",
+    "returnedBy": "أعاده {{name}}",
+    "approveHint": "يسجل الاعتماد النتيجة «{{value}}» كفعالية مختبرة للضابط.",
+    "types": {
+      "DESIGN": "فعالية التصميم",
+      "OPERATING": "فعالية التشغيل"
+    },
+    "status": {
+      "PLANNED": "مخطط",
+      "IN_PROGRESS": "قيد التنفيذ",
+      "SUBMITTED": "مقدَّم",
+      "RETURNED": "مُعاد",
+      "REVIEWED": "تمت المراجعة",
+      "CLOSED": "مغلق"
+    },
+    "conclusion": {
+      "EFFECTIVE": "فعال",
+      "EFFECTIVE_WITH_EXCEPTIONS": "فعال مع استثناءات",
+      "NOT_EFFECTIVE": "غير فعال"
+    },
+    "result": {
+      "PASS": "ناجح",
+      "EXCEPTION": "استثناء",
+      "FAIL": "فاشل"
+    },
+    "step": {
+      "PASS": "ناجح",
+      "FAIL": "فاشل",
+      "NA": "لا ينطبق"
+    },
+    "filters": {
+      "open": "المفتوحة فقط",
+      "overdue": "المتأخرة",
+      "mine": "المسندة إليّ"
+    }
   }
 }

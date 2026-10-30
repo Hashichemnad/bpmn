@@ -330,7 +330,14 @@
       "GRC_CHANGE": "تعديل {{title}}",
       "GRC_CHANGE_requested": "يطلب منك {{actor}} اعتماد تعديل {{title}}",
       "GRC_CHANGE_approved": "تم اعتماد تعديل {{title}}",
-      "GRC_CHANGE_rejected": "رفض {{actor}} تعديل {{title}}"
+      "GRC_CHANGE_rejected": "رفض {{actor}} تعديل {{title}}",
+      "CONTROL_TEST": "اختبار ضابط: {{title}}",
+      "CONTROL_TEST_assigned": "أُسند إليك اختبار ضابط: {{title}}",
+      "CONTROL_TEST_due": "موعد اختبار الضابط {{due}}: {{title}}",
+      "CONTROL_TEST_overdue": "اختبار ضابط متأخر (الموعد {{due}}): {{title}}",
+      "CONTROL_TEST_submitted": "قدّم {{actor}} اختبار ضابط لمراجعتك: {{title}}",
+      "CONTROL_TEST_returned": "أعاد {{actor}} اختبار الضابط الخاص بك: {{title}}",
+      "CONTROL_TEST_reviewed": "تم اعتماد اختبار الضابط الخاص بك: {{title}}"
     }
   },
   "prefs": {
@@ -352,7 +359,8 @@
       "FEEDBACK_RECEIVED": "ملاحظات من البوابة على عناصري",
       "FEEDBACK_UPDATED": "تحديثات على ملاحظات أرسلتها",
       "GRC_REVIEW": "مواعيد مراجعة المخاطر والامتثال",
-      "GRC_CHANGE": "تعديلات المخاطر والضوابط (الاعتمادات)"
+      "GRC_CHANGE": "تعديلات المخاطر والضوابط (الاعتمادات)",
+      "CONTROL_TEST": "اختبارات الضوابط (الإسناد والمواعيد والمراجعات)"
     }
   },
   "feedback": {

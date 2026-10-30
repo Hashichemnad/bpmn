@@ -66,6 +66,7 @@ const riskInclude = {
             select: {
               status: true,
               effectiveness: true,
+              operatingEffectiveness: true,
               keyControl: true,
               object: objRef,
             },
@@ -165,6 +166,7 @@ export function toRiskDto(o: RiskRow, settings: GrcSettings): RiskDto {
     .map((c) => ({
       ...ref(c.control.object, c.control.status),
       effectiveness: c.control.effectiveness as ControlEffectiveness,
+      operatingEffectiveness: c.control.operatingEffectiveness as ControlEffectiveness,
       keyControl: c.control.keyControl,
     }));
   return {
@@ -207,6 +209,8 @@ export function toControlDto(o: ControlRow, settings: GrcSettings): ControlDto {
         : null,
     effectiveness: c.effectiveness,
     lastAssessedAt: iso(c.lastAssessedAt),
+    operatingEffectiveness: c.operatingEffectiveness,
+    lastTestedAt: iso(c.lastTestedAt),
     risks: c.risks
       .filter((x) => !x.risk.object.deletedAt)
       .map((x) => ({
@@ -1302,6 +1306,7 @@ export class GrcService {
                       select: {
                         status: true,
                         effectiveness: true,
+                        operatingEffectiveness: true,
                         object: { select: { deletedAt: true } },
                       },
                     },

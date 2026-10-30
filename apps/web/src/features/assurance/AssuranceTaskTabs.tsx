@@ -1,7 +1,8 @@
 import { Link } from 'react-router-dom';
 import { Badge, Table, Typography, type TabsProps } from 'antd';
 import { useTranslation } from 'react-i18next';
-import type { AssuranceTasksDto, GrcChangeDto } from '@processhub/shared';
+import type { AssuranceTasksDto, ControlTestDto, GrcChangeDto } from '@processhub/shared';
+import { AssigneeLabel, TestStatusTag } from './assurance-tags';
 import { useAssuranceTasks } from '@/api/assurance';
 import { useFormatDate, useLocalized } from '@/components/i18n-helpers';
 import { grcItemPath } from '@/features/grc/grc-helpers';
@@ -76,5 +77,54 @@ export function useAssuranceTaskTabs(): {
       ),
     });
   }
+  const testTable = (list: ControlTestDto[], testId: string) => (
+    <Table
+      rowKey="id"
+      size="middle"
+      pagination={false}
+      dataSource={list}
+      data-testid={testId}
+      columns={[
+        {
+          title: t('assurance:tests.control'),
+          render: (_, r) => (
+            <Link to={`/grc/tests/${r.id}`}>
+              {r.control.code && <span dir="ltr">{r.control.code} </span>}
+              {loc(r.control)}
+            </Link>
+          ),
+        },
+        { title: t('assurance:tests.period'), dataIndex: 'period' },
+        {
+          title: t('assurance:tests.statusLabel'),
+          render: (_, r) => <TestStatusTag status={r.status} />,
+        },
+        {
+          title: t('assurance:tests.tester'),
+          render: (_, r) => <AssigneeLabel value={r.tester} />,
+        },
+        {
+          title: t('assurance:tests.due'),
+          render: (_, r) => (
+            <Typography.Text type={r.overdue ? 'danger' : undefined}>
+              {formatDate(r.dueAt, false)}
+            </Typography.Text>
+          ),
+        },
+      ]}
+    />
+  );
+  if (d.testsToExecute.length)
+    items.push({
+      key: 'testsToExecute',
+      label: label('testsToExecute', t('assurance:tasks.testsToExecute')),
+      children: testTable(d.testsToExecute, 'tasks-tests-execute'),
+    });
+  if (d.testsToReview.length)
+    items.push({
+      key: 'testsToReview',
+      label: label('testsToReview', t('assurance:tasks.testsToReview')),
+      children: testTable(d.testsToReview, 'tasks-tests-review'),
+    });
   return { items, counts };
 }

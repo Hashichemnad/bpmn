@@ -13,6 +13,9 @@ interface Template {
  * language from `titleEn/titleAr`, `actorEn/actorAr`, `stepEn/stepAr`; other placeholders
  * (`{version}`, `{comment}`, `{due}`, `{status}`, `{reply}`) are used as they are.
  */
+/** Phase 4.2 types: subject and text come from KIND_TEMPLATES by `params.kind`. */
+const BY_KIND = { subject: '{kindSubject}', body: '{kindBody}' };
+
 const TEMPLATES: Record<Locale, Record<NotificationType, Template>> = {
   en: {
     REVIEW_REQUESTED: {
@@ -63,7 +66,8 @@ const TEMPLATES: Record<Locale, Record<NotificationType, Template>> = {
       subject: 'Risk & Compliance review due: {code} {title}',
       body: '“{title}” ({code}) is due for review on {due}. Please reassess it in Risk & Compliance.',
     },
-    GRC_CHANGE: { subject: '{kindSubject}', body: '{kindBody}' },
+    GRC_CHANGE: BY_KIND,
+    CONTROL_TEST: BY_KIND,
   },
   ar: {
     REVIEW_REQUESTED: {
@@ -114,7 +118,8 @@ const TEMPLATES: Record<Locale, Record<NotificationType, Template>> = {
       subject: 'موعد مراجعة المخاطر والامتثال: {code} {title}',
       body: 'موعد مراجعة «{title}» ({code}) هو {due}. يرجى إعادة تقييمه في قسم المخاطر والامتثال.',
     },
-    GRC_CHANGE: { subject: '{kindSubject}', body: '{kindBody}' },
+    GRC_CHANGE: BY_KIND,
+    CONTROL_TEST: BY_KIND,
   },
 };
 
@@ -136,6 +141,30 @@ const KIND_TEMPLATES: Record<Locale, Record<string, { subject: string; body: str
       subject: 'Change rejected: {title}',
       body: '{actor} rejected the proposed change of “{title}”. {comment}',
     },
+    'CONTROL_TEST:assigned': {
+      subject: 'Control test {period}: {title}',
+      body: 'A test of the control “{title}” ({period}) is assigned to you, due on {due}.',
+    },
+    'CONTROL_TEST:due': {
+      subject: 'Control test due on {due}: {title}',
+      body: 'The test of “{title}” ({period}) is due on {due}.',
+    },
+    'CONTROL_TEST:overdue': {
+      subject: 'Control test overdue: {title}',
+      body: 'The test of “{title}” ({period}) was due on {due} and is not submitted yet.',
+    },
+    'CONTROL_TEST:submitted': {
+      subject: 'Control test to review: {title}',
+      body: '{actor} submitted the test of “{title}” ({period}) for your review.',
+    },
+    'CONTROL_TEST:returned': {
+      subject: 'Control test returned: {title}',
+      body: '{actor} returned the test of “{title}” ({period}): {comment}',
+    },
+    'CONTROL_TEST:reviewed': {
+      subject: 'Control test reviewed: {title}',
+      body: 'The test of “{title}” ({period}) was reviewed. Conclusion: {conclusion}.',
+    },
   },
   ar: {
     'GRC_CHANGE:requested': {
@@ -150,6 +179,43 @@ const KIND_TEMPLATES: Record<Locale, Record<string, { subject: string; body: str
       subject: 'رُفض التعديل: {title}',
       body: 'رفض {actor} التعديل المقترح على «{title}». {comment}',
     },
+    'CONTROL_TEST:assigned': {
+      subject: 'اختبار الضابط {period}: {title}',
+      body: 'أُسند إليك اختبار الضابط «{title}» ({period})، موعده {due}.',
+    },
+    'CONTROL_TEST:due': {
+      subject: 'موعد اختبار الضابط {due}: {title}',
+      body: 'موعد اختبار «{title}» ({period}) هو {due}.',
+    },
+    'CONTROL_TEST:overdue': {
+      subject: 'اختبار ضابط متأخر: {title}',
+      body: 'كان موعد اختبار «{title}» ({period}) في {due} ولم يُقدَّم بعد.',
+    },
+    'CONTROL_TEST:submitted': {
+      subject: 'اختبار ضابط للمراجعة: {title}',
+      body: 'قدّم {actor} اختبار «{title}» ({period}) لمراجعتك.',
+    },
+    'CONTROL_TEST:returned': {
+      subject: 'أُعيد اختبار الضابط: {title}',
+      body: 'أعاد {actor} اختبار «{title}» ({period}): {comment}',
+    },
+    'CONTROL_TEST:reviewed': {
+      subject: 'تمت مراجعة اختبار الضابط: {title}',
+      body: 'تمت مراجعة اختبار «{title}» ({period}). النتيجة: {conclusion}.',
+    },
+  },
+};
+
+const CONCLUSIONS: Record<Locale, Record<string, string>> = {
+  en: {
+    EFFECTIVE: 'effective',
+    EFFECTIVE_WITH_EXCEPTIONS: 'effective with exceptions',
+    NOT_EFFECTIVE: 'not effective',
+  },
+  ar: {
+    EFFECTIVE: 'فعال',
+    EFFECTIVE_WITH_EXCEPTIONS: 'فعال مع استثناءات',
+    NOT_EFFECTIVE: 'غير فعال',
   },
 };
 
@@ -229,6 +295,9 @@ export function templateValues(
     status: labels[String(params.status ?? '')] ?? String(params.status ?? ''),
     kind: labels[String(params.kind ?? '')] ?? String(params.kind ?? ''),
     reply: String(params.reply ?? ''),
+    period: String(params.period ?? ''),
+    conclusion:
+      CONCLUSIONS[locale][String(params.conclusion ?? '')] ?? String(params.conclusion ?? ''),
   };
   const kindTpl = KIND_TEMPLATES[locale][`${type}:${String(params.kind ?? '')}`];
   if (kindTpl) {

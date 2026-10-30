@@ -139,5 +139,9 @@
   "TOO_MANY_ROWS": "At most 2,000 rows per import.",
   "CHANGE_PENDING": "A change of this item is already waiting for approval.",
   "NO_CHANGES": "Nothing would change.",
-  "CHANGE_CLOSED": "This change has already been decided or withdrawn."
+  "CHANGE_CLOSED": "This change has already been decided or withdrawn.",
+  "TEST_INCOMPLETE": "Record a result for every sample and choose a conclusion before submitting.",
+  "TESTER_IS_REVIEWER": "The tester and the reviewer must be different people.",
+  "INVALID_USER": "A selected user no longer exists.",
+  "TEST_STARTED": "Only planned tests can be removed."
 }

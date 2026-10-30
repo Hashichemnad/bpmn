@@ -1109,3 +1109,30 @@ decode-uri-component 0.2.2`, also on `main`; no MinIO release avoids it. Root `p
 - **Wiring**: the assurance module registers a change gate on `GrcService` (no module cycle between GRC and
   governance). Notification `GRC_CHANGE` (`params.kind` requested / approved / rejected) with its own preference;
   the approvals appear in My tasks ("Change approvals", `GET /assurance/tasks`).
+
+## D-099 — Control testing and tested effectiveness (Phase 4.2, 2026-10-30)
+
+- **Plans and tests**: a control has any number of test plans (design or operating effectiveness). Test frequency
+  defaults from the control frequency (per transaction … monthly → quarterly, quarterly → every six months, annual /
+  ad hoc → annually) and the sample size from common audit practice (25 / 20 / 5 / 2 / 2 / 1). Tests copy the plan's
+  procedure, sample size and people when they are created, so later plan changes never alter a running test.
+- **Who**: tester and reviewer are a user, everyone with a system role, or nobody (then any holder of
+  `controls.test` / `controls.review`; notifications go to the Risk & Compliance editors). `grc.edit` holders manage
+  plans, create tests ("Test now") and may also execute any open test. Four-eyes: the same user is never both tester
+  and reviewer of a plan or test, and whoever executed a test can never review it (`403`).
+- **Lifecycle**: Planned → In progress (start / first save) → Submitted (every sample has a result, a conclusion is
+  chosen — `TEST_INCOMPLETE`) → Reviewed (sign off) or Returned (reason required) → Closed. Transitions are
+  compare-and-set on the status (concurrent clicks get `INVALID_TRANSITION`).
+- **Effectiveness**: the reviewed conclusion is written to the control's new `operatingEffectiveness` (effective →
+  EFFECTIVE, with exceptions → PARTLY, not effective → NOT_EFFECTIVE) with an assessment entry in the control's GRC
+  history and an `ASSESS` audit entry. The self-assessed `effectiveness` stays as it is. Wherever the system judges
+  whether a control protects (risk "effectively controlled", alert badge, coverage tiles, gap rules), the tested value
+  wins once there is one (`currentEffectiveness`).
+- **Scheduler**: the assurance module runs its own scheduler (same interval setting as governance) to avoid a module
+  cycle; it creates the test of an active plan when the next due date is within `leadDays` (one per due date, at most a
+  year of catch-up per run) and moves the plan on by its frequency, then sends due / overdue reminders once per test
+  (markers on the test plus dedupe keys).
+- **Evidence** is stored like page attachments (same allow-list, magic-byte check, 10 MB) in a generic
+  `AssuranceFile` table used by every Phase 4.2 record; downloads go through `GET /assurance/files/:id`, which asks
+  the owning feature whether the caller may read the record (404 otherwise), with `Content-Disposition: attachment`
+  and a sandbox CSP.

@@ -68,5 +68,139 @@
       "riskIds": "Risks",
       "requirementIds": "Requirements"
     }
+  },
+  "nav": {
+    "tests": "Control tests"
+  },
+  "anyone": "Anyone with the role {{role}}",
+  "unassigned": "Risk & Compliance",
+  "overdue": "Overdue",
+  "system": "System",
+  "tasks": {
+    "testsToExecute": "Control tests to perform",
+    "testsToReview": "Control tests to review"
+  },
+  "evidence": {
+    "title": "Evidence",
+    "none": "No evidence yet.",
+    "add": "Add evidence",
+    "uploaded": "Evidence added",
+    "removeConfirm": "Remove this file?"
+  },
+  "events": {
+    "title": "History and comments",
+    "commentPlaceholder": "Add a comment…",
+    "add": "Comment",
+    "status": "Status: {{from}} → {{to}}",
+    "file": "Evidence added: {{name}}",
+    "CREATED": "Created",
+    "STATUS": "Status changed",
+    "UPDATED": "Updated",
+    "COMMENT": "Comment",
+    "FILE": "Evidence added"
+  },
+  "plans": {
+    "title": "Test plans",
+    "new": "New test plan",
+    "edit": "Edit test plan",
+    "saved": "Test plan saved",
+    "empty": "No test plan yet.",
+    "frequency": "Test frequency",
+    "frequencyHint": "Suggested from the control frequency ({{value}}).",
+    "frequencies": {
+      "MONTHLY": "Monthly",
+      "QUARTERLY": "Quarterly",
+      "SEMI_ANNUAL": "Every six months",
+      "ANNUAL": "Annually",
+      "AD_HOC": "On demand"
+    },
+    "stepEn": "Step (English)",
+    "stepAr": "Step (Arabic)",
+    "addStep": "Add step",
+    "orRole": "…or anyone with the role",
+    "nextDue": "Next due",
+    "leadDays": "Create the test (days before due)",
+    "active": "Active",
+    "inactive": "Inactive",
+    "testNow": "Test now",
+    "deleteConfirm": "Delete this test plan? Existing tests are kept."
+  },
+  "tests": {
+    "title": "Control tests",
+    "subtitle": "Tests of design and operating effectiveness: planned, in progress, waiting for review and done.",
+    "cardTitle": "Testing",
+    "history": "Tests",
+    "empty": "No tests yet.",
+    "search": "Search controls",
+    "control": "Control",
+    "period": "Period",
+    "type": "Test type",
+    "statusLabel": "Status",
+    "conclusionLabel": "Conclusion",
+    "due": "Due",
+    "tester": "Tester",
+    "reviewer": "Reviewer",
+    "sampleSize": "Sample size",
+    "procedure": "Test procedure",
+    "noProcedure": "No test steps defined.",
+    "samples": "Samples and results",
+    "sampleRef": "Sample",
+    "sampleResult": "Result",
+    "note": "Note",
+    "addSample": "Add sample",
+    "testerComment": "Summary of the test (what was checked, exceptions found)",
+    "reviewComment": "Reviewer comment",
+    "returnReason": "Why is the test returned? (required)",
+    "suggested": "Suggested from the samples: {{value}}",
+    "origin": "Created",
+    "origins": {
+      "SCHEDULED": "By the test plan schedule",
+      "MANUAL": "By hand"
+    },
+    "operatingEffectiveness": "Tested effectiveness",
+    "lastTested": "last tested {{date}}",
+    "start": "Start test",
+    "submit": "Submit for review",
+    "approve": "Sign off",
+    "return": "Return to tester",
+    "close": "Close",
+    "saved": "Results saved",
+    "submitted": "Test submitted for review",
+    "reviewed": "Test signed off",
+    "returned": "Test returned",
+    "returnedBy": "Returned by {{name}}",
+    "approveHint": "Signing off records the conclusion “{{value}}” as the control's tested effectiveness.",
+    "types": {
+      "DESIGN": "Design effectiveness",
+      "OPERATING": "Operating effectiveness"
+    },
+    "status": {
+      "PLANNED": "Planned",
+      "IN_PROGRESS": "In progress",
+      "SUBMITTED": "Submitted",
+      "RETURNED": "Returned",
+      "REVIEWED": "Reviewed",
+      "CLOSED": "Closed"
+    },
+    "conclusion": {
+      "EFFECTIVE": "Effective",
+      "EFFECTIVE_WITH_EXCEPTIONS": "Effective with exceptions",
+      "NOT_EFFECTIVE": "Not effective"
+    },
+    "result": {
+      "PASS": "Pass",
+      "EXCEPTION": "Exception",
+      "FAIL": "Fail"
+    },
+    "step": {
+      "PASS": "Pass",
+      "FAIL": "Fail",
+      "NA": "N/A"
+    },
+    "filters": {
+      "open": "Open only",
+      "overdue": "Overdue",
+      "mine": "Assigned to me"
+    }
   }
 }

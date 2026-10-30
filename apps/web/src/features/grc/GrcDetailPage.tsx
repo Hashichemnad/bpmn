@@ -34,6 +34,7 @@ import { ErrorState, LoadingState } from '@/components/states';
 import { useErrorMessage, useFormatDate, useLocalized } from '@/components/i18n-helpers';
 import { GrcFormModal } from './GrcFormModal';
 import { GrcChangeCard } from '@/features/assurance/GrcChangeCard';
+import { ControlTestingCard } from '@/features/assurance/ControlTestingCard';
 import { RiskMatrix } from './RiskMatrix';
 import { GRC_ROUTES, grcItemPath, stepHref, useCategoryName, useGrcAccess } from './grc-helpers';
 import { EffectivenessTag, GrcStatusTag, OverdueTag, RatingTag } from './grc-tags';
@@ -518,6 +519,9 @@ export function GrcDetailPage({ type }: { type: GrcObjectType }) {
             />
           </Card>
           {side && <Card style={{ marginBlockEnd: 16 }}>{side}</Card>}
+          {item.type === 'CONTROL' && item.status !== 'DRAFT' && (
+            <ControlTestingCard control={item as ControlDto} />
+          )}
           <GrcTimeline id={item.id} canComment={access.canComment} />
         </Col>
         <Col xs={24} lg={10}>

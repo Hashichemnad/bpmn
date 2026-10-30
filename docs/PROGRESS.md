@@ -29,8 +29,20 @@ Steps (tick as they are committed; a new session continues at the first unticked
       "Change approvals" (`GET /assurance/tasks`, new module `assurance`). Web: before / after card with steps and
       Approve / Reject / Withdraw on the risk / control page. Tests: shared 2, API 4 (`grc-changes.e2e-spec.ts`),
       Playwright 1 (`assurance.spec.ts`).
-- [ ] 1. Control testing: test plans, cycles (scheduler / manual), execution with samples and evidence, four-eyes
-      review, operating effectiveness on the control, reminders and My tasks.
+- [x] 1. Control testing (D-099): `ControlTestPlan` per control (bilingual steps, design / operating, sample size and
+      test frequency suggested from the control frequency, tester / reviewer = user or role, next due, lead days),
+      `ControlTest` (Planned → In progress → Submitted → Reviewed / Returned → Closed; samples × steps, conclusion,
+      comments), evidence `AssuranceFile` (attachment allow-list + magic bytes, `GET /assurance/files/:id` checked
+      per owner), history `AssuranceEvent`. Four-eyes (tester ≠ reviewer, executor never reviews). Signing off sets
+      `Control.operatingEffectiveness` + `lastTestedAt` with a GRC assessment entry; `isEffectiveControl` uses the
+      tested value when there is one (warnings, coverage, alert badge). `AssuranceScheduler` (own interval) creates
+      scheduled tests within the lead time and sends `CONTROL_TEST` reminders (assigned / due / overdue / submitted /
+      returned / reviewed, EN/AR e-mail). New permissions `controls.test`, `controls.review`, `issues.manage`,
+      `audit.manage`, `surveys.manage`, `surveys.respond` and role `INTERNAL_AUDIT` (bundles in D-101, mapped now).
+      Web: "Control tests" register (`/grc/tests`, URL filters), test page (procedure, samples grid, suggested
+      conclusion, evidence, history, Start / Save / Submit / Sign off / Return / Close), "Testing" card on the control
+      (plans, history, Test now), My tasks tabs "Control tests to perform / review". Tests: shared 4, API 3
+      (`control-tests.e2e-spec.ts`), Playwright 1.
 - [ ] 2. Issues and action plans: sources, severity scale, actions with progress and evidence, verification,
       accepted risk, escalation, ageing.
 - [ ] 3. Audit management: universe, annual plan and engagements (role Internal Audit, `audit.manage`), work
@@ -42,7 +54,7 @@ Steps (tick as they are committed; a new session continues at the first unticked
 
 ### Next (continue here)
 
-Step 1 — control testing.
+Step 2 — issues and action plans (the "Raise issue" button on failed tests comes with it).
 
 ## Previous state — 2026-10-30 (Phase 4 — Part 1: GRC core, branch `phase-4-1-grc`, done — awaiting review)
 

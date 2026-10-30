@@ -51,6 +51,8 @@ import { GrcRegisterPage } from '@/features/grc/GrcRegisterPage';
 import { GrcDetailPage } from '@/features/grc/GrcDetailPage';
 import { GrcSettingsPage } from '@/features/grc/GrcSettingsPage';
 import { GrcDashboardPage } from '@/features/grc/GrcDashboardPage';
+import { ControlTestsPage } from '@/features/assurance/ControlTestsPage';
+import { ControlTestPage } from '@/features/assurance/ControlTestPage';
 
 const P = PERMISSIONS;
 
@@ -219,6 +221,22 @@ export const routes: RouteObject[] = [
                     element: (
                       <RequirePermission all={[P.GRC_READ]}>
                         <GrcDetailPage key="REQUIREMENT" type="REQUIREMENT" />
+                      </RequirePermission>
+                    ),
+                  },
+                  {
+                    path: 'grc/tests',
+                    element: (
+                      <RequirePermission all={[P.GRC_READ]}>
+                        <ControlTestsPage />
+                      </RequirePermission>
+                    ),
+                  },
+                  {
+                    path: 'grc/tests/:id',
+                    element: (
+                      <RequirePermission any={[P.GRC_READ, P.CONTROLS_TEST, P.CONTROLS_REVIEW]}>
+                        <ControlTestPage />
                       </RequirePermission>
                     ),
                   },

@@ -176,6 +176,8 @@ zod / UUID pipe; file uploads are checked in the service (allow-list, content sn
 | POST   | `/ai/summarise`                              | authenticated                                             | body                                | default    |
 | POST   | `/ai/translate`                              | authenticated                                             | body                                | default    |
 | GET    | `/ai/usage`                                  | `ai.usage.read`                                           | query                               | default    |
+| DELETE | `/assurance/files/:id`                       | authenticated                                             | param `id`                          | default    |
+| GET    | `/assurance/files/:id`                       | authenticated                                             | param `id`                          | default    |
 | GET    | `/assurance/tasks`                           | authenticated                                             | —                                   | default    |
 | DELETE | `/attachments/:id`                           | `docs.read` + `docs.edit`                                 | param `id`                          | default    |
 | GET    | `/attachments/:id/content`                   | `docs.read`                                               | param `id`                          | default    |
@@ -204,6 +206,21 @@ zod / UUID pipe; file uploads are checked in the service (allow-list, content sn
 | POST   | `/comments/:commentId/resolve`               | `comments.write`                                          | param `commentId`                   | default    |
 | GET    | `/comments/:type/:id`                        | any of `processes.read`, `docs.read`                      | param `id`, param `type`            | default    |
 | POST   | `/comments/:type/:id`                        | `comments.write`                                          | body, param `id`, param `type`      | default    |
+| GET    | `/control-tests`                             | `grc.read`                                                | query                               | default    |
+| POST   | `/control-tests`                             | `grc.edit`                                                | body                                | default    |
+| DELETE | `/control-tests/:id`                         | `grc.edit`                                                | param `id`                          | default    |
+| GET    | `/control-tests/:id`                         | any of `grc.read`, `controls.test`, `controls.review`     | param `id`                          | default    |
+| POST   | `/control-tests/:id/close`                   | any of `grc.edit`, `controls.review`                      | param `id`                          | default    |
+| POST   | `/control-tests/:id/comments`                | any of `grc.read`, `controls.test`, `controls.review`     | body, param `id`                    | default    |
+| POST   | `/control-tests/:id/files`                   | `controls.test`                                           | file, param `id`                    | default    |
+| PUT    | `/control-tests/:id/results`                 | `controls.test`                                           | body, param `id`                    | default    |
+| POST   | `/control-tests/:id/review`                  | `controls.review`                                         | body, param `id`                    | default    |
+| POST   | `/control-tests/:id/start`                   | `controls.test`                                           | param `id`                          | default    |
+| POST   | `/control-tests/:id/submit`                  | `controls.test`                                           | param `id`                          | default    |
+| GET    | `/control-tests/plans`                       | `grc.read`                                                | query                               | default    |
+| POST   | `/control-tests/plans`                       | `grc.edit`                                                | body                                | default    |
+| DELETE | `/control-tests/plans/:id`                   | `grc.edit`                                                | param `id`                          | default    |
+| PATCH  | `/control-tests/plans/:id`                   | `grc.edit`                                                | body, param `id`                    | default    |
 | GET    | `/departments`                               | `departments.read`                                        | —                                   | default    |
 | POST   | `/departments`                               | `departments.manage`                                      | body                                | default    |
 | DELETE | `/departments/:id`                           | `departments.manage`                                      | param `id`                          | default    |
