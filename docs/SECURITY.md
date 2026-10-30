@@ -255,6 +255,29 @@ zod / UUID pipe; file uploads are checked in the service (allow-list, content sn
 | PATCH  | `/dictionary/terms/:id`                      | `dictionary.propose`                                      | body, param `id`                    | default    |
 | POST   | `/dictionary/terms/:id/approve`              | `dictionary.approve`                                      | param `id`                          | default    |
 | POST   | `/dictionary/terms/:id/reject`               | `dictionary.approve`                                      | body, param `id`                    | default    |
+| GET    | `/ea/applications`                           | `ea.read`                                                 | query                               | default    |
+| POST   | `/ea/applications`                           | `ea.edit`                                                 | body                                | default    |
+| DELETE | `/ea/applications/:id`                       | `ea.admin`                                                | param `id`                          | default    |
+| GET    | `/ea/applications/:id`                       | `ea.read`                                                 | param `id`                          | default    |
+| PATCH  | `/ea/applications/:id`                       | `ea.edit`                                                 | body, param `id`                    | default    |
+| GET    | `/ea/capabilities`                           | `ea.read`                                                 | —                                   | default    |
+| POST   | `/ea/capabilities`                           | `ea.edit`                                                 | body                                | default    |
+| DELETE | `/ea/capabilities/:id`                       | `ea.admin`                                                | param `id`                          | default    |
+| GET    | `/ea/capabilities/:id`                       | `ea.read`                                                 | param `id`                          | default    |
+| PATCH  | `/ea/capabilities/:id`                       | `ea.edit`                                                 | body, param `id`                    | default    |
+| GET    | `/ea/data-objects`                           | `ea.read`                                                 | query                               | default    |
+| POST   | `/ea/data-objects`                           | `ea.edit`                                                 | body                                | default    |
+| DELETE | `/ea/data-objects/:id`                       | `ea.admin`                                                | param `id`                          | default    |
+| GET    | `/ea/data-objects/:id`                       | `ea.read`                                                 | param `id`                          | default    |
+| PATCH  | `/ea/data-objects/:id`                       | `ea.edit`                                                 | body, param `id`                    | default    |
+| GET    | `/ea/export/:kind`                           | `ea.read`                                                 | param `kind`, query                 | default    |
+| POST   | `/ea/import/:kind`                           | `ea.edit`                                                 | file, param `kind`, query           | default    |
+| GET    | `/ea/interfaces`                             | `ea.read`                                                 | query                               | default    |
+| POST   | `/ea/interfaces`                             | `ea.edit`                                                 | body                                | default    |
+| DELETE | `/ea/interfaces/:id`                         | `ea.admin`                                                | param `id`                          | default    |
+| GET    | `/ea/interfaces/:id`                         | `ea.read`                                                 | param `id`                          | default    |
+| PATCH  | `/ea/interfaces/:id`                         | `ea.edit`                                                 | body, param `id`                    | default    |
+| GET    | `/ea/template/:kind`                         | `ea.edit`                                                 | param `kind`, query                 | default    |
 | GET    | `/feedback`                                  | authenticated                                             | query                               | default    |
 | POST   | `/feedback`                                  | `portal.read`                                             | body                                | default    |
 | PATCH  | `/feedback/:id`                              | authenticated                                             | body, param `id`                    | default    |

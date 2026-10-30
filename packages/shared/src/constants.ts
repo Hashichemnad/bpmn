@@ -73,6 +73,12 @@ export const PERMISSIONS = {
   SURVEYS_MANAGE: 'surveys.manage',
   /** Answer questionnaires one is asked to answer. */
   SURVEYS_RESPOND: 'surveys.respond',
+  /** Enterprise architecture (Phase 4.3): application catalogue, interfaces, data, capabilities (read). */
+  EA_READ: 'ea.read',
+  /** Create and change applications, interfaces, data objects and capabilities; Excel import. */
+  EA_EDIT: 'ea.edit',
+  /** Delete architecture items. */
+  EA_ADMIN: 'ea.admin',
 } as const;
 export type Permission = (typeof PERMISSIONS)[keyof typeof PERMISSIONS];
 export const ALL_PERMISSIONS: Permission[] = Object.values(PERMISSIONS);
@@ -86,6 +92,7 @@ export const SYSTEM_ROLE_KEYS = [
   'AUDITOR',
   'RISK_OFFICER',
   'INTERNAL_AUDIT',
+  'ENTERPRISE_ARCHITECT',
   'VIEWER',
 ] as const;
 export type SystemRoleKey = (typeof SYSTEM_ROLE_KEYS)[number];
@@ -135,6 +142,7 @@ export const SYSTEM_ROLES: Record<
       P.GRC_PROPOSE,
       P.CONTROLS_TEST,
       P.SURVEYS_RESPOND,
+      P.EA_READ,
     ],
   },
   MODELER: {
@@ -152,12 +160,13 @@ export const SYSTEM_ROLES: Record<
       P.GRC_READ,
       P.GRC_PROPOSE,
       P.SURVEYS_RESPOND,
+      P.EA_READ,
     ],
   },
   REVIEWER: {
     nameEn: 'Reviewer',
     nameAr: 'مراجع',
-    permissions: [...READ_REPOSITORY, P.USERS_READ, P.GRC_READ, P.SURVEYS_RESPOND],
+    permissions: [...READ_REPOSITORY, P.USERS_READ, P.GRC_READ, P.SURVEYS_RESPOND, P.EA_READ],
   },
   AUDITOR: {
     nameEn: 'Auditor',
@@ -176,6 +185,7 @@ export const SYSTEM_ROLES: Record<
       P.AI_USAGE_READ,
       P.GRC_READ,
       P.SURVEYS_RESPOND,
+      P.EA_READ,
     ],
   },
   RISK_OFFICER: {
@@ -195,6 +205,7 @@ export const SYSTEM_ROLES: Record<
       P.ISSUES_MANAGE,
       P.SURVEYS_MANAGE,
       P.SURVEYS_RESPOND,
+      P.EA_READ,
     ],
   },
   INTERNAL_AUDIT: {
@@ -211,6 +222,22 @@ export const SYSTEM_ROLES: Record<
       P.CONTROLS_REVIEW,
       P.SURVEYS_MANAGE,
       P.SURVEYS_RESPOND,
+      P.EA_READ,
+    ],
+  },
+  ENTERPRISE_ARCHITECT: {
+    nameEn: 'Enterprise Architect',
+    nameAr: 'مهندس المؤسسة',
+    // Application catalogue, interfaces, data objects and the capability map; the rest read-only (D-108).
+    permissions: [
+      ...READ_REPOSITORY,
+      P.USERS_READ,
+      P.GOVERNANCE_DASHBOARD,
+      P.GRC_READ,
+      P.SURVEYS_RESPOND,
+      P.EA_READ,
+      P.EA_EDIT,
+      P.EA_ADMIN,
     ],
   },
   VIEWER: {
@@ -364,6 +391,10 @@ export const AUDIT_ENTITY_TYPES = [
   'Questionnaire',
   'SurveyCampaign',
   'SurveyResponse',
+  'Application',
+  'AppInterface',
+  'DataObject',
+  'Capability',
 ] as const;
 export type AuditEntityType = (typeof AUDIT_ENTITY_TYPES)[number];
 

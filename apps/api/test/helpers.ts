@@ -200,6 +200,14 @@ export async function createApp(): Promise<TestContext> {
 }
 
 const TABLES = [
+  'InterfaceDataObject',
+  'DataObjectUsage',
+  'AppInterface',
+  'DataObject',
+  'CapabilityProcess',
+  'CapabilityApplication',
+  'Capability',
+  'Application',
   'SurveyProposal',
   'SurveyResponse',
   'SurveyCampaign',

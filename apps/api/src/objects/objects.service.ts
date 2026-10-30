@@ -195,6 +195,8 @@ export class ObjectsService {
             : {}),
           createdById: actor.id,
           updatedById: actor.id,
+          // IT systems are application catalogue entries (Phase 4.3, D-107).
+          ...(input.type === 'SYSTEM' ? { application: { create: {} } } : {}),
         },
       });
       await this.audit.log(

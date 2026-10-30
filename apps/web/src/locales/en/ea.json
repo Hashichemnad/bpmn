@@ -1,0 +1,175 @@
+{
+  "nav": {
+    "group": "Architecture",
+    "applications": "Applications",
+    "interfaces": "Interfaces",
+    "dataObjects": "Data objects",
+    "capabilities": "Capabilities",
+    "landscape": "Landscape",
+    "traceability": "Traceability"
+  },
+  "applications": {
+    "title": "Application catalogue",
+    "subtitle": "Applications, platforms, services and external systems that support the processes",
+    "new": "New application",
+    "edit": "Edit application",
+    "empty": "No applications yet",
+    "deleteConfirm": "Delete this application? Its step links, interfaces and data usages are removed.",
+    "endOfLifeInUse": "Phasing out / retired but still in use"
+  },
+  "interfaces": {
+    "title": "Interfaces",
+    "subtitle": "Data flows between applications",
+    "new": "New interface",
+    "edit": "Edit interface",
+    "empty": "No interfaces yet",
+    "deleteConfirm": "Delete this interface?"
+  },
+  "dataObjects": {
+    "title": "Data objects",
+    "subtitle": "Business entities, their system of record and which applications create, read, update or delete them",
+    "new": "New data object",
+    "edit": "Edit data object",
+    "empty": "No data objects yet",
+    "deleteConfirm": "Delete this data object?",
+    "list": "List",
+    "matrix": "CRUD matrix",
+    "matrixHint": "C = create, R = read, U = update, D = delete; ★ = system of record",
+    "addApplication": "Add application"
+  },
+  "capabilities": {
+    "title": "Business capabilities",
+    "subtitle": "Capability map (levels 1–3) with the processes and applications behind each capability",
+    "new": "New capability",
+    "newChild": "Add sub-capability",
+    "edit": "Edit capability",
+    "empty": "No capabilities yet",
+    "deleteConfirm": "Delete this capability?",
+    "tree": "List",
+    "map": "Capability map",
+    "level": "Level {{level}}"
+  },
+  "fields": {
+    "code": "Code",
+    "name": "Name",
+    "type": "Type",
+    "vendor": "Vendor",
+    "version": "Version",
+    "businessOwner": "Business owner",
+    "itOwner": "IT owner",
+    "owner": "Owner",
+    "department": "Department",
+    "hosting": "Hosting",
+    "hostingCountry": "Hosting country",
+    "hostingCountryHint": "ISO code, e.g. AE — for data residency",
+    "lifecycle": "Lifecycle",
+    "liveFrom": "Live from",
+    "phaseOutFrom": "Phase-out from",
+    "retiredAt": "Retired on",
+    "criticality": "Criticality",
+    "dataClassification": "Data classification",
+    "classification": "Classification",
+    "licenceNotes": "Licence / contract notes",
+    "url": "URL",
+    "capabilities": "Capabilities",
+    "steps": "Steps",
+    "interfaces": "Interfaces",
+    "source": "Source",
+    "target": "Target",
+    "direction": "Direction",
+    "technology": "Technology",
+    "frequency": "Frequency",
+    "status": "Status",
+    "dataObjects": "Data objects",
+    "definitionEn": "Definition (English)",
+    "definitionAr": "Definition (Arabic)",
+    "systemOfRecord": "System of record",
+    "usage": "Used by (CRUD)",
+    "application": "Application",
+    "parent": "Parent capability",
+    "importance": "Strategic importance",
+    "processes": "Processes",
+    "applications": "Applications",
+    "process": "Process",
+    "step": "Step",
+    "wholeProcess": "Whole process",
+    "updated": "Updated"
+  },
+  "detail": {
+    "overview": "Overview",
+    "supportedSteps": "Processes and steps supported",
+    "noSteps": "Not linked to any process step yet",
+    "noInterfaces": "No interfaces",
+    "noData": "No data objects",
+    "open": "Open"
+  },
+  "appType": {
+    "APPLICATION": "Application",
+    "PLATFORM": "Platform",
+    "SERVICE": "Service",
+    "DATABASE": "Database",
+    "EXTERNAL": "External system"
+  },
+  "hosting": {
+    "ON_PREMISE": "On-premise",
+    "CLOUD": "Cloud",
+    "SAAS": "SaaS"
+  },
+  "lifecycle": {
+    "PLANNED": "Planned",
+    "ACTIVE": "Active",
+    "PHASING_OUT": "Phasing out",
+    "RETIRED": "Retired"
+  },
+  "criticality": {
+    "LOW": "Low",
+    "MEDIUM": "Medium",
+    "HIGH": "High",
+    "CRITICAL": "Critical"
+  },
+  "classification": {
+    "PUBLIC": "Public",
+    "INTERNAL": "Internal",
+    "CONFIDENTIAL": "Confidential",
+    "SECRET": "Secret"
+  },
+  "direction": {
+    "ONE_WAY": "One way",
+    "TWO_WAY": "Both ways"
+  },
+  "technology": {
+    "API": "API",
+    "FILE": "File",
+    "DB_LINK": "Database link",
+    "MANUAL": "Manual",
+    "MESSAGE_QUEUE": "Message queue"
+  },
+  "frequency": {
+    "REAL_TIME": "Real time",
+    "HOURLY": "Hourly",
+    "DAILY": "Daily",
+    "WEEKLY": "Weekly",
+    "MONTHLY": "Monthly",
+    "ON_DEMAND": "On demand"
+  },
+  "status": {
+    "PLANNED": "Planned",
+    "ACTIVE": "Active",
+    "RETIRED": "Retired"
+  },
+  "importance": {
+    "LOW": "Low",
+    "MEDIUM": "Medium",
+    "HIGH": "High"
+  },
+  "crud": {
+    "create": "Create",
+    "read": "Read",
+    "update": "Update",
+    "delete": "Delete"
+  },
+  "filters": {
+    "search": "Search code, name or vendor",
+    "all": "All"
+  }
+}

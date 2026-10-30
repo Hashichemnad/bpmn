@@ -169,5 +169,11 @@
   "OPTIONS_REQUIRED": "A choice question needs at least two options.",
   "CONDITION_ON_LATER_QUESTION": "A question can only depend on an earlier question.",
   "INVALID_LINK": "Rating questions propose a likelihood or impact; single-choice questions an effectiveness.",
-  "RETIRE_INSTEAD": "Active risks and controls cannot be deleted. Retire them instead."
+  "RETIRE_INSTEAD": "Active risks and controls cannot be deleted. Retire them instead.",
+  "INVALID_APPLICATION": "Choose an application from the catalogue.",
+  "INVALID_CAPABILITY": "Choose a capability from the capability map.",
+  "INVALID_DATA_OBJECT": "Choose a data object from the list.",
+  "SAME_APPLICATION": "Source and target must be different applications.",
+  "CAPABILITY_TOO_DEEP": "The capability map has at most three levels.",
+  "CAPABILITY_HAS_CHILDREN": "Delete or move the sub-capabilities first."
 }

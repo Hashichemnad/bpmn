@@ -14,6 +14,7 @@ import enPortal from './locales/en/portal.json';
 import enAi from './locales/en/ai.json';
 import enGrc from './locales/en/grc.json';
 import enAssurance from './locales/en/assurance.json';
+import enEa from './locales/en/ea.json';
 import arCommon from './locales/ar/common.json';
 import arAdmin from './locales/ar/admin.json';
 import arProcesses from './locales/ar/processes.json';
@@ -27,6 +28,7 @@ import arPortal from './locales/ar/portal.json';
 import arAi from './locales/ar/ai.json';
 import arGrc from './locales/ar/grc.json';
 import arAssurance from './locales/ar/assurance.json';
+import arEa from './locales/ar/ea.json';
 
 export const resources = {
   en: {
@@ -43,6 +45,7 @@ export const resources = {
     ai: enAi,
     grc: enGrc,
     assurance: enAssurance,
+    ea: enEa,
   },
   ar: {
     common: arCommon,
@@ -58,6 +61,7 @@ export const resources = {
     ai: arAi,
     grc: arGrc,
     assurance: arAssurance,
+    ea: arEa,
   },
 } as const;
 
@@ -75,6 +79,7 @@ export const NAMESPACES = [
   'ai',
   'grc',
   'assurance',
+  'ea',
 ] as const;
 
 const STORAGE_KEY = 'ph.locale';

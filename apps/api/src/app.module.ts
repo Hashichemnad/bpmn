@@ -28,6 +28,7 @@ import { CommentsModule } from './comments/comments.module';
 import { PortalModule } from './portal/portal.module';
 import { AiModule } from './ai/ai.module';
 import { AssuranceModule } from './assurance/assurance.module';
+import { EaModule } from './ea/ea.module';
 import { HealthController } from './health/health.controller';
 import { CsrfGuard, JwtAuthGuard, PermissionsGuard } from './common/guards';
 import { AllExceptionsFilter } from './common/http-exception.filter';
@@ -62,6 +63,7 @@ import { AllExceptionsFilter } from './common/http-exception.filter';
     ConventionsModule,
     GrcModule,
     AssuranceModule,
+    EaModule,
     DocsModule,
     SearchModule,
     IntegrationsModule,

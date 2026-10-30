@@ -1257,3 +1257,47 @@ Product owner decision (PR #14, decision 6), confirming D-099 with two additions
 5. **Feedback-request answers** stay process comments signed by the respondent; each starts with a label naming the
    campaign — "[Feedback request] <campaign title>" (Arabic: «[طلب ملاحظات]»).
 6. Tested effectiveness replaces the self-assessed one: see D-105.
+
+## D-107 — Application catalogue on the IT system library objects (Phase 4.3, 2026-10-30)
+
+The application catalogue (module M11) extends the existing IT system objects instead of replacing them, the same
+pattern as risks and controls (D-089): a new table `Application` is one-to-one with a `RepoObject` of type `SYSTEM`
+(`objectId` = the object id). Code, bilingual name and description stay on the library object; the catalogue fields
+(type, vendor, version, business / IT owner, department, hosting + ISO country for data residency, lifecycle with
+live / phase-out / retired dates, criticality, data classification, licence notes, URL) live on `Application`.
+
+- **Ids, step links, badges and "where used" keep working**: the modeler still links `SYSTEM` objects (relation
+  `SUPPORTS`), Risk & Compliance still points controls at them (`Control.systemId`).
+- The migration creates an `Application` row for every existing `SYSTEM` object; objects created later through the
+  library, the seed or an import get theirs on creation or lazily (`EaService.ensureApplicationRows`).
+- The library menu item "IT systems" becomes "Applications" in the new **Architecture** menu group for users with
+  `ea.read`; `/library/systems` redirects there (users without `ea.read` keep the plain library page).
+- Deleting an application (soft delete, `ea.admin`) removes its step links, interfaces, CRUD usages and capability
+  relations, like deleting a library object.
+
+## D-108 — Architecture permissions and the Enterprise Architect role (Phase 4.3, 2026-10-30)
+
+New permissions `ea.read` (catalogues, views, traceability, exports), `ea.edit` (create / change, Excel import) and
+`ea.admin` (delete). New system role **Enterprise Architect** (`ENTERPRISE_ARCHITECT`): the three EA permissions, the
+rest of the workspace read-only (like the Risk & Compliance Officer, D-090) plus `grc.read` for the risk columns of
+the impact analysis. `ea.read` is added to every workspace role (Process Owner, Modeler, Reviewer, Auditor, Risk &
+Compliance Officer, Internal Audit); Viewers (portal only) never see the architecture workspace. Demo user
+`architect@processhub.local`. Every endpoint has a server guard and a permission test (`ea.e2e-spec.ts`); every write
+is audited (entity types `Application`, `AppInterface`, `DataObject`, `Capability`; `EXPORT` / `IMPORT` for Excel).
+
+## D-109 — Interfaces, data objects and the capability map (Phase 4.3, 2026-10-30)
+
+- **Interfaces** (`AppInterface`): source → target application, direction (one way / both ways), technology (API,
+  file, DB link, manual, message queue), frequency, data objects carried (`InterfaceDataObject`), owner, status
+  (planned / active / retired); optional bilingual name (the list shows "Source → Target" when empty).
+- **Data objects** (`DataObject`): bilingual name and definition, classification, system of record (one
+  application), owner; the **CRUD matrix** is `DataObjectUsage` (application × data object with four flags), edited
+  on the data object and shown as a matrix (★ = system of record).
+- **Capabilities** (`Capability`): a tree of at most three levels (level stored, recomputed on a move; deeper trees
+  and cycles are refused with `CAPABILITY_TOO_DEEP` / `INVALID_PARENT`; only leaves can be deleted), owner, strategic
+  importance, relations to processes (`CapabilityProcess`) and applications (`CapabilityApplication`).
+- **Excel** for each catalogue (`/ea/export|template|import/:kind`, kinds applications, interfaces, data-objects,
+  capabilities): the Phase 4.1 pattern — upsert by code, the whole file is checked first and nothing is imported
+  while it has errors; references by code (applications, capabilities, processes, data objects) or e-mail (users);
+  the CRUD column reads `APP:CRUD; APP2:R`; capability parents may be defined later in the same file. Shared helpers
+  in `apps/api/src/common/excel.ts` (also used by the KPI catalogue).

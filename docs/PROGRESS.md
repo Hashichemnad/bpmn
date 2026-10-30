@@ -16,9 +16,15 @@ Local setup: PostgreSQL 16 (`service postgresql start`; role `processhub` / `dev
 Steps (tick as they are committed; a new session continues at the first unticked one):
 
 - [x] 0. CLAUDE.md phase table (4.1 / 4.2 merged, 4.4 added), this plan.
-- [ ] 1. IT architecture data model and workspace (M11): application catalogue on the SYSTEM library objects,
-      interfaces, data objects + CRUD matrix, capabilities (levels 1–3) with process / application relations,
-      permissions `ea.read` / `ea.edit` / `ea.admin`, role Enterprise Architect, Excel import / export per catalogue.
+- [x] 1. IT architecture data model and workspace (M11, D-107 – D-109): `Application` 1:1 on the SYSTEM library
+      objects (migration backfills rows; ids / links / badges kept; `/library/systems` → `/ea/applications`),
+      `AppInterface` (+ data objects carried), `DataObject` + `DataObjectUsage` (CRUD matrix, system of record),
+      `Capability` (levels 1–3, moves recompute levels) with `CapabilityProcess` / `CapabilityApplication`;
+      permissions `ea.read` / `ea.edit` / `ea.admin`, role `ENTERPRISE_ARCHITECT` (+ demo user
+      `architect@processhub.local`); API `/ea/applications|interfaces|data-objects|capabilities` (+ Excel
+      export / template / import per catalogue, shared `common/excel.ts`), all audited. Web: Architecture menu
+      (Capabilities with list + basic map, Applications list / detail, Interfaces, Data objects with CRUD matrix),
+      generic `components/ExcelMenu.tsx`. Tests: API 4 (`ea.e2e-spec.ts`), Playwright 1 (`ea.spec.ts`).
 - [ ] 2. EA views and traceability: capability map with colour-by, application landscape / interface diagram,
       traceability and impact analysis (Excel), modeler "by application lifecycle", handbook "Systems and data".
 - [ ] 3. KPIs (M12): KPI table on the KPI library objects (migration), objectives, relations, measurements with

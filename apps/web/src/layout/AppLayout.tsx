@@ -42,6 +42,9 @@ import {
   FormOutlined,
   FundOutlined,
   IssuesCloseOutlined,
+  PartitionOutlined,
+  SwapOutlined,
+  DatabaseOutlined,
 } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
 import { PERMISSIONS, type Locale } from '@processhub/shared';
@@ -226,6 +229,34 @@ export function AppLayout() {
         ],
       });
     }
+    if (can(PERMISSIONS.EA_READ)) {
+      list.push({
+        type: 'group',
+        label: t('ea:nav.group'),
+        children: [
+          {
+            key: '/ea/capabilities',
+            icon: <PartitionOutlined />,
+            label: <Link to="/ea/capabilities">{t('ea:nav.capabilities')}</Link>,
+          },
+          {
+            key: '/ea/applications',
+            icon: <DesktopOutlined />,
+            label: <Link to="/ea/applications">{t('ea:nav.applications')}</Link>,
+          },
+          {
+            key: '/ea/interfaces',
+            icon: <SwapOutlined />,
+            label: <Link to="/ea/interfaces">{t('ea:nav.interfaces')}</Link>,
+          },
+          {
+            key: '/ea/data',
+            icon: <DatabaseOutlined />,
+            label: <Link to="/ea/data">{t('ea:nav.dataObjects')}</Link>,
+          },
+        ],
+      });
+    }
     if (can(PERMISSIONS.OBJECTS_READ)) {
       list.push({
         type: 'group',
@@ -236,11 +267,15 @@ export function AppLayout() {
             icon: <TeamOutlined />,
             label: <Link to="/library/roles">{t('nav.roles')}</Link>,
           },
-          {
-            key: '/library/systems',
-            icon: <DesktopOutlined />,
-            label: <Link to="/library/systems">{t('nav.systems')}</Link>,
-          },
+          ...(can(PERMISSIONS.EA_READ)
+            ? []
+            : [
+                {
+                  key: '/library/systems',
+                  icon: <DesktopOutlined />,
+                  label: <Link to="/library/systems">{t('nav.systems')}</Link>,
+                },
+              ]),
           {
             key: '/library/documents',
             icon: <FileOutlined />,

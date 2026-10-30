@@ -18,7 +18,7 @@ import { createPublication, type StepSnapshot } from '../src/governance/publicat
 import { linearXml } from './demo-diagrams';
 
 const DEMO_USERS: {
-  key: 'viewer' | 'reviewer' | 'owner' | 'modeler' | 'auditor' | 'risk' | 'audit';
+  key: 'viewer' | 'reviewer' | 'owner' | 'modeler' | 'auditor' | 'risk' | 'audit' | 'architect';
   role: SystemRoleKey;
   nameEn: string;
   nameAr: string;
@@ -72,6 +72,13 @@ const DEMO_USERS: {
     nameEn: 'Iman Internal Audit',
     nameAr: 'إيمان التدقيق الداخلي',
     department: 'RSK',
+  },
+  {
+    key: 'architect',
+    role: 'ENTERPRISE_ARCHITECT',
+    nameEn: 'Ali Architect',
+    nameAr: 'علي مهندس المؤسسة',
+    department: 'IT',
   },
 ];
 

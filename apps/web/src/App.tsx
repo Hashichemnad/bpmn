@@ -64,6 +64,12 @@ import { QuestionnaireBuilderPage } from '@/features/assurance/QuestionnaireBuil
 import { CampaignPage } from '@/features/assurance/CampaignPage';
 import { SurveyResponsePage } from '@/features/assurance/SurveyResponsePage';
 import { AssuranceDashboardPage } from '@/features/assurance/AssuranceDashboardPage';
+import { ApplicationsPage } from '@/features/ea/ApplicationsPage';
+import { ApplicationDetailPage } from '@/features/ea/ApplicationDetailPage';
+import { InterfacesPage } from '@/features/ea/InterfacesPage';
+import { DataObjectsPage } from '@/features/ea/DataObjectsPage';
+import { CapabilitiesPage } from '@/features/ea/CapabilitiesPage';
+import { SystemsLibraryRoute } from '@/features/ea/SystemsLibraryRoute';
 
 const P = PERMISSIONS;
 
@@ -339,6 +345,46 @@ export const routes: RouteObject[] = [
                     ],
                   },
                   {
+                    path: 'ea/applications',
+                    element: (
+                      <RequirePermission all={[P.EA_READ]}>
+                        <ApplicationsPage />
+                      </RequirePermission>
+                    ),
+                  },
+                  {
+                    path: 'ea/applications/:id',
+                    element: (
+                      <RequirePermission all={[P.EA_READ]}>
+                        <ApplicationDetailPage />
+                      </RequirePermission>
+                    ),
+                  },
+                  {
+                    path: 'ea/interfaces',
+                    element: (
+                      <RequirePermission all={[P.EA_READ]}>
+                        <InterfacesPage />
+                      </RequirePermission>
+                    ),
+                  },
+                  {
+                    path: 'ea/data',
+                    element: (
+                      <RequirePermission all={[P.EA_READ]}>
+                        <DataObjectsPage />
+                      </RequirePermission>
+                    ),
+                  },
+                  {
+                    path: 'ea/capabilities',
+                    element: (
+                      <RequirePermission all={[P.EA_READ]}>
+                        <CapabilitiesPage />
+                      </RequirePermission>
+                    ),
+                  },
+                  {
                     path: 'library/roles',
                     element: (
                       <RequirePermission all={[P.OBJECTS_READ]}>
@@ -350,7 +396,7 @@ export const routes: RouteObject[] = [
                     path: 'library/systems',
                     element: (
                       <RequirePermission all={[P.OBJECTS_READ]}>
-                        <ObjectLibraryPage key="SYSTEM" type="SYSTEM" />
+                        <SystemsLibraryRoute />
                       </RequirePermission>
                     ),
                   },

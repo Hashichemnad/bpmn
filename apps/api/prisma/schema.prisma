@@ -212,20 +212,25 @@ model User {
   updatedById       String?     @db.Uuid
   deletedAt         DateTime?
 
-  roles           UserRole[]
-  refreshTokens   RefreshToken[]
-  ownedProcesses  Process[]         @relation("ProcessOwner")
-  ownedSpaces     Space[]           @relation("SpaceOwner")
-  auditLogs       AuditLog[]
-  pageDrafts      PageDraft[]
-  ownedPages      Page[]            @relation("PageOwner")
-  jobRoles        UserJobRole[]
-  notifications   Notification[]
-  aiUsage         AiUsage[]
-  recoveryCodes   MfaRecoveryCode[]
-  ownedObjects    RepoObject[]      @relation("ObjectOwner")
-  grcActivities   GrcActivity[]
-  assuranceEvents AssuranceEvent[]  @relation("AssuranceEventAuthor")
+  roles             UserRole[]
+  refreshTokens     RefreshToken[]
+  ownedProcesses    Process[]         @relation("ProcessOwner")
+  ownedSpaces       Space[]           @relation("SpaceOwner")
+  auditLogs         AuditLog[]
+  pageDrafts        PageDraft[]
+  ownedPages        Page[]            @relation("PageOwner")
+  jobRoles          UserJobRole[]
+  notifications     Notification[]
+  aiUsage           AiUsage[]
+  recoveryCodes     MfaRecoveryCode[]
+  ownedObjects      RepoObject[]      @relation("ObjectOwner")
+  grcActivities     GrcActivity[]
+  assuranceEvents   AssuranceEvent[]  @relation("AssuranceEventAuthor")
+  appsOwned         Application[]     @relation("AppBusinessOwner")
+  appsIt            Application[]     @relation("AppItOwner")
+  interfacesOwned   AppInterface[]    @relation("InterfaceOwner")
+  dataObjectsOwned  DataObject[]      @relation("DataObjectOwner")
+  capabilitiesOwned Capability[]      @relation("CapabilityOwner")
 
   @@unique([ssoIssuer, ssoSubject])
   @@index([departmentId])
@@ -320,6 +325,7 @@ model Department {
   risks        Risk[]
   controls     Control[]
   requirements Requirement[]
+  applications Application[]
 
   @@index([parentId])
 }
@@ -355,10 +361,11 @@ model Process {
   updatedById   String?         @db.Uuid
   deletedAt     DateTime?
 
-  model     ProcessModel?
-  versions  ProcessVersion[]
-  links     ObjectLink[]
-  pageLinks PageLink[]
+  model        ProcessModel?
+  versions     ProcessVersion[]
+  links        ObjectLink[]
+  pageLinks    PageLink[]
+  capabilities CapabilityProcess[]
 
   @@index([parentId, sortOrder])
   @@index([category])
@@ -430,6 +437,8 @@ model RepoObject {
   systemControls Control[]     @relation("ControlSystem")
   grcActivities  GrcActivity[]
   grcChanges     GrcChange[]
+  /// Application catalogue details of a SYSTEM object (Phase 4.3, D-107).
+  application    Application?
 
   @@index([type, status])
 }
@@ -1493,4 +1502,241 @@ model SurveyProposal {
 
   @@index([campaignId, status])
   @@index([objectId])
+}
+
+// ---------- Enterprise architecture (M11, Phase 4.3 — D-107) ----------
+
+enum AppType {
+  APPLICATION
+  PLATFORM
+  SERVICE
+  DATABASE
+  EXTERNAL
+}
+
+enum AppHosting {
+  ON_PREMISE
+  CLOUD
+  SAAS
+}
+
+enum AppLifecycle {
+  PLANNED
+  ACTIVE
+  PHASING_OUT
+  RETIRED
+}
+
+enum Criticality {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum DataClassification {
+  PUBLIC
+  INTERNAL
+  CONFIDENTIAL
+  SECRET
+}
+
+enum InterfaceDirection {
+  ONE_WAY
+  TWO_WAY
+}
+
+enum InterfaceTechnology {
+  API
+  FILE
+  DB_LINK
+  MANUAL
+  MESSAGE_QUEUE
+}
+
+enum InterfaceFrequency {
+  REAL_TIME
+  HOURLY
+  DAILY
+  WEEKLY
+  MONTHLY
+  ON_DEMAND
+}
+
+enum EaStatus {
+  PLANNED
+  ACTIVE
+  RETIRED
+}
+
+enum StrategicImportance {
+  LOW
+  MEDIUM
+  HIGH
+}
+
+/// Application catalogue entry; code, bilingual name and description live on the RepoObject (type SYSTEM),
+/// so step links, badges and "where used" of the former IT system objects keep working (D-107).
+model Application {
+  objectId           String             @id @db.Uuid
+  object             RepoObject         @relation(fields: [objectId], references: [id], onDelete: Cascade)
+  appType            AppType            @default(APPLICATION)
+  vendor             String             @default("")
+  version            String             @default("")
+  businessOwnerId    String?            @db.Uuid
+  businessOwner      User?              @relation("AppBusinessOwner", fields: [businessOwnerId], references: [id], onDelete: SetNull)
+  itOwnerId          String?            @db.Uuid
+  itOwner            User?              @relation("AppItOwner", fields: [itOwnerId], references: [id], onDelete: SetNull)
+  departmentId       String?            @db.Uuid
+  department         Department?        @relation(fields: [departmentId], references: [id], onDelete: SetNull)
+  hosting            AppHosting         @default(ON_PREMISE)
+  /// ISO 3166-1 alpha-2 country of the hosting (data residency).
+  hostingCountry     String             @default("")
+  lifecycle          AppLifecycle       @default(ACTIVE)
+  /// Lifecycle dates: go-live, start of phase-out, retirement.
+  liveFrom           DateTime?
+  phaseOutFrom       DateTime?
+  retiredAt          DateTime?
+  criticality        Criticality        @default(MEDIUM)
+  dataClassification DataClassification @default(INTERNAL)
+  licenceNotes       String             @default("")
+  url                String?
+
+  outgoing     AppInterface[]          @relation("InterfaceSource")
+  incoming     AppInterface[]          @relation("InterfaceTarget")
+  dataUsages   DataObjectUsage[]
+  recordOf     DataObject[]            @relation("SystemOfRecord")
+  capabilities CapabilityApplication[]
+
+  @@index([lifecycle])
+  @@index([departmentId])
+}
+
+/// Data flow between two applications.
+model AppInterface {
+  id            String              @id @default(uuid()) @db.Uuid
+  code          String?
+  nameEn        String              @default("")
+  nameAr        String              @default("")
+  descriptionEn String              @default("")
+  descriptionAr String              @default("")
+  sourceId      String              @db.Uuid
+  source        Application         @relation("InterfaceSource", fields: [sourceId], references: [objectId], onDelete: Cascade)
+  targetId      String              @db.Uuid
+  target        Application         @relation("InterfaceTarget", fields: [targetId], references: [objectId], onDelete: Cascade)
+  direction     InterfaceDirection  @default(ONE_WAY)
+  technology    InterfaceTechnology @default(API)
+  frequency     InterfaceFrequency  @default(DAILY)
+  ownerId       String?             @db.Uuid
+  owner         User?               @relation("InterfaceOwner", fields: [ownerId], references: [id], onDelete: SetNull)
+  status        EaStatus            @default(ACTIVE)
+  createdAt     DateTime            @default(now())
+  updatedAt     DateTime            @updatedAt
+  createdById   String?             @db.Uuid
+  updatedById   String?             @db.Uuid
+  deletedAt     DateTime?
+
+  dataObjects InterfaceDataObject[]
+
+  @@index([sourceId])
+  @@index([targetId])
+}
+
+/// Business entity (Budget, Invoice, Employee …) with its system of record.
+model DataObject {
+  id               String             @id @default(uuid()) @db.Uuid
+  code             String?
+  nameEn           String             @default("")
+  nameAr           String             @default("")
+  definitionEn     String             @default("")
+  definitionAr     String             @default("")
+  classification   DataClassification @default(INTERNAL)
+  systemOfRecordId String?            @db.Uuid
+  systemOfRecord   Application?       @relation("SystemOfRecord", fields: [systemOfRecordId], references: [objectId], onDelete: SetNull)
+  ownerId          String?            @db.Uuid
+  owner            User?              @relation("DataObjectOwner", fields: [ownerId], references: [id], onDelete: SetNull)
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
+  createdById      String?            @db.Uuid
+  updatedById      String?            @db.Uuid
+  deletedAt        DateTime?
+
+  usages     DataObjectUsage[]
+  interfaces InterfaceDataObject[]
+}
+
+/// CRUD matrix: what an application does with a data object.
+model DataObjectUsage {
+  dataObjectId  String      @db.Uuid
+  dataObject    DataObject  @relation(fields: [dataObjectId], references: [id], onDelete: Cascade)
+  applicationId String      @db.Uuid
+  application   Application @relation(fields: [applicationId], references: [objectId], onDelete: Cascade)
+  canCreate     Boolean     @default(false)
+  canRead       Boolean     @default(false)
+  canUpdate     Boolean     @default(false)
+  canDelete     Boolean     @default(false)
+
+  @@id([dataObjectId, applicationId])
+  @@index([applicationId])
+}
+
+/// Data objects carried by an interface.
+model InterfaceDataObject {
+  interfaceId  String       @db.Uuid
+  interface    AppInterface @relation(fields: [interfaceId], references: [id], onDelete: Cascade)
+  dataObjectId String       @db.Uuid
+  dataObject   DataObject   @relation(fields: [dataObjectId], references: [id], onDelete: Cascade)
+
+  @@id([interfaceId, dataObjectId])
+  @@index([dataObjectId])
+}
+
+/// Business capability map (levels 1–3).
+model Capability {
+  id            String              @id @default(uuid()) @db.Uuid
+  code          String?
+  nameEn        String              @default("")
+  nameAr        String              @default("")
+  descriptionEn String              @default("")
+  descriptionAr String              @default("")
+  parentId      String?             @db.Uuid
+  parent        Capability?         @relation("CapabilityTree", fields: [parentId], references: [id], onDelete: Restrict)
+  children      Capability[]        @relation("CapabilityTree")
+  level         Int                 @default(1)
+  sortOrder     Int                 @default(0)
+  ownerId       String?             @db.Uuid
+  owner         User?               @relation("CapabilityOwner", fields: [ownerId], references: [id], onDelete: SetNull)
+  importance    StrategicImportance @default(MEDIUM)
+  createdAt     DateTime            @default(now())
+  updatedAt     DateTime            @updatedAt
+  createdById   String?             @db.Uuid
+  updatedById   String?             @db.Uuid
+  deletedAt     DateTime?
+
+  processes    CapabilityProcess[]
+  applications CapabilityApplication[]
+
+  @@index([parentId, sortOrder])
+}
+
+model CapabilityProcess {
+  capabilityId String     @db.Uuid
+  capability   Capability @relation(fields: [capabilityId], references: [id], onDelete: Cascade)
+  processId    String     @db.Uuid
+  process      Process    @relation(fields: [processId], references: [id], onDelete: Cascade)
+  createdAt    DateTime   @default(now())
+
+  @@id([capabilityId, processId])
+  @@index([processId])
+}
+
+model CapabilityApplication {
+  capabilityId  String      @db.Uuid
+  capability    Capability  @relation(fields: [capabilityId], references: [id], onDelete: Cascade)
+  applicationId String      @db.Uuid
+  application   Application @relation(fields: [applicationId], references: [objectId], onDelete: Cascade)
+  createdAt     DateTime    @default(now())
+
+  @@id([capabilityId, applicationId])
+  @@index([applicationId])
 }

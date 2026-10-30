@@ -8,7 +8,8 @@
     "AUDITOR": "مدقق",
     "VIEWER": "مشاهد",
     "RISK_OFFICER": "مسؤول المخاطر والامتثال",
-    "INTERNAL_AUDIT": "التدقيق الداخلي"
+    "INTERNAL_AUDIT": "التدقيق الداخلي",
+    "ENTERPRISE_ARCHITECT": "مهندس المؤسسة"
   },
   "status": {
     "ACTIVE": "نشط",
@@ -140,7 +141,11 @@
       "AuditFinding": "نتيجة تدقيق",
       "Questionnaire": "استبيان",
       "SurveyCampaign": "حملة استبيان",
-      "SurveyResponse": "رد على استبيان"
+      "SurveyResponse": "رد على استبيان",
+      "Application": "تطبيق",
+      "AppInterface": "واجهة",
+      "DataObject": "كائن بيانات",
+      "Capability": "قدرة"
     }
   },
   "settings": {

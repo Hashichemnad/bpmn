@@ -8,7 +8,8 @@
     "AUDITOR": "Auditor",
     "VIEWER": "Viewer",
     "RISK_OFFICER": "Risk & Compliance Officer",
-    "INTERNAL_AUDIT": "Internal Audit"
+    "INTERNAL_AUDIT": "Internal Audit",
+    "ENTERPRISE_ARCHITECT": "Enterprise Architect"
   },
   "status": {
     "ACTIVE": "Active",
@@ -140,7 +141,11 @@
       "AuditFinding": "Audit finding",
       "Questionnaire": "Questionnaire",
       "SurveyCampaign": "Survey campaign",
-      "SurveyResponse": "Survey response"
+      "SurveyResponse": "Survey response",
+      "Application": "Application",
+      "AppInterface": "Interface",
+      "DataObject": "Data object",
+      "Capability": "Capability"
     }
   },
   "settings": {

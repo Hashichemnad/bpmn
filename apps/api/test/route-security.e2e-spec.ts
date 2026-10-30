@@ -60,6 +60,7 @@ describe('Route security declarations', () => {
       'POST /audits/findings/:id/files file',
       'POST /audits/items/:id/files file',
       'POST /control-tests/:id/files file',
+      'POST /ea/import/:kind file',
       'POST /grc/import/:kind file',
       'POST /issues/:id/files file',
       'POST /issues/actions/:id/files file',
