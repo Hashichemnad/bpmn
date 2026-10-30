@@ -1,5 +1,6 @@
 import ExcelJS from 'exceljs';
 import JSZip from 'jszip';
+import { GovernanceScheduler } from '../src/governance/scheduler.service';
 import { DEFAULT_GRC_SETTINGS, PROCESS_ELEMENT_ID } from '@processhub/shared';
 import {
   createApp,
@@ -620,5 +621,38 @@ describe('Risk & Compliance (e2e)', () => {
     expect(steps.rowCount).toBe(2);
     await viewer.get('/grc/dashboard').expect(403);
     await viewer.get('/grc/rcm').expect(403);
+  });
+
+  it('reminds owners of due and overdue reviews once and lists them in My tasks', async () => {
+    const ownerId = (
+      await ctx.prisma.user.findUniqueOrThrow({ where: { email: 'owner@test.local' } })
+    ).id;
+    const soon = new Date(Date.now() + 5 * 86_400_000).toISOString().slice(0, 10);
+    const r = (await risk(officer, { ownerId, nextReviewAt: soon }).expect(201)).body.item;
+    const c = (
+      await officer
+        .post('/grc/controls')
+        .send({ nameEn: 'Old check', ownerId, nextReviewAt: '2026-01-01' })
+        .expect(201)
+    ).body.item;
+    await risk(officer, { code: 'R-9', ownerId, nextReviewAt: '2099-01-01' }).expect(201);
+    const scheduler = ctx.app.get(GovernanceScheduler);
+    await scheduler.runOnce();
+    await scheduler.runOnce();
+    const sent = await ctx.prisma.notification.findMany({
+      where: { userId: ownerId, type: 'GRC_REVIEW' },
+      orderBy: { createdAt: 'asc' },
+    });
+    expect(sent).toHaveLength(2);
+    expect(sent.map((n) => (n.params as { kind: string }).kind).sort()).toEqual(['due', 'overdue']);
+    expect(sent.map((n) => n.link).sort()).toEqual(
+      [`/grc/controls/${c.id}`, `/grc/risks/${r.id}`].sort(),
+    );
+    const tasks = (await owner.get('/tasks').expect(200)).body;
+    expect(tasks.grcReviews).toMatchObject([
+      { id: c.id, type: 'CONTROL', overdue: true },
+      { id: r.id, type: 'RISK', overdue: false },
+    ]);
+    expect((await officer.get('/tasks').expect(200)).body.grcReviews).toEqual([]);
   });
 });

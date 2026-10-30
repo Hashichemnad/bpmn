@@ -1,3 +1,4 @@
+import { GrcModule } from '../grc/grc.module';
 import { Module } from '@nestjs/common';
 import { DocsModule } from '../docs/docs.module';
 import { ConventionsModule } from '../conventions/conventions.module';
@@ -17,7 +18,7 @@ import {
 } from './governance.controller';
 
 @Module({
-  imports: [DocsModule, ConventionsModule],
+  imports: [DocsModule, ConventionsModule, GrcModule],
   controllers: [
     GovernanceController,
     WorkflowsController,

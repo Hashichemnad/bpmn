@@ -711,3 +711,16 @@ export function summariseSteps(items: ProcessGrcDto['items']): Map<string, StepG
 export function portalHiddenTypes(v: GrcPortalVisibility): GrcObjectType[] {
   return v === 'ALL' ? [] : v === 'CONTROLS' ? ['RISK', 'REQUIREMENT'] : [...GRC_OBJECT_TYPES];
 }
+
+/** A risk, control or requirement whose next review is due (My tasks, reminders). */
+export interface GrcReviewTaskDto {
+  id: string;
+  type: GrcObjectType;
+  code: string | null;
+  nameEn: string;
+  nameAr: string;
+  ownerId: string | null;
+  nextReviewAt: string;
+  overdue: boolean;
+  link: string;
+}

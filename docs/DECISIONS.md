@@ -1038,3 +1038,16 @@ matched to the library by name (spelling variants folded), an unknown role still
 - **RCM export** (`GET /grc/rcm`, `grc.read`, audited `EXPORT`): one row per step × risk × mitigating control with
   the control's requirements, ratings and effectiveness; sheets "Coverage" and "Steps without controls". Arabic
   workbooks are right-to-left.
+
+## D-094 — GRC review reminders; approval of GRC changes deferred (Phase 4.1, 2026-10-30)
+
+- **Reminders**: the governance scheduler also runs `GrcRemindersService`: active risks, controls and requirements
+  with an owner and a next review date within `reminderDaysBefore` days (Settings → Risk & Compliance, default 14) notify the owner once ("due") and once more when overdue — one new notification type `GRC_REVIEW`
+  (`params.kind` due / overdue, in-app and e-mail, own preference), deduplicated per item and date. The same items
+  appear under My tasks → "Risk & control reviews" (counted in the menu badge) for `grc.read` holders. Overdue
+  flags show in the registers, detail pages and the dashboard tile.
+- **Approval of risk / control changes through governance workflows** (optional, default off in the brief) is
+  **not built in this part**: today new items proposed by process owners / modelers are drafts that only a
+  Risk & Compliance editor can activate, which covers the approval of new items; routing changes of active items
+  through the Phase 3 workflows needs the review model to support library objects (versions of an object, review
+  rounds) and is listed in BACKLOG for Phase 4.2 — a product-owner decision is requested in the pull request.

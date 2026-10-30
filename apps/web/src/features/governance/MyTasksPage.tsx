@@ -1,8 +1,13 @@
 import { useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
-import { Badge, Button, Card, Empty, Table, Tabs, Tag, Typography } from 'antd';
+import { Badge, Button, Card, Empty, Space, Table, Tabs, Tag, Typography } from 'antd';
 import { useTranslation } from 'react-i18next';
-import type { FeedbackDto, GovernedItemDto, ReviewSummaryDto } from '@processhub/shared';
+import type {
+  FeedbackDto,
+  GovernedItemDto,
+  GrcReviewTaskDto,
+  ReviewSummaryDto,
+} from '@processhub/shared';
 import { useMyTasks } from '@/api/governance';
 import { PageHeader } from '@/components/PageHeader';
 import { ErrorState, LoadingState } from '@/components/states';
@@ -13,7 +18,8 @@ import { useOpenNotification } from '@/features/notifications/use-open-notificat
 import { ItemTitle } from './ItemTitle';
 import { FeedbackManageModal } from './FeedbackManageModal';
 
-type TabKey = 'reviews' | 'toPublish' | 'returned' | 'dueReviews' | 'mentions' | 'feedback';
+type TabKey =
+  'reviews' | 'toPublish' | 'returned' | 'dueReviews' | 'grcReviews' | 'mentions' | 'feedback';
 
 /** Everything waiting for the current user. */
 export function MyTasksPage() {
@@ -37,6 +43,7 @@ export function MyTasksPage() {
     toPublish: d.toPublish.length,
     returned: d.returned.length,
     dueReviews: d.dueReviews.length,
+    grcReviews: d.grcReviews.length,
     mentions: d.mentions.length,
     feedback: d.feedback.length,
   };
@@ -242,6 +249,49 @@ export function MyTasksPage() {
                 />
               ) : (
                 empty('dueReviews')
+              ),
+            },
+            {
+              key: 'grcReviews',
+              label: label('grcReviews'),
+              children: d.grcReviews.length ? (
+                <Table<GrcReviewTaskDto>
+                  rowKey="id"
+                  pagination={false}
+                  dataSource={d.grcReviews}
+                  scroll={{ x: 600 }}
+                  columns={[
+                    {
+                      title: t('governance:tasks.item'),
+                      key: 'item',
+                      render: (_, r) => (
+                        <Link to={r.link}>
+                          {r.code && <span dir="ltr">{r.code} · </span>}
+                          {loc(r)}
+                        </Link>
+                      ),
+                    },
+                    {
+                      title: t('grc:fields.title'),
+                      key: 'type',
+                      width: 140,
+                      render: (_, r) => t(`grc:types.${r.type}`),
+                    },
+                    {
+                      title: t('governance:tasks.due'),
+                      key: 'due',
+                      width: 200,
+                      render: (_, r) => (
+                        <Space size={4}>
+                          {formatDate(r.nextReviewAt, false)}
+                          {r.overdue && <Tag color="red">{t('grc:detail.overdue')}</Tag>}
+                        </Space>
+                      ),
+                    },
+                  ]}
+                />
+              ) : (
+                empty('grcReviews')
               ),
             },
             {

@@ -40,7 +40,9 @@ Steps (tick as they are committed; a new session continues at the first unticked
       department → process → step, steps with risks but no control, RCM Excel export (`/grc/rcm`, + coverage
       sheets). Registers gained `scopeDepartmentId` and `alert` filters. Tests: API 1 (dashboard, scopes,
       uncovered steps, RCM workbook).
-- [ ] 5. Reviews and notifications: next-review reminders, overdue flags, My tasks, optional approval.
+- [x] 5. Reviews and notifications (D-094): due / overdue reminders (`GRC_REVIEW`, scheduler, dedupe, e-mail
+      template EN/AR, preference), My tasks tab "Risk & control reviews" + menu count, overdue flags. Optional
+      approval of GRC changes through governance workflows deferred to BACKLOG (decision requested). Tests: API 1.
 - [ ] 6. AI control-gap check.
 - [ ] 7. Demo data, e2e tests, screenshots, docs, verification, pull request.
 

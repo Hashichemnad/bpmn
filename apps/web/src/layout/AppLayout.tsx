@@ -96,6 +96,7 @@ export function AppLayout() {
       tasks.data.toPublish.length +
       tasks.data.returned.length +
       tasks.data.dueReviews.length +
+      tasks.data.grcReviews.length +
       tasks.data.feedback.length
     : 0;
 
