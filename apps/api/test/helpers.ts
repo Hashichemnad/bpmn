@@ -200,6 +200,12 @@ export async function createApp(): Promise<TestContext> {
 }
 
 const TABLES = [
+  'GrcActivity',
+  'RiskControl',
+  'RequirementControl',
+  'Risk',
+  'Control',
+  'Requirement',
   'AiUsage',
   'Feedback',
   'Notification',

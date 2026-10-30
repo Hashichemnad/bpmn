@@ -96,6 +96,7 @@
     "preparing": "Preparing the report…",
     "rendering": "Drawing diagram {{n}} of {{total}}…",
     "building": "Building the document…",
-    "done": "Report downloaded"
+    "done": "Report downloaded",
+    "includeRisks": "Include a \"Risks and controls\" section"
   }
 }

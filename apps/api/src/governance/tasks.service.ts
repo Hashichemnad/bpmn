@@ -1,3 +1,4 @@
+import { GrcRemindersService } from '../grc/grc-reminders.service';
 import { Injectable } from '@nestjs/common';
 import type { Prisma } from '@prisma/client';
 import {
@@ -9,6 +10,7 @@ import {
   type GovernedItemDto,
   type MyTasksDto,
   type PublishedItemDto,
+  PERMISSIONS,
 } from '@processhub/shared';
 import { PrismaService } from '../prisma/prisma.service';
 import { NotificationsService } from '../notifications/notifications.service';
@@ -54,6 +56,7 @@ export class TasksService {
     private readonly workflows: WorkflowsService,
     private readonly notifications: NotificationsService,
     private readonly feedback: FeedbackService,
+    private readonly grcReminders: GrcRemindersService,
   ) {}
 
   private async items(processes: ProcessRow[], pages: PageRow[]): Promise<GovernedItemDto[]> {
@@ -222,6 +225,9 @@ export class TasksService {
       dueReviews: await this.reviewDue(addDays(now, settings.reminderDays), null, user, user.id),
       mentions: await this.notifications.toDtos(mentions),
       feedback,
+      grcReviews: user.permissions.has(PERMISSIONS.GRC_READ)
+        ? await this.grcReminders.dueItems(now, user.id)
+        : [],
     };
   }
 

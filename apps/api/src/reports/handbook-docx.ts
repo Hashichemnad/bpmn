@@ -52,6 +52,16 @@ export interface HandbookInput {
   logo: ReportImage | null;
   generatedBy: string;
   generatedAt: Date;
+  /** "Risks and controls" rows per process; absent = section not requested. */
+  grc?: Map<string, HandbookGrcRow[]>;
+}
+
+/** One linked risk, control or requirement in the handbook (texts already localised). */
+export interface HandbookGrcRow {
+  step: string;
+  type: string;
+  item: string;
+  detail: string;
 }
 
 const FONT = 'Arial';
@@ -312,6 +322,33 @@ export async function buildHandbook(input: HandbookInput): Promise<Buffer> {
           )
         : [para([run(t.noDocuments, { color: MUTED })])]),
     );
+    if (input.grc) {
+      const rows = input.grc.get(p.id) ?? [];
+      children.push(
+        para([run(t.risksControls, { bold: true })], { heading: HeadingLevel.HEADING_2 }),
+      );
+      children.push(
+        rows.length
+          ? table([
+              new TableRow({
+                tableHeader: true,
+                children: [
+                  cell(t.step, { header: true, width: 25 }),
+                  cell(t.type, { header: true, width: 12 }),
+                  cell(t.item, { header: true, width: 40 }),
+                  cell(t.ratingEffectiveness, { header: true, width: 23 }),
+                ],
+              }),
+              ...rows.map(
+                (r) =>
+                  new TableRow({
+                    children: [cell(r.step), cell(r.type), cell(r.item), cell(r.detail)],
+                  }),
+              ),
+            ])
+          : para([run(t.noRisks, { color: MUTED })]),
+      );
+    }
     if (p.pages.length) {
       children.push(para([run(t.procedures, { bold: true })], { heading: HeadingLevel.HEADING_2 }));
       for (const page of p.pages) {

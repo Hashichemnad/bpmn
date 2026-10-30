@@ -59,6 +59,10 @@ const TEMPLATES: Record<Locale, Record<NotificationType, Template>> = {
       subject: 'Your feedback on “{title}” was updated',
       body: 'Status: {status}. {reply}',
     },
+    GRC_REVIEW: {
+      subject: 'Risk & Compliance review due: {code} {title}',
+      body: '“{title}” ({code}) is due for review on {due}. Please reassess it in Risk & Compliance.',
+    },
   },
   ar: {
     REVIEW_REQUESTED: {
@@ -104,6 +108,10 @@ const TEMPLATES: Record<Locale, Record<NotificationType, Template>> = {
     FEEDBACK_UPDATED: {
       subject: 'تم تحديث ملاحظتك على «{title}»',
       body: 'الحالة: {status}. {reply}',
+    },
+    GRC_REVIEW: {
+      subject: 'موعد مراجعة المخاطر والامتثال: {code} {title}',
+      body: 'موعد مراجعة «{title}» ({code}) هو {due}. يرجى إعادة تقييمه في قسم المخاطر والامتثال.',
     },
   },
 };

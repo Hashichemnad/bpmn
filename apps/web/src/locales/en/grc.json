@@ -1,0 +1,303 @@
+{
+  "types": {
+    "RISK": "Risk",
+    "CONTROL": "Control",
+    "REQUIREMENT": "Requirement"
+  },
+  "register": {
+    "RISK": {
+      "title": "Risk register",
+      "subtitle": "Risks of the organisation, rated before and after controls",
+      "empty": "No risks yet",
+      "new": "New risk",
+      "edit": "Edit risk",
+      "propose": "Propose risk"
+    },
+    "CONTROL": {
+      "title": "Control library",
+      "subtitle": "Internal controls that mitigate risks and satisfy requirements",
+      "empty": "No controls yet",
+      "new": "New control",
+      "edit": "Edit control",
+      "propose": "Propose control"
+    },
+    "REQUIREMENT": {
+      "title": "Requirements",
+      "subtitle": "Laws, regulations, policies, standards and internal rules",
+      "empty": "No requirements yet",
+      "new": "New requirement",
+      "edit": "Edit requirement",
+      "propose": "Propose requirement"
+    }
+  },
+  "fields": {
+    "code": "Code",
+    "title": "Title",
+    "owner": "Owner",
+    "department": "Department",
+    "status": "Status",
+    "nextReview": "Next review",
+    "category": "Category",
+    "causeEn": "Cause (English)",
+    "causeAr": "Cause (Arabic)",
+    "consequenceEn": "Consequence (English)",
+    "consequenceAr": "Consequence (Arabic)",
+    "cause": "Cause",
+    "consequence": "Consequence",
+    "likelihood": "Likelihood",
+    "impact": "Impact",
+    "inherent": "Inherent",
+    "residual": "Residual",
+    "inherentRating": "Inherent rating",
+    "residualRating": "Residual rating",
+    "rating": "Rating",
+    "response": "Response",
+    "controlType": "Type",
+    "nature": "Nature",
+    "frequency": "Frequency",
+    "keyControl": "Key control",
+    "system": "IT system",
+    "effectiveness": "Design effectiveness",
+    "lastAssessed": "Last assessed",
+    "level": "Level",
+    "parent": "Part of",
+    "sourceRef": "Source reference",
+    "url": "Link",
+    "effectiveDate": "Effective date",
+    "risks": "Risks",
+    "controls": "Controls",
+    "requirements": "Requirements",
+    "steps": "Linked steps",
+    "comment": "Assessment comment",
+    "commentHint": "Saved in the history with rating or effectiveness changes",
+    "textEn": "Text (English)",
+    "textAr": "Text (Arabic)",
+    "residualHint": "Leave empty until the controls are assessed — the inherent rating applies"
+  },
+  "status": {
+    "DRAFT": "Draft",
+    "ACTIVE": "Active",
+    "RETIRED": "Retired"
+  },
+  "response": {
+    "ACCEPT": "Accept",
+    "AVOID": "Avoid",
+    "MITIGATE": "Mitigate",
+    "TRANSFER": "Transfer"
+  },
+  "controlType": {
+    "PREVENTIVE": "Preventive",
+    "DETECTIVE": "Detective",
+    "CORRECTIVE": "Corrective"
+  },
+  "nature": {
+    "MANUAL": "Manual",
+    "AUTOMATED": "Automated",
+    "IT_DEPENDENT_MANUAL": "IT-dependent manual"
+  },
+  "frequency": {
+    "PER_TRANSACTION": "Per transaction",
+    "DAILY": "Daily",
+    "WEEKLY": "Weekly",
+    "MONTHLY": "Monthly",
+    "QUARTERLY": "Quarterly",
+    "ANNUAL": "Annual",
+    "AD_HOC": "Ad hoc"
+  },
+  "effectiveness": {
+    "EFFECTIVE": "Effective",
+    "PARTLY": "Partly effective",
+    "NOT_EFFECTIVE": "Not effective",
+    "NOT_ASSESSED": "Not assessed"
+  },
+  "level": {
+    "SOURCE": "Source document",
+    "SECTION": "Section",
+    "CLAUSE": "Clause"
+  },
+  "filters": {
+    "search": "Search by code or title",
+    "all": "All",
+    "overdue": "Review overdue",
+    "withoutControls": "Without controls",
+    "alertNoControl": "High / critical without an effective control",
+    "keyAttention": "Key controls not assessed or not effective",
+    "keyOnly": "Key controls only",
+    "cell": "Heat-map cell: likelihood {{likelihood}}, impact {{impact}} ({{matrix}})",
+    "clear": "Clear filters",
+    "process": "Linked to process"
+  },
+  "detail": {
+    "linkedSteps": "Linked process steps",
+    "wholeProcess": "Whole process",
+    "openInModeler": "Open in the modeler",
+    "noSteps": "Not linked to any process step yet",
+    "relations": "Relations",
+    "mitigatedBy": "Mitigated by",
+    "mitigates": "Mitigates",
+    "satisfiedBy": "Satisfied by",
+    "satisfies": "Satisfies",
+    "noneLinked": "None",
+    "timeline": "Assessment history and comments",
+    "addComment": "Add comment",
+    "commentPlaceholder": "Write a comment…",
+    "noActivity": "No history yet",
+    "effectivelyControlled": "Effectively controlled",
+    "notControlled": "No effective control",
+    "overdue": "Review overdue",
+    "proposal": "Proposal — a Risk & Compliance officer reviews and activates it",
+    "children": "Sections and clauses",
+    "deleteConfirm": "Delete \"{{name}}\"? Its links to process steps are removed.",
+    "deleted": "Deleted",
+    "saved": "Saved",
+    "open": "Open"
+  },
+  "activity": {
+    "CREATED": "Created",
+    "ASSESSMENT": "Assessment",
+    "STATUS": "Status changed",
+    "COMMENT": "Comment"
+  },
+  "excel": {
+    "menu": "Excel",
+    "export": "Export to Excel",
+    "template": "Download template",
+    "import": "Import from Excel",
+    "importTitle": "Import {{register}}",
+    "importHint": "Rows are matched by code: new codes are created, existing ones updated. The file is checked first; nothing is imported while it has errors.",
+    "chooseFile": "Choose .xlsx file",
+    "validate": "Check file",
+    "importNow": "Import",
+    "summary": "{{rows}} rows: {{created}} new, {{updated}} updated",
+    "errorsTitle": "Problems to fix ({{count}})",
+    "row": "Row",
+    "column": "Column",
+    "problem": "Problem",
+    "noErrors": "No problems found — ready to import.",
+    "imported": "Imported {{created}} new and {{updated}} updated items",
+    "issue": {
+      "REQUIRED": "Required",
+      "INVALID_VALUE": "Not an allowed value",
+      "INVALID_RATING": "Must be 1 to 5",
+      "INVALID_CATEGORY": "Unknown category key",
+      "UNKNOWN_CONTROL": "Unknown control code",
+      "UNKNOWN_USER": "No user with this e-mail",
+      "UNKNOWN_DEPARTMENT": "Unknown department",
+      "UNKNOWN_SYSTEM": "Unknown IT system",
+      "UNKNOWN_REQUIREMENT": "Unknown requirement code",
+      "DUPLICATE_IN_FILE": "Code appears twice in the file",
+      "INVALID_DATE": "Not a date",
+      "PARENT_REQUIRED": "Sections and clauses need a parent",
+      "NAME_REQUIRED": "A title in English or Arabic is required",
+      "RESIDUAL_PAIR": "Residual likelihood and impact go together",
+      "INVALID_URL": "Must start with http:// or https://",
+      "INVALID_KEY": "Invalid key"
+    }
+  },
+  "matrix": {
+    "likelihood": "Likelihood",
+    "impact": "Impact",
+    "inherent": "Inherent",
+    "residual": "Residual",
+    "risks_one": "{{count}} risk",
+    "risks_other": "{{count}} risks",
+    "cellTitle": "Likelihood {{likelihood}} × impact {{impact}} = {{score}}"
+  },
+  "settings": {
+    "title": "Risk & Compliance settings",
+    "subtitle": "Risk categories, the risk matrix and what the portal shows",
+    "categories": "Risk categories",
+    "key": "Key",
+    "nameEn": "Name (English)",
+    "nameAr": "Name (Arabic)",
+    "add": "Add",
+    "matrix": "Risk matrix (5 × 5)",
+    "likelihoodLabels": "Likelihood labels",
+    "impactLabels": "Impact labels",
+    "bands": "Rating bands",
+    "minScore": "From score",
+    "colour": "Colour",
+    "alert": "High / critical",
+    "alertHint": "Residual risks in these bands are flagged on badges and the coverage dashboard",
+    "portal": "Knowledge Portal",
+    "portalVisibility": "Show risks and controls in the portal",
+    "portalOption": {
+      "OFF": "Off",
+      "CONTROLS": "Controls only (what staff must do)",
+      "ALL": "Risks and controls"
+    },
+    "reminderDays": "Remind owners before a review is due (days)",
+    "saved": "Settings saved",
+    "preview": "Preview",
+    "reset": "Restore defaults"
+  },
+  "yes": "Yes",
+  "no": "No",
+  "panel": {
+    "tab": "Risks & Controls",
+    "linkExisting": "Link an existing item",
+    "link": "Link"
+  },
+  "dashboard": {
+    "title": "Risk dashboard",
+    "subtitle": "Heat maps and control coverage — click a cell, tile or row to drill down",
+    "allDepartments": "All departments",
+    "exportRcm": "Risk-control matrix (Excel)",
+    "organisation": "Organisation",
+    "tiles": {
+      "alertRisksWithoutEffectiveControl": "High / critical without an effective control",
+      "alertRisks": "High / critical residual risks",
+      "risksWithoutControls": "Risks without controls",
+      "keyControlsAttention": "Key controls not assessed or not effective",
+      "requirementsWithoutControls": "Requirements without controls",
+      "stepsWithRiskNoControl": "Steps with risks but no control",
+      "processesWithRiskNoControl": "Processes with risks but no control",
+      "overdueReviews": "Overdue reviews"
+    },
+    "heatHint_one": "{{count}} active risk. Click a cell to list its risks.",
+    "heatHint_other": "{{count}} active risks. Click a cell to list its risks.",
+    "breakdown": {
+      "department": "By department",
+      "process": "By process",
+      "step": "By step"
+    },
+    "level": {
+      "department": "Department",
+      "process": "Process",
+      "step": "Step"
+    },
+    "alerts": "High / critical",
+    "withoutControls": "Steps without controls",
+    "uncovered": "Steps with risks but no control",
+    "step": "Step"
+  },
+  "gaps": {
+    "title": "Control-gap check",
+    "check": "Check control gaps",
+    "rules_one": "{{count}} gap found by the rules",
+    "rules_other": "{{count}} gaps found by the rules",
+    "none": "No control gaps found.",
+    "runAi": "Explain and suggest fixes",
+    "working": "Checking the controls…",
+    "accepted": "Done",
+    "acceptLink": "Link {{name}} to {{step}}",
+    "acceptCreate": "Create control “{{name}}”",
+    "dismiss": "Dismiss",
+    "kind": {
+      "HIGH_RISK_NO_CONTROL": "High risk without an effective control",
+      "SEGREGATION_OF_DUTIES": "No segregation of duties",
+      "ORPHAN_LINK": "Linked to a step that no longer exists",
+      "REQUIREMENT_NOT_COVERED": "Requirement without controls in this process",
+      "MISSING_REVIEW_EVIDENCE": "Control not assessed or review overdue",
+      "OTHER": "Other gap"
+    },
+    "hint": {
+      "HIGH_RISK_NO_CONTROL": "The residual rating is high or critical and none of the risk's controls is active and effective.",
+      "SEGREGATION_OF_DUTIES": "The same lane (role) submits and approves.",
+      "ORPHAN_LINK": "Remove the link or link the item to the right step.",
+      "REQUIREMENT_NOT_COVERED": "The process must satisfy the requirement but no step has a control.",
+      "MISSING_REVIEW_EVIDENCE": "There is no current evidence that the control works.",
+      "OTHER": "Pointed out by the assistant."
+    }
+  }
+}

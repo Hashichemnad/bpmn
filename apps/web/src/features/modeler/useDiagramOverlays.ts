@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { CommentDto, ObjectType } from '@processhub/shared';
+import type { CommentDto, ObjectType, StepGrcSummary } from '@processhub/shared';
 import type { BpmnInstance, ElementRegistry, EventBus, Overlays } from './bpmn-types';
 import { BADGE_KINDS, renderBadges, type BadgeItem, type BadgeKind } from './badges';
 import { canDrillDown, linkedProcessOf } from './diagram';
@@ -34,6 +34,13 @@ export function commentBadgeItems(comments: CommentDto[]): BadgeItem[] {
         name: text.length > 60 ? `${text.slice(0, 57)}…` : text,
       };
     });
+}
+
+/** Warning badges: high / critical residual risk without an effective control at the step. */
+export function grcAlertBadgeItems(steps: Map<string, StepGrcSummary>, name: string): BadgeItem[] {
+  return [...steps]
+    .filter(([, s]) => s.alert)
+    .map(([elementId]) => ({ elementId, kind: 'ALERT' as const, name }));
 }
 
 /**

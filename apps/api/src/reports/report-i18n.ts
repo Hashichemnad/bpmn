@@ -42,6 +42,21 @@ const EN = {
   outputs: 'Outputs',
   documents: 'Linked documents',
   noDocuments: 'No linked documents.',
+  risksControls: 'Risks and controls',
+  noRisks: 'No risks or controls linked.',
+  item: 'Item',
+  ratingEffectiveness: 'Residual rating / effectiveness',
+  wholeProcess: 'Whole process',
+  grcTypes: { RISK: 'Risk', CONTROL: 'Control', REQUIREMENT: 'Requirement' } as Record<
+    string,
+    string
+  >,
+  effectiveness: {
+    EFFECTIVE: 'Effective',
+    PARTLY: 'Partly effective',
+    NOT_EFFECTIVE: 'Not effective',
+    NOT_ASSESSED: 'Not assessed',
+  } as Record<string, string>,
   procedures: 'Procedures and instructions',
   /** Footer: "Page " n " of " m. */
   pageBefore: 'Page ',
@@ -91,6 +106,7 @@ const EN = {
     CONTROL: 'Control',
     KPI: 'KPI',
     TERM: 'Dictionary term',
+    REQUIREMENT: 'Requirement',
   },
   relations: {
     PERFORMS: 'Performs',
@@ -100,6 +116,7 @@ const EN = {
     MITIGATES: 'Mitigates',
     MEASURES: 'Measures',
     NAMED: 'Label (dictionary)',
+    REQUIRES: 'Must satisfy',
   },
 };
 
@@ -143,6 +160,18 @@ const AR: Texts = {
   outputs: 'المخرجات',
   documents: 'الوثائق المرتبطة',
   noDocuments: 'لا توجد وثائق مرتبطة.',
+  risksControls: 'المخاطر والضوابط',
+  noRisks: 'لا توجد مخاطر أو ضوابط مرتبطة.',
+  item: 'العنصر',
+  ratingEffectiveness: 'التقييم المتبقي / الفعالية',
+  wholeProcess: 'العملية كاملة',
+  grcTypes: { RISK: 'خطر', CONTROL: 'ضابط رقابي', REQUIREMENT: 'متطلب' } as Record<string, string>,
+  effectiveness: {
+    EFFECTIVE: 'فعّال',
+    PARTLY: 'فعّال جزئيًا',
+    NOT_EFFECTIVE: 'غير فعّال',
+    NOT_ASSESSED: 'لم يُقيَّم',
+  } as Record<string, string>,
   procedures: 'الإجراءات والتعليمات',
   pageBefore: 'صفحة ',
   pageOf: ' من ',
@@ -190,6 +219,7 @@ const AR: Texts = {
     CONTROL: 'ضابط',
     KPI: 'مؤشر أداء',
     TERM: 'مصطلح القاموس',
+    REQUIREMENT: 'متطلب',
   },
   relations: {
     PERFORMS: 'ينفّذ',
@@ -199,6 +229,7 @@ const AR: Texts = {
     MITIGATES: 'يخفف',
     MEASURES: 'يقيس',
     NAMED: 'التسمية (القاموس)',
+    REQUIRES: 'يجب استيفاء',
   },
 };
 

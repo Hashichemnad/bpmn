@@ -1,7 +1,14 @@
+import { GrcSettingsService } from '../grc/grc-settings.service';
 import { Injectable } from '@nestjs/common';
 import type { Readable } from 'node:stream';
 import {
+  PERMISSIONS,
+  PROCESS_ELEMENT_ID,
   SETTING_KEYS,
+  extractBpmnLabels,
+  isGrcObjectType,
+  portalHiddenTypes,
+  rateRisk,
   type HandbookInput,
   type HandbookPlanDto,
   type HandbookPlanInput,
@@ -15,8 +22,8 @@ import { StorageService } from '../storage/storage.service';
 import { ObjectsService } from '../objects/objects.service';
 import { badRequest } from '../common/app-exception';
 import type { AuthUser, RequestMeta } from '../common/auth-user';
-import { ReportDataService } from './report-data.service';
-import { buildHandbook, imageInfo, type ReportImage } from './handbook-docx';
+import { ReportDataService, type ReportProcess } from './report-data.service';
+import { buildHandbook, imageInfo, type HandbookGrcRow, type ReportImage } from './handbook-docx';
 import { buildObjectReport, buildRaci } from './xlsx-reports';
 import { pick, reportTexts } from './report-i18n';
 
@@ -55,7 +62,62 @@ export class ReportsService {
     private readonly storage: StorageService,
     private readonly objects: ObjectsService,
     private readonly data: ReportDataService,
+    private readonly grcSettings: GrcSettingsService,
   ) {}
+
+  /**
+   * Rows of the handbook's "Risks and controls" section: GRC readers see every linked item; others
+   * (portal) only what Settings → Risk & Compliance shows in the portal.
+   */
+  private async grcRows(processes: ReportProcess[], user: AuthUser, locale: Locale) {
+    const settings = await this.grcSettings.get();
+    const hidden = user.permissions.has(PERMISSIONS.GRC_READ)
+      ? []
+      : portalHiddenTypes(settings.portalVisibility);
+    const t = reportTexts(locale);
+    const links = processes.flatMap((p) =>
+      p.links
+        .filter((l) => isGrcObjectType(l.object.type) && !hidden.includes(l.object.type as never))
+        .map((l) => ({ p, l })),
+    );
+    const details = await this.prisma.repoObject.findMany({
+      where: { id: { in: [...new Set(links.map((x) => x.l.object.id))] }, deletedAt: null },
+      include: { risk: true, control: true },
+    });
+    const byId = new Map(details.map((d) => [d.id, d]));
+    const out = new Map<string, HandbookGrcRow[]>();
+    for (const p of processes) out.set(p.id, []);
+    const labels = new Map(processes.map((p) => [p.id, extractBpmnLabels(p.bpmnXml ?? '')]));
+    for (const { p, l } of links) {
+      const d = byId.get(l.object.id);
+      if (!d) continue;
+      const label = labels.get(p.id)?.get(l.bpmnElementId);
+      let detail = '';
+      if (d.risk) {
+        const r = rateRisk(d.risk, settings.bands);
+        const band = settings.bands.find((b) => b.key === r.residualBand);
+        detail = `${band ? (locale === 'ar' ? band.nameAr : band.nameEn) : ''} · ${r.residualScore}`;
+      } else if (d.control) detail = t.effectiveness[d.control.effectiveness] ?? '';
+      out.get(p.id)!.push({
+        step:
+          l.bpmnElementId === PROCESS_ELEMENT_ID
+            ? t.wholeProcess
+            : (label && pick(locale, label)) || l.bpmnElementId,
+        type: t.grcTypes[d.type] ?? d.type,
+        item: `${d.code ? `${d.code} ` : ''}${pick(locale, d)}`,
+        detail,
+      });
+    }
+    const order = { RISK: 0, CONTROL: 1, REQUIREMENT: 2 } as Record<string, number>;
+    for (const rows of out.values())
+      rows.sort(
+        (a, b) =>
+          a.step.localeCompare(b.step) ||
+          (order[a.type] ?? 0) - (order[b.type] ?? 0) ||
+          a.item.localeCompare(b.item),
+      );
+    return out;
+  }
 
   /** The processes of a handbook and the diagram XML the browser renders as images. */
   async handbookPlan(input: HandbookPlanInput, user: AuthUser): Promise<HandbookPlanDto> {
@@ -98,11 +160,13 @@ export class ReportsService {
       logo,
       generatedBy: pick(locale, user) || user.email,
       generatedAt: new Date(),
+      grc: input.includeRisks ? await this.grcRows(processes, user, locale) : undefined,
     });
     await this.logExport('handbook', root.id, user, meta, {
       source,
       locale,
       includeChildren: input.includeChildren,
+      ...(input.includeRisks ? { includeRisks: true } : {}),
       processes: processes.map((p) => p.code),
     });
     return {

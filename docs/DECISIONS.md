@@ -951,3 +951,139 @@ matched to the library by name (spelling variants folded), an unknown role still
   `400 CONVENTIONS_NOT_MET` listing the failed mandatory rules and element labels (EN/AR); the panel lists them
   with a "Required" tag. Processes already in review or published are not re-checked until their next submission.
 - The basic diagram check "not connected" is hidden for elements the convention already reports (no duplicates).
+
+## D-089 — Risk & Compliance data model: detail tables beside the library object (Phase 4.1, 2026-10-30)
+
+- **Class-table design**: every risk, control and requirement is a `RepoObject` (type `RISK`, `CONTROL`, new
+  `REQUIREMENT`) holding the shared fields — code, bilingual title and description (a requirement's bilingual
+  text), owner, soft delete — plus a one-to-one detail row in `Risk`, `Control` or `Requirement` (primary key =
+  object id). Step links, badges, the link panel, "where used", reports and published links therefore keep using
+  `ObjectLink` / `PublishedLink` unchanged; nothing is duplicated as JSON attributes.
+- **Risk**: configurable category key (Setting `grc`), cause and consequence EN/AR, department, inherent and
+  residual likelihood / impact 1–5 (residual null = not assessed, the inherent rating stands), response
+  (accept / avoid / mitigate / transfer), status (draft / active / retired), next review date.
+  **Control**: type, nature, frequency, department, key control, IT system (`SYSTEM` library object),
+  design effectiveness (effective / partly / not effective / not assessed), status, next review, last assessed.
+  **Requirement**: level source → section → clause (`parentId`, a clause may hang under a source directly),
+  source reference, `http(s)` link only, effective date, status.
+- **Relations**: `RiskControl` (risk "mitigated by" control), `RequirementControl` (requirement "satisfied by"
+  control); step and process links are `ObjectLink`s (default relation `MITIGATES` for risks and controls, new
+  `REQUIRES` for requirements). A link to the whole process uses the element id `#process`
+  (`PROCESS_ELEMENT_ID`), which saving a model never prunes.
+- **History**: `GrcActivity` rows (CREATED, ASSESSMENT, STATUS, COMMENT) with `{ field: { from, to } }`, comment,
+  author and time; every change of likelihood / impact / effectiveness writes one (audit action `ASSESS`).
+  Comments on GRC items live here too (not in the process/page `Comment` table, which is tied to governance).
+- **Ratings are computed** (score = likelihood × impact, band from the configurable thresholds), never stored, so
+  changing the matrix re-rates everything at once. Lists filter, sort and page in memory after the database
+  filters — fine for the expected few thousand items; revisit with stored scores if registers grow far beyond.
+- **Existing data**: the migration gives every pre-existing `RISK` object a register row (category Operational,
+  3 × 3, active) and every `CONTROL` object a control row (active, not assessed). Risks, controls and
+  requirements can no longer be created or changed through `/objects` (`USE_GRC_REGISTER`); the library lists
+  them read-only.
+
+## D-090 — GRC permissions and the Risk & Compliance Officer role (Phase 4.1, 2026-10-30)
+
+- New permissions `grc.read` (registers, dashboards), `grc.propose` (create risks and controls as drafts, change
+  and delete one's own drafts), `grc.edit` (create, change, assess, activate, relate and link any item; Excel
+  import), `grc.admin` (settings: categories, matrix, portal visibility; delete any item). `grc.propose` was added
+  to the three requested permissions so process owners and modelers can propose without edit rights on the
+  registers.
+- New system role **Risk & Compliance Officer** (`RISK_OFFICER`): all four GRC permissions, the rest of the
+  workspace read-only (same read bundle as a Reviewer, so it may comment and be a workflow approver).
+  Process Owner and Modeler: `grc.read` + `grc.propose`. Auditor: `grc.read` (no comments, as elsewhere).
+  Reviewer: `grc.read` (reviewers judge processes that show their risks; read-only). Viewer: none — the portal shows
+  linked risks / controls only as the portal setting allows. Super Admin and Admin: everything.
+- Requirements are created and changed by `grc.edit` only. Proposers can neither set effectiveness nor map
+  requirements, and relate only their own drafts.
+
+## D-091 — Who links risks, controls and requirements to steps (Phase 4.1, 2026-10-30)
+
+- Linking is a change of the process content (links are published with the process), so the existing link
+  endpoints are used with the governance lock (not while in review or archived; an approved / published process
+  gets a new draft). Allowed: model editors of the process (with `grc.propose` for GRC items) — as before — and
+  additionally `grc.edit` holders for GRC items on any process, without general model edit rights.
+
+## D-092 — Risks and controls in the modeler, portal and handbook (Phase 4.1, 2026-10-30)
+
+- **Modeler**: side panel tab "Risks & Controls" for the selected step (or the whole process when nothing is
+  selected): linked risks with residual rating, controls with key flag and effectiveness, requirements; link an
+  existing item, create (or, without `grc.edit`, propose as a draft) a risk / control that is linked to the step
+  at once; unlink. Hidden while the process is in review or archived (the server refuses too).
+- **Warning badge** `ALERT`: a step carries a high / critical residual risk (band flagged "alert") whose own
+  mitigating controls (risk ↔ control relation) include no active, (partly) effective control. Judged per risk,
+  not per step, so an effective control for a different risk on the same step does not hide the warning. Shown
+  in the modeler, the read-only preview and (as published links allow) the portal. Risk and control counts use
+  the existing B1 badges.
+- **Colour by** (view only, D-086 mechanics): "Residual risk rating" (highest residual band of the step's risks,
+  band colours) and "Risks without controls" (risk but no control at the step / risk with controls / no risk).
+  Offered to `grc.read` holders only. Shared `summariseSteps` computes both.
+- **Portal**: Setting `grc.portalVisibility` OFF (default) / CONTROLS / ALL, applied on the server to the published
+  links of the portal process page and to the portal AI assistant's sources. Behaviour change: risk and control
+  links that earlier phases showed in the portal are hidden until the setting is changed.
+- **Handbook**: optional "Risks and controls" section per process (step, type, item, residual rating or
+  effectiveness) from the links of the chosen source (working or published). GRC readers see every item; portal
+  users only what the portal setting shows.
+
+## D-093 — Risk dashboards, coverage and the risk–control matrix (Phase 4.1, 2026-10-30)
+
+- **Scope**: organisation, a department or a process. A department's scope is the risks / controls / requirements
+  owned by the department **or** linked to one of its processes; a process scope is what is linked to it. Only
+  active items count. The registers accept the same scope (`scopeDepartmentId`, `processId`) so every tile and
+  heat-map cell opens the matching filtered list.
+- **Heat maps**: inherent and residual (residual falls back to inherent until assessed) side by side; a cell lists
+  its risks. **Drill-down**: departments (by linked processes) → processes → steps (opens the modeler at the step).
+- **Coverage**: risks without controls; high / critical residual risks; of these without an effective own control;
+  key controls not assessed / not effective; requirements without controls; steps and processes with risks but no
+  control linked at the step; overdue reviews (risks + controls).
+- **RCM export** (`GET /grc/rcm`, `grc.read`, audited `EXPORT`): one row per step × risk × mitigating control with
+  the control's requirements, ratings and effectiveness; sheets "Coverage" and "Steps without controls". Arabic
+  workbooks are right-to-left.
+
+## D-094 — GRC review reminders; approval of GRC changes deferred (Phase 4.1, 2026-10-30)
+
+- **Reminders**: the governance scheduler also runs `GrcRemindersService`: active risks, controls and requirements
+  with an owner and a next review date within `reminderDaysBefore` days (Settings → Risk & Compliance, default 14) notify the owner once ("due") and once more when overdue — one new notification type `GRC_REVIEW`
+  (`params.kind` due / overdue, in-app and e-mail, own preference), deduplicated per item and date. The same items
+  appear under My tasks → "Risk & control reviews" (counted in the menu badge) for `grc.read` holders. Overdue
+  flags show in the registers, detail pages and the dashboard tile.
+- **Approval of risk / control changes through governance workflows** (optional, default off in the brief) is
+  **not built in this part**: today new items proposed by process owners / modelers are drafts that only a
+  Risk & Compliance editor can activate, which covers the approval of new items; routing changes of active items
+  through the Phase 3 workflows needs the review model to support library objects (versions of an object, review
+  rounds) and is listed in BACKLOG for Phase 4.2 — a product-owner decision is requested in the pull request.
+
+## D-095 — Control-gap check: rules first, AI explains and proposes (Phase 4.1, 2026-10-30)
+
+- **Rules** (shared `detectControlGaps`, run on the server: `GET /grc/processes/:id/gaps`): high / critical
+  residual risk whose own controls are not effective; segregation of duties (an approval step in the same lane as
+  a step leading to it, directly or through gateways / events); links to elements that are no longer in the
+  diagram; requirements mapped to the process while no step has a control; linked controls never assessed or with
+  an overdue review ("missing evidence of review"). They work without the AI.
+- **AI** (`POST /ai/control-gaps`, feature `CONTROL_GAPS`, same access, limits and audit as the other AI features,
+  plus `grc.read`): the process outline, linked items, rule gaps and the control library go to the model, which
+  explains each gap, may add others (kind OTHER) and proposes an action — link an existing control to a step or
+  create a new one (names EN/AR). Ids the model invents are dropped and impossible actions become "none".
+- **Nothing changes automatically**: in the modeler (Risks & Controls → "Check control gaps") each suggestion has
+  Accept (calls the normal link endpoint, or opens the control form prefilled and links the saved control) and
+  Dismiss (client only). Proposers create drafts as usual.
+
+## D-096 — `decode-uri-component` override (Phase 4.1, 2026-10-30)
+
+- `pnpm audit --audit-level high --prod` reported GHSA-qr28-fpjm-wq7f (high) on `minio → query-string 7 →
+decode-uri-component 0.2.2`, also on `main`; no MinIO release avoids it. Root `pnpm.overrides` forces
+  `decode-uri-component@<0.5.1` to `^0.5.1` (ESM-only). MinIO uses only `query-string.stringify` (the decoder is
+  never called); Node 22 loads the ES module through `require(esm)`, verified in the production API image, and the
+  API Jest config compiles it like `openid-client`. Remove the override when MinIO drops `query-string` 7.
+
+## D-097 — Product owner decisions on Phase 4.1 (2026-10-30)
+
+1. **Approval of changes to active risks and controls** through the governance workflows moves to **Phase 4.2**;
+   it is not needed before go-live (BACKLOG, Phase 4.2). Today new proposals stay drafts until a Risk & Compliance
+   officer activates them (D-094).
+2. **Reviewers keep `grc.read`**: they need the risk context when they approve processes (D-090).
+3. **The portal hides risks and controls by default** (`grc.portalVisibility` = OFF): accepted — there is no real
+   content yet and hidden is the safe default; the setting will be decided before go-live (D-092).
+4. **`grc.propose` for Process Owners and Modelers** is approved: they only propose drafts; the officer activates
+   them (D-090).
+5. **Warning badge per risk**: confirmed — the badge checks each risk's own mitigating controls; a control on the
+   same step that does not mitigate that risk must not hide the warning (D-092).

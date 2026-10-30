@@ -42,6 +42,12 @@ describe('Authorisation matrix (e2e)', () => {
     'Feedback',
     'GitSyncItem',
     'AiUsage',
+    'Risk',
+    'Control',
+    'Requirement',
+    'RiskControl',
+    'RequirementControl',
+    'GrcActivity',
   ];
 
   async function fingerprint(): Promise<Record<string, string>> {
@@ -127,6 +133,11 @@ describe('Authorisation matrix (e2e)', () => {
       ),
       user: await anyId(p.user.findFirst({ where: { email: 'matrix-admin@test.local' } })),
       object: await anyId(p.repoObject.findFirst()),
+      risk: await anyId(p.repoObject.findFirst({ where: { type: 'RISK', deletedAt: null } })),
+      control: await anyId(p.repoObject.findFirst({ where: { type: 'CONTROL', deletedAt: null } })),
+      requirement: await anyId(
+        p.repoObject.findFirst({ where: { type: 'REQUIREMENT', deletedAt: null } }),
+      ),
       department: await anyId(p.department.findFirst()),
       template: await anyId(p.pageTemplate.findFirst()),
       workflow: await anyId(p.workflow.findFirst()),
@@ -160,7 +171,14 @@ describe('Authorisation matrix (e2e)', () => {
 
   /** Fills route parameters with ids of real records (restricted / draft content where possible). */
   function fill(path: string, type: 'processes' | 'pages'): string {
-    const first = path.split('/')[1];
+    const [, first, second] = path.split('/');
+    const grc: Record<string, string> = {
+      risks: ids.risk,
+      controls: ids.control,
+      requirements: ids.requirement,
+      items: ids.risk,
+      processes: ids.process,
+    };
     const byPrefix: Record<string, string> = {
       processes: ids.process,
       pages: ids.page,
@@ -184,7 +202,7 @@ describe('Authorisation matrix (e2e)', () => {
       .replace(':commentId', ids.comment)
       .replace(':versionId', first === 'pages' ? ids.pageVersion : ids.processVersion)
       .replace(':linkId', first === 'pages' ? ids.pageLink : ids.processLink)
-      .replace(':id', byPrefix[first] ?? ids.process);
+      .replace(':id', (first === 'grc' ? grc[second] : byPrefix[first]) || ids.process);
   }
 
   /** Valid bodies for routes whose finer checks happen in the service (so those checks run). */

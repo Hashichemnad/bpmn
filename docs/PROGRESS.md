@@ -2,7 +2,70 @@
 
 Read this together with `CLAUDE.md` at the start of every session.
 
-## Current state — 2026-10-29 (Modeler design — Part B2: smarter modeling and reports, branch `modeler-design-b2`)
+## Current state — 2026-10-30 (Phase 4 — Part 1: GRC core, branch `phase-4-1-grc`, done — awaiting review)
+
+Everything up to Modeler design Part B2 is merged into `main`. This branch builds module M10 core: risks,
+controls and requirements linked to process steps (DOF RFP §4.5). Phase 4.2 / 4.3 items are in BACKLOG.
+
+Local setup used by this session: PostgreSQL 16 (`service postgresql start`; role `processhub` /
+`devpassword`, databases `processhub`, `processhub_test`).
+
+Steps (tick as they are committed; a new session continues at the first unticked one):
+
+- [x] 0. CLAUDE.md phase table (B2 and Phase 6 part 4 merged; Phase 6 remainder moved to the end), this plan.
+- [x] 1. Data model and permissions (D-089 – D-091): `Risk`, `Control`, `Requirement` detail tables 1:1 with
+      a `RepoObject` (types RISK / CONTROL / new REQUIREMENT), `RiskControl`, `RequirementControl`,
+      `GrcActivity` (assessment history + comments); process-level links (`#process`, kept on save);
+      permissions `grc.read` / `grc.propose` / `grc.edit` / `grc.admin`, role `RISK_OFFICER`; API `/grc/*`
+      (registers with filters incl. rating / heat-map cell / coverage, details with linked steps, timeline,
+      comments, settings, per-process view); GRC editors link GRC items without model rights; `/objects` refuses
+      GRC types (`USE_GRC_REGISTER`). Shared `grc.ts` (schemas, ratings, settings). Tests: shared 7, API 6 (+
+      authorisation matrix covers the new tables), SECURITY.md route table regenerated.
+- [x] 2. GRC workspace: menu "Risk & Compliance" (dashboard link lands in step 4), risk register, control
+      library, requirements (filters in the URL: search, status, category, rating, department, owner, overdue,
+      coverage toggles, heat-map cell, process; sorting; paging), detail pages (ratings, both matrices,
+      relations, linked steps → modeler deep link, assessment timeline + comments), create / edit / propose
+      forms EN/AR, Excel export / template / import with validation report (API `/grc/export|template|import`,
+      audited `EXPORT` / `IMPORT`), Settings → Risk & Compliance (bands, matrix labels, categories, portal
+      visibility, reminder days, live preview). Library objects of GRC types redirect to their GRC page. Demo
+      seed `seed-grc.ts` (10 risks, 12 controls, 6 requirements, links incl. published links; demo user
+      `risk@processhub.local`) — done early to have data for the UI. Tests: API import / export 1, seed, i18n keys.
+- [x] 3. Modeler and portal (D-092): side panel tab "Risks & Controls" (link / unlink, create or propose a
+      linked draft, ratings and effectiveness, alert), warning badge `ALERT` (modeler + preview), colour-by
+      "Residual risk rating" and "Risks without controls", portal visibility setting enforced on the server
+      (portal page + portal AI sources), handbook option "Risks and controls". Tests: shared 1, API 2 (portal
+      setting, handbook section).
+- [x] 4. Dashboards (D-093): Risk dashboard (scope organisation / department / process with breadcrumb), inherent
+      and residual heat maps (cell → risk list), eight coverage tiles linking to filtered registers, breakdown
+      department → process → step, steps with risks but no control, RCM Excel export (`/grc/rcm`, + coverage
+      sheets). Registers gained `scopeDepartmentId` and `alert` filters. Tests: API 1 (dashboard, scopes,
+      uncovered steps, RCM workbook).
+- [x] 5. Reviews and notifications (D-094): due / overdue reminders (`GRC_REVIEW`, scheduler, dedupe, e-mail
+      template EN/AR, preference), My tasks tab "Risk & control reviews" + menu count, overdue flags. Optional
+      approval of GRC changes through governance workflows deferred to BACKLOG (decision requested). Tests: API 1.
+- [x] 6. AI control-gap check (D-095): shared rules `detectControlGaps` + `GET /grc/processes/:id/gaps`, AI feature
+      `CONTROL_GAPS` (`POST /ai/control-gaps`, mocked provider in tests), modeler drawer "Check control gaps" with
+      Accept (link / create control) and Dismiss. Tests: shared 1, API 1.
+- [x] 7. Demo data (seed `seed-grc.ts`: 10 risks, 12 controls, 6 requirements on S.01 / S.01.01 / C.01.01, incl.
+      the critical RSK-02 whose only control is not assessed; demo user `risk@processhub.local`), Playwright
+      `grc.spec.ts` (3 tests: create risk → link in modeler → heat map and coverage; portal setting OFF / CONTROLS /
+      ALL; Excel import validation), screenshots EN/AR in `docs/screenshots/phase-4-1/` (register, risk detail,
+      modeler panel with badges, heat map, coverage dashboard, portal step), docs (README, CLAUDE.md, DECISIONS
+      D-089 – D-096, BACKLOG, SECURITY), dependency fix D-096.
+
+Verification on 2026-10-30: shared 134, web 79, API 343 tests pass; Playwright 29 tests pass (3.9 min, against the
+dev stack: API from `apps/api/dist`, Vite on 5173, `E2E_BASE_URL=http://localhost:5173`); lint, format and
+type-check clean; `pnpm audit --audit-level high --prod` clean (7 moderate); API and web Docker images build
+(built with the sandbox proxy CA through scratch Dockerfile copies — repository Dockerfiles unchanged).
+
+### Next (continue here)
+
+1. Review and merge the pull request `phase-4-1-grc` → `main`. The product owner answered the five open decisions
+   (D-097): workflow approval of GRC changes → Phase 4.2; Reviewers keep `grc.read`; portal default OFF accepted
+   (decide per process before go-live); `grc.propose` approved; warning badge per risk confirmed.
+2. Then Phase 4.2 (control testing, issues, audits — BACKLOG) or 4.3 (EA, KPIs, Salesforce).
+
+## Previous state — 2026-10-29 (Modeler design — Part B2: smarter modeling and reports, branch `modeler-design-b2`)
 
 Everything up to Modeler design Part B1 and the zod 4 upgrade is merged into `main`. Part B2 adds browser
 tests in CI, a Dictionary with label autocomplete, Quick Model (table entry), step attributes with "colour by"

@@ -23,6 +23,8 @@ export const AI_FEATURES = [
   'SUMMARISE',
   'PORTAL_QA',
   'TEST_CONNECTION',
+  /** Risk & Compliance: control gaps of a process (Phase 4.1). */
+  'CONTROL_GAPS',
 ] as const;
 export type AiFeature = (typeof AI_FEATURES)[number];
 
@@ -265,6 +267,14 @@ export const aiAnalyseSchema = z.object({
   focus: optionalPrompt,
 });
 export type AiAnalyseInput = z.infer<typeof aiAnalyseSchema>;
+
+export const aiControlGapsSchema = z.object({
+  processId: z.guid(),
+  /** The diagram as shown in the modeler (may contain unsaved changes). */
+  bpmnXml: bpmnXmlInput.optional(),
+  language: localeInput,
+});
+export type AiControlGapsInput = z.infer<typeof aiControlGapsSchema>;
 
 /** Feature 6: summarise an item, or what changed between two versions. */
 export const aiSummariseSchema = z.object({

@@ -11,6 +11,7 @@ import { NotificationsService } from '../notifications/notifications.service';
 import { APP_CONFIG, type AppConfig } from '../config/config';
 import { itemLink } from './content.service';
 import { WorkflowsService } from './workflows.service';
+import { GrcRemindersService } from '../grc/grc-reminders.service';
 
 const day = (d: Date) => d.toISOString().slice(0, 10);
 
@@ -18,6 +19,7 @@ const day = (d: Date) => d.toISOString().slice(0, 10);
  * Reminders, checked periodically in this process:
  *  - periodic review due soon (REVIEW_DUE) and overdue (REVIEW_OVERDUE, kind "periodic") → owner;
  *  - review tasks past their due date (REVIEW_OVERDUE, kind "task") → assignees.
+ *  - Risk & Compliance reviews due / overdue (GRC_REVIEW) → owner (GrcRemindersService).
  * Dedupe keys make every reminder fire once per item and date.
  */
 @Injectable()
@@ -30,6 +32,7 @@ export class GovernanceScheduler implements OnModuleInit, OnModuleDestroy {
     private readonly prisma: PrismaService,
     private readonly notifications: NotificationsService,
     private readonly workflows: WorkflowsService,
+    private readonly grcReminders: GrcRemindersService,
     @Inject(APP_CONFIG) private readonly config: AppConfig,
   ) {}
 
@@ -134,6 +137,7 @@ export class GovernanceScheduler implements OnModuleInit, OnModuleDestroy {
       await this.prisma.review.update({ where: { id: r.id }, data: { overdueNotifiedAt: now } });
       sent.tasks++;
     }
+    await this.grcReminders.runOnce(now);
     if (sent.due + sent.overdue + sent.tasks) {
       this.logger.log(
         `Reminders: ${sent.due} due, ${sent.overdue} overdue, ${sent.tasks} late reviews`,

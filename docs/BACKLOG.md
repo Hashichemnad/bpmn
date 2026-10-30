@@ -3,6 +3,20 @@
 Ideas and follow-ups noted during development, outside the current phase scope. Group by the phase
 where they belong; move items into the plan when that phase starts.
 
+## Phase 4.2 / 4.3 — after GRC core (Phase 4.1)
+
+- Control testing cycles and evidence (test plans, samples, results, attachments), issues and action plans,
+  audit management, compliance questionnaires / surveys.
+- **Phase 4.2 (decided D-097):** optional approval of changes to active risks and controls through the Phase 3
+  governance workflows (configurable per object type, default off; needs versions and review rounds for library
+  objects — D-094). Not needed before go-live.
+- IT architecture (applications, interfaces, data objects — M11), KPIs and dashboards (M12), Salesforce KPI link,
+  Oracle Fusion Risk Management overlay.
+- Ratings are computed in memory for lists and dashboards (D-089); store scores if registers grow far beyond a few
+  thousand items. Heat map of a single risk's history (trend), risk appetite per category.
+- Portal: a requirement view per process (only process-level requirements; currently not shown in the portal).
+- Import of risk ↔ control links from the control sheet (today: from the risk sheet's "Controls" column).
+
 ## Modeler design — after Part B2
 
 Part A (colours, D-067 – D-073), Part B1 (full-screen workspace and productivity, D-074 – D-081) and Part B2

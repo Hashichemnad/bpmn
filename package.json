@@ -2,7 +2,7 @@
   "name": "processhub",
   "private": true,
   "version": "0.1.0",
-  "description": "ProcessHub — bilingual (Arabic/English) business process management platform",
+  "description": "ProcessHub \u2014 bilingual (Arabic/English) business process management platform",
   "packageManager": "pnpm@10.28.0",
   "engines": {
     "node": ">=22.12"
@@ -46,7 +46,8 @@
       "tinypool@<2.1.2": "^2.1.2",
       "js-yaml@>=5.0.0 <5.4.1": "^5.4.1",
       "body-parser@>=2.0.0 <2.4.0": "^2.4.0",
-      "multer@>=2.0.0 <2.5.0": "^2.5.0"
+      "multer@>=2.0.0 <2.5.0": "^2.5.0",
+      "decode-uri-component@<0.5.1": "^0.5.1"
     },
     "ignoredBuiltDependencies": [
       "@scarf/scarf"

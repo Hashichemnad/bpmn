@@ -122,7 +122,12 @@ describe('Models, versions, objects and links (e2e)', () => {
     expect(updated.descriptionAr).toBe('وصف');
     await modeler.post('/objects').send({ type: 'ALIEN', nameEn: 'X' }).expect(400);
     // Other object types are supported by the data model already
-    await modeler.post('/objects').send({ type: 'RISK', nameEn: 'Fraud' }).expect(201);
+    await modeler.post('/objects').send({ type: 'KPI', nameEn: 'Lead time' }).expect(201);
+    // Risks, controls and requirements live in the Risk & Compliance registers (D-089).
+    for (const type of ['RISK', 'CONTROL', 'REQUIREMENT']) {
+      const res = await modeler.post('/objects').send({ type, nameEn: 'Fraud' }).expect(400);
+      expect(res.body.code).toBe('USE_GRC_REGISTER');
+    }
     const viewer = await loggedIn(ctx.app, 'viewer@test.local');
     await viewer.get(`/objects/${created.id}`).expect(200);
     await viewer.patch(`/objects/${created.id}`).send({ nameEn: 'X' }).expect(403);

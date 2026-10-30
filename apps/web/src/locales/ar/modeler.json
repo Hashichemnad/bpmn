@@ -303,7 +303,13 @@
     "COMMENT_two": "تعليقان مفتوحان",
     "COMMENT_few": "{{count}} تعليقات مفتوحة",
     "COMMENT_many": "{{count}} تعليقًا مفتوحًا",
-    "COMMENT_other": "{{count}} تعليق مفتوح"
+    "COMMENT_other": "{{count}} تعليق مفتوح",
+    "ALERT_one": "خطر مرتفع واحد دون ضابط فعّال",
+    "ALERT_other": "{{count}} مخاطر مرتفعة دون ضابط فعّال",
+    "ALERT_zero": "{{count}} مخاطر مرتفعة دون ضابط فعّال",
+    "ALERT_two": "{{count}} مخاطر مرتفعة دون ضابط فعّال",
+    "ALERT_few": "{{count}} مخاطر مرتفعة دون ضابط فعّال",
+    "ALERT_many": "{{count}} مخاطر مرتفعة دون ضابط فعّال"
   },
   "preview": {
     "title": "المخطط",
@@ -443,7 +449,9 @@
       "system": "نظام تقنية المعلومات",
       "type": "نوع الخطوة",
       "duration": "المدة المخططة",
-      "missing": "معلومات ناقصة"
+      "missing": "معلومات ناقصة",
+      "riskRating": "تقييم الخطر المتبقي",
+      "riskControl": "مخاطر بلا ضوابط"
     },
     "categories": {
       "none": "غير محدد",
@@ -465,6 +473,11 @@
       "missing": {
         "complete": "الدور والوصف محددان",
         "incomplete": "معلومات ناقصة"
+      },
+      "riskControl": {
+        "noRisk": "لا يوجد خطر مرتبط",
+        "uncovered": "خطر دون ضابط",
+        "covered": "خطر مع ضوابط"
       }
     },
     "missingRole_zero": "لا توجد خطوات بلا دور",

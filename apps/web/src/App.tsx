@@ -47,6 +47,10 @@ import { PortalSettingsPage } from '@/features/portal/PortalSettingsPage';
 import { ConventionsSettingsPage } from '@/features/settings/ConventionsSettingsPage';
 import { PortalPrintProcess } from '@/features/portal/PortalPrintProcess';
 import { PortalPrintPage } from '@/features/portal/PortalPrintPage';
+import { GrcRegisterPage } from '@/features/grc/GrcRegisterPage';
+import { GrcDetailPage } from '@/features/grc/GrcDetailPage';
+import { GrcSettingsPage } from '@/features/grc/GrcSettingsPage';
+import { GrcDashboardPage } from '@/features/grc/GrcDashboardPage';
 
 const P = PERMISSIONS;
 
@@ -159,6 +163,70 @@ export const routes: RouteObject[] = [
                     element: (
                       <RequirePermission all={[P.PORTAL_MANAGE]}>
                         <PortalSettingsPage />
+                      </RequirePermission>
+                    ),
+                  },
+                  {
+                    path: 'grc/dashboard',
+                    element: (
+                      <RequirePermission all={[P.GRC_READ]}>
+                        <GrcDashboardPage />
+                      </RequirePermission>
+                    ),
+                  },
+                  {
+                    path: 'grc/risks',
+                    element: (
+                      <RequirePermission all={[P.GRC_READ]}>
+                        <GrcRegisterPage key="RISK" type="RISK" />
+                      </RequirePermission>
+                    ),
+                  },
+                  {
+                    path: 'grc/risks/:id',
+                    element: (
+                      <RequirePermission all={[P.GRC_READ]}>
+                        <GrcDetailPage key="RISK" type="RISK" />
+                      </RequirePermission>
+                    ),
+                  },
+                  {
+                    path: 'grc/controls',
+                    element: (
+                      <RequirePermission all={[P.GRC_READ]}>
+                        <GrcRegisterPage key="CONTROL" type="CONTROL" />
+                      </RequirePermission>
+                    ),
+                  },
+                  {
+                    path: 'grc/controls/:id',
+                    element: (
+                      <RequirePermission all={[P.GRC_READ]}>
+                        <GrcDetailPage key="CONTROL" type="CONTROL" />
+                      </RequirePermission>
+                    ),
+                  },
+                  {
+                    path: 'grc/requirements',
+                    element: (
+                      <RequirePermission all={[P.GRC_READ]}>
+                        <GrcRegisterPage key="REQUIREMENT" type="REQUIREMENT" />
+                      </RequirePermission>
+                    ),
+                  },
+                  {
+                    path: 'grc/requirements/:id',
+                    element: (
+                      <RequirePermission all={[P.GRC_READ]}>
+                        <GrcDetailPage key="REQUIREMENT" type="REQUIREMENT" />
+                      </RequirePermission>
+                    ),
+                  },
+                  {
+                    path: 'settings/grc',
+                    element: (
+                      <RequirePermission all={[P.GRC_ADMIN]}>
+                        <GrcSettingsPage />
                       </RequirePermission>
                     ),
                   },

@@ -180,7 +180,8 @@
       "returned": "أُعيد إليّ",
       "dueReviews": "مواعيد المراجعة",
       "mentions": "الإشارات",
-      "feedback": "الملاحظات"
+      "feedback": "الملاحظات",
+      "grcReviews": "مراجعات المخاطر والضوابط"
     },
     "empty": {
       "reviews": "لا توجد مراجعات بانتظارك.",
@@ -188,7 +189,8 @@
       "returned": "لم يُعد إليك أي طلب.",
       "dueReviews": "لا يوجد من عناصرك ما تستحق مراجعته.",
       "mentions": "لا توجد إشارات غير مقروءة.",
-      "feedback": "لا توجد ملاحظات مفتوحة."
+      "feedback": "لا توجد ملاحظات مفتوحة.",
+      "grcReviews": "لا توجد مخاطر أو ضوابط أو متطلبات لديك مستحقة المراجعة."
     },
     "item": "العنصر",
     "version": "الإصدار",
@@ -321,7 +323,10 @@
       "REVIEW_OVERDUE_periodic": "تأخرت المراجعة الدورية لـ {{title}} (الموعد {{due}})",
       "REVIEW_DUE": "موعد المراجعة الدورية لـ {{title}} هو {{due}}",
       "FEEDBACK_RECEIVED": "أرسل {{actor}} ملاحظة ({{kind}}) على {{title}}",
-      "FEEDBACK_UPDATED": "حالة ملاحظتك على {{title}} الآن: {{status}}"
+      "FEEDBACK_UPDATED": "حالة ملاحظتك على {{title}} الآن: {{status}}",
+      "GRC_REVIEW_due": "موعد المراجعة {{due}}: {{title}}",
+      "GRC_REVIEW_overdue": "المراجعة متأخرة منذ {{due}}: {{title}}",
+      "GRC_REVIEW": "موعد المراجعة {{due}}: {{title}}"
     }
   },
   "prefs": {
@@ -341,7 +346,8 @@
       "REVIEW_OVERDUE": "مراجعة متأخرة",
       "REVIEW_DUE": "مراجعة دورية مستحقة قريباً",
       "FEEDBACK_RECEIVED": "ملاحظات من البوابة على عناصري",
-      "FEEDBACK_UPDATED": "تحديثات على ملاحظات أرسلتها"
+      "FEEDBACK_UPDATED": "تحديثات على ملاحظات أرسلتها",
+      "GRC_REVIEW": "مواعيد مراجعة المخاطر والامتثال"
     }
   },
   "feedback": {

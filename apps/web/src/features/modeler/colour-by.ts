@@ -1,5 +1,7 @@
 import {
   durationBand,
+  type GrcBand,
+  type StepGrcSummary,
   readStepAttributes,
   type DurationBand,
   type ObjectLinkDto,
@@ -16,7 +18,17 @@ import { rowTypeOf } from './quick-model';
  * (BPMN-in-Color) never change: each shape gets a canvas marker class and a generated stylesheet
  * paints the marker classes over the stored colours; turning the view off removes the markers.
  */
-export const COLOUR_BY_MODES = ['none', 'role', 'system', 'type', 'duration', 'missing'] as const;
+export const COLOUR_BY_MODES = [
+  'none',
+  'role',
+  'system',
+  'type',
+  'duration',
+  'missing',
+  // Risk & Compliance (Phase 4.1): highest residual rating, steps with risks but no control.
+  'riskRating',
+  'riskControl',
+] as const;
 export type ColourByMode = (typeof COLOUR_BY_MODES)[number];
 
 export interface LegendItem {
@@ -59,6 +71,9 @@ const FIXED: Record<string, { fill: string; stroke: string }> = {
   'duration:long': { fill: '#FFE4E6', stroke: '#BE123C' },
   'missing:complete': { fill: '#DCFCE7', stroke: '#15803D' },
   'missing:incomplete': { fill: '#FEE2E2', stroke: '#DC2626' },
+  'riskControl:noRisk': NONE,
+  'riskControl:uncovered': { fill: '#FEE2E2', stroke: '#DC2626' },
+  'riskControl:covered': { fill: '#DCFCE7', stroke: '#15803D' },
 };
 
 /** What a step lacks in the "missing information" view. */
@@ -69,6 +84,8 @@ export interface ColourByContext {
   locale: 'en' | 'ar';
   /** Translates the fixed category keys (`type:task`, `missing:incomplete`, …) and "none". */
   label: (key: string) => string;
+  /** Risks and controls per step with the rating bands (risk views). */
+  grc?: { steps: Map<string, StepGrcSummary>; bands: GrcBand[] };
 }
 
 export interface ColourByResult {
@@ -89,7 +106,7 @@ function categoryOf(
   ctx: ColourByContext,
   registry: ElementRegistry,
   missing: Map<string, MissingInfo[]>,
-): { key: string; label: string } | null {
+): { key: string; label: string; colour?: { fill: string; stroke: string } } | null {
   const isStep = isActivityElement(el);
   const linksOf = (rel: string) =>
     ctx.links.filter((l) => l.bpmnElementId === el.id && l.relation === rel);
@@ -127,6 +144,27 @@ function categoryOf(
       }).values.durationMinutes;
       const band: DurationBand = durationBand(minutes);
       return { key: `duration:${band}`, label: ctx.label(`duration:${band}`) };
+    }
+    case 'riskRating': {
+      if (!isStep) return null;
+      const sum = ctx.grc?.steps.get(el.id);
+      const band = ctx.grc?.bands.find((b) => b.key === sum?.maxResidualBand);
+      if (!band) return { key: 'riskControl:noRisk', label: ctx.label('riskControl:noRisk') };
+      return {
+        key: `band:${band.key}`,
+        label: ctx.locale === 'ar' ? band.nameAr : band.nameEn,
+        colour: { fill: `${band.colour}59`, stroke: band.colour },
+      };
+    }
+    case 'riskControl': {
+      if (!isStep) return null;
+      const sum = ctx.grc?.steps.get(el.id);
+      const key = !sum?.risks
+        ? 'riskControl:noRisk'
+        : sum.uncovered
+          ? 'riskControl:uncovered'
+          : 'riskControl:covered';
+      return { key, label: ctx.label(key) };
     }
     case 'missing': {
       if (!isStep) return null;
@@ -176,6 +214,7 @@ export function planColourBy(
     let item = legend.get(cat.key);
     if (!item) {
       const c =
+        cat.colour ??
         FIXED[cat.key] ??
         (cat.key === 'none' ? NONE : CATEGORY_COLOURS[next++ % CATEGORY_COLOURS.length]);
       item = { key: cat.key, label: cat.label, ...c, count: 0 };
@@ -191,7 +230,9 @@ export function planColourBy(
   items.sort(
     (a, b) =>
       Number(a.key === 'none') - Number(b.key === 'none') ||
-      (mode === 'type' || mode === 'duration' || mode === 'missing' ? 0 : b.count - a.count),
+      (['type', 'duration', 'missing', 'riskRating', 'riskControl'].includes(mode)
+        ? 0
+        : b.count - a.count),
   );
   return { legend: items, missing, classes, colours };
 }

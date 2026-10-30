@@ -1,3 +1,4 @@
+import type { GrcReviewTaskDto } from './grc';
 import type { DiagramTheme } from './diagram-theme';
 import type {
   AuditAction,
@@ -698,6 +699,8 @@ export interface MyTasksDto {
   dueReviews: GovernedItemDto[];
   mentions: NotificationDto[];
   feedback: FeedbackDto[];
+  /** Risks, controls and requirements the user owns whose review is due or overdue (Phase 4.1). */
+  grcReviews: GrcReviewTaskDto[];
 }
 
 export interface GovernanceDashboardDto {

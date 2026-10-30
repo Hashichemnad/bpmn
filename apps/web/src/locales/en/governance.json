@@ -177,7 +177,8 @@
       "returned": "Returned to me",
       "dueReviews": "Review dates",
       "mentions": "Mentions",
-      "feedback": "Feedback"
+      "feedback": "Feedback",
+      "grcReviews": "Risk & control reviews"
     },
     "empty": {
       "reviews": "No reviews are waiting for you.",
@@ -185,7 +186,8 @@
       "returned": "None of your submissions came back.",
       "dueReviews": "None of your items is due for review.",
       "mentions": "No unread mentions.",
-      "feedback": "No open feedback."
+      "feedback": "No open feedback.",
+      "grcReviews": "None of your risks, controls or requirements is due for review."
     },
     "item": "Item",
     "version": "Version",
@@ -306,7 +308,10 @@
       "REVIEW_OVERDUE_periodic": "The periodic review of {{title}} is overdue (due {{due}})",
       "REVIEW_DUE": "{{title}} is due for its periodic review on {{due}}",
       "FEEDBACK_RECEIVED": "{{actor}} sent feedback ({{kind}}) on {{title}}",
-      "FEEDBACK_UPDATED": "Your feedback on {{title}} is now: {{status}}"
+      "FEEDBACK_UPDATED": "Your feedback on {{title}} is now: {{status}}",
+      "GRC_REVIEW_due": "Review due on {{due}}: {{title}}",
+      "GRC_REVIEW_overdue": "Review overdue since {{due}}: {{title}}",
+      "GRC_REVIEW": "Review due on {{due}}: {{title}}"
     }
   },
   "prefs": {
@@ -326,7 +331,8 @@
       "REVIEW_OVERDUE": "A review is overdue",
       "REVIEW_DUE": "A periodic review is due soon",
       "FEEDBACK_RECEIVED": "Portal feedback on my items",
-      "FEEDBACK_UPDATED": "Updates on feedback I sent"
+      "FEEDBACK_UPDATED": "Updates on feedback I sent",
+      "GRC_REVIEW": "Risk & Compliance review dates"
     }
   },
   "feedback": {

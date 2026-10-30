@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link, useNavigate, useParams } from 'react-router-dom';
+import { Link, Navigate, useNavigate, useParams } from 'react-router-dom';
 import { App, Button, Card, Col, Descriptions, Flex, Row, Table, Tag, Typography } from 'antd';
 import {
   CheckOutlined,
@@ -9,7 +9,8 @@ import {
   FormOutlined,
 } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
-import type { ObjectUsageDto } from '@processhub/shared';
+import { isGrcObjectType, type ObjectUsageDto } from '@processhub/shared';
+import { grcItemPath } from '@/features/grc/grc-helpers';
 import { useObject, useObjectUsage } from '@/api/hooks';
 import { useApproveTerm } from '@/api/dictionary';
 import { PageHeader } from '@/components/PageHeader';
@@ -53,6 +54,8 @@ export function ObjectDetailPage() {
   if (object.isError || !object.data)
     return <ErrorState error={object.error} onRetry={() => void object.refetch()} />;
   const o = object.data;
+  // Risks, controls and requirements have their own pages (Risk & Compliance).
+  if (isGrcObjectType(o.type)) return <Navigate to={grcItemPath(o.type, o.id)} replace />;
   const libraryPath = LIBRARY_PATH[o.type];
   const attributes = Object.entries(o.attributes);
   const isTerm = o.type === 'TERM';

@@ -28,6 +28,7 @@ export function ReportDialog({ kind, process, hasChildren, publishedOnly, onClos
     locale: Locale;
     source: ReportSource;
     includeChildren: boolean;
+    includeRisks: boolean;
   }>();
   const [submitting, setSubmitting] = useState(false);
 
@@ -40,6 +41,7 @@ export function ReportDialog({ kind, process, hasChildren, publishedOnly, onClos
         ? await reports.handbook({
             processId: process.id,
             includeChildren: !!v.includeChildren,
+            includeRisks: !!v.includeRisks,
             source,
             locale: v.locale,
           })
@@ -88,6 +90,11 @@ export function ReportDialog({ kind, process, hasChildren, publishedOnly, onClos
         {kind === 'handbook' && hasChildren && (
           <Form.Item name="includeChildren" valuePropName="checked">
             <Checkbox>{t('processes:reports.includeChildren')}</Checkbox>
+          </Form.Item>
+        )}
+        {kind === 'handbook' && (
+          <Form.Item name="includeRisks" valuePropName="checked">
+            <Checkbox>{t('processes:reports.includeRisks')}</Checkbox>
           </Form.Item>
         )}
       </Form>

@@ -2,6 +2,9 @@ import { Injectable } from '@nestjs/common';
 import type { Prisma } from '@prisma/client';
 import {
   DEFAULT_RELATION_FOR_TYPE,
+  PERMISSIONS,
+  PROCESS_ELEMENT_ID,
+  isGrcObjectType,
   SETTING_KEYS,
   editBlockedReason,
   extractBpmnElementIds,
@@ -119,7 +122,8 @@ export class ModelsService {
         update: { bpmnXml, updatedById: actor.id },
       });
       const pruned = await tx.objectLink.deleteMany({
-        where: { processId, bpmnElementId: { notIn: ids } },
+        // Links to the process as a whole (requirements, D-089) have no element.
+        where: { processId, bpmnElementId: { notIn: [...ids, PROCESS_ELEMENT_ID] } },
       });
       const laneRoles = await this.syncLaneRoleLinks(tx, processId, bpmnXml, actor.id);
       const labelRefs = await this.syncLabelRefLinks(tx, processId, bpmnXml, actor.id);
@@ -436,12 +440,29 @@ export class ModelsService {
     }));
   }
 
+  /**
+   * Model editors link anything; Risk & Compliance editors (`grc.edit`) link risks, controls and
+   * requirements to any process (D-091). The governance lock applies to both.
+   */
+  private async assertCanLink(processId: string, actor: AuthUser, type: string) {
+    const p = await this.processes.findActive(processId);
+    const grc = isGrcObjectType(type) && actor.permissions.has(PERMISSIONS.GRC_EDIT);
+    if (!canEditModel(actor, p) && !grc) throw forbidden('You cannot edit this model');
+    if (isGrcObjectType(type) && !grc && !actor.permissions.has(PERMISSIONS.GRC_PROPOSE))
+      throw forbidden('You cannot link risks and controls');
+    await assertEditable(this.prisma, 'PROCESS', processId);
+  }
+
   async createLink(processId: string, input: CreateLinkInput, actor: AuthUser, meta: RequestMeta) {
-    await this.assertCanChange(processId, actor);
+    await this.processes.findActive(processId);
     const obj = await this.prisma.repoObject.findFirst({
       where: { id: input.repoObjectId, deletedAt: null },
     });
-    if (!obj) throw badRequest('OBJECT_NOT_FOUND');
+    if (!obj) {
+      await this.assertCanChange(processId, actor);
+      throw badRequest('OBJECT_NOT_FOUND');
+    }
+    await this.assertCanLink(processId, actor, obj.type);
     const relation = input.relation ?? DEFAULT_RELATION_FOR_TYPE[obj.type as ObjectType];
     const existing = await this.prisma.objectLink.findFirst({
       where: { processId, bpmnElementId: input.bpmnElementId, repoObjectId: obj.id, relation },
@@ -480,9 +501,16 @@ export class ModelsService {
   }
 
   async deleteLink(processId: string, linkId: string, actor: AuthUser, meta: RequestMeta) {
-    await this.assertCanChange(processId, actor);
-    const link = await this.prisma.objectLink.findFirst({ where: { id: linkId, processId } });
-    if (!link) throw notFound('Link');
+    await this.processes.findActive(processId);
+    const link = await this.prisma.objectLink.findFirst({
+      where: { id: linkId, processId },
+      include: { repoObject: { select: { type: true } } },
+    });
+    if (!link) {
+      await this.assertCanChange(processId, actor);
+      throw notFound('Link');
+    }
+    await this.assertCanLink(processId, actor, link.repoObject.type);
     await this.prisma.$transaction(async (tx) => {
       await tx.objectLink.delete({ where: { id: linkId } });
       await markEdited(tx, 'PROCESS', processId, actor.id);

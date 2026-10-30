@@ -31,7 +31,9 @@ export function useNotificationText() {
       const key =
         n.type === 'REVIEW_OVERDUE'
           ? `REVIEW_OVERDUE_${p.kind === 'periodic' ? 'periodic' : 'task'}`
-          : n.type;
+          : n.type === 'GRC_REVIEW'
+            ? `GRC_REVIEW_${p.kind === 'overdue' ? 'overdue' : 'due'}`
+            : n.type;
       return {
         title: t(`governance:notifications.title.${key}`, values),
         detail: values.comment || values.reply || '',
