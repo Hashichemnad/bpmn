@@ -60,9 +60,9 @@ type-check clean; `pnpm audit --audit-level high --prod` clean (7 moderate); API
 
 ### Next (continue here)
 
-1. Review and merge the pull request `phase-4-1-grc` → `main`; decisions for the product owner are listed in the
-   pull request (approval of GRC changes through workflows, Reviewer read access, portal default OFF hides
-   earlier risk / control links, `grc.propose` permission).
+1. Review and merge the pull request `phase-4-1-grc` → `main`. The product owner answered the five open decisions
+   (D-097): workflow approval of GRC changes → Phase 4.2; Reviewers keep `grc.read`; portal default OFF accepted
+   (decide per process before go-live); `grc.propose` approved; warning badge per risk confirmed.
 2. Then Phase 4.2 (control testing, issues, audits — BACKLOG) or 4.3 (EA, KPIs, Salesforce).
 
 ## Previous state — 2026-10-29 (Modeler design — Part B2: smarter modeling and reports, branch `modeler-design-b2`)

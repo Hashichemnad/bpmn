@@ -1074,3 +1074,16 @@ decode-uri-component 0.2.2`, also on `main`; no MinIO release avoids it. Root `p
   `decode-uri-component@<0.5.1` to `^0.5.1` (ESM-only). MinIO uses only `query-string.stringify` (the decoder is
   never called); Node 22 loads the ES module through `require(esm)`, verified in the production API image, and the
   API Jest config compiles it like `openid-client`. Remove the override when MinIO drops `query-string` 7.
+
+## D-097 — Product owner decisions on Phase 4.1 (2026-10-30)
+
+1. **Approval of changes to active risks and controls** through the governance workflows moves to **Phase 4.2**;
+   it is not needed before go-live (BACKLOG, Phase 4.2). Today new proposals stay drafts until a Risk & Compliance
+   officer activates them (D-094).
+2. **Reviewers keep `grc.read`**: they need the risk context when they approve processes (D-090).
+3. **The portal hides risks and controls by default** (`grc.portalVisibility` = OFF): accepted — there is no real
+   content yet and hidden is the safe default; the setting will be decided before go-live (D-092).
+4. **`grc.propose` for Process Owners and Modelers** is approved: they only propose drafts; the officer activates
+   them (D-090).
+5. **Warning badge per risk**: confirmed — the badge checks each risk's own mitigating controls; a control on the
+   same step that does not mitigate that risk must not hide the warning (D-092).

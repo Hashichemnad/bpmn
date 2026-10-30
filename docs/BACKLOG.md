@@ -7,8 +7,9 @@ where they belong; move items into the plan when that phase starts.
 
 - Control testing cycles and evidence (test plans, samples, results, attachments), issues and action plans,
   audit management, compliance questionnaires / surveys.
-- Optional approval of changes to active risks and controls through the Phase 3 governance workflows
-  (configurable per object type, default off; needs versions and review rounds for library objects — D-094).
+- **Phase 4.2 (decided D-097):** optional approval of changes to active risks and controls through the Phase 3
+  governance workflows (configurable per object type, default off; needs versions and review rounds for library
+  objects — D-094). Not needed before go-live.
 - IT architecture (applications, interfaces, data objects — M11), KPIs and dashboards (M12), Salesforce KPI link,
   Oracle Fusion Risk Management overlay.
 - Ratings are computed in memory for lists and dashboards (D-089); store scores if registers grow far beyond a few
