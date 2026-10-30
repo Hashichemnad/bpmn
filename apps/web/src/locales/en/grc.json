@@ -72,7 +72,11 @@
     "commentHint": "Saved in the history with rating or effectiveness changes",
     "textEn": "Text (English)",
     "textAr": "Text (Arabic)",
-    "residualHint": "Leave empty until the controls are assessed — the inherent rating applies"
+    "residualHint": "Leave empty until the controls are assessed — the inherent rating applies",
+    "operatingEffectiveness": "Tested effectiveness",
+    "selfAssessed": "Self-assessed effectiveness",
+    "counts": "(counts)",
+    "testOverdue": "Test overdue"
   },
   "status": {
     "DRAFT": "Draft",
@@ -125,7 +129,8 @@
     "keyOnly": "Key controls only",
     "cell": "Heat-map cell: likelihood {{likelihood}}, impact {{impact}} ({{matrix}})",
     "clear": "Clear filters",
-    "process": "Linked to process"
+    "process": "Linked to process",
+    "testOverdue": "Tested result overdue"
   },
   "detail": {
     "linkedSteps": "Linked process steps",
@@ -192,7 +197,11 @@
       "RESIDUAL_PAIR": "Residual likelihood and impact go together",
       "INVALID_URL": "Must start with http:// or https://",
       "INVALID_KEY": "Invalid key"
-    }
+    },
+    "pendingApproval_one": "{{count}} change of an active item waits for approval.",
+    "pendingApproval_other": "{{count}} changes of active items wait for approval as one batch.",
+    "willNeedApproval_one": "{{count}} row changes an active item and will wait for approval.",
+    "willNeedApproval_other": "{{count}} rows change active items and will wait for approval as one batch; new items are imported as drafts."
   },
   "matrix": {
     "likelihood": "Likelihood",
@@ -252,7 +261,8 @@
       "requirementsWithoutControls": "Requirements without controls",
       "stepsWithRiskNoControl": "Steps with risks but no control",
       "processesWithRiskNoControl": "Processes with risks but no control",
-      "overdueReviews": "Overdue reviews"
+      "overdueReviews": "Overdue reviews",
+      "testsOverdue": "Tested results older than one test cycle"
     },
     "heatHint_one": "{{count}} active risk. Click a cell to list its risks.",
     "heatHint_other": "{{count}} active risks. Click a cell to list its risks.",

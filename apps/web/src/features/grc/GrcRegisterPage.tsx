@@ -58,6 +58,7 @@ const FILTER_KEYS = [
   'effectiveness',
   'keyControl',
   'keyAttention',
+  'testOverdue',
   'level',
   'parentId',
   'scopeDepartmentId',
@@ -73,6 +74,7 @@ const TOGGLES: Record<GrcObjectType, { key: string; label: string }[]> = {
     { key: 'overdue', label: 'grc:filters.overdue' },
     { key: 'keyControl', label: 'grc:filters.keyOnly' },
     { key: 'keyAttention', label: 'grc:filters.keyAttention' },
+    { key: 'testOverdue', label: 'grc:filters.testOverdue' },
   ],
   REQUIREMENT: [{ key: 'withoutControls', label: 'grc:filters.withoutControls' }],
 };

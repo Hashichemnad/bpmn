@@ -51,6 +51,19 @@ import { GrcRegisterPage } from '@/features/grc/GrcRegisterPage';
 import { GrcDetailPage } from '@/features/grc/GrcDetailPage';
 import { GrcSettingsPage } from '@/features/grc/GrcSettingsPage';
 import { GrcDashboardPage } from '@/features/grc/GrcDashboardPage';
+import { ControlTestsPage } from '@/features/assurance/ControlTestsPage';
+import { ControlTestPage } from '@/features/assurance/ControlTestPage';
+import { IssuesPage } from '@/features/assurance/IssuesPage';
+import { IssuePage } from '@/features/assurance/IssuePage';
+import { PortalTasksPage } from '@/features/assurance/PortalTasksPage';
+import { AuditPlanPage } from '@/features/assurance/AuditPlanPage';
+import { EngagementPage } from '@/features/assurance/EngagementPage';
+import { FindingPage } from '@/features/assurance/FindingPage';
+import { SurveysPage } from '@/features/assurance/SurveysPage';
+import { QuestionnaireBuilderPage } from '@/features/assurance/QuestionnaireBuilderPage';
+import { CampaignPage } from '@/features/assurance/CampaignPage';
+import { SurveyResponsePage } from '@/features/assurance/SurveyResponsePage';
+import { AssuranceDashboardPage } from '@/features/assurance/AssuranceDashboardPage';
 
 const P = PERMISSIONS;
 
@@ -104,6 +117,10 @@ export const routes: RouteObject[] = [
               { path: 'my', element: <MyProcessesPage /> },
               { path: 'feedback', element: <MyFeedbackPage /> },
               { path: 'notifications', element: <NotificationsPage /> },
+              { path: 'tasks', element: <PortalTasksPage /> },
+              { path: 'issues/:id', element: <IssuePage portal /> },
+              { path: 'findings/:id', element: <FindingPage portal /> },
+              { path: 'surveys/:id', element: <SurveyResponsePage portal /> },
               { path: 'profile', element: <ProfilePage /> },
               { path: '*', element: <NotFound /> },
             ],
@@ -222,6 +239,77 @@ export const routes: RouteObject[] = [
                       </RequirePermission>
                     ),
                   },
+                  {
+                    path: 'grc/assurance',
+                    element: (
+                      <RequirePermission any={[P.GRC_READ, P.AUDIT_MANAGE, P.ISSUES_MANAGE]}>
+                        <AssuranceDashboardPage />
+                      </RequirePermission>
+                    ),
+                  },
+                  {
+                    path: 'grc/tests',
+                    element: (
+                      <RequirePermission all={[P.GRC_READ]}>
+                        <ControlTestsPage />
+                      </RequirePermission>
+                    ),
+                  },
+                  {
+                    path: 'grc/tests/:id',
+                    element: (
+                      <RequirePermission any={[P.GRC_READ, P.CONTROLS_TEST, P.CONTROLS_REVIEW]}>
+                        <ControlTestPage />
+                      </RequirePermission>
+                    ),
+                  },
+                  {
+                    path: 'grc/issues',
+                    element: (
+                      <RequirePermission any={[P.GRC_READ, P.ISSUES_MANAGE]}>
+                        <IssuesPage />
+                      </RequirePermission>
+                    ),
+                  },
+                  // Owners of an issue or an action reach it without the registers (checked on the server).
+                  { path: 'grc/issues/:id', element: <IssuePage /> },
+                  {
+                    path: 'grc/audits',
+                    element: (
+                      <RequirePermission any={[P.AUDIT_MANAGE, P.GRC_EDIT, P.AUDIT_READ]}>
+                        <AuditPlanPage />
+                      </RequirePermission>
+                    ),
+                  },
+                  {
+                    path: 'grc/audits/:id',
+                    element: (
+                      <RequirePermission any={[P.AUDIT_MANAGE, P.GRC_EDIT, P.AUDIT_READ]}>
+                        <EngagementPage />
+                      </RequirePermission>
+                    ),
+                  },
+                  // Response owners answer their finding without the audit workspace.
+                  { path: 'grc/findings/:id', element: <FindingPage /> },
+                  {
+                    path: 'grc/surveys',
+                    element: (
+                      <RequirePermission all={[P.SURVEYS_MANAGE]}>
+                        <SurveysPage />
+                      </RequirePermission>
+                    ),
+                  },
+                  {
+                    path: 'grc/surveys/questionnaires/:id',
+                    element: (
+                      <RequirePermission all={[P.SURVEYS_MANAGE]}>
+                        <QuestionnaireBuilderPage />
+                      </RequirePermission>
+                    ),
+                  },
+                  // Process feedback requests are also followed by the editors of the process.
+                  { path: 'grc/surveys/campaigns/:id', element: <CampaignPage /> },
+                  { path: 'surveys/:id', element: <SurveyResponsePage /> },
                   {
                     path: 'settings/grc',
                     element: (

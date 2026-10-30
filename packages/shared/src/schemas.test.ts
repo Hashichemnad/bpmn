@@ -90,8 +90,10 @@ describe('system roles', () => {
       .map(([k]) => k);
     expect(holders).toEqual(['SUPER_ADMIN']);
   });
-  it('viewer is read-only', () => {
-    expect(SYSTEM_ROLES.VIEWER.permissions.every((p) => p.endsWith('.read'))).toBe(true);
+  it('viewer is read-only (answering questionnaires sent to them is its only write, D-102)', () => {
+    expect(
+      SYSTEM_ROLES.VIEWER.permissions.every((p) => p.endsWith('.read') || p === 'surveys.respond'),
+    ).toBe(true);
   });
 });
 

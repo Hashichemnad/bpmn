@@ -18,7 +18,7 @@ import { createPublication, type StepSnapshot } from '../src/governance/publicat
 import { linearXml } from './demo-diagrams';
 
 const DEMO_USERS: {
-  key: 'viewer' | 'reviewer' | 'owner' | 'modeler' | 'auditor' | 'risk';
+  key: 'viewer' | 'reviewer' | 'owner' | 'modeler' | 'auditor' | 'risk' | 'audit';
   role: SystemRoleKey;
   nameEn: string;
   nameAr: string;
@@ -64,6 +64,13 @@ const DEMO_USERS: {
     role: 'RISK_OFFICER',
     nameEn: 'Rana Risk Officer',
     nameAr: 'رنا مسؤولة المخاطر',
+    department: 'RSK',
+  },
+  {
+    key: 'audit',
+    role: 'INTERNAL_AUDIT',
+    nameEn: 'Iman Internal Audit',
+    nameAr: 'إيمان التدقيق الداخلي',
     department: 'RSK',
   },
 ];

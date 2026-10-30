@@ -1087,3 +1087,173 @@ decode-uri-component 0.2.2`, also on `main`; no MinIO release avoids it. Root `p
    them (D-090).
 5. **Warning badge per risk**: confirmed — the badge checks each risk's own mitigating controls; a control on the
    same step that does not mitigate that risk must not hide the warning (D-092).
+
+## D-098 — Approval of changes to active risks and controls (Phase 4.2, 2026-10-30)
+
+- **Setting** `grc.changeApproval` `{ enabled, types, workflowId }`: off by default (stored settings from Phase 4.1 stay
+  valid); once enabled it covers risks and controls unless one type is unticked. The workflow is the one chosen in
+  Settings → Risk & Compliance, else the governance default workflow; without one the change is refused
+  (`NO_WORKFLOW`).
+- **What is routed**: every update of a risk / control whose status is not DRAFT (ratings, owner, description,
+  relations, effectiveness, retirement via status). Drafts edit freely. Excel imports by Risk & Compliance editors
+  still apply directly (bulk administration, audited `IMPORT`); deletion stays a `grc.admin` action.
+- **Model**: `GrcChange` (proposed input as sent, `fields` = before / after at submission, workflow snapshot with the
+  resolved assignees, current step) and `GrcChangeTask` per assignee. A separate model instead of the process / page
+  `Review`, which is tied to versions and publications of content. The Phase 3 rules apply: steps in order, ANY /
+  ALL, four-eyes (the submitter is never an approver; `SELF_APPROVAL_NOT_ALLOWED` / `WORKFLOW_NO_ASSIGNEES`), and
+  approvers need `reviews.decide` (read-only roles never approve) plus `grc.read`.
+- **In force**: the item keeps its current values until the last step approves; the stored input is then applied
+  unchanged through the normal update (assessment history, audit `ASSESS` / `UPDATE`), with `SUBMIT` / `APPROVE` /
+  `REJECT` / `WITHDRAW` audit entries on the risk or control. One pending change per item (`CHANGE_PENDING`); the
+  submitter or a `grc.admin` may withdraw it.
+- **Wiring**: the assurance module registers a change gate on `GrcService` (no module cycle between GRC and
+  governance). Notification `GRC_CHANGE` (`params.kind` requested / approved / rejected) with its own preference;
+  the approvals appear in My tasks ("Change approvals", `GET /assurance/tasks`).
+
+## D-099 — Control testing and tested effectiveness (Phase 4.2, 2026-10-30)
+
+- **Plans and tests**: a control has any number of test plans (design or operating effectiveness). Test frequency
+  defaults from the control frequency (per transaction … monthly → quarterly, quarterly → every six months, annual /
+  ad hoc → annually) and the sample size from common audit practice (25 / 20 / 5 / 2 / 2 / 1). Tests copy the plan's
+  procedure, sample size and people when they are created, so later plan changes never alter a running test.
+- **Who**: tester and reviewer are a user, everyone with a system role, or nobody (then any holder of
+  `controls.test` / `controls.review`; notifications go to the Risk & Compliance editors). `grc.edit` holders manage
+  plans, create tests ("Test now") and may also execute any open test. Four-eyes: the same user is never both tester
+  and reviewer of a plan or test, and whoever executed a test can never review it (`403`).
+- **Lifecycle**: Planned → In progress (start / first save) → Submitted (every sample has a result, a conclusion is
+  chosen — `TEST_INCOMPLETE`) → Reviewed (sign off) or Returned (reason required) → Closed. Transitions are
+  compare-and-set on the status (concurrent clicks get `INVALID_TRANSITION`).
+- **Effectiveness**: the reviewed conclusion is written to the control's new `operatingEffectiveness` (effective →
+  EFFECTIVE, with exceptions → PARTLY, not effective → NOT_EFFECTIVE) with an assessment entry in the control's GRC
+  history and an `ASSESS` audit entry. The self-assessed `effectiveness` stays as it is. Wherever the system judges
+  whether a control protects (risk "effectively controlled", alert badge, coverage tiles, gap rules), the tested value
+  wins once there is one (`currentEffectiveness`).
+- **Scheduler**: the assurance module runs its own scheduler (same interval setting as governance) to avoid a module
+  cycle; it creates the test of an active plan when the next due date is within `leadDays` (one per due date, at most a
+  year of catch-up per run) and moves the plan on by its frequency, then sends due / overdue reminders once per test
+  (markers on the test plus dedupe keys).
+- **Evidence** is stored like page attachments (same allow-list, magic-byte check, 10 MB) in a generic
+  `AssuranceFile` table used by every Phase 4.2 record; downloads go through `GET /assurance/files/:id`, which asks
+  the owning feature whether the caller may read the record (404 otherwise), with `Content-Disposition: attachment`
+  and a sandbox CSP.
+
+## D-100 — Issues, action plans, verification and escalation (Phase 4.2, 2026-10-30)
+
+- **Sources**: a failed or "with exceptions" control test, a risk (assessment), an audit finding, a portal feedback item,
+  or by hand. The source fills default links (test → control and department, risk → risk, feedback → process) and the
+  issue keeps a link back. Creating issues needs `issues.manage` (Risk & Compliance officers, admins); accepted audit
+  findings create them through the service.
+- **Severity** comes from a configurable scale in the new Setting `assurance` (default Low / Medium / High / Critical,
+  2–6 levels, also used to rate audit findings), together with the reminder days, escalation days and target.
+- **Who works on it**: the owner edits the content of an open issue and its action plan; only issue managers change the
+  owner or the severity; action owners update progress, note and evidence of their own action. People involved (owner,
+  raiser, action owners) open the issue without `grc.read`; action owners without the workspace (e.g. Viewers) do it
+  in the portal (`/portal/tasks`, `/portal/issues/:id`); workspace links redirect there.
+- **Closing**: "Ready for verification" needs every action at 100 % (`ACTIONS_OPEN`); "Verify and close" is done by the
+  raiser or a Risk & Compliance officer and never by the owner (four-eyes); "Not fixed yet" returns it with a reason.
+  "Accept risk" needs `grc.edit`, a justification, and a different person than the owner; the approver and date are
+  recorded. "Reopen" (reason required) for managers / officers. All transitions audited and in the history.
+- **Escalation**: owners are reminded before the due date and when overdue (issues and actions); after `escalationDays`
+  the issue / action is escalated once to the manager of the owner's department (new `Department.managerId`), to the
+  Risk & Compliance officers, or both (setting); without a manager the officers are always told.
+
+## D-101 — Audit management and the Internal Audit role (Phase 4.2, 2026-10-30)
+
+- **Role**: new system role **Internal Audit** (`INTERNAL_AUDIT`) with `audit.manage`, `controls.test`,
+  `controls.review`, `surveys.manage`, `grc.read` and the usual read bundle. The existing read-only **Auditor** role is
+  unchanged in spirit: it reads audits (through its `audit.read`) but changes nothing.
+- **Who sees audits**: `audit.manage`, Risk & Compliance editors (`grc.edit`) and `audit.read` holders. Audit content is
+  more sensitive than the registers, so `grc.read` alone (process owners, modelers, reviewers) is not enough.
+  A finding's **response owner** opens that one finding (`/grc/findings/:id`, or in the portal) and answers it without
+  any audit permission.
+- **Universe and plan**: the universe is computed (no extra table): every process (not archived) and department, with
+  the highest residual score of its active risks (linked to the process, or owned by / linked to processes of the
+  department) as the priority, the latest actual end of a reporting / follow-up / closed engagement covering it as
+  "last audited", and the engagements of the selected year. The annual plan is the list of engagements of a year.
+- **Lifecycle**: Planned → Fieldwork (sets the actual start) → Reporting (sets the actual end and asks every response
+  owner for a response) → Follow-up → Closed; one stage at a time, back or forward; closing needs every finding answered.
+  Closed engagements are read-only.
+- **Findings → issues**: "Agree" needs an action and a target date and creates an `Issue` (source AUDIT_FINDING,
+  severity = finding rating, owner = the chosen action owner, due = target date, one action) that carries the
+  finding's process, step, risk, control and requirement — the root-cause trace the RFP asks for; the issue links back
+  to the finding. An agreed finding can no longer be edited (`FINDING_AGREED`). "Disagree" needs a reason.
+- **Report**: `.docx` generated on the server with the same `docx` library and style as the B2 handbook (cover with
+  organisation name and logo, executive summary, objective, scope table, findings table coloured by rating, each finding
+  with trace and management response), English or Arabic right-to-left; downloads are audited (`EXPORT`).
+
+## D-102 — Questionnaires, campaigns, self-assessment proposals and process feedback (Phase 4.2, 2026-10-30)
+
+- **Definition as JSON**: a questionnaire is one JSON definition (sections → questions) validated by a shared zod
+  schema, not tables per question: questions are always read and written together, and campaigns keep a snapshot so a
+  later edit of the questionnaire never changes a running campaign. Conditions may only refer to an earlier question.
+- **Who**: `surveys.manage` (Risk & Compliance officers, Internal Audit, admins) builds questionnaires and runs
+  campaigns; `surveys.respond` (every role, Viewers included) answers what was sent to them — the audience is resolved
+  to active users holding `surveys.respond` when the campaign is launched and fixed from then on. Respondents only ever
+  see their own response (404 otherwise). Viewers answer in the portal (`/portal/surveys/:id`).
+- **Scoring**: rating = value × weight (max 5 × weight), yes / no = weight / 0 (N/A not counted), choices = option
+  score × weight (max: best option, or the sum of positive options for multiple choice); hidden questions do not count.
+- **Self-assessment (RCSA)**: a rating question may propose a risk's residual likelihood or impact, a single-choice
+  question (options effective / partly / not effective) a control's effectiveness. Submissions create proposals; a
+  Risk & Compliance officer (`grc.edit`) accepts them through the normal update (with the change approval of D-098
+  when it is on; the other residual value is kept) or dismisses them. Answers never change ratings by themselves.
+- **Process feedback**: "Request feedback" is open to the editors of the process (and survey managers); it uses a
+  built-in four-question questionnaire, launches at once and gives recipients — also without the workspace — a
+  read-only view of the working (draft) diagram through their response only. Each submission is posted as a comment
+  on the process (Comments panel), authored by the respondent; the requester follows the campaign and its results.
+- **Reminders**: once per recipient, `reminderDaysBefore` days before the end; campaigns close themselves the day after
+  their end date (assurance scheduler).
+
+## D-103 — Assurance dashboard and the "tested effectiveness" heat map (Phase 4.2, 2026-10-30)
+
+- **Dashboard scope** as on the risk dashboard: organisation, a department (tests of controls owned by the department
+  or linked to its processes; issues of its processes or the department; engagements and campaigns covering it) or a
+  process. "Done" = tests reviewed or closed in the selected year; "due" / "overdue" = open tests (planned, in
+  progress, returned) before / after their due date; % effective = reviewed tests not concluded "not effective".
+  Readable by `grc.read`, `audit.manage` and `issues.manage` holders; every figure links to the matching filtered list.
+- **Tested heat map**: the residual rating assumes the controls work. With "Using tested effectiveness" a risk keeps
+  its residual position only while at least one active mitigating control has a reviewed test result of effective or
+  partly effective; otherwise it is shown at its inherent rating. The stored ratings never change.
+- **Viewer role**: Viewers stay read-only except answering questionnaires sent to them (`surveys.respond`).
+
+## D-104 — No deletion of active risks / controls; Excel imports through change approval (Phase 4.2, 2026-10-30)
+
+Product owner decision (PR #14, decision 1), closing the gap left in D-098:
+
+- **Deletion**: active and retired risks and controls cannot be deleted (`409 RETIRE_INSTEAD`), by anyone; they are
+  retired (status RETIRED), which goes through change approval when it is on. Drafts can still be deleted (their
+  proposer or a `grc.admin`). Requirements are unchanged (`grc.admin` deletes).
+- **Excel import while change approval is on** (risks / controls): rows that change an active or retired item become
+  pending changes that share one **batch** (`GrcChange.batchId`); rows that change nothing are skipped; new items are
+  imported as **drafts**; a row for an item that already has a pending change is refused in the validation report
+  (`CHANGE_PENDING`), so nothing is imported while it is there. The report shows how many rows wait for approval
+  (dry run: an estimate). Approvers get one notification per import (`GRC_CHANGE`, kind `batch`) and approve or reject
+  the whole batch in My tasks (`POST /grc/changes/batches/:batchId/decision`, every change of the batch that waits for
+  the caller; the per-change rules — steps, four-eyes — still apply). With approval off, imports apply directly and
+  are audited as before.
+
+## D-105 — Both effectiveness values; "test overdue" (Phase 4.2, 2026-10-30)
+
+Product owner decision (PR #14, decision 6), confirming D-099 with two additions:
+
+- The control page shows the **self-assessed** and the **tested** effectiveness side by side and marks which one
+  counts (the tested one once a test was reviewed).
+- **Test overdue**: a tested result older than one test cycle — the shortest frequency of the control's active test
+  plans (monthly 1, quarterly 3, every six months 6, annually / on demand 12 months; 12 months without a plan) — still
+  counts but is flagged "Test overdue" on the control, in the control register (filter `testOverdue`) and as a coverage
+  tile on the risk dashboard ("Tested results older than one test cycle").
+
+## D-106 — Product owner decisions on Phase 4.2 (2026-10-30)
+
+1. Imports and deletions: see D-104.
+2. **Change approval** stays **off by default** in the product. The **base seed** (every installation, once) creates
+   the workflow **"GRC change approval"** — one step, role Risk & Compliance Officer, rule ANY — and preselects it in
+   the setting. At go-live it is switched on for risks and controls (DEPLOYMENT.md §6 step 9, SECURITY.md §7).
+3. **Audit visibility** stays as in D-101. Sharing the final report with the owners of the processes in scope is in
+   BACKLOG.
+4. **Viewers** keep `surveys.respond` and may update the issue actions assigned to them. The server checks the
+   assignment, not only the permission: a response belongs to its recipient (404 for anybody else, also for uploads
+   and the feedback diagram); an action is updated only by its owner, the issue owner or an issue manager (403
+   otherwise; others do not see the issue at all). Permission tests cover both.
+5. **Feedback-request answers** stay process comments signed by the respondent; each starts with a label naming the
+   campaign — "[Feedback request] <campaign title>" (Arabic: «[طلب ملاحظات]»).
+6. Tested effectiveness replaces the self-assessed one: see D-105.

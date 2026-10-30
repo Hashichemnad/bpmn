@@ -70,6 +70,8 @@ test('create a risk, link it to a step, see it on the heat map and the coverage 
 });
 
 test('the portal shows linked risks and controls only as the setting allows', async ({ page }) => {
+  // Six sign-ins and three portal pages.
+  test.setTimeout(60_000);
   await login(page, DEMO.risk);
   const settings = (await apiCall<Record<string, unknown>>(page, 'GET', '/grc/settings')).data;
   const set = async (portalVisibility: string) =>

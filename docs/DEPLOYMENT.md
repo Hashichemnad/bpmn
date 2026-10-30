@@ -290,7 +290,13 @@ Caddy handles HTTPS. Choose one option with `CADDY_TLS` in `.env`, then run `sud
 8. **Settings → Authentication** — single sign-on with your company accounts (6.1), the MFA request to IT
    (6.1, step 9), the break-glass account (6.3) and two-step verification (6.2; Super Admin and Admin are
    already required).
-9. Go through the go-live checklist in [`docs/SECURITY.md`](./SECURITY.md) §7.
+9. **Settings → Risk & Compliance → Approval of changes** (decided for go-live, D-106): switch it **on** for
+   **risks and controls** with the ready-made workflow **"GRC change approval"** (created by the base seed: one
+   step, any Risk & Compliance Officer, rule ANY; it is preselected but the approval itself ships switched off).
+   From then on changes, retirements and Excel imports of active risks and controls wait for a second Risk &
+   Compliance Officer. Nobody approves their own change, so **create at least two Risk & Compliance Officers**
+   first — with only one, their changes are refused (`SELF_APPROVAL_NOT_ALLOWED`).
+10. Go through the go-live checklist in [`docs/SECURITY.md`](./SECURITY.md) §7.
 
 ### 6.1 Single sign-on with Microsoft Entra ID (Azure AD)
 

@@ -9,6 +9,9 @@ import {
   heatMap,
   isEffectiveControl,
   isOverdue,
+  needsChangeApproval,
+  testedResidual,
+  isTestOverdue,
   rateRisk,
   ratingBand,
   resolveGrcSettings,
@@ -273,5 +276,82 @@ describe('control-gap rules', () => {
       'SEGREGATION_OF_DUTIES',
       'MISSING_REVIEW_EVIDENCE',
     ]);
+  });
+});
+
+describe('approval of changes (Phase 4.2)', () => {
+  it('routes only non-draft items of the configured types while enabled', () => {
+    const on = {
+      changeApproval: { enabled: true, types: ['RISK' as const], workflowId: null },
+    };
+    expect(needsChangeApproval('RISK', 'ACTIVE', on)).toBe(true);
+    expect(needsChangeApproval('RISK', 'RETIRED', on)).toBe(true);
+    expect(needsChangeApproval('RISK', 'DRAFT', on)).toBe(false);
+    expect(needsChangeApproval('CONTROL', 'ACTIVE', on)).toBe(false);
+    expect(needsChangeApproval('RISK', 'ACTIVE', DEFAULT_GRC_SETTINGS)).toBe(false);
+  });
+
+  it('keeps stored settings from before Phase 4.2 valid (approval off)', () => {
+    const { changeApproval: _c, ...old } = DEFAULT_GRC_SETTINGS;
+    expect(resolveGrcSettings({ ...old, reminderDaysBefore: 7 })).toMatchObject({
+      reminderDaysBefore: 7,
+      changeApproval: { enabled: false },
+    });
+  });
+});
+
+describe('tested residual (Phase 4.2)', () => {
+  const r = { inherentLikelihood: 5, inherentImpact: 4, residualLikelihood: 2, residualImpact: 2 };
+  it('keeps the residual only with a control tested (partly) effective', () => {
+    expect(testedResidual(r, [{ status: 'ACTIVE', operatingEffectiveness: 'PARTLY' }])).toEqual({
+      likelihood: 2,
+      impact: 2,
+    });
+    expect(
+      testedResidual(r, [{ status: 'ACTIVE', operatingEffectiveness: 'NOT_EFFECTIVE' }]),
+    ).toEqual({
+      likelihood: 5,
+      impact: 4,
+    });
+    expect(testedResidual(r, [{ status: 'RETIRED', operatingEffectiveness: 'EFFECTIVE' }])).toEqual(
+      {
+        likelihood: 5,
+        impact: 4,
+      },
+    );
+  });
+  it('uses the tested result of a control when it has one', () => {
+    expect(
+      isEffectiveControl({
+        status: 'ACTIVE',
+        effectiveness: 'EFFECTIVE',
+        operatingEffectiveness: 'NOT_EFFECTIVE',
+      }),
+    ).toBe(false);
+    expect(
+      isEffectiveControl({
+        status: 'ACTIVE',
+        effectiveness: 'NOT_ASSESSED',
+        operatingEffectiveness: 'PARTLY',
+      }),
+    ).toBe(true);
+    expect(
+      isEffectiveControl({
+        status: 'ACTIVE',
+        effectiveness: 'EFFECTIVE',
+        operatingEffectiveness: 'NOT_ASSESSED',
+      }),
+    ).toBe(true);
+  });
+});
+
+describe('test overdue (D-105)', () => {
+  const now = new Date('2026-10-30T00:00:00Z');
+  it('uses the shortest active plan cycle, a year without a plan', () => {
+    expect(isTestOverdue('2026-06-01', ['QUARTERLY'], now)).toBe(true);
+    expect(isTestOverdue('2026-09-01', ['QUARTERLY', 'ANNUAL'], now)).toBe(false);
+    expect(isTestOverdue('2026-01-01', [], now)).toBe(false);
+    expect(isTestOverdue('2025-09-01', [], now)).toBe(true);
+    expect(isTestOverdue(null, ['MONTHLY'], now)).toBe(false);
   });
 });

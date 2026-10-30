@@ -4,8 +4,10 @@ import {
   heatMap,
   isEffectiveControl,
   isOverdue,
+  isTestOverdue,
   rateRisk,
   residualOrInherent,
+  testedResidual,
   type GrcBreakdownRow,
   type GrcDashboardDto,
   type GrcDashboardQuery,
@@ -53,6 +55,7 @@ export class GrcDashboardService {
                     select: {
                       status: true,
                       effectiveness: true,
+                      operatingEffectiveness: true,
                       object: { select: { deletedAt: true } },
                     },
                   },
@@ -64,7 +67,14 @@ export class GrcDashboardService {
       }),
       this.prisma.repoObject.findMany({
         where: { type: 'CONTROL', deletedAt: null, control: { status: 'ACTIVE' } },
-        include: { links: linkSelect, control: true },
+        include: {
+          links: linkSelect,
+          control: {
+            include: {
+              testPlans: { where: { active: true, deletedAt: null }, select: { frequency: true } },
+            },
+          },
+        },
       }),
       this.prisma.repoObject.findMany({
         where: { type: 'REQUIREMENT', deletedAt: null, requirement: { status: 'ACTIVE' } },
@@ -137,7 +147,18 @@ export class GrcDashboardService {
             impact: r.o.risk!.inherentImpact,
           })),
         ),
-        residual: heatMap(risks.map((r) => residualOrInherent(r.o.risk!))),
+        residual: heatMap(
+          risks.map((r) =>
+            q.tested
+              ? testedResidual(
+                  r.o.risk!,
+                  r.o
+                    .risk!.controls.filter((c) => !c.control.object.deletedAt)
+                    .map((c) => c.control),
+                )
+              : residualOrInherent(r.o.risk!),
+          ),
+        ),
         total: risks.length,
       },
       coverage: {
@@ -158,6 +179,14 @@ export class GrcDashboardService {
         overdueReviews:
           risks.filter((r) => isOverdue(r.o.risk!.nextReviewAt)).length +
           controls.filter((c) => isOverdue(c.control!.nextReviewAt)).length,
+        testsOverdue: controls.filter(
+          (c) =>
+            c.control!.operatingEffectiveness !== 'NOT_ASSESSED' &&
+            isTestOverdue(
+              c.control!.lastTestedAt,
+              c.control!.testPlans.map((p) => p.frequency),
+            ),
+        ).length,
       },
       breakdown,
     };

@@ -176,9 +176,35 @@ zod / UUID pipe; file uploads are checked in the service (allow-list, content sn
 | POST   | `/ai/summarise`                              | authenticated                                             | body                                | default    |
 | POST   | `/ai/translate`                              | authenticated                                             | body                                | default    |
 | GET    | `/ai/usage`                                  | `ai.usage.read`                                           | query                               | default    |
+| GET    | `/assurance/dashboard`                       | any of `grc.read`, `audit.manage`, `issues.manage`        | query                               | default    |
+| GET    | `/assurance/dashboard/export`                | any of `grc.read`, `audit.manage`, `issues.manage`        | query                               | default    |
+| DELETE | `/assurance/files/:id`                       | authenticated                                             | param `id`                          | default    |
+| GET    | `/assurance/files/:id`                       | authenticated                                             | param `id`                          | default    |
+| GET    | `/assurance/settings`                        | any of `grc.read`, `issues.manage`, `audit.manage`        | —                                   | default    |
+| PUT    | `/assurance/settings`                        | `grc.admin`                                               | body                                | default    |
+| GET    | `/assurance/tasks`                           | authenticated                                             | —                                   | default    |
 | DELETE | `/attachments/:id`                           | `docs.read` + `docs.edit`                                 | param `id`                          | default    |
 | GET    | `/attachments/:id/content`                   | `docs.read`                                               | param `id`                          | default    |
 | GET    | `/audit-logs`                                | `audit.read`                                              | query                               | default    |
+| GET    | `/audits`                                    | any of `audit.manage`, `grc.edit`, `audit.read`           | query                               | default    |
+| POST   | `/audits`                                    | `audit.manage`                                            | body                                | default    |
+| DELETE | `/audits/:id`                                | `audit.manage`                                            | param `id`                          | default    |
+| GET    | `/audits/:id`                                | any of `audit.manage`, `grc.edit`, `audit.read`           | param `id`                          | default    |
+| PATCH  | `/audits/:id`                                | `audit.manage`                                            | body, param `id`                    | default    |
+| POST   | `/audits/:id/comments`                       | `audit.manage`                                            | body, param `id`                    | default    |
+| POST   | `/audits/:id/findings`                       | `audit.manage`                                            | body, param `id`                    | default    |
+| POST   | `/audits/:id/items`                          | `audit.manage`                                            | body, param `id`                    | default    |
+| GET    | `/audits/:id/report`                         | any of `audit.manage`, `grc.edit`, `audit.read`           | param `id`, query                   | default    |
+| POST   | `/audits/:id/status`                         | `audit.manage`                                            | body, param `id`                    | default    |
+| DELETE | `/audits/findings/:id`                       | `audit.manage`                                            | param `id`                          | default    |
+| GET    | `/audits/findings/:id`                       | authenticated                                             | param `id`                          | default    |
+| PATCH  | `/audits/findings/:id`                       | `audit.manage`                                            | body, param `id`                    | default    |
+| POST   | `/audits/findings/:id/files`                 | `audit.manage`                                            | file, param `id`                    | default    |
+| POST   | `/audits/findings/:id/response`              | authenticated                                             | body, param `id`                    | default    |
+| DELETE | `/audits/items/:id`                          | `audit.manage`                                            | param `id`                          | default    |
+| PATCH  | `/audits/items/:id`                          | `audit.manage`                                            | body, param `id`                    | default    |
+| POST   | `/audits/items/:id/files`                    | `audit.manage`                                            | file, param `id`                    | default    |
+| GET    | `/audits/universe`                           | any of `audit.manage`, `grc.edit`, `audit.read`           | query                               | default    |
 | POST   | `/auth/change-password`                      | authenticated                                             | body                                | login      |
 | GET    | `/auth/csrf`                                 | **public**                                                | —                                   | default    |
 | POST   | `/auth/login`                                | **public**                                                | body                                | login      |
@@ -203,6 +229,21 @@ zod / UUID pipe; file uploads are checked in the service (allow-list, content sn
 | POST   | `/comments/:commentId/resolve`               | `comments.write`                                          | param `commentId`                   | default    |
 | GET    | `/comments/:type/:id`                        | any of `processes.read`, `docs.read`                      | param `id`, param `type`            | default    |
 | POST   | `/comments/:type/:id`                        | `comments.write`                                          | body, param `id`, param `type`      | default    |
+| GET    | `/control-tests`                             | `grc.read`                                                | query                               | default    |
+| POST   | `/control-tests`                             | `grc.edit`                                                | body                                | default    |
+| DELETE | `/control-tests/:id`                         | `grc.edit`                                                | param `id`                          | default    |
+| GET    | `/control-tests/:id`                         | any of `grc.read`, `controls.test`, `controls.review`     | param `id`                          | default    |
+| POST   | `/control-tests/:id/close`                   | any of `grc.edit`, `controls.review`                      | param `id`                          | default    |
+| POST   | `/control-tests/:id/comments`                | any of `grc.read`, `controls.test`, `controls.review`     | body, param `id`                    | default    |
+| POST   | `/control-tests/:id/files`                   | `controls.test`                                           | file, param `id`                    | default    |
+| PUT    | `/control-tests/:id/results`                 | `controls.test`                                           | body, param `id`                    | default    |
+| POST   | `/control-tests/:id/review`                  | `controls.review`                                         | body, param `id`                    | default    |
+| POST   | `/control-tests/:id/start`                   | `controls.test`                                           | param `id`                          | default    |
+| POST   | `/control-tests/:id/submit`                  | `controls.test`                                           | param `id`                          | default    |
+| GET    | `/control-tests/plans`                       | `grc.read`                                                | query                               | default    |
+| POST   | `/control-tests/plans`                       | `grc.edit`                                                | body                                | default    |
+| DELETE | `/control-tests/plans/:id`                   | `grc.edit`                                                | param `id`                          | default    |
+| PATCH  | `/control-tests/plans/:id`                   | `grc.edit`                                                | body, param `id`                    | default    |
 | GET    | `/departments`                               | `departments.read`                                        | —                                   | default    |
 | POST   | `/departments`                               | `departments.manage`                                      | body                                | default    |
 | DELETE | `/departments/:id`                           | `departments.manage`                                      | param `id`                          | default    |
@@ -232,6 +273,11 @@ zod / UUID pipe; file uploads are checked in the service (allow-list, content sn
 | GET    | `/governance/settings`                       | any of `governance.manage`, `processes.read`, `docs.read` | —                                   | default    |
 | PUT    | `/governance/settings`                       | `governance.manage`                                       | body                                | default    |
 | PUT    | `/governance/spaces/:spaceId/workflow`       | any of `governance.manage`, `docs.read`                   | body, param `spaceId`               | default    |
+| GET    | `/grc/changes`                               | `grc.read`                                                | query                               | default    |
+| GET    | `/grc/changes/:id`                           | `grc.read`                                                | param `id`                          | default    |
+| POST   | `/grc/changes/:id/decision`                  | `grc.read` + `reviews.decide`                             | body, param `id`                    | default    |
+| POST   | `/grc/changes/:id/withdraw`                  | `grc.edit`                                                | param `id`                          | default    |
+| POST   | `/grc/changes/batches/:batchId/decision`     | `grc.read` + `reviews.decide`                             | body, param `batchId`               | default    |
 | GET    | `/grc/controls`                              | `grc.read`                                                | query                               | default    |
 | POST   | `/grc/controls`                              | any of `grc.edit`, `grc.propose`                          | body                                | default    |
 | DELETE | `/grc/controls/:id`                          | any of `grc.edit`, `grc.propose`                          | param `id`                          | default    |
@@ -266,6 +312,18 @@ zod / UUID pipe; file uploads are checked in the service (allow-list, content sn
 | GET    | `/integrations/git/status`                   | `settings.manage`                                         | —                                   | default    |
 | POST   | `/integrations/git/sync`                     | `settings.manage`                                         | body                                | default    |
 | POST   | `/integrations/git/test`                     | `settings.manage`                                         | body                                | default    |
+| GET    | `/issues`                                    | any of `grc.read`, `issues.manage`                        | query                               | default    |
+| POST   | `/issues`                                    | `issues.manage`                                           | body                                | default    |
+| DELETE | `/issues/:id`                                | `issues.manage` + `grc.admin`                             | param `id`                          | default    |
+| GET    | `/issues/:id`                                | authenticated                                             | param `id`                          | default    |
+| PATCH  | `/issues/:id`                                | authenticated                                             | body, param `id`                    | default    |
+| POST   | `/issues/:id/actions`                        | authenticated                                             | body, param `id`                    | default    |
+| POST   | `/issues/:id/comments`                       | authenticated                                             | body, param `id`                    | default    |
+| POST   | `/issues/:id/files`                          | authenticated                                             | file, param `id`                    | default    |
+| POST   | `/issues/:id/transition`                     | authenticated                                             | body, param `id`                    | default    |
+| DELETE | `/issues/actions/:id`                        | authenticated                                             | param `id`                          | default    |
+| PATCH  | `/issues/actions/:id`                        | authenticated                                             | body, param `id`                    | default    |
+| POST   | `/issues/actions/:id/files`                  | authenticated                                             | file, param `id`                    | default    |
 | GET    | `/notifications`                             | authenticated                                             | query                               | default    |
 | POST   | `/notifications/:id/read`                    | authenticated                                             | param `id`                          | default    |
 | GET    | `/notifications/preferences`                 | authenticated                                             | —                                   | default    |
@@ -365,6 +423,27 @@ zod / UUID pipe; file uploads are checked in the service (allow-list, content sn
 | GET    | `/spaces/:spaceId/pages`                     | `docs.read`                                               | param `spaceId`                     | default    |
 | POST   | `/spaces/:spaceId/pages`                     | `docs.read` + `docs.edit`                                 | body, param `spaceId`               | default    |
 | GET    | `/spaces/:spaceId/trash`                     | `docs.read` + `docs.edit`                                 | param `spaceId`                     | default    |
+| GET    | `/surveys/campaigns`                         | any of `surveys.manage`, `processes.read`                 | query                               | default    |
+| POST   | `/surveys/campaigns`                         | `surveys.manage`                                          | body                                | default    |
+| DELETE | `/surveys/campaigns/:id`                     | `surveys.manage`                                          | param `id`                          | default    |
+| GET    | `/surveys/campaigns/:id`                     | any of `surveys.manage`, `processes.read`                 | param `id`                          | default    |
+| PATCH  | `/surveys/campaigns/:id`                     | `surveys.manage`                                          | body, param `id`                    | default    |
+| POST   | `/surveys/campaigns/:id/close`               | any of `surveys.manage`, `processes.read`                 | param `id`                          | default    |
+| GET    | `/surveys/campaigns/:id/export`              | any of `surveys.manage`, `processes.read`                 | param `id`, query                   | default    |
+| POST   | `/surveys/campaigns/:id/launch`              | any of `surveys.manage`, `processes.read`                 | param `id`                          | default    |
+| GET    | `/surveys/campaigns/:id/proposals`           | any of `surveys.manage`, `grc.edit`                       | param `id`                          | default    |
+| GET    | `/surveys/campaigns/:id/results`             | any of `surveys.manage`, `processes.read`                 | param `id`                          | default    |
+| POST   | `/surveys/feedback-requests`                 | `processes.read`                                          | body                                | default    |
+| POST   | `/surveys/proposals/:id/decision`            | `grc.edit`                                                | body, param `id`                    | default    |
+| GET    | `/surveys/questionnaires`                    | `surveys.manage`                                          | —                                   | default    |
+| POST   | `/surveys/questionnaires`                    | `surveys.manage`                                          | body                                | default    |
+| DELETE | `/surveys/questionnaires/:id`                | `surveys.manage`                                          | param `id`                          | default    |
+| GET    | `/surveys/questionnaires/:id`                | `surveys.manage`                                          | param `id`                          | default    |
+| PATCH  | `/surveys/questionnaires/:id`                | `surveys.manage`                                          | body, param `id`                    | default    |
+| GET    | `/surveys/responses/:id`                     | `surveys.respond`                                         | param `id`                          | default    |
+| PUT    | `/surveys/responses/:id`                     | `surveys.respond`                                         | body, param `id`                    | default    |
+| GET    | `/surveys/responses/:id/diagram`             | `surveys.respond`                                         | param `id`                          | default    |
+| POST   | `/surveys/responses/:id/files`               | `surveys.respond`                                         | file, param `id`                    | default    |
 | GET    | `/tasks`                                     | authenticated                                             | —                                   | default    |
 | GET    | `/templates`                                 | `docs.read`                                               | —                                   | default    |
 | POST   | `/templates`                                 | `docs.manage`                                             | body                                | default    |
@@ -428,6 +507,8 @@ already the default; check them anyway if you changed the setup.
 - [ ] Leaver process includes "deactivate in ProcessHub" until automatic de-provisioning exists.
 - [ ] Database, file storage and the API are not reachable from outside (only the web container is published) _(prod stack: only Caddy on 80/443; database and storage on an internal network)_.
 - [ ] Daily backups with an off-site copy, and one restore tested (`docs/DEPLOYMENT.md` §7–8).
+- [ ] Settings → Risk & Compliance → Approval of changes **on** for risks and controls with the workflow
+      "GRC change approval", and at least two Risk & Compliance Officers (DEPLOYMENT.md §6 step 9, D-106).
 
 ## 8. External penetration test checklist
 

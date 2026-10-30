@@ -99,6 +99,16 @@ export const grcSettingsSchema = z
     portalVisibility: z.enum(GRC_PORTAL_VISIBILITY),
     /** Owners are reminded this many days before a risk or control review is due. */
     reminderDaysBefore: z.number().int().min(0).max(90),
+    /**
+     * Phase 4.2 (D-098): changes to active risks / controls go through an approval workflow.
+     * Off by default; once enabled it applies to the listed types (default: risks and controls).
+     * Drafts are never routed. Workflow: the chosen one, else the governance default workflow.
+     */
+    changeApproval: z.strictObject({
+      enabled: z.boolean(),
+      types: z.array(z.enum(['RISK', 'CONTROL'])).max(2),
+      workflowId: z.guid().nullable(),
+    }),
   })
   .superRefine((v, ctx) => {
     const scores = v.bands.map((b) => b.minScore);
@@ -168,6 +178,7 @@ export const DEFAULT_GRC_SETTINGS: GrcSettings = {
   ],
   portalVisibility: 'OFF',
   reminderDaysBefore: 14,
+  changeApproval: { enabled: false, types: ['RISK', 'CONTROL'], workflowId: null },
 };
 
 /** The stored setting, or the defaults when it is missing or invalid. */
@@ -232,6 +243,25 @@ export function rateRisk(r: RiskRatingInput, bands: GrcBand[]): RiskRating {
   };
 }
 
+/**
+ * Residual position "using tested effectiveness" (Phase 4.2, D-103): the residual rating assumes
+ * the controls work, so it counts only while at least one active mitigating control has a
+ * reviewed test result of effective or partly effective; otherwise the inherent rating stands.
+ */
+export function testedResidual(
+  r: RiskRatingInput,
+  controls: { status: GrcStatus; operatingEffectiveness?: ControlEffectiveness | null }[],
+): { likelihood: number; impact: number } {
+  const tested = controls.some(
+    (c) =>
+      c.status === 'ACTIVE' &&
+      (c.operatingEffectiveness === 'EFFECTIVE' || c.operatingEffectiveness === 'PARTLY'),
+  );
+  return tested
+    ? residualOrInherent(r)
+    : { likelihood: r.inherentLikelihood, impact: r.inherentImpact };
+}
+
 /** Matrix of counts: `cells[likelihood-1][impact-1]`. */
 export function heatMap(points: { likelihood: number; impact: number }[]): number[][] {
   const cells = Array.from({ length: 5 }, () => Array.from({ length: 5 }, () => 0));
@@ -242,9 +272,30 @@ export function heatMap(points: { likelihood: number; impact: number }[]): numbe
   return cells;
 }
 
-/** A control counts as effective protection when it is active and assessed (partly) effective. */
-export function isEffectiveControl(c: { status: GrcStatus; effectiveness: ControlEffectiveness }) {
-  return c.status === 'ACTIVE' && (c.effectiveness === 'EFFECTIVE' || c.effectiveness === 'PARTLY');
+/**
+ * The effectiveness that counts: the tested operating effectiveness once a test was reviewed
+ * (Phase 4.2, D-099), else the assessed effectiveness.
+ */
+export function currentEffectiveness(c: {
+  effectiveness: ControlEffectiveness;
+  operatingEffectiveness?: ControlEffectiveness | null;
+}): ControlEffectiveness {
+  return c.operatingEffectiveness && c.operatingEffectiveness !== 'NOT_ASSESSED'
+    ? c.operatingEffectiveness
+    : c.effectiveness;
+}
+
+/**
+ * A control counts as effective protection when it is active and (partly) effective — by its
+ * reviewed test result when it has one, else by its assessment.
+ */
+export function isEffectiveControl(c: {
+  status: GrcStatus;
+  effectiveness: ControlEffectiveness;
+  operatingEffectiveness?: ControlEffectiveness | null;
+}) {
+  const e = currentEffectiveness(c);
+  return c.status === 'ACTIVE' && (e === 'EFFECTIVE' || e === 'PARTLY');
 }
 
 /** The next review date has passed. */
@@ -418,7 +469,7 @@ export const riskListQuerySchema = listBase.extend({
     .string()
     .regex(/^[1-5],[1-5]$/)
     .optional(),
-  matrix: z.enum(['inherent', 'residual']).default('residual'),
+  matrix: z.enum(['inherent', 'residual', 'tested']).default('residual'),
   /** Coverage filters. */
   withoutControls: z
     .enum(['true', 'false'])
@@ -441,6 +492,11 @@ export const controlListQuerySchema = listBase.extend({
   nature: z.enum(CONTROL_NATURES).optional(),
   effectiveness: z.enum(CONTROL_EFFECTIVENESS).optional(),
   keyControl: z
+    .enum(['true', 'false'])
+    .transform((v) => v === 'true')
+    .optional(),
+  /** Controls whose tested result is older than one test cycle (D-105). */
+  testOverdue: z
     .enum(['true', 'false'])
     .transform((v) => v === 'true')
     .optional(),
@@ -469,6 +525,11 @@ export type GrcCommentInput = z.infer<typeof grcCommentSchema>;
 export const grcDashboardQuerySchema = z.object({
   departmentId: id.optional(),
   processId: id.optional(),
+  /** Phase 4.2: residual heat map "using tested effectiveness" (D-103). */
+  tested: z
+    .enum(['true', 'false'])
+    .transform((v) => v === 'true')
+    .optional(),
 });
 export type GrcDashboardQuery = z.infer<typeof grcDashboardQuerySchema>;
 
@@ -546,7 +607,11 @@ export interface RiskDto extends GrcBaseDto {
   residualImpact: number | null;
   response: RiskResponse;
   rating: RiskRating;
-  controls: (GrcRef & { effectiveness: ControlEffectiveness; keyControl: boolean })[];
+  controls: (GrcRef & {
+    effectiveness: ControlEffectiveness;
+    operatingEffectiveness: ControlEffectiveness;
+    keyControl: boolean;
+  })[];
   /** At least one linked control is active and (partly) effective. */
   effectivelyControlled: boolean;
 }
@@ -560,6 +625,11 @@ export interface ControlDto extends GrcBaseDto {
   system: { id: string; code: string | null; nameEn: string; nameAr: string } | null;
   effectiveness: ControlEffectiveness;
   lastAssessedAt: string | null;
+  /** Result of the last reviewed control test (Phase 4.2); NOT_ASSESSED until one is reviewed. */
+  operatingEffectiveness: ControlEffectiveness;
+  lastTestedAt: string | null;
+  /** The tested result is older than one test cycle: it still counts, flagged "test overdue" (D-105). */
+  testOverdue: boolean;
   risks: (GrcRef & { rating: RiskRating })[];
   requirements: GrcRef[];
 }
@@ -580,6 +650,8 @@ export type GrcItemDto = RiskDto | ControlDto | RequirementDto;
 export interface GrcItemDetailDto<T extends GrcItemDto = GrcItemDto> {
   item: T;
   steps: GrcStepLinkDto[];
+  /** A change waiting for approval (Phase 4.2); the item shows the current values meanwhile. */
+  pendingChange?: GrcChangeDto | null;
 }
 
 /** Assessment history and comments of one item, newest first. */
@@ -640,6 +712,8 @@ export interface GrcDashboardDto {
     stepsWithRiskNoControl: number;
     processesWithRiskNoControl: number;
     overdueReviews: number;
+    /** Active controls whose tested result is older than one test cycle (Phase 4.2, D-105). */
+    testsOverdue: number;
   };
   /** Drill-down: departments (organisation scope), processes (department scope) or steps. */
   breakdown: { level: 'department' | 'process' | 'step'; rows: GrcBreakdownRow[] };
@@ -664,6 +738,9 @@ export interface GrcImportReportDto {
   rows: number;
   created: number;
   updated: number;
+  /** Rows changing an active item while change approval is on: pending changes of one batch (D-104). */
+  pending: number;
+  batchId: string | null;
   errors: GrcImportRowIssue[];
   imported: boolean;
 }
@@ -863,3 +940,108 @@ export interface ControlGapsDto {
 export interface ProcessGapsDto {
   gaps: ControlGap[];
 }
+
+// ---------- Approval of changes to active risks and controls (Phase 4.2, D-098) ----------
+
+export const GRC_CHANGE_STATUSES = ['PENDING', 'APPROVED', 'REJECTED', 'WITHDRAWN'] as const;
+export type GrcChangeStatus = (typeof GRC_CHANGE_STATUSES)[number];
+export const GRC_CHANGE_TASK_STATUSES = ['PENDING', 'APPROVED', 'REJECTED', 'SKIPPED'] as const;
+export type GrcChangeTaskStatus = (typeof GRC_CHANGE_TASK_STATUSES)[number];
+export type GrcChangeType = 'RISK' | 'CONTROL';
+
+/** Whether an update of an item in `status` needs approval under the settings. */
+export function needsChangeApproval(
+  type: GrcObjectType,
+  status: GrcStatus,
+  settings: Pick<GrcSettings, 'changeApproval'>,
+): boolean {
+  const a = settings.changeApproval;
+  return !!a?.enabled && status !== 'DRAFT' && (a.types as readonly string[]).includes(type);
+}
+
+export const grcChangeDecisionSchema = z.object({
+  decision: z.enum(['APPROVE', 'REJECT']),
+  comment: z.string().trim().max(2000).optional(),
+});
+export type GrcChangeDecisionInput = z.infer<typeof grcChangeDecisionSchema>;
+
+export const grcChangeListQuerySchema = z.object({
+  status: z.enum(GRC_CHANGE_STATUSES).optional(),
+  objectId: z.guid().optional(),
+  /** Only changes waiting for the caller's decision. */
+  mine: z
+    .enum(['true', 'false'])
+    .transform((v) => v === 'true')
+    .optional(),
+});
+export type GrcChangeListQuery = z.infer<typeof grcChangeListQuerySchema>;
+
+export interface GrcChangeFieldDto {
+  field: string;
+  from: unknown;
+  to: unknown;
+}
+
+export interface GrcChangeDto {
+  id: string;
+  object: GrcRef;
+  /** Excel import batch (approved or rejected together), with the number of its changes. */
+  batchId: string | null;
+  batchSize: number;
+  status: GrcChangeStatus;
+  fields: GrcChangeFieldDto[];
+  comment: string;
+  workflowNameEn: string;
+  workflowNameAr: string;
+  steps: {
+    nameEn: string;
+    nameAr: string;
+    rule: 'ANY' | 'ALL';
+    tasks: {
+      assignee: UserRef | null;
+      status: GrcChangeTaskStatus;
+      comment: string | null;
+      decidedAt: string | null;
+    }[];
+  }[];
+  currentStep: number;
+  submittedBy: UserRef | null;
+  submittedAt: string;
+  completedAt: string | null;
+  /** The caller has an open task on the current step. */
+  canDecide: boolean;
+  /** The caller submitted it (or administers Risk & Compliance) and it is pending. */
+  canWithdraw: boolean;
+}
+
+/** Months of one test cycle per test frequency (on demand: a year). */
+const CYCLE_MONTHS: Record<string, number> = {
+  MONTHLY: 1,
+  QUARTERLY: 3,
+  SEMI_ANNUAL: 6,
+  ANNUAL: 12,
+  AD_HOC: 12,
+};
+
+/**
+ * Whether a tested result is older than one test cycle (D-105): the shortest frequency of the
+ * control's active test plans (a year without a plan). The result still counts; it is flagged.
+ */
+export function isTestOverdue(
+  lastTestedAt: string | Date | null | undefined,
+  planFrequencies: string[],
+  now = new Date(),
+): boolean {
+  if (!lastTestedAt) return false;
+  const months = planFrequencies.length
+    ? Math.min(...planFrequencies.map((f) => CYCLE_MONTHS[f] ?? 12))
+    : 12;
+  const due = new Date(lastTestedAt);
+  due.setUTCMonth(due.getUTCMonth() + months);
+  return due.getTime() < now.getTime();
+}
+
+export const grcChangeBatchDecisionSchema = z.object({
+  decision: z.enum(['APPROVE', 'REJECT']),
+  comment: z.string().trim().max(2000).optional(),
+});

@@ -11,6 +11,6 @@ import { ReportsService } from './reports.service';
   imports: [GovernanceModule, DocsModule, ObjectsModule, GrcModule],
   controllers: [ReportsController],
   providers: [ReportsService, ReportDataService],
-  exports: [ReportDataService],
+  exports: [ReportDataService, ReportsService],
 })
 export class ReportsModule {}

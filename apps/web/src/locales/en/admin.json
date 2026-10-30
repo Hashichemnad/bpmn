@@ -7,7 +7,8 @@
     "REVIEWER": "Reviewer",
     "AUDITOR": "Auditor",
     "VIEWER": "Viewer",
-    "RISK_OFFICER": "Risk & Compliance Officer"
+    "RISK_OFFICER": "Risk & Compliance Officer",
+    "INTERNAL_AUDIT": "Internal Audit"
   },
   "status": {
     "ACTIVE": "Active",
@@ -53,7 +54,9 @@
     "users": "Users",
     "empty": "No departments yet",
     "deleteTitle": "Delete {{name}}?",
-    "deleteText": "Departments with sub-departments, users or processes cannot be deleted."
+    "deleteText": "Departments with sub-departments, users or processes cannot be deleted.",
+    "manager": "Manager (head of department)",
+    "managerHint": "Overdue issues and actions of the department's staff are escalated to this person."
   },
   "audit": {
     "title": "Audit log",
@@ -128,7 +131,16 @@
       "AI": "AI assistant",
       "Risk": "Risk",
       "Control": "Control",
-      "Requirement": "Requirement"
+      "Requirement": "Requirement",
+      "ControlTestPlan": "Test plan",
+      "ControlTest": "Control test",
+      "Issue": "Issue",
+      "IssueAction": "Action",
+      "AuditEngagement": "Audit engagement",
+      "AuditFinding": "Audit finding",
+      "Questionnaire": "Questionnaire",
+      "SurveyCampaign": "Survey campaign",
+      "SurveyResponse": "Survey response"
     }
   },
   "settings": {

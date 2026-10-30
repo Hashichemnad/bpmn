@@ -7,11 +7,14 @@ import {
   Card,
   Col,
   Empty,
+  Flex,
   Row,
   Space,
   Statistic,
+  Switch,
   Table,
   Tag,
+  Tooltip,
   TreeSelect,
   Typography,
 } from 'antd';
@@ -36,7 +39,7 @@ import { RiskMatrix } from './RiskMatrix';
 import { grcItemPath, stepHref } from './grc-helpers';
 import { RatingTag } from './grc-tags';
 
-type Matrix = 'inherent' | 'residual';
+type Matrix = 'inherent' | 'residual' | 'tested';
 
 /**
  * Risk dashboard (Phase 4.1): inherent and residual heat maps, coverage tiles linking to filtered
@@ -55,7 +58,8 @@ export function GrcDashboardPage() {
     departmentId: params.get('departmentId') ?? undefined,
     processId: params.get('processId') ?? undefined,
   };
-  const dashboard = useGrcDashboard(scope);
+  const tested = params.get('tested') === 'true';
+  const dashboard = useGrcDashboard(scope, tested);
   const uncovered = useUncoveredSteps(scope);
   const departments = useDepartments();
   const deptTree = useDepartmentTreeData();
@@ -155,6 +159,12 @@ export function GrcDashboardPage() {
       value: d.coverage.overdueReviews,
       to: registerLink('/grc/risks', { overdue: 'true', status: 'ACTIVE' }),
     },
+    {
+      key: 'testsOverdue',
+      value: d.coverage.testsOverdue,
+      to: registerLink('/grc/controls', { testOverdue: 'true', status: 'ACTIVE' }),
+      danger: true,
+    },
   ];
 
   const openRow = (r: GrcBreakdownRow) => {
@@ -237,18 +247,43 @@ export function GrcDashboardPage() {
         ))}
       </Row>
       <Card style={{ marginBlockEnd: 16 }}>
-        <Typography.Paragraph type="secondary">
-          {t('grc:dashboard.heatHint', { count: d.heatMap.total })}
-        </Typography.Paragraph>
+        <Flex justify="space-between" wrap="wrap" gap={8}>
+          <Typography.Paragraph type="secondary">
+            {t('grc:dashboard.heatHint', { count: d.heatMap.total })}
+          </Typography.Paragraph>
+          <Space>
+            <Switch
+              size="small"
+              data-testid="grc-tested-toggle"
+              checked={tested}
+              onChange={(on) => {
+                const p = new URLSearchParams(params);
+                if (on) p.set('tested', 'true');
+                else p.delete('tested');
+                setCell(null);
+                setParams(p);
+              }}
+            />
+            <Tooltip title={t('assurance:dashboard.testedHint')}>
+              {t('assurance:dashboard.tested')}
+            </Tooltip>
+          </Space>
+        </Flex>
         <div className="ph-grc-matrices">
           {(['inherent', 'residual'] as const).map((m) => (
             <RiskMatrix
               key={m}
               testId={`grc-heatmap-${m}`}
-              title={t(`grc:matrix.${m}`)}
+              title={
+                m === 'residual' && tested
+                  ? t('assurance:dashboard.testedMatrix')
+                  : t(`grc:matrix.${m}`)
+              }
               cells={d.heatMap[m]}
-              selected={cell?.matrix === m ? cell : null}
-              onCell={(likelihood, impact) => setCell({ matrix: m, likelihood, impact })}
+              selected={cell?.matrix === (m === 'residual' && tested ? 'tested' : m) ? cell : null}
+              onCell={(likelihood, impact) =>
+                setCell({ matrix: m === 'residual' && tested ? 'tested' : m, likelihood, impact })
+              }
             />
           ))}
         </div>
@@ -258,7 +293,10 @@ export function GrcDashboardPage() {
               {t('grc:filters.cell', {
                 likelihood: cell.likelihood,
                 impact: cell.impact,
-                matrix: t(`grc:matrix.${cell.matrix}`),
+                matrix:
+                  cell.matrix === 'tested'
+                    ? t('assurance:dashboard.testedMatrix')
+                    : t(`grc:matrix.${cell.matrix}`),
               })}
             </Typography.Title>
             <Table<RiskDto>

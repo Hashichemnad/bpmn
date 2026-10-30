@@ -40,8 +40,9 @@ with no per-user licensing. Target: 50–500 users on a single server.
 | 2 | M5 Wiki, M6 Version control, M7 Git integration | ✅ Done (merged into `main`) |
 | 3 | M8 Governance, M9 Knowledge Portal | ✅ Done (merged into `main`) |
 | AI | M16 AI Assistant (after Phase 3) | ✅ Done (merged into `main`) |
-| 4.1 | M10 GRC core: risks, controls, requirements linked to process steps; heat maps, coverage dashboard, RCM export, reminders, AI control-gap check | 🟡 Done on branch `phase-4-1-grc` (D-089 – D-095), awaiting review |
-| 4.2 / 4.3 | M10 control testing, issues and audits; M11 EA; M12 KPIs + Salesforce | ⬜ |
+| 4.1 | M10 GRC core: risks, controls, requirements linked to process steps; heat maps, coverage dashboard, RCM export, reminders, AI control-gap check | ✅ Done (merged into `main`, D-089 – D-097) |
+| 4.2 | M10 assurance: approval of GRC changes, control testing, issues and actions, audits, questionnaires, assurance dashboard | 🟡 Done on branch `phase-4-2-grc-assurance` (D-098 – D-103), awaiting review |
+| 4.3 | M11 EA; M12 KPIs + Salesforce; Oracle Fusion Risk Management overlay | ⬜ |
 | 5 | M13 Mining, M14 Execution, simulation | ⬜ |
 | Design A | Modeler design upgrade — Part A: look and feel (colour theme as BPMN-in-Color, renderer, colour picker, fonts/RTL, apply theme) | ✅ Done (merged into `main`, D-067 – D-073) |
 | Design B1 | Modeler design — Part B1: full-screen workspace and modeling productivity (palette, ready-made steps, zoom/mini-map, align, auto-layout, lane roles, badges, portal diagram, print layout) | ✅ Done (merged into `main`, D-074 – D-081); Part B2 in BACKLOG |
@@ -88,8 +89,9 @@ System roles (extensible, permission-based underneath):
 | Modeler / Editor | Create and edit drafts |
 | Reviewer | Review and comment, approve where assigned |
 | Auditor | Read-only workspace: drafts, history, reviews, audit log, Risk & Compliance — no edit, comment, approve or publish |
-| Risk & Compliance Officer | Risks, controls, requirements: create, assess, link to steps, import, settings; rest of the workspace read-only |
-| Viewer | Knowledge Portal only (published content, read-only) |
+| Risk & Compliance Officer | Risks, controls, requirements: create, assess, link to steps, import, settings; control tests, issues, questionnaires; rest of the workspace read-only |
+| Internal Audit | Audit universe, plan, engagements, work programmes, findings; tests and reviews controls; questionnaires; rest read-only |
+| Viewer | Knowledge Portal only (published content, read-only); answers questionnaires sent to them and their own issue actions |
 
 Permissions are checked **on the server** for every request (NestJS guards). The UI hides what the user cannot do, but never relies on that for security.
 
@@ -191,6 +193,18 @@ Phase 4.1 additions (DECISIONS D-089 – D-095):
 - Process-level links use element id `#process`; permissions `grc.read`, `grc.propose`, `grc.edit`, `grc.admin`;
   system role `RISK_OFFICER`; notification `GRC_REVIEW`; audit actions `IMPORT`, `ASSESS`; Setting `grc`
 - Shared `packages/shared/src/grc.ts` (schemas, ratings, per-step coverage, control-gap rules); AI feature `CONTROL_GAPS`
+
+Phase 4.2 additions (DECISIONS D-098 – D-103):
+
+- `GrcChange` + `GrcChangeTask` (approval of changes to active risks / controls; Setting `grc.changeApproval`)
+- `Control.operatingEffectiveness` + `lastTestedAt`; `ControlTestPlan`, `ControlTest` (samples, conclusion, four-eyes)
+- `Issue` + `IssueAction` (sources, severity scale in Setting `assurance`, verification, accepted risk, escalation);
+  `Department.managerId`
+- `AuditEngagement`, `AuditWorkItem`, `AuditFinding` (management response → issue); role `INTERNAL_AUDIT`
+- `Questionnaire`, `SurveyCampaign`, `SurveyResponse`, `SurveyProposal` (RCSA proposals, process feedback)
+- Generic `AssuranceFile` (evidence) and `AssuranceEvent` (history and comments); permissions `controls.test`,
+  `controls.review`, `issues.manage`, `audit.manage`, `surveys.manage`, `surveys.respond`; notifications
+  `GRC_CHANGE`, `CONTROL_TEST`, `ISSUE`, `AUDIT`, `SURVEY`; shared `packages/shared/src/assurance.ts`
 
 ## 10. Definition of Done (every phase)
 

@@ -33,6 +33,9 @@ import { PageHeader } from '@/components/PageHeader';
 import { ErrorState, LoadingState } from '@/components/states';
 import { useErrorMessage, useFormatDate, useLocalized } from '@/components/i18n-helpers';
 import { GrcFormModal } from './GrcFormModal';
+import { GrcChangeCard } from '@/features/assurance/GrcChangeCard';
+import { ControlTestingCard } from '@/features/assurance/ControlTestingCard';
+import { RaiseIssueButton } from '@/features/assurance/RaiseIssueButton';
 import { RiskMatrix } from './RiskMatrix';
 import { GRC_ROUTES, grcItemPath, stepHref, useCategoryName, useGrcAccess } from './grc-helpers';
 import { EffectivenessTag, GrcStatusTag, OverdueTag, RatingTag } from './grc-tags';
@@ -227,7 +230,7 @@ export function GrcDetailPage({ type }: { type: GrcObjectType }) {
   if (detail.isLoading) return <LoadingState />;
   if (detail.isError || !detail.data)
     return <ErrorState error={detail.error} onRetry={() => void detail.refetch()} />;
-  const { item, steps } = detail.data;
+  const { item, steps, pendingChange } = detail.data;
   const person = (u: typeof item.owner) => (u ? loc(u) || u.email : '—');
 
   const confirmDelete = () =>
@@ -383,8 +386,30 @@ export function GrcDetailPage({ type }: { type: GrcObjectType }) {
       },
       {
         key: 'eff',
-        label: t('grc:fields.effectiveness'),
-        children: <EffectivenessTag value={c.effectiveness} />,
+        label: t('grc:fields.selfAssessed'),
+        children: (
+          <Space size={4} wrap>
+            <EffectivenessTag value={c.effectiveness} />
+            {c.operatingEffectiveness === 'NOT_ASSESSED' && (
+              <Typography.Text type="secondary">{t('grc:fields.counts')}</Typography.Text>
+            )}
+          </Space>
+        ),
+      },
+      {
+        key: 'tested',
+        label: t('grc:fields.operatingEffectiveness'),
+        children: (
+          <Space size={4} wrap data-testid="tested-effectiveness">
+            <EffectivenessTag value={c.operatingEffectiveness} />
+            {c.operatingEffectiveness !== 'NOT_ASSESSED' && (
+              <Typography.Text type="secondary">
+                {t('grc:fields.counts')} · {formatDate(c.lastTestedAt, false)}
+              </Typography.Text>
+            )}
+            {c.testOverdue && <Tag color="red">{t('grc:fields.testOverdue')}</Tag>}
+          </Space>
+        ),
       },
       {
         key: 'assessed',
@@ -481,9 +506,26 @@ export function GrcDetailPage({ type }: { type: GrcObjectType }) {
         extra={
           <Flex gap={8} wrap="wrap">
             {access.canChange(item) && (
-              <Button icon={<EditOutlined />} onClick={() => setEditing(true)}>
+              <Button
+                icon={<EditOutlined />}
+                disabled={!!pendingChange}
+                title={pendingChange ? t('assurance:changes.editBlocked') : undefined}
+                onClick={() => setEditing(true)}
+              >
                 {t('edit')}
               </Button>
+            )}
+            {item.type === 'RISK' && item.status === 'ACTIVE' && (
+              <RaiseIssueButton
+                prefill={{
+                  sourceType: 'RISK_ASSESSMENT',
+                  sourceId: item.id,
+                  riskId: item.id,
+                  ownerId: item.owner?.id ?? null,
+                  titleEn: item.nameEn,
+                  titleAr: item.nameAr,
+                }}
+              />
             )}
             {access.canDelete(item) && (
               <Button danger icon={<DeleteOutlined />} onClick={confirmDelete}>
@@ -496,6 +538,7 @@ export function GrcDetailPage({ type }: { type: GrcObjectType }) {
       {item.status === 'DRAFT' && (
         <Typography.Paragraph type="warning">{t('grc:detail.proposal')}</Typography.Paragraph>
       )}
+      {pendingChange && <GrcChangeCard change={pendingChange} />}
       <Row gutter={[16, 16]}>
         <Col xs={24} lg={14}>
           <Card style={{ marginBlockEnd: 16 }}>
@@ -511,6 +554,9 @@ export function GrcDetailPage({ type }: { type: GrcObjectType }) {
             />
           </Card>
           {side && <Card style={{ marginBlockEnd: 16 }}>{side}</Card>}
+          {item.type === 'CONTROL' && item.status !== 'DRAFT' && (
+            <ControlTestingCard control={item as ControlDto} />
+          )}
           <GrcTimeline id={item.id} canComment={access.canComment} />
         </Col>
         <Col xs={24} lg={10}>

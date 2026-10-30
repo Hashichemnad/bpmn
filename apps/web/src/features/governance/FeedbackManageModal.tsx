@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { FEEDBACK_STATUSES, type FeedbackDto, type FeedbackStatus } from '@processhub/shared';
 import { useUpdateFeedback } from '@/api/governance';
 import { useErrorMessage, useFormatDate, useLocalized } from '@/components/i18n-helpers';
+import { RaiseIssueButton } from '@/features/assurance/RaiseIssueButton';
 
 /** The owner sets the status of portal feedback and answers the sender. */
 export function FeedbackManageModal({
@@ -53,6 +54,19 @@ export function FeedbackManageModal({
       >
         {feedback.message}
       </Typography.Paragraph>
+      <div style={{ marginBlockEnd: 12 }}>
+        <RaiseIssueButton
+          size="small"
+          prefill={{
+            sourceType: 'FEEDBACK',
+            sourceId: feedback.id,
+            severity: 'LOW',
+            titleEn: feedback.message.slice(0, 120),
+            titleAr: feedback.message.slice(0, 120),
+            descriptionEn: feedback.message,
+          }}
+        />
+      </div>
       <Form
         form={form}
         layout="vertical"

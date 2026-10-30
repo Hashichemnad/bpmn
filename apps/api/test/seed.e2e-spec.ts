@@ -57,6 +57,7 @@ describe('Seed (e2e)', () => {
       include: { roles: { include: { role: true } } },
     });
     expect(demo.map((u) => [u.email, u.roles[0].role.key]).sort()).toEqual([
+      ['audit@processhub.local', 'INTERNAL_AUDIT'],
       ['auditor@processhub.local', 'AUDITOR'],
       ['modeler@processhub.local', 'MODELER'],
       ['owner@processhub.local', 'PROCESS_OWNER'],
@@ -66,6 +67,12 @@ describe('Seed (e2e)', () => {
     ]);
     // Phase 4.1: risks, controls and requirements linked to steps, incl. a critical residual
     // risk without an effective control.
+    // Phase 4.2: test plans with a failed test → issue, an engagement with two findings, an RCSA campaign.
+    expect(await ctx.prisma.controlTestPlan.count()).toBe(2);
+    expect(await ctx.prisma.controlTest.count({ where: { conclusion: 'NOT_EFFECTIVE' } })).toBe(1);
+    expect(await ctx.prisma.issue.count()).toBe(2);
+    expect(await ctx.prisma.auditFinding.count()).toBe(2);
+    expect(await ctx.prisma.surveyProposal.count({ where: { status: 'PENDING' } })).toBe(4);
     expect(await ctx.prisma.risk.count()).toBe(10);
     expect(await ctx.prisma.control.count()).toBe(12);
     expect(await ctx.prisma.requirement.count()).toBe(6);
@@ -75,7 +82,8 @@ describe('Seed (e2e)', () => {
     });
     expect(uncovered.residualLikelihood! * uncovered.residualImpact!).toBeGreaterThanOrEqual(16);
     expect(uncovered.controls.every((c) => c.control.effectiveness === 'NOT_ASSESSED')).toBe(true);
-    expect(await ctx.prisma.workflow.count()).toBe(2);
+    // Two demo workflows + the base "GRC change approval" workflow (D-106).
+    expect(await ctx.prisma.workflow.count()).toBe(3);
     // AI assistant: suggestion chips for the demo, disabled until a key is entered.
     const ai = await ctx.prisma.setting.findUniqueOrThrow({ where: { key: 'ai' } });
     expect(ai.value).toMatchObject({ enabled: false, apiKeySealed: null });

@@ -13,6 +13,9 @@ interface Template {
  * language from `titleEn/titleAr`, `actorEn/actorAr`, `stepEn/stepAr`; other placeholders
  * (`{version}`, `{comment}`, `{due}`, `{status}`, `{reply}`) are used as they are.
  */
+/** Phase 4.2 types: subject and text come from KIND_TEMPLATES by `params.kind`. */
+const BY_KIND = { subject: '{kindSubject}', body: '{kindBody}' };
+
 const TEMPLATES: Record<Locale, Record<NotificationType, Template>> = {
   en: {
     REVIEW_REQUESTED: {
@@ -61,8 +64,13 @@ const TEMPLATES: Record<Locale, Record<NotificationType, Template>> = {
     },
     GRC_REVIEW: {
       subject: 'Risk & Compliance review due: {code} {title}',
-      body: '“{title}” ({code}) is due for review on {due}. Please reassess it in Risk & Compliance.',
+      body: '“{title}” is due for review on {due}. Please reassess it in Risk & Compliance.',
     },
+    GRC_CHANGE: BY_KIND,
+    CONTROL_TEST: BY_KIND,
+    ISSUE: BY_KIND,
+    AUDIT: BY_KIND,
+    SURVEY: BY_KIND,
   },
   ar: {
     REVIEW_REQUESTED: {
@@ -111,8 +119,269 @@ const TEMPLATES: Record<Locale, Record<NotificationType, Template>> = {
     },
     GRC_REVIEW: {
       subject: 'موعد مراجعة المخاطر والامتثال: {code} {title}',
-      body: 'موعد مراجعة «{title}» ({code}) هو {due}. يرجى إعادة تقييمه في قسم المخاطر والامتثال.',
+      body: 'موعد مراجعة «{title}» هو {due}. يرجى إعادة تقييمه في قسم المخاطر والامتثال.',
     },
+    GRC_CHANGE: BY_KIND,
+    CONTROL_TEST: BY_KIND,
+    ISSUE: BY_KIND,
+    AUDIT: BY_KIND,
+    SURVEY: BY_KIND,
+  },
+};
+
+/**
+ * Phase 4.2 notification types share one template each; the text depends on `params.kind`
+ * (e.g. GRC_CHANGE requested / approved / rejected).
+ */
+export const KIND_TEMPLATES: Record<Locale, Record<string, { subject: string; body: string }>> = {
+  en: {
+    'GRC_CHANGE:requested': {
+      subject: 'Approval requested: change of {title}',
+      body: '{actor} proposed a change of “{title}” ({step}). The current values stay in force until it is approved.',
+    },
+    'GRC_CHANGE:approved': {
+      subject: 'Change approved: {title}',
+      body: 'The proposed change of “{title}” was approved and is now in force.',
+    },
+    'GRC_CHANGE:rejected': {
+      subject: 'Change rejected: {title}',
+      body: '{actor} rejected the proposed change of “{title}”. {comment}',
+    },
+    'CONTROL_TEST:assigned': {
+      subject: 'Control test {period}: {title}',
+      body: 'A test of the control “{title}” ({period}) is assigned to you, due on {due}.',
+    },
+    'CONTROL_TEST:due': {
+      subject: 'Control test due on {due}: {title}',
+      body: 'The test of “{title}” ({period}) is due on {due}.',
+    },
+    'CONTROL_TEST:overdue': {
+      subject: 'Control test overdue: {title}',
+      body: 'The test of “{title}” ({period}) was due on {due} and is not submitted yet.',
+    },
+    'CONTROL_TEST:submitted': {
+      subject: 'Control test to review: {title}',
+      body: '{actor} submitted the test of “{title}” ({period}) for your review.',
+    },
+    'CONTROL_TEST:returned': {
+      subject: 'Control test returned: {title}',
+      body: '{actor} returned the test of “{title}” ({period}): {comment}',
+    },
+    'CONTROL_TEST:reviewed': {
+      subject: 'Control test reviewed: {title}',
+      body: 'The test of “{title}” ({period}) was reviewed. Conclusion: {conclusion}.',
+    },
+    'ISSUE:assigned': {
+      subject: 'Issue assigned to you: {title}',
+      body: 'The issue “{title}” is assigned to you. Due: {due}.',
+    },
+    'ISSUE:action_assigned': {
+      subject: 'Action assigned to you: {step}',
+      body: 'The action “{step}” of the issue “{title}” is assigned to you. Due: {due}.',
+    },
+    'ISSUE:ready': {
+      subject: 'Issue ready for verification: {title}',
+      body: 'The owner reports that the issue “{title}” is fixed. Please verify it.',
+    },
+    'ISSUE:closed': {
+      subject: 'Issue closed: {title}',
+      body: '{actor} verified the fix and closed the issue “{title}”.',
+    },
+    'ISSUE:returned': {
+      subject: 'Issue verification rejected: {title}',
+      body: '{actor} did not accept the fix of “{title}”: {comment}',
+    },
+    'ISSUE:accepted': {
+      subject: 'Risk accepted: {title}',
+      body: '{actor} accepted the risk of the issue “{title}”: {comment}',
+    },
+    'ISSUE:reopened': {
+      subject: 'Issue reopened: {title}',
+      body: '{actor} reopened the issue “{title}”: {comment}',
+    },
+    'ISSUE:due': {
+      subject: 'Issue due on {due}: {title}',
+      body: 'The issue “{title}” is due on {due}.',
+    },
+    'ISSUE:overdue': {
+      subject: 'Issue overdue: {title}',
+      body: 'The issue “{title}” was due on {due} and is still open.',
+    },
+    'ISSUE:escalated': {
+      subject: 'Escalation: overdue issue {title}',
+      body: 'The issue “{title}” was due on {due} and is still open. You receive this escalation as the owner’s manager or as Risk & Compliance.',
+    },
+    'ISSUE:action_due': {
+      subject: 'Action due on {due}: {step}',
+      body: 'The action “{step}” of the issue “{title}” is due on {due}.',
+    },
+    'ISSUE:action_overdue': {
+      subject: 'Action overdue: {step}',
+      body: 'The action “{step}” of the issue “{title}” was due on {due}.',
+    },
+    'ISSUE:action_escalated': {
+      subject: 'Escalation: overdue action {step}',
+      body: 'The action “{step}” of the issue “{title}” was due on {due} and is not done.',
+    },
+    'AUDIT:team': {
+      subject: 'Audit engagement: {title}',
+      body: 'You are on the team of the audit engagement “{title}”.',
+    },
+    'AUDIT:response': {
+      subject: 'Management response requested: {title}',
+      body: 'Please respond to the audit finding “{title}”: agree with an action and a target date, or explain why not.',
+    },
+    'AUDIT:agreed': {
+      subject: 'Finding agreed: {title}',
+      body: '{actor} agreed to the audit finding “{title}”; an issue with the action was created.',
+    },
+    'AUDIT:disagreed': {
+      subject: 'Finding not agreed: {title}',
+      body: '{actor} did not agree to the audit finding “{title}”: {comment}',
+    },
+    'SURVEY:invited': {
+      subject: 'Questionnaire: {title}',
+      body: 'You are asked to answer the questionnaire “{title}” by {due}.',
+    },
+    'SURVEY:reminder': {
+      subject: 'Reminder — questionnaire: {title}',
+      body: 'The questionnaire “{title}” closes on {due}. Please answer it if you have not done so yet.',
+    },
+    'GRC_CHANGE:batch': {
+      subject: 'Approval requested: imported changes of risks and controls',
+      body: '{actor} imported changes of active risks or controls from Excel. They wait for your approval in My tasks (approve or reject them together).',
+    },
+  },
+  ar: {
+    'GRC_CHANGE:requested': {
+      subject: 'طلب اعتماد: تعديل {title}',
+      body: 'اقترح {actor} تعديل «{title}» ({step}). تبقى القيم الحالية سارية حتى الاعتماد.',
+    },
+    'GRC_CHANGE:approved': {
+      subject: 'تم اعتماد التعديل: {title}',
+      body: 'تم اعتماد التعديل المقترح على «{title}» وأصبح ساريًا.',
+    },
+    'GRC_CHANGE:rejected': {
+      subject: 'رُفض التعديل: {title}',
+      body: 'رفض {actor} التعديل المقترح على «{title}». {comment}',
+    },
+    'CONTROL_TEST:assigned': {
+      subject: 'اختبار الضابط {period}: {title}',
+      body: 'أُسند إليك اختبار الضابط «{title}» ({period})، موعده {due}.',
+    },
+    'CONTROL_TEST:due': {
+      subject: 'موعد اختبار الضابط {due}: {title}',
+      body: 'موعد اختبار «{title}» ({period}) هو {due}.',
+    },
+    'CONTROL_TEST:overdue': {
+      subject: 'اختبار ضابط متأخر: {title}',
+      body: 'كان موعد اختبار «{title}» ({period}) في {due} ولم يُقدَّم بعد.',
+    },
+    'CONTROL_TEST:submitted': {
+      subject: 'اختبار ضابط للمراجعة: {title}',
+      body: 'قدّم {actor} اختبار «{title}» ({period}) لمراجعتك.',
+    },
+    'CONTROL_TEST:returned': {
+      subject: 'أُعيد اختبار الضابط: {title}',
+      body: 'أعاد {actor} اختبار «{title}» ({period}): {comment}',
+    },
+    'CONTROL_TEST:reviewed': {
+      subject: 'تمت مراجعة اختبار الضابط: {title}',
+      body: 'تمت مراجعة اختبار «{title}» ({period}). النتيجة: {conclusion}.',
+    },
+    'ISSUE:assigned': {
+      subject: 'أُسندت إليك ملاحظة: {title}',
+      body: 'أُسندت إليك الملاحظة «{title}». الموعد: {due}.',
+    },
+    'ISSUE:action_assigned': {
+      subject: 'أُسند إليك إجراء: {step}',
+      body: 'أُسند إليك الإجراء «{step}» من الملاحظة «{title}». الموعد: {due}.',
+    },
+    'ISSUE:ready': {
+      subject: 'ملاحظة جاهزة للتحقق: {title}',
+      body: 'أفاد المالك بمعالجة الملاحظة «{title}». يرجى التحقق منها.',
+    },
+    'ISSUE:closed': {
+      subject: 'أُغلقت الملاحظة: {title}',
+      body: 'تحقق {actor} من المعالجة وأغلق الملاحظة «{title}».',
+    },
+    'ISSUE:returned': {
+      subject: 'رُفض التحقق: {title}',
+      body: 'لم يقبل {actor} معالجة «{title}»: {comment}',
+    },
+    'ISSUE:accepted': {
+      subject: 'تم قبول المخاطر: {title}',
+      body: 'قبل {actor} مخاطر الملاحظة «{title}»: {comment}',
+    },
+    'ISSUE:reopened': {
+      subject: 'أُعيد فتح الملاحظة: {title}',
+      body: 'أعاد {actor} فتح الملاحظة «{title}»: {comment}',
+    },
+    'ISSUE:due': {
+      subject: 'موعد الملاحظة {due}: {title}',
+      body: 'موعد الملاحظة «{title}» هو {due}.',
+    },
+    'ISSUE:overdue': {
+      subject: 'ملاحظة متأخرة: {title}',
+      body: 'كان موعد الملاحظة «{title}» في {due} وما زالت مفتوحة.',
+    },
+    'ISSUE:escalated': {
+      subject: 'تصعيد: ملاحظة متأخرة {title}',
+      body: 'كان موعد الملاحظة «{title}» في {due} وما زالت مفتوحة. تصلك هذه الرسالة بصفتك مدير المالك أو من المخاطر والامتثال.',
+    },
+    'ISSUE:action_due': {
+      subject: 'موعد الإجراء {due}: {step}',
+      body: 'موعد الإجراء «{step}» من الملاحظة «{title}» هو {due}.',
+    },
+    'ISSUE:action_overdue': {
+      subject: 'إجراء متأخر: {step}',
+      body: 'كان موعد الإجراء «{step}» من الملاحظة «{title}» في {due}.',
+    },
+    'ISSUE:action_escalated': {
+      subject: 'تصعيد: إجراء متأخر {step}',
+      body: 'كان موعد الإجراء «{step}» من الملاحظة «{title}» في {due} ولم يُنجز.',
+    },
+    'AUDIT:team': {
+      subject: 'مهمة تدقيق: {title}',
+      body: 'أنت ضمن فريق مهمة التدقيق «{title}».',
+    },
+    'AUDIT:response': {
+      subject: 'مطلوب رد الإدارة: {title}',
+      body: 'يرجى الرد على نتيجة التدقيق «{title}»: الموافقة مع إجراء وتاريخ مستهدف، أو توضيح سبب عدم الموافقة.',
+    },
+    'AUDIT:agreed': {
+      subject: 'تمت الموافقة على النتيجة: {title}',
+      body: 'وافق {actor} على نتيجة التدقيق «{title}»، وأُنشئت ملاحظة بالإجراء.',
+    },
+    'AUDIT:disagreed': {
+      subject: 'لم تتم الموافقة على النتيجة: {title}',
+      body: 'لم يوافق {actor} على نتيجة التدقيق «{title}»: {comment}',
+    },
+    'SURVEY:invited': {
+      subject: 'استبيان: {title}',
+      body: 'يُطلب منك الإجابة على الاستبيان «{title}» قبل {due}.',
+    },
+    'SURVEY:reminder': {
+      subject: 'تذكير — استبيان: {title}',
+      body: 'يُغلق الاستبيان «{title}» في {due}. يرجى الإجابة عليه إن لم تفعل بعد.',
+    },
+    'GRC_CHANGE:batch': {
+      subject: 'طلب اعتماد: تعديلات مستوردة على المخاطر والضوابط',
+      body: 'استورد {actor} تعديلات على مخاطر أو ضوابط نشطة من Excel. تنتظر اعتمادك في مهامي (اعتمادها أو رفضها معًا).',
+    },
+  },
+};
+
+const CONCLUSIONS: Record<Locale, Record<string, string>> = {
+  en: {
+    EFFECTIVE: 'effective',
+    EFFECTIVE_WITH_EXCEPTIONS: 'effective with exceptions',
+    NOT_EFFECTIVE: 'not effective',
+  },
+  ar: {
+    EFFECTIVE: 'فعال',
+    EFFECTIVE_WITH_EXCEPTIONS: 'فعال مع استثناءات',
+    NOT_EFFECTIVE: 'غير فعال',
   },
 };
 
@@ -192,7 +461,14 @@ export function templateValues(
     status: labels[String(params.status ?? '')] ?? String(params.status ?? ''),
     kind: labels[String(params.kind ?? '')] ?? String(params.kind ?? ''),
     reply: String(params.reply ?? ''),
+    period: String(params.period ?? ''),
+    conclusion:
+      CONCLUSIONS[locale][String(params.conclusion ?? '')] ?? String(params.conclusion ?? ''),
   };
+  const kindTpl = KIND_TEMPLATES[locale][`${type}:${String(params.kind ?? '')}`];
+  // Unknown kinds fall back to the item's title (never an empty e-mail).
+  values.kindSubject = kindTpl ? fill(kindTpl.subject, values) : values.title;
+  values.kindBody = kindTpl ? fill(kindTpl.body, values) : values.title;
   if (type === 'REVIEW_OVERDUE') {
     values.overdue = fill(
       OVERDUE[locale][params.kind === 'periodic' ? 'periodic' : 'task'],

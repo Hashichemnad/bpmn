@@ -17,6 +17,7 @@ import { NotificationItem } from '@/features/notifications/NotificationBell';
 import { useOpenNotification } from '@/features/notifications/use-open-notification';
 import { ItemTitle } from './ItemTitle';
 import { FeedbackManageModal } from './FeedbackManageModal';
+import { useAssuranceTaskTabs } from '@/features/assurance/AssuranceTaskTabs';
 
 type TabKey =
   'reviews' | 'toPublish' | 'returned' | 'dueReviews' | 'grcReviews' | 'mentions' | 'feedback';
@@ -31,6 +32,7 @@ export function MyTasksPage() {
   const tasks = useMyTasks();
   const openNotification = useOpenNotification();
   const [feedback, setFeedback] = useState<FeedbackDto | null>(null);
+  const assurance = useAssuranceTaskTabs();
   const name = (u: { nameEn: string; nameAr: string; email: string } | null) =>
     u ? loc(u) || u.email : '—';
 
@@ -47,8 +49,11 @@ export function MyTasksPage() {
     mentions: d.mentions.length,
     feedback: d.feedback.length,
   };
-  const first = (Object.keys(counts) as TabKey[]).find((k) => counts[k] > 0) ?? 'reviews';
-  const tab = (params.get('tab') as TabKey) || first;
+  const first =
+    (Object.keys(counts) as TabKey[]).find((k) => counts[k] > 0) ??
+    Object.keys(assurance.counts).find((k) => assurance.counts[k] > 0) ??
+    'reviews';
+  const tab = params.get('tab') || first;
   const empty = (key: TabKey) => (
     <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description={t(`governance:tasks.empty.${key}`)} />
   );
@@ -364,6 +369,7 @@ export function MyTasksPage() {
                 empty('feedback')
               ),
             },
+            ...assurance.items,
           ]}
         />
       </Card>

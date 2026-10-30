@@ -17,3 +17,4 @@ export * from './step-attributes';
 export * from './bpmn-graph';
 export * from './conventions';
 export * from './grc';
+export * from './assurance';

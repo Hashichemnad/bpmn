@@ -61,6 +61,18 @@ export const PERMISSIONS = {
   GRC_EDIT: 'grc.edit',
   /** Risk matrix, categories, portal visibility; delete GRC items. */
   GRC_ADMIN: 'grc.admin',
+  /** Execute control tests assigned to the user (or to one of their roles). Phase 4.2. */
+  CONTROLS_TEST: 'controls.test',
+  /** Review (sign off or return) submitted control tests — never one's own (four-eyes). */
+  CONTROLS_REVIEW: 'controls.review',
+  /** Raise issues and manage any issue and its action plan. */
+  ISSUES_MANAGE: 'issues.manage',
+  /** Audit universe, annual audit plan, engagements, work programmes and findings. */
+  AUDIT_MANAGE: 'audit.manage',
+  /** Build questionnaires and run survey campaigns. */
+  SURVEYS_MANAGE: 'surveys.manage',
+  /** Answer questionnaires one is asked to answer. */
+  SURVEYS_RESPOND: 'surveys.respond',
 } as const;
 export type Permission = (typeof PERMISSIONS)[keyof typeof PERMISSIONS];
 export const ALL_PERMISSIONS: Permission[] = Object.values(PERMISSIONS);
@@ -73,6 +85,7 @@ export const SYSTEM_ROLE_KEYS = [
   'REVIEWER',
   'AUDITOR',
   'RISK_OFFICER',
+  'INTERNAL_AUDIT',
   'VIEWER',
 ] as const;
 export type SystemRoleKey = (typeof SYSTEM_ROLE_KEYS)[number];
@@ -120,6 +133,8 @@ export const SYSTEM_ROLES: Record<
       P.DICTIONARY_APPROVE,
       P.GRC_READ,
       P.GRC_PROPOSE,
+      P.CONTROLS_TEST,
+      P.SURVEYS_RESPOND,
     ],
   },
   MODELER: {
@@ -136,12 +151,13 @@ export const SYSTEM_ROLES: Record<
       P.DICTIONARY_PROPOSE,
       P.GRC_READ,
       P.GRC_PROPOSE,
+      P.SURVEYS_RESPOND,
     ],
   },
   REVIEWER: {
     nameEn: 'Reviewer',
     nameAr: 'مراجع',
-    permissions: [...READ_REPOSITORY, P.USERS_READ, P.GRC_READ],
+    permissions: [...READ_REPOSITORY, P.USERS_READ, P.GRC_READ, P.SURVEYS_RESPOND],
   },
   AUDITOR: {
     nameEn: 'Auditor',
@@ -159,6 +175,7 @@ export const SYSTEM_ROLES: Record<
       P.GOVERNANCE_DASHBOARD,
       P.AI_USAGE_READ,
       P.GRC_READ,
+      P.SURVEYS_RESPOND,
     ],
   },
   RISK_OFFICER: {
@@ -173,13 +190,34 @@ export const SYSTEM_ROLES: Record<
       P.GRC_PROPOSE,
       P.GRC_EDIT,
       P.GRC_ADMIN,
+      P.CONTROLS_TEST,
+      P.CONTROLS_REVIEW,
+      P.ISSUES_MANAGE,
+      P.SURVEYS_MANAGE,
+      P.SURVEYS_RESPOND,
+    ],
+  },
+  INTERNAL_AUDIT: {
+    nameEn: 'Internal Audit',
+    nameAr: 'التدقيق الداخلي',
+    // Audit plan, engagements and findings; tests and reviews controls; the rest read-only (D-101).
+    permissions: [
+      ...READ_REPOSITORY,
+      P.USERS_READ,
+      P.GOVERNANCE_DASHBOARD,
+      P.GRC_READ,
+      P.AUDIT_MANAGE,
+      P.CONTROLS_TEST,
+      P.CONTROLS_REVIEW,
+      P.SURVEYS_MANAGE,
+      P.SURVEYS_RESPOND,
     ],
   },
   VIEWER: {
     nameEn: 'Viewer',
     nameAr: 'مشاهد',
-    // Knowledge Portal only: published content, read-only (D-028).
-    permissions: [P.PORTAL_READ],
+    // Knowledge Portal only: published content, read-only (D-028); answers questionnaires sent to them.
+    permissions: [P.PORTAL_READ, P.SURVEYS_RESPOND],
   },
 };
 
@@ -317,6 +355,15 @@ export const AUDIT_ENTITY_TYPES = [
   'Risk',
   'Control',
   'Requirement',
+  'ControlTestPlan',
+  'ControlTest',
+  'Issue',
+  'IssueAction',
+  'AuditEngagement',
+  'AuditFinding',
+  'Questionnaire',
+  'SurveyCampaign',
+  'SurveyResponse',
 ] as const;
 export type AuditEntityType = (typeof AUDIT_ENTITY_TYPES)[number];
 
@@ -337,6 +384,8 @@ export const SETTING_KEYS = {
   MODELING_CONVENTIONS: 'modeling.conventions',
   /** Risk & Compliance: categories, risk matrix, portal visibility, reminders. */
   GRC: 'grc',
+  /** Assurance (Phase 4.2): issue severity scale, escalation. */
+  ASSURANCE: 'assurance',
 } as const;
 
 /** Logo upload limits. */
@@ -538,6 +587,16 @@ export const NOTIFICATION_TYPES = [
   'FEEDBACK_UPDATED',
   /** Risk, control or requirement review due soon or overdue (params.kind: due | overdue). */
   'GRC_REVIEW',
+  /** Change of an active risk / control: approval requested, approved or rejected (params.kind). */
+  'GRC_CHANGE',
+  /** Control test assigned / due / overdue / submitted / returned / reviewed (params.kind). */
+  'CONTROL_TEST',
+  /** Issue / action assigned, due, overdue, escalated, ready for verification, closed (params.kind). */
+  'ISSUE',
+  /** Audit engagement / finding: added to the team, response requested, response given (params.kind). */
+  'AUDIT',
+  /** Questionnaire to answer: invited / reminder (params.kind). */
+  'SURVEY',
 ] as const;
 export type NotificationType = (typeof NOTIFICATION_TYPES)[number];
 

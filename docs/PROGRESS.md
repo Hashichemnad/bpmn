@@ -2,7 +2,129 @@
 
 Read this together with `CLAUDE.md` at the start of every session.
 
-## Current state — 2026-10-30 (Phase 4 — Part 1: GRC core, branch `phase-4-1-grc`, done — awaiting review)
+## Current state — 2026-10-30 (Phase 4 — Part 2: GRC assurance, branch `phase-4-2-grc-assurance`, done — awaiting review)
+
+Everything up to Phase 4.1 (GRC core) is merged into `main`. This branch builds module M10 assurance (DOF RFP §4.5,
+compliance items 32–36): approval of changes to active risks / controls, control testing, issues and action plans,
+audit management, questionnaires and the assurance dashboard. Phase 4.3 (EA, KPIs, Salesforce, Oracle overlay) stays
+in BACKLOG. The session works on `claude/eager-dirac-5r1gd8` (the harness branch) and pushes the same commits to
+`phase-4-2-grc-assurance`.
+
+Local setup used by this session: PostgreSQL 16 (`service postgresql start`; role `processhub` / `devpassword`,
+databases `processhub`, `processhub_test`); S3 for the dev stack: `moto_server -p 7070` from a Python venv (Docker
+Hub pulls of the Versity image hit the rate limit); API from `apps/api/dist` with `SCHEDULER_INTERVAL_MINUTES=0`,
+Vite on 5173; Playwright with `E2E_BASE_URL=http://localhost:5173` and
+`E2E_CHROMIUM_PATH=/opt/pw-browsers/chromium-1243/chrome-linux64/chrome`. Run single API suites with
+`npx jest --runInBand test/<file> --selectProjects e2e` (the path must come before `--selectProjects`).
+
+Steps (tick as they are committed; a new session continues at the first unticked one):
+
+- [x] 0. Approval of changes to active risks and controls (D-098): Settings → Risk & Compliance → "Approval of
+      changes" (off by default; once on: risks and controls, workflow = chosen one or the governance default).
+      An update of a non-draft risk / control becomes a `GrcChange` (proposed input + before / after) routed through
+      the workflow steps (`GrcChangeTask`, ANY / ALL, four-eyes, approvers need `grc.read` + `reviews.decide`); the
+      current values stay in force until the last approval applies the input unchanged; reject / withdraw; one
+      pending change per item (`CHANGE_PENDING`). API `/grc/changes` (list, mine, detail, decision, withdraw), detail
+      `pendingChange`, notification `GRC_CHANGE` (requested / approved / rejected, e-mail EN/AR), My tasks tab
+      "Change approvals" (`GET /assurance/tasks`, new module `assurance`). Web: before / after card with steps and
+      Approve / Reject / Withdraw on the risk / control page. Tests: shared 2, API 4 (`grc-changes.e2e-spec.ts`),
+      Playwright 1 (`assurance.spec.ts`).
+- [x] 1. Control testing (D-099): `ControlTestPlan` per control (bilingual steps, design / operating, sample size and
+      test frequency suggested from the control frequency, tester / reviewer = user or role, next due, lead days),
+      `ControlTest` (Planned → In progress → Submitted → Reviewed / Returned → Closed; samples × steps, conclusion,
+      comments), evidence `AssuranceFile` (attachment allow-list + magic bytes, `GET /assurance/files/:id` checked
+      per owner), history `AssuranceEvent`. Four-eyes (tester ≠ reviewer, executor never reviews). Signing off sets
+      `Control.operatingEffectiveness` + `lastTestedAt` with a GRC assessment entry; `isEffectiveControl` uses the
+      tested value when there is one (warnings, coverage, alert badge). `AssuranceScheduler` (own interval) creates
+      scheduled tests within the lead time and sends `CONTROL_TEST` reminders (assigned / due / overdue / submitted /
+      returned / reviewed, EN/AR e-mail). New permissions `controls.test`, `controls.review`, `issues.manage`,
+      `audit.manage`, `surveys.manage`, `surveys.respond` and role `INTERNAL_AUDIT` (bundles in D-101, mapped now).
+      Web: "Control tests" register (`/grc/tests`, URL filters), test page (procedure, samples grid, suggested
+      conclusion, evidence, history, Start / Save / Submit / Sign off / Return / Close), "Testing" card on the control
+      (plans, history, Test now), My tasks tabs "Control tests to perform / review". Tests: shared 4, API 3
+      (`control-tests.e2e-spec.ts`), Playwright 1.
+- [x] 2. Issues and action plans (D-100): `Issue` (ISS-0001 …, bilingual, source CONTROL_TEST / RISK_ASSESSMENT /
+      AUDIT_FINDING / FEEDBACK / MANUAL with a link back, severity from the new Setting `assurance` scale, owner, due,
+      links to process / step / risk / control / requirement / department) and `IssueAction` (owner, due, progress %,
+      evidence). Open → In progress → Ready for verification (all actions at 100 %, `ACTIONS_OPEN`) → Closed (raiser or
+      a GRC officer verifies, never the owner) or Accepted risk (officer, justification). Reminders, overdue and
+      escalation after `escalationDays` to the owner's department manager (new `Department.managerId`, field in Admin →
+      Departments) and / or the Risk & Compliance officers; ageing (days, buckets). Notification `ISSUE` (13 kinds,
+      EN/AR e-mail). Web: register `/grc/issues` (filters in the URL), issue page with action plan (progress slider,
+      evidence per action), lifecycle buttons, history; "Raise issue" on failed tests, risks and portal feedback;
+      Settings card "Issues"; My tasks tabs (my issues / my actions / to verify); portal "My tasks" + `/portal/issues/:id`
+      for action owners without the workspace (workspace links redirect there). Tests: API 3 (`issues.e2e-spec.ts`),
+      Playwright 1.
+- [x] 3. Audit management (D-101): audit universe (`GET /audits/universe?year`: processes and departments ranked by the
+      highest residual score of their active risks, last audited, engagements of the year), `AuditEngagement`
+      (AUD-YYYY-NN, bilingual title / objective / scope / summary, scope = processes, departments, risks, controls,
+      requirements, lead + team, planned / actual dates, Planned → Fieldwork → Reporting → Follow-up → Closed, one step
+      at a time, closing needs every finding answered), `AuditWorkItem` (checklist / test steps, "test a control" copies
+      its current test procedure, status, result, working notes, evidence), `AuditFinding` (F-01 …, rating from the
+      severity scale, condition / criteria (+ requirement) / cause / effect / recommendation, trace to process, step,
+      risk, control, work item; management response owner). Responses: agree (action + target date → an `Issue`
+      with the action, source AUDIT_FINDING, same trace) or disagree (reason). Audit report `.docx` (cover, summary,
+      objective, scope, findings table, findings with trace and management responses; Arabic right-to-left), audited
+      `EXPORT`. Role `INTERNAL_AUDIT` (+ demo user `audit@processhub.local`); audits readable by `audit.manage`,
+      `grc.edit` and `audit.read` (Auditors). Notification `AUDIT` (team / response / agreed / disagreed). Web: Audits
+      (plan + universe with "Plan engagement"), engagement page (overview, work programme, findings, report EN / AR,
+      status steps), finding page for response owners (`/grc/findings/:id`, portal `/portal/findings/:id`), My tasks
+      "Audit findings to answer". Tests: API 1 (`audits.e2e-spec.ts`, incl. report in both languages and the universe),
+      e-mail templates 1, Playwright 1.
+- [x] 4. Questionnaires and surveys (D-102): `Questionnaire` (bilingual, purpose GENERAL / RCSA / COMPLIANCE /
+      PROCESS_FEEDBACK, definition = sections of questions: single / multiple choice, rating 1–5, yes/no/NA, text,
+      number, date, file upload; required, scoring weights and option scores, conditional show/hide on an earlier
+      answer, RCSA link to a risk's residual likelihood / impact or a control's effectiveness), `SurveyCampaign`
+      (definition snapshot, audience users / roles / departments limited to `surveys.respond` holders, dates, reminder
+      days, department or process assessed; Draft → Open → Closed, closes itself after the end date),
+      `SurveyResponse` (Sent → Opened → Submitted, answers, weighted score, file answers as `AssuranceFile`),
+      `SurveyProposal` (RCSA answers → proposals a GRC officer accepts — applied through the normal risk / control
+      update, so the change approval applies — or dismisses). Results per question (counts, averages, texts), Excel
+      export EN / AR (responses + summary sheets, right-to-left), audited `EXPORT`. "Request feedback" on a process
+      (editors of the process or survey managers): built-in short questionnaire, launched at once, recipients see the
+      read-only working (draft) diagram, each submission becomes a comment on the process. Notification `SURVEY`
+      (invited / reminder). Web: Questionnaires (campaigns + questionnaires), builder with preview, campaign page
+      (launch / close, tracking, results, proposals, Excel), response page in the workspace (`/surveys/:id`) and the
+      portal (`/portal/surveys/:id`), My tasks / portal tasks "Questionnaires to answer", "Request feedback" on the
+      process page. Tests: shared 5, API 2 (`surveys.e2e-spec.ts`), Playwright 1.
+- [x] 5. Assurance dashboard (D-103): `GET /assurance/dashboard` (scope organisation / department / process, year):
+      control tests done / due / overdue / awaiting review, % tested effective, by department and by process; open
+      and overdue issues, by severity and age (0–30 / 31–60 / 61–90 / 90+ days), overdue actions, accepted risks;
+      audit plan progress (engagements per status, late), findings by rating and pending responses; campaign
+      response rates. Every tile / bar opens the filtered list; Excel export EN / AR (`/assurance/dashboard/export`,
+      audited). Risk dashboard heat map toggle "Using tested effectiveness" (`/grc/dashboard?tested=true`, register
+      filter `matrix=tested`, shared `testedResidual`). Web: "Assurance dashboard" in the Risk & Compliance menu.
+      Tests: shared 2, API 1 (`assurance-dashboard.e2e-spec.ts`), Playwright 1.
+- [x] 6. Permissions, demo data, docs: authorisation matrix with real assurance records + a Modeler sweep over every
+      assurance write endpoint; route table in SECURITY.md regenerated; demo seed `seed-assurance.ts` (2 test plans,
+      the failed CTL-01 test → ISS-0001 with two actions, an overdue and a planned test, engagement AUD-YYYY-01 with
+      F-01 agreed → ISS-0002 and F-02 waiting for the response, RCSA campaign with two answers / four proposals; demo
+      user `audit@processhub.local`); screenshots EN / AR in `docs/screenshots/phase-4-2/` (spec
+      `screenshots-phase-4-2.spec.ts`, run with `SCREENSHOTS=1`), sample audit reports
+      `docs/samples/sample-audit-report-{en,ar}.docx`; README tour, CLAUDE.md (roles, data model, phase table),
+      BACKLOG (4.2 follow-ups, 4.3), DECISIONS D-098 – D-103.
+
+Verification on 2026-10-30: shared 147, web 79, API 359 tests pass; Playwright 35 tests (8 new in `assurance.spec.ts`)
+— 34 passed in the full run, the Phase 4.1 portal test hit the 30 s default budget with six sign-ins and now has 60 s
+(passes alone in 28 s); lint, format and type-check clean; `pnpm build` succeeds; `pnpm audit --audit-level high
+--prod` clean (7 moderate, unchanged). **Not verified here:** the Docker image builds — Docker Hub answered
+429 Too Many Requests for the base images in this sandbox (the build steps themselves, `pnpm build`, pass).
+
+- [x] 7. Product owner decisions on the pull request (D-104 – D-106): active / retired risks and controls cannot be
+      deleted (retire instead); Excel imports with change approval on → one batch of pending changes (approve /
+      reject together in My tasks, one notification), new rows as drafts, `CHANGE_PENDING` rows refused; base-seed
+      workflow "GRC change approval" (preselected, approval still off) + go-live step in DEPLOYMENT.md / SECURITY.md;
+      Viewer assignment checks with permission tests; feedback comments labelled "[Feedback request] <campaign>";
+      control page shows self-assessed and tested effectiveness, "Test overdue" flag, register filter and coverage
+      tile. Tests: shared 1, API +4 (grc-changes 2, issues 1, control-tests / surveys / grc / seed extended),
+      Playwright assertion for the two values.
+
+### Next (continue here)
+
+1. Review and merge the pull request `phase-4-2-grc-assurance` → `main` (CI builds the Docker images).
+2. Then Phase 4.3 (EA, KPIs, Salesforce, Oracle overlay — BACKLOG).
+
+## Previous state — 2026-10-30 (Phase 4 — Part 1: GRC core, branch `phase-4-1-grc`, done — awaiting review)
 
 Everything up to Modeler design Part B2 is merged into `main`. This branch builds module M10 core: risks,
 controls and requirements linked to process steps (DOF RFP §4.5). Phase 4.2 / 4.3 items are in BACKLOG.

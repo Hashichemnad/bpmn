@@ -166,10 +166,14 @@ export interface GrcScope {
   processId?: string;
 }
 
-export const useGrcDashboard = (scope: GrcScope) =>
+/** `tested`: residual heat map "using tested effectiveness" (Phase 4.2). */
+export const useGrcDashboard = (scope: GrcScope, tested = false) =>
   useQuery({
-    queryKey: ['grc', 'dashboard', scope],
-    queryFn: () => api<GrcDashboardDto>('/grc/dashboard', { query: { ...scope } }),
+    queryKey: ['grc', 'dashboard', scope, tested],
+    queryFn: () =>
+      api<GrcDashboardDto>('/grc/dashboard', {
+        query: { ...scope, ...(tested ? { tested: 'true' } : {}) },
+      }),
     placeholderData: keepPreviousData,
   });
 

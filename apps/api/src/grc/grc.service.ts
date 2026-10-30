@@ -5,8 +5,10 @@ import {
   extractBpmnLabels,
   isEffectiveControl,
   isOverdue,
+  isTestOverdue,
   rateRisk,
   riskScore,
+  testedResidual,
   type BpmnElementLabel,
   type ControlDto,
   type ControlEffectiveness,
@@ -15,6 +17,7 @@ import {
   type CreateRequirementInput,
   type CreateRiskInput,
   type GrcActivityDto,
+  type GrcChangeDto,
   type GrcItemDetailDto,
   type GrcObjectType,
   type GrcRef,
@@ -38,7 +41,7 @@ import {
 } from '@processhub/shared';
 import { PrismaService } from '../prisma/prisma.service';
 import { AuditService } from '../audit/audit.service';
-import { badRequest, forbidden, notFound } from '../common/app-exception';
+import { badRequest, conflict, forbidden, notFound } from '../common/app-exception';
 import type { AuthUser, RequestMeta } from '../common/auth-user';
 import { elementLabel } from '../models/bpmn-xml';
 import { GrcSettingsService } from './grc-settings.service';
@@ -65,6 +68,7 @@ const riskInclude = {
             select: {
               status: true,
               effectiveness: true,
+              operatingEffectiveness: true,
               keyControl: true,
               object: objRef,
             },
@@ -80,6 +84,7 @@ const controlInclude = {
   _count: { select: { links: { where: activeLinks } } },
   control: {
     include: {
+      testPlans: { where: { active: true, deletedAt: null }, select: { frequency: true } },
       department: deptRef,
       system: { select: { id: true, code: true, nameEn: true, nameAr: true, deletedAt: true } },
       risks: {
@@ -164,6 +169,7 @@ export function toRiskDto(o: RiskRow, settings: GrcSettings): RiskDto {
     .map((c) => ({
       ...ref(c.control.object, c.control.status),
       effectiveness: c.control.effectiveness as ControlEffectiveness,
+      operatingEffectiveness: c.control.operatingEffectiveness as ControlEffectiveness,
       keyControl: c.control.keyControl,
     }));
   return {
@@ -206,6 +212,15 @@ export function toControlDto(o: ControlRow, settings: GrcSettings): ControlDto {
         : null,
     effectiveness: c.effectiveness,
     lastAssessedAt: iso(c.lastAssessedAt),
+    operatingEffectiveness: c.operatingEffectiveness,
+    lastTestedAt: iso(c.lastTestedAt),
+    testOverdue:
+      c.status === 'ACTIVE' &&
+      c.operatingEffectiveness !== 'NOT_ASSESSED' &&
+      isTestOverdue(
+        c.lastTestedAt,
+        c.testPlans.map((p) => p.frequency),
+      ),
     risks: c.risks
       .filter((x) => !x.risk.object.deletedAt)
       .map((x) => ({
@@ -280,8 +295,41 @@ const RISK_ASSESSMENT = [
   'residualImpact',
 ] as const;
 
+/**
+ * Approval of changes to active risks and controls (Phase 4.2, D-098), registered by the
+ * assurance module: `submit` returns the item with its pending change when the update needs
+ * approval (null: apply directly); `pending` returns the open change of an item.
+ */
+export interface GrcChangeGate {
+  submit(
+    type: 'RISK' | 'CONTROL',
+    id: string,
+    status: GrcStatus,
+    input: UpdateRiskInput | UpdateControlInput,
+    actor: AuthUser,
+    meta: RequestMeta,
+    opts?: { batchId?: string },
+  ): Promise<GrcItemDetailDto | null | 'UNCHANGED'>;
+  pending(id: string, actor?: AuthUser): Promise<GrcChangeDto | null>;
+}
+
+/**
+ * Options of an update: `approved` applies an approved change (no new approval round);
+ * `batchId` groups the changes of one Excel import (D-104).
+ */
+export interface GrcUpdateOptions {
+  approved?: boolean;
+  batchId?: string;
+}
+
 @Injectable()
 export class GrcService {
+  private gate?: GrcChangeGate;
+
+  setChangeGate(gate: GrcChangeGate) {
+    this.gate = gate;
+  }
+
   constructor(
     private readonly prisma: PrismaService,
     private readonly audit: AuditService,
@@ -362,12 +410,17 @@ export class GrcService {
     if (q.inherentRating) items = items.filter((r) => r.rating.inherentBand === q.inherentRating);
     if (q.cell) {
       const [l, i] = q.cell.split(',').map(Number);
-      items = items.filter((r) =>
-        q.matrix === 'inherent'
-          ? r.inherentLikelihood === l && r.inherentImpact === i
-          : (r.residualLikelihood ?? r.inherentLikelihood) === l &&
-            (r.residualImpact ?? r.inherentImpact) === i,
-      );
+      items = items.filter((r) => {
+        if (q.matrix === 'inherent') return r.inherentLikelihood === l && r.inherentImpact === i;
+        const p =
+          q.matrix === 'tested'
+            ? testedResidual(r, r.controls)
+            : {
+                likelihood: r.residualLikelihood ?? r.inherentLikelihood,
+                impact: r.residualImpact ?? r.inherentImpact,
+              };
+        return p.likelihood === l && p.impact === i;
+      });
     }
     if (q.withoutControls !== undefined)
       items = items.filter((r) => (r.controls.length === 0) === q.withoutControls);
@@ -424,14 +477,15 @@ export class GrcService {
     return o;
   }
 
-  async getRisk(id: string): Promise<GrcItemDetailDto<RiskDto>> {
+  async getRisk(id: string, actor?: AuthUser): Promise<GrcItemDetailDto<RiskDto>> {
     await this.findItem(id, 'RISK');
-    const [row, settings, steps] = await Promise.all([
+    const [row, settings, steps, pendingChange] = await Promise.all([
       this.prisma.repoObject.findUniqueOrThrow({ where: { id }, include: riskInclude }),
       this.settings.get(),
       this.steps(id),
+      this.gate?.pending(id, actor) ?? null,
     ]);
-    return { item: toRiskDto(row, settings), steps };
+    return { item: toRiskDto(row, settings), steps, pendingChange };
   }
 
   /** Proposers (no `grc.edit`) always create drafts. */
@@ -529,13 +583,24 @@ export class GrcService {
     };
   }
 
-  async updateRisk(id: string, input: UpdateRiskInput, actor: AuthUser, meta: RequestMeta) {
+  async updateRisk(
+    id: string,
+    input: UpdateRiskInput,
+    actor: AuthUser,
+    meta: RequestMeta,
+    opts: GrcUpdateOptions = {},
+  ): Promise<GrcItemDetailDto<RiskDto>> {
     const o = await this.findItem(id, 'RISK');
     const before = await this.prisma.risk.findUniqueOrThrow({ where: { objectId: id } });
-    this.assertMayChange(o, before.status, actor, input);
+    if (!opts.approved) {
+      this.assertMayChange(o, before.status, actor, input);
+      const pending = await this.gate?.submit('RISK', id, before.status, input, actor, meta, opts);
+      if (pending === 'UNCHANGED') return this.getRisk(id, actor);
+      if (pending) return pending as GrcItemDetailDto<RiskDto>;
+    }
     const settings = await this.settings.get();
     this.assertCategory(input.category, settings);
-    if (input.controlIds && !this.canEdit(actor) && input.controlIds.length)
+    if (input.controlIds && !opts.approved && !this.canEdit(actor) && input.controlIds.length)
       await this.assertOwnDrafts(input.controlIds, actor);
     await this.prisma.$transaction(async (tx) => {
       await this.assertRefs(tx, input);
@@ -594,7 +659,7 @@ export class GrcService {
         tx,
       );
     });
-    return this.getRisk(id);
+    return this.getRisk(id, actor);
   }
 
   /** Proposers may relate only their own draft items. */
@@ -694,6 +759,7 @@ export class GrcService {
     });
     let items = rows.map((r) => toControlDto(r, settings));
     if (q.overdue !== undefined) items = items.filter((r) => r.overdue === q.overdue);
+    if (q.testOverdue !== undefined) items = items.filter((r) => r.testOverdue === q.testOverdue);
     return page(
       items,
       q,
@@ -710,14 +776,15 @@ export class GrcService {
     );
   }
 
-  async getControl(id: string): Promise<GrcItemDetailDto<ControlDto>> {
+  async getControl(id: string, actor?: AuthUser): Promise<GrcItemDetailDto<ControlDto>> {
     await this.findItem(id, 'CONTROL');
-    const [row, settings, steps] = await Promise.all([
+    const [row, settings, steps, pendingChange] = await Promise.all([
       this.prisma.repoObject.findUniqueOrThrow({ where: { id }, include: controlInclude }),
       this.settings.get(),
       this.steps(id),
+      this.gate?.pending(id, actor) ?? null,
     ]);
-    return { item: toControlDto(row, settings), steps };
+    return { item: toControlDto(row, settings), steps, pendingChange };
   }
 
   async createControl(input: CreateControlInput, actor: AuthUser, meta: RequestMeta) {
@@ -794,16 +861,35 @@ export class GrcService {
     return this.getControl(id);
   }
 
-  async updateControl(id: string, input: UpdateControlInput, actor: AuthUser, meta: RequestMeta) {
+  async updateControl(
+    id: string,
+    input: UpdateControlInput,
+    actor: AuthUser,
+    meta: RequestMeta,
+    opts: GrcUpdateOptions = {},
+  ): Promise<GrcItemDetailDto<ControlDto>> {
     const o = await this.findItem(id, 'CONTROL');
     const before = await this.prisma.control.findUniqueOrThrow({ where: { objectId: id } });
-    this.assertMayChange(o, before.status, actor, input);
-    if (!this.canEdit(actor)) {
+    if (!opts.approved) this.assertMayChange(o, before.status, actor, input);
+    if (!opts.approved && !this.canEdit(actor)) {
       if (input.effectiveness && input.effectiveness !== before.effectiveness)
         throw forbidden('Only Risk & Compliance editors can assess controls');
       if (input.requirementIds?.length)
         throw forbidden('Only Risk & Compliance editors can map requirements');
       if (input.riskIds?.length) await this.assertOwnDrafts(input.riskIds, actor);
+    }
+    if (!opts.approved) {
+      const pending = await this.gate?.submit(
+        'CONTROL',
+        id,
+        before.status,
+        input,
+        actor,
+        meta,
+        opts,
+      );
+      if (pending === 'UNCHANGED') return this.getControl(id, actor);
+      if (pending) return pending as GrcItemDetailDto<ControlDto>;
     }
     await this.prisma.$transaction(async (tx) => {
       await this.assertRefs(tx, input);
@@ -868,7 +954,7 @@ export class GrcService {
         tx,
       );
     });
-    return this.getControl(id);
+    return this.getControl(id, actor);
   }
 
   /** Replaces the risks or requirements of a control. */
@@ -1148,6 +1234,9 @@ export class GrcService {
     const status = await this.statusOf(id, type);
     const ownDraft = o.createdById === actor.id && status === 'DRAFT';
     if (!actor.permissions.has(PERMISSIONS.GRC_ADMIN) && !ownDraft) throw forbidden();
+    // Active (and retired) risks and controls are retired, never deleted (D-104).
+    if (type !== 'REQUIREMENT' && status !== 'DRAFT')
+      throw conflict('RETIRE_INSTEAD', 'Retire the item instead of deleting it');
     await this.prisma.$transaction(async (tx) => {
       const removed = await tx.objectLink.deleteMany({ where: { repoObjectId: id } });
       await tx.repoObject.update({
@@ -1251,6 +1340,7 @@ export class GrcService {
                       select: {
                         status: true,
                         effectiveness: true,
+                        operatingEffectiveness: true,
                         object: { select: { deletedAt: true } },
                       },
                     },

@@ -38,6 +38,10 @@ import {
   AlertOutlined,
   SafetyOutlined,
   BankOutlined,
+  ExperimentOutlined,
+  FormOutlined,
+  FundOutlined,
+  IssuesCloseOutlined,
 } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
 import { PERMISSIONS, type Locale } from '@processhub/shared';
@@ -50,6 +54,7 @@ import { BrandMark } from './BrandMark';
 import { DiagramThemeNotice } from '@/features/settings/DiagramThemeNotice';
 import { GlobalSearch } from '@/features/search/GlobalSearch';
 import { NotificationBell } from '@/features/notifications/NotificationBell';
+import { assuranceTaskCount, useAssuranceTasks } from '@/api/assurance';
 import { useMyTasks } from '@/api/governance';
 
 const { Header, Sider, Content } = Layout;
@@ -91,13 +96,15 @@ export function AppLayout() {
   const [collapsed, setCollapsed] = useState(false);
 
   const tasks = useMyTasks();
+  const assurance = useAssuranceTasks(!!user);
   const taskCount = tasks.data
     ? tasks.data.reviews.length +
       tasks.data.toPublish.length +
       tasks.data.returned.length +
       tasks.data.dueReviews.length +
       tasks.data.grcReviews.length +
-      tasks.data.feedback.length
+      tasks.data.feedback.length +
+      assuranceTaskCount(assurance.data)
     : 0;
 
   const items = useMemo<MenuProps['items']>(() => {
@@ -169,6 +176,11 @@ export function AppLayout() {
             label: <Link to="/grc/dashboard">{t('nav.grcDashboard')}</Link>,
           },
           {
+            key: '/grc/assurance',
+            icon: <FundOutlined />,
+            label: <Link to="/grc/assurance">{t('assurance:nav.dashboard')}</Link>,
+          },
+          {
             key: '/grc/risks',
             icon: <AlertOutlined />,
             label: <Link to="/grc/risks">{t('nav.risks')}</Link>,
@@ -183,6 +195,34 @@ export function AppLayout() {
             icon: <BankOutlined />,
             label: <Link to="/grc/requirements">{t('nav.requirements')}</Link>,
           },
+          {
+            key: '/grc/tests',
+            icon: <ExperimentOutlined />,
+            label: <Link to="/grc/tests">{t('assurance:nav.tests')}</Link>,
+          },
+          {
+            key: '/grc/issues',
+            icon: <IssuesCloseOutlined />,
+            label: <Link to="/grc/issues">{t('assurance:nav.issues')}</Link>,
+          },
+          ...(canAny(PERMISSIONS.AUDIT_MANAGE, PERMISSIONS.GRC_EDIT, PERMISSIONS.AUDIT_READ)
+            ? [
+                {
+                  key: '/grc/audits',
+                  icon: <AuditOutlined />,
+                  label: <Link to="/grc/audits">{t('assurance:nav.audits')}</Link>,
+                },
+              ]
+            : []),
+          ...(can(PERMISSIONS.SURVEYS_MANAGE)
+            ? [
+                {
+                  key: '/grc/surveys',
+                  icon: <FormOutlined />,
+                  label: <Link to="/grc/surveys">{t('assurance:nav.surveys')}</Link>,
+                },
+              ]
+            : []),
         ],
       });
     }
@@ -280,7 +320,7 @@ export function AppLayout() {
     }
     if (admin.length) list.push({ type: 'group', label: t('nav.administration'), children: admin });
     return list;
-  }, [can, t, taskCount]);
+  }, [can, canAny, t, taskCount]);
 
   const selected = useMemo(() => {
     const p = location.pathname;
@@ -298,9 +338,14 @@ export function AppLayout() {
       '/library/documents',
       '/library/dictionary',
       '/grc/dashboard',
+      '/grc/assurance',
       '/grc/risks',
       '/grc/controls',
       '/grc/requirements',
+      '/grc/tests',
+      '/grc/issues',
+      '/grc/audits',
+      '/grc/surveys',
       '/admin/users',
       '/admin/departments',
       '/admin/audit',

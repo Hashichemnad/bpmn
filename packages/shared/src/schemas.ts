@@ -157,6 +157,8 @@ export const createDepartmentSchema = z
     nameAr: optionalText(200),
     code: trimmed(50).optional().nullable(),
     parentId: uuidSchema.nullable().optional(),
+    /** Head of the department (escalation of overdue issues, Phase 4.2). */
+    managerId: uuidSchema.nullable().optional(),
   })
   .superRefine(requireOneName);
 export type CreateDepartmentInput = z.infer<typeof createDepartmentSchema>;
@@ -166,6 +168,7 @@ export const updateDepartmentSchema = z.object({
   nameAr: optionalText(200),
   code: trimmed(50).optional().nullable(),
   parentId: uuidSchema.nullable().optional(),
+  managerId: uuidSchema.nullable().optional(),
 });
 export type UpdateDepartmentInput = z.infer<typeof updateDepartmentSchema>;
 

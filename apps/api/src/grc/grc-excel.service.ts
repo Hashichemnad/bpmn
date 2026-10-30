@@ -29,7 +29,9 @@ import {
   type Locale,
   type RequirementDto,
   type RiskDto,
+  needsChangeApproval,
 } from '@processhub/shared';
+import { randomUUID } from 'node:crypto';
 import { PrismaService } from '../prisma/prisma.service';
 import { AuditService } from '../audit/audit.service';
 import { badRequest } from '../common/app-exception';
@@ -469,7 +471,12 @@ export class GrcExcelService {
     const [existing, users, departments, controls, requirements, systems] = await Promise.all([
       this.prisma.repoObject.findMany({
         where: { type, deletedAt: null, code: { not: null } },
-        select: { id: true, code: true },
+        select: {
+          id: true,
+          code: true,
+          risk: { select: { status: true } },
+          control: { select: { status: true } },
+        },
       }),
       this.prisma.user.findMany({ where: { deletedAt: null }, select: { id: true, email: true } }),
       this.prisma.department.findMany({
@@ -492,6 +499,22 @@ export class GrcExcelService {
     const byCode = (l: { id: string; code: string | null }[]) =>
       new Map(l.map((o) => [norm(o.code!), o.id]));
     const existingIds = byCode(existing);
+    // Change approval (D-104): rows changing an active / retired item become pending changes of
+    // one batch; new items are imported as drafts; items with a change already pending are refused.
+    const approval = type !== 'REQUIREMENT' && needsChangeApproval(type, 'ACTIVE', settings);
+    const pendingIds = approval
+      ? new Set(
+          (
+            await this.prisma.grcChange.findMany({
+              where: { status: 'PENDING', objectId: { in: existing.map((e) => e.id) } },
+              select: { objectId: true },
+            })
+          ).map((c) => c.objectId),
+        )
+      : new Set<string>();
+    const draftIds = new Set(
+      existing.filter((e) => (e.risk ?? e.control)?.status === 'DRAFT').map((e) => e.id),
+    );
     const controlIds = byCode(controls);
     const requirementIds = byCode(requirements);
     const userIds = new Map(users.map((u) => [norm(u.email), u.id]));
@@ -630,6 +653,8 @@ export class GrcExcelService {
 
       // New items need what a create needs; existing ones are partial updates.
       const isNew = !existingIds.has(norm(code ?? ''));
+      if (!isNew && pendingIds.has(existingIds.get(norm(code!))!)) err('code', 'CHANGE_PENDING');
+      if (isNew && approval) input.status = 'DRAFT';
       const parsed = (isNew ? create : update).safeParse({
         ...input,
         ...(parentCode ? { parentId: PLACEHOLDER_ID } : {}),
@@ -667,6 +692,14 @@ export class GrcExcelService {
       rows: rows.length,
       created: prepared.filter((p) => !existingIds.has(norm(p.code))).length,
       updated: prepared.filter((p) => existingIds.has(norm(p.code))).length,
+      // Dry run: rows that would wait for approval (unchanged rows are skipped on import).
+      pending: approval
+        ? prepared.filter((p) => {
+            const id = existingIds.get(norm(p.code));
+            return !!id && !draftIds.has(id);
+          }).length
+        : 0,
+      batchId: null,
       errors: unique(errors).slice(0, 500),
       imported: false,
     };
@@ -680,33 +713,50 @@ export class GrcExcelService {
           (order[String(a.input.level ?? (a.parentCode ? 'CLAUSE' : 'SOURCE'))] ?? 0) -
           (order[String(b.input.level ?? (b.parentCode ? 'CLAUSE' : 'SOURCE'))] ?? 0),
       );
+    const batchId = approval ? randomUUID() : undefined;
+    let pending = 0;
+    report.pending = 0;
     for (const p of prepared) {
       const id = existingIds.get(norm(p.code));
       const input = { ...p.input };
       if (p.parentCode) input.parentId = existingIds.get(norm(p.parentCode));
-      let saved: { item: { id: string } };
+      let saved: { item: { id: string }; pendingChange?: { batchId: string | null } | null };
       if (kind === 'risks')
         saved = id
-          ? await this.grc.updateRisk(id, input, actor, meta)
+          ? await this.grc.updateRisk(id, input, actor, meta, { batchId })
           : await this.grc.createRisk(input as never, actor, meta);
       else if (kind === 'controls')
         saved = id
-          ? await this.grc.updateControl(id, input, actor, meta)
+          ? await this.grc.updateControl(id, input, actor, meta, { batchId })
           : await this.grc.createControl(input as never, actor, meta);
       else
         saved = id
           ? await this.grc.updateRequirement(id, input, actor, meta)
           : await this.grc.createRequirement(input as never, actor, meta);
       existingIds.set(norm(p.code), saved.item.id);
+      if (batchId && saved.pendingChange?.batchId === batchId) pending++;
     }
     await this.audit.log({
       action: 'IMPORT',
       entityType: type === 'RISK' ? 'Risk' : type === 'CONTROL' ? 'Control' : 'Requirement',
       userId: actor.id,
-      summary: { kind, rows: report.rows, created: report.created, updated: report.updated },
+      summary: {
+        kind,
+        rows: report.rows,
+        created: report.created,
+        updated: report.updated - pending,
+        pending,
+        ...(pending ? { batchId } : {}),
+      },
       meta,
     });
-    return { ...report, imported: true };
+    return {
+      ...report,
+      updated: report.updated - pending,
+      pending,
+      batchId: pending ? batchId! : null,
+      imported: true,
+    };
   }
 
   // ---------- Risk–control matrix ----------

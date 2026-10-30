@@ -7,7 +7,8 @@
     "REVIEWER": "مراجع",
     "AUDITOR": "مدقق",
     "VIEWER": "مشاهد",
-    "RISK_OFFICER": "مسؤول المخاطر والامتثال"
+    "RISK_OFFICER": "مسؤول المخاطر والامتثال",
+    "INTERNAL_AUDIT": "التدقيق الداخلي"
   },
   "status": {
     "ACTIVE": "نشط",
@@ -53,7 +54,9 @@
     "users": "المستخدمون",
     "empty": "لا توجد إدارات بعد",
     "deleteTitle": "حذف {{name}}؟",
-    "deleteText": "لا يمكن حذف إدارة لديها إدارات فرعية أو مستخدمون أو عمليات."
+    "deleteText": "لا يمكن حذف إدارة لديها إدارات فرعية أو مستخدمون أو عمليات.",
+    "manager": "المدير (رئيس الإدارة)",
+    "managerHint": "تُصعَّد الملاحظات والإجراءات المتأخرة لموظفي الإدارة إلى هذا الشخص."
   },
   "audit": {
     "title": "سجل التدقيق",
@@ -128,7 +131,16 @@
       "AI": "المساعد الذكي",
       "Risk": "خطر",
       "Control": "ضابط رقابي",
-      "Requirement": "متطلب"
+      "Requirement": "متطلب",
+      "ControlTestPlan": "خطة اختبار",
+      "ControlTest": "اختبار ضابط",
+      "Issue": "ملاحظة",
+      "IssueAction": "إجراء",
+      "AuditEngagement": "مهمة تدقيق",
+      "AuditFinding": "نتيجة تدقيق",
+      "Questionnaire": "استبيان",
+      "SurveyCampaign": "حملة استبيان",
+      "SurveyResponse": "رد على استبيان"
     }
   },
   "settings": {
