@@ -9,6 +9,9 @@ import {
   GRC_IMPORT_MAX_BYTES,
   GRC_IMPORT_MAX_ROWS,
   GRC_STATUSES,
+  PROCESS_ELEMENT_ID,
+  rateRisk,
+  type GrcDashboardQuery,
   REQUIREMENT_LEVELS,
   RISK_RESPONSES,
   createControlSchema,
@@ -33,6 +36,7 @@ import { badRequest } from '../common/app-exception';
 import type { AuthUser, RequestMeta } from '../common/auth-user';
 import { GrcService } from './grc.service';
 import { GrcSettingsService } from './grc-settings.service';
+import { GrcDashboardService } from './grc-dashboard.service';
 
 export interface GrcFile {
   data: Buffer;
@@ -347,6 +351,7 @@ export class GrcExcelService {
     private readonly audit: AuditService,
     private readonly grc: GrcService,
     private readonly settings: GrcSettingsService,
+    private readonly dashboard: GrcDashboardService,
   ) {}
 
   private async items(kind: GrcImportKind): Promise<GrcItemDto[]> {
@@ -702,5 +707,210 @@ export class GrcExcelService {
       meta,
     });
     return { ...report, imported: true };
+  }
+
+  // ---------- Risk–control matrix ----------
+
+  /**
+   * Risk–control matrix (RCM): process → step → risk → mitigating control → requirements, with
+   * ratings and effectiveness; second sheet: the coverage figures; third: steps with risks but no
+   * control. Scope as on the dashboard.
+   */
+  async rcm(
+    q: GrcDashboardQuery,
+    locale: Locale,
+    actor: AuthUser,
+    meta: RequestMeta,
+  ): Promise<GrcFile> {
+    const ar = locale === 'ar';
+    const L = (en: string, a: string) => (ar ? a : en);
+    const settings = await this.settings.get();
+    const band = (key: string | null) => {
+      const b = settings.bands.find((x) => x.key === key);
+      return b ? (ar ? b.nameAr : b.nameEn) : '';
+    };
+    const pick = (o: { nameEn: string; nameAr: string }) =>
+      (ar ? o.nameAr || o.nameEn : o.nameEn || o.nameAr) ?? '';
+    const links = await this.prisma.objectLink.findMany({
+      where: {
+        process: {
+          deletedAt: null,
+          ...(q.processId ? { id: q.processId } : {}),
+          ...(q.departmentId ? { departmentId: q.departmentId } : {}),
+        },
+        repoObject: { type: 'RISK', deletedAt: null, risk: { status: { not: 'RETIRED' } } },
+      },
+      include: {
+        process: { select: { id: true, code: true, nameEn: true, nameAr: true } },
+        repoObject: {
+          include: {
+            risk: {
+              include: {
+                controls: {
+                  include: {
+                    control: {
+                      include: {
+                        object: true,
+                        requirements: {
+                          include: { requirement: { include: { object: true } } },
+                        },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    });
+    const labels = await this.grc.labels([...new Set(links.map((l) => l.processId))]);
+    const wb = new ExcelJS.Workbook();
+    wb.creator = 'ProcessHub';
+    const sheet = (name: string, header: string[], widths: number[]) => {
+      const ws = wb.addWorksheet(name, {
+        views: [{ state: 'frozen', ySplit: 1, rightToLeft: ar }],
+      });
+      ws.addRow(header);
+      ws.getRow(1).font = { bold: true };
+      ws.getRow(1).fill = HEADER_FILL;
+      widths.forEach((w, i) => (ws.getColumn(i + 1).width = w));
+      ws.autoFilter = { from: { row: 1, column: 1 }, to: { row: 1, column: header.length } };
+      return ws;
+    };
+    const rcm = sheet(
+      L('Risk-control matrix', 'مصفوفة المخاطر والضوابط'),
+      [
+        L('Process', 'العملية'),
+        L('Step', 'الخطوة'),
+        L('Risk code', 'رمز الخطر'),
+        L('Risk', 'الخطر'),
+        L('Inherent', 'الكامن'),
+        L('Residual', 'المتبقي'),
+        L('Control code', 'رمز الضابط'),
+        L('Control', 'الضابط'),
+        L('Type', 'النوع'),
+        L('Key control', 'ضابط رئيسي'),
+        L('Effectiveness', 'الفعالية'),
+        L('Requirements', 'المتطلبات'),
+      ],
+      [30, 30, 12, 36, 16, 16, 12, 36, 14, 10, 18, 24],
+    );
+    const effectiveness: Record<string, [string, string]> = {
+      EFFECTIVE: ['Effective', 'فعّال'],
+      PARTLY: ['Partly effective', 'فعّال جزئيًا'],
+      NOT_EFFECTIVE: ['Not effective', 'غير فعّال'],
+      NOT_ASSESSED: ['Not assessed', 'لم يُقيَّم'],
+    };
+    const ctype: Record<string, [string, string]> = {
+      PREVENTIVE: ['Preventive', 'وقائي'],
+      DETECTIVE: ['Detective', 'كشفي'],
+      CORRECTIVE: ['Corrective', 'تصحيحي'],
+    };
+    const sorted = [...links].sort(
+      (a, b) =>
+        a.process.code.localeCompare(b.process.code, undefined, { numeric: true }) ||
+        a.bpmnElementId.localeCompare(b.bpmnElementId) ||
+        (a.repoObject.code ?? '').localeCompare(b.repoObject.code ?? ''),
+    );
+    let rows = 0;
+    for (const l of sorted) {
+      const r = l.repoObject.risk!;
+      const rating = rateRisk(r, settings.bands);
+      const label = labels.get(l.processId)?.get(l.bpmnElementId);
+      const step =
+        l.bpmnElementId === PROCESS_ELEMENT_ID
+          ? L('Whole process', 'العملية كاملة')
+          : (label && (ar ? label.nameAr || label.nameEn : label.nameEn || label.nameAr)) ||
+            l.bpmnElementId;
+      const lead = [
+        `${l.process.code} ${pick(l.process)}`,
+        step,
+        l.repoObject.code ?? '',
+        pick(l.repoObject),
+        `${band(rating.inherentBand)} · ${rating.inherentScore}`,
+        `${band(rating.residualBand)} · ${rating.residualScore}`,
+      ];
+      const controls = r.controls.filter((c) => !c.control.object.deletedAt);
+      if (!controls.length) {
+        rcm.addRow([...lead, '', '', '', '', '', '']);
+        rows++;
+      }
+      for (const c of controls) {
+        const ctl = c.control;
+        rcm.addRow([
+          ...lead,
+          ctl.object.code ?? '',
+          pick(ctl.object),
+          ctype[ctl.controlType][ar ? 1 : 0],
+          ctl.keyControl ? L('Yes', 'نعم') : L('No', 'لا'),
+          effectiveness[ctl.effectiveness][ar ? 1 : 0],
+          ctl.requirements
+            .filter((x) => !x.requirement.object.deletedAt)
+            .map((x) => x.requirement.object.code || pick(x.requirement.object))
+            .join('; '),
+        ]);
+        rows++;
+      }
+    }
+
+    const dash = await this.dashboard.dashboard(q);
+    const cov = sheet(
+      L('Coverage', 'التغطية'),
+      [L('Measure', 'المؤشر'), L('Count', 'العدد')],
+      [50, 12],
+    );
+    const c = dash.coverage;
+    for (const [en, a, n] of [
+      ['Active risks', 'المخاطر النشطة', dash.heatMap.total],
+      ['Risks without controls', 'مخاطر بلا ضوابط', c.risksWithoutControls],
+      ['High / critical residual risks', 'مخاطر متبقية مرتفعة / حرجة', c.alertRisks],
+      [
+        'High / critical without an effective control',
+        'مرتفعة / حرجة دون ضابط فعّال',
+        c.alertRisksWithoutEffectiveControl,
+      ],
+      [
+        'Key controls not assessed or not effective',
+        'ضوابط رئيسية لم تُقيَّم أو غير فعّالة',
+        c.keyControlsAttention,
+      ],
+      ['Requirements without controls', 'متطلبات بلا ضوابط', c.requirementsWithoutControls],
+      ['Steps with risks but no control', 'خطوات بها مخاطر دون ضوابط', c.stepsWithRiskNoControl],
+      [
+        'Processes with risks but no control',
+        'عمليات بها مخاطر دون ضوابط',
+        c.processesWithRiskNoControl,
+      ],
+      ['Overdue reviews', 'مراجعات متأخرة', c.overdueReviews],
+    ] as const)
+      cov.addRow([L(en, a), n]);
+
+    const unc = sheet(
+      L('Steps without controls', 'خطوات بلا ضوابط'),
+      [L('Process', 'العملية'), L('Step', 'الخطوة'), L('Risks', 'المخاطر')],
+      [30, 30, 50],
+    );
+    for (const s of await this.dashboard.uncoveredSteps(q))
+      unc.addRow([
+        `${s.process.code} ${pick(s.process)}`,
+        s.bpmnElementId === PROCESS_ELEMENT_ID
+          ? L('Whole process', 'العملية كاملة')
+          : (s.element && pick(s.element)) || s.bpmnElementId,
+        s.risks.map((r) => `${r.code ?? ''} ${pick(r)}`.trim()).join('; '),
+      ]);
+
+    await this.audit.log({
+      action: 'EXPORT',
+      entityType: 'Risk',
+      userId: actor.id,
+      summary: { report: 'grc-rcm', locale, rows, ...q },
+      meta,
+    });
+    return {
+      data: Buffer.from(await wb.xlsx.writeBuffer()),
+      fileName: 'risk-control-matrix.xlsx',
+      contentType: XLSX,
+    };
   }
 }

@@ -236,11 +236,14 @@ zod / UUID pipe; file uploads are checked in the service (allow-list, content sn
 | DELETE | `/grc/controls/:id`                          | any of `grc.edit`, `grc.propose`                          | param `id`                          | default    |
 | GET    | `/grc/controls/:id`                          | `grc.read`                                                | param `id`                          | default    |
 | PATCH  | `/grc/controls/:id`                          | any of `grc.edit`, `grc.propose`                          | body, param `id`                    | default    |
+| GET    | `/grc/dashboard`                             | `grc.read`                                                | query                               | default    |
+| GET    | `/grc/dashboard/uncovered-steps`             | `grc.read`                                                | query                               | default    |
 | GET    | `/grc/export/:kind`                          | `grc.read`                                                | param `kind`, query                 | default    |
 | POST   | `/grc/import/:kind`                          | `grc.edit`                                                | file, param `kind`, query           | default    |
 | POST   | `/grc/items/:id/comments`                    | `grc.read` + `comments.write`                             | body, param `id`                    | default    |
 | GET    | `/grc/items/:id/timeline`                    | `grc.read`                                                | param `id`                          | default    |
 | GET    | `/grc/processes/:id`                         | `grc.read` + `processes.read`                             | param `id`                          | default    |
+| GET    | `/grc/rcm`                                   | `grc.read`                                                | query                               | default    |
 | GET    | `/grc/requirements`                          | `grc.read`                                                | query                               | default    |
 | POST   | `/grc/requirements`                          | `grc.edit`                                                | body                                | default    |
 | DELETE | `/grc/requirements/:id`                      | `grc.admin`                                               | param `id`                          | default    |

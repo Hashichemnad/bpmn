@@ -341,6 +341,7 @@ export class GrcService {
         type: 'RISK',
         deletedAt: null,
         ownerId: q.ownerId,
+        ...this.scopeFilter(q.scopeDepartmentId, { risk: { departmentId: q.scopeDepartmentId } }),
         ...this.textFilter(q.q),
         ...(q.processId ? { links: { some: { processId: q.processId } } } : {}),
         risk: {
@@ -366,6 +367,7 @@ export class GrcService {
     }
     if (q.withoutControls !== undefined)
       items = items.filter((r) => (r.controls.length === 0) === q.withoutControls);
+    if (q.alert !== undefined) items = items.filter((r) => r.rating.alert === q.alert);
     if (q.alertWithoutEffectiveControl)
       items = items.filter((r) => r.rating.alert && !r.effectivelyControlled);
     return page(
@@ -382,6 +384,21 @@ export class GrcService {
       },
       'code',
     );
+  }
+
+  /** Owned by the department, or linked to one of its processes (as on the dashboard). */
+  private scopeFilter(
+    departmentId: string | undefined,
+    own: Prisma.RepoObjectWhereInput,
+  ): Prisma.RepoObjectWhereInput {
+    if (!departmentId) return {};
+    return {
+      AND: [
+        {
+          OR: [own, { links: { some: { process: { departmentId, deletedAt: null } } } }],
+        },
+      ],
+    };
   }
 
   private textFilter(q?: string): Prisma.RepoObjectWhereInput {
@@ -654,6 +671,9 @@ export class GrcService {
         type: 'CONTROL',
         deletedAt: null,
         ownerId: q.ownerId,
+        ...this.scopeFilter(q.scopeDepartmentId, {
+          control: { departmentId: q.scopeDepartmentId },
+        }),
         ...this.textFilter(q.q),
         ...(q.processId ? { links: { some: { processId: q.processId } } } : {}),
         control: {
@@ -891,6 +911,9 @@ export class GrcService {
         type: 'REQUIREMENT',
         deletedAt: null,
         ownerId: q.ownerId,
+        ...this.scopeFilter(q.scopeDepartmentId, {
+          requirement: { departmentId: q.scopeDepartmentId },
+        }),
         ...this.textFilter(q.q),
         ...(q.processId ? { links: { some: { processId: q.processId } } } : {}),
         requirement: {

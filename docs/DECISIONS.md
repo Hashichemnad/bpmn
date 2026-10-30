@@ -1023,3 +1023,18 @@ matched to the library by name (spelling variants folded), an unknown role still
 - **Handbook**: optional "Risks and controls" section per process (step, type, item, residual rating or
   effectiveness) from the links of the chosen source (working or published). GRC readers see every item; portal
   users only what the portal setting shows.
+
+## D-093 — Risk dashboards, coverage and the risk–control matrix (Phase 4.1, 2026-10-30)
+
+- **Scope**: organisation, a department or a process. A department's scope is the risks / controls / requirements
+  owned by the department **or** linked to one of its processes; a process scope is what is linked to it. Only
+  active items count. The registers accept the same scope (`scopeDepartmentId`, `processId`) so every tile and
+  heat-map cell opens the matching filtered list.
+- **Heat maps**: inherent and residual (residual falls back to inherent until assessed) side by side; a cell lists
+  its risks. **Drill-down**: departments (by linked processes) → processes → steps (opens the modeler at the step).
+- **Coverage**: risks without controls; high / critical residual risks; of these without an effective own control;
+  key controls not assessed / not effective; requirements without controls; steps and processes with risks but no
+  control linked at the step; overdue reviews (risks + controls).
+- **RCM export** (`GET /grc/rcm`, `grc.read`, audited `EXPORT`): one row per step × risk × mitigating control with
+  the control's requirements, ratings and effectiveness; sheets "Coverage" and "Steps without controls". Arabic
+  workbooks are right-to-left.

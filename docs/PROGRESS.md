@@ -35,7 +35,11 @@ Steps (tick as they are committed; a new session continues at the first unticked
       "Residual risk rating" and "Risks without controls", portal visibility setting enforced on the server
       (portal page + portal AI sources), handbook option "Risks and controls". Tests: shared 1, API 2 (portal
       setting, handbook section).
-- [ ] 4. Dashboards: heat maps (org / department / process, drill-down), coverage dashboard, RCM export.
+- [x] 4. Dashboards (D-093): Risk dashboard (scope organisation / department / process with breadcrumb), inherent
+      and residual heat maps (cell → risk list), eight coverage tiles linking to filtered registers, breakdown
+      department → process → step, steps with risks but no control, RCM Excel export (`/grc/rcm`, + coverage
+      sheets). Registers gained `scopeDepartmentId` and `alert` filters. Tests: API 1 (dashboard, scopes,
+      uncovered steps, RCM workbook).
 - [ ] 5. Reviews and notifications: next-review reminders, overdue flags, My tasks, optional approval.
 - [ ] 6. AI control-gap check.
 - [ ] 7. Demo data, e2e tests, screenshots, docs, verification, pull request.

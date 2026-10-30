@@ -398,6 +398,8 @@ const listBase = z.object({
   ownerId: id.optional(),
   /** Only items linked to this process (any step or the process itself). */
   processId: id.optional(),
+  /** Dashboard scope: owned by the department or linked to one of its processes. */
+  scopeDepartmentId: id.optional(),
   /** Only items whose next review date has passed. */
   overdue: z
     .enum(['true', 'false'])
@@ -422,6 +424,11 @@ export const riskListQuerySchema = listBase.extend({
     .transform((v) => v === 'true')
     .optional(),
   alertWithoutEffectiveControl: z
+    .enum(['true', 'false'])
+    .transform((v) => v === 'true')
+    .optional(),
+  /** Residual rating in a high / critical band. */
+  alert: z
     .enum(['true', 'false'])
     .transform((v) => v === 'true')
     .optional(),
@@ -463,6 +470,11 @@ export const grcDashboardQuerySchema = z.object({
   processId: id.optional(),
 });
 export type GrcDashboardQuery = z.infer<typeof grcDashboardQuerySchema>;
+
+export const grcRcmQuerySchema = grcDashboardQuerySchema.extend({
+  locale: z.enum(['en', 'ar']).default('en'),
+});
+export type GrcRcmQuery = z.infer<typeof grcRcmQuerySchema>;
 
 export const grcExportQuerySchema = z.object({
   locale: z.enum(['en', 'ar']).default('en'),

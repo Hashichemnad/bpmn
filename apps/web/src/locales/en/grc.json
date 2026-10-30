@@ -237,5 +237,38 @@
     "tab": "Risks & Controls",
     "linkExisting": "Link an existing item",
     "link": "Link"
+  },
+  "dashboard": {
+    "title": "Risk dashboard",
+    "subtitle": "Heat maps and control coverage — click a cell, tile or row to drill down",
+    "allDepartments": "All departments",
+    "exportRcm": "Risk-control matrix (Excel)",
+    "organisation": "Organisation",
+    "tiles": {
+      "alertRisksWithoutEffectiveControl": "High / critical without an effective control",
+      "alertRisks": "High / critical residual risks",
+      "risksWithoutControls": "Risks without controls",
+      "keyControlsAttention": "Key controls not assessed or not effective",
+      "requirementsWithoutControls": "Requirements without controls",
+      "stepsWithRiskNoControl": "Steps with risks but no control",
+      "processesWithRiskNoControl": "Processes with risks but no control",
+      "overdueReviews": "Overdue reviews"
+    },
+    "heatHint_one": "{{count}} active risk. Click a cell to list its risks.",
+    "heatHint_other": "{{count}} active risks. Click a cell to list its risks.",
+    "breakdown": {
+      "department": "By department",
+      "process": "By process",
+      "step": "By step"
+    },
+    "level": {
+      "department": "Department",
+      "process": "Process",
+      "step": "Step"
+    },
+    "alerts": "High / critical",
+    "withoutControls": "Steps without controls",
+    "uncovered": "Steps with risks but no control",
+    "step": "Step"
   }
 }

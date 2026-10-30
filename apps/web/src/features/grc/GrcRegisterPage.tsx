@@ -60,6 +60,8 @@ const FILTER_KEYS = [
   'keyAttention',
   'level',
   'parentId',
+  'scopeDepartmentId',
+  'alert',
 ] as const;
 const TOGGLES: Record<GrcObjectType, { key: string; label: string }[]> = {
   RISK: [

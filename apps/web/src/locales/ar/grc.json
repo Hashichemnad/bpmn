@@ -241,5 +241,42 @@
     "tab": "المخاطر والضوابط",
     "linkExisting": "ربط عنصر موجود",
     "link": "ربط"
+  },
+  "dashboard": {
+    "title": "لوحة المخاطر",
+    "subtitle": "الخرائط الحرارية وتغطية الضوابط — انقر خلية أو بطاقة أو صفًا للتعمق",
+    "allDepartments": "كل الإدارات",
+    "exportRcm": "مصفوفة المخاطر والضوابط (إكسل)",
+    "organisation": "الجهة",
+    "tiles": {
+      "alertRisksWithoutEffectiveControl": "مرتفعة / حرجة دون ضابط فعّال",
+      "alertRisks": "مخاطر متبقية مرتفعة / حرجة",
+      "risksWithoutControls": "مخاطر بلا ضوابط",
+      "keyControlsAttention": "ضوابط رئيسية لم تُقيَّم أو غير فعّالة",
+      "requirementsWithoutControls": "متطلبات بلا ضوابط",
+      "stepsWithRiskNoControl": "خطوات بها مخاطر دون ضوابط",
+      "processesWithRiskNoControl": "عمليات بها مخاطر دون ضوابط",
+      "overdueReviews": "مراجعات متأخرة"
+    },
+    "heatHint_zero": "لا توجد مخاطر نشطة.",
+    "heatHint_one": "خطر نشط واحد. انقر خلية لعرض مخاطرها.",
+    "heatHint_two": "خطران نشطان. انقر خلية لعرض مخاطرها.",
+    "heatHint_few": "{{count}} مخاطر نشطة. انقر خلية لعرض مخاطرها.",
+    "heatHint_many": "{{count}} خطرًا نشطًا. انقر خلية لعرض مخاطرها.",
+    "heatHint_other": "{{count}} خطر نشط. انقر خلية لعرض مخاطرها.",
+    "breakdown": {
+      "department": "حسب الإدارة",
+      "process": "حسب العملية",
+      "step": "حسب الخطوة"
+    },
+    "level": {
+      "department": "الإدارة",
+      "process": "العملية",
+      "step": "الخطوة"
+    },
+    "alerts": "مرتفع / حرج",
+    "withoutControls": "خطوات بلا ضوابط",
+    "uncovered": "خطوات بها مخاطر دون ضوابط",
+    "step": "الخطوة"
   }
 }

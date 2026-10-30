@@ -534,4 +534,91 @@ describe('Risk & Compliance (e2e)', () => {
     expect(withRisks).toContain('Critical · 16');
     expect(await handbook(false)).not.toContain('Risks and controls');
   });
+
+  it('dashboards: heat maps, coverage, drill-down, uncovered steps and the RCM export', async () => {
+    const dept = await ctx.prisma.department.create({ data: { nameEn: 'Procurement' } });
+    await ctx.prisma.process.update({ where: { id: processId }, data: { departmentId: dept.id } });
+    const high = (await risk(officer).expect(201)).body.item; // 4 × 4, critical
+    const low = (
+      await risk(officer, {
+        code: 'R-02',
+        nameEn: 'Typos',
+        inherentLikelihood: 2,
+        inherentImpact: 1,
+        nextReviewAt: '2020-01-01',
+      }).expect(201)
+    ).body.item;
+    const ctl = (
+      await officer
+        .post('/grc/controls')
+        .send({ code: 'C-1', nameEn: 'Check', keyControl: true, riskIds: [low.id] })
+        .expect(201)
+    ).body.item;
+    await officer.post('/grc/requirements').send({ code: 'Q', nameEn: 'Policy' }).expect(201);
+    const link = (el: string, id: string) =>
+      officer
+        .post(`/processes/${processId}/links`)
+        .send({ bpmnElementId: el, repoObjectId: id })
+        .expect(201);
+    await link('Task_Approve', high.id);
+    await link('Task_Order', low.id);
+    await link('Task_Order', ctl.id);
+
+    const org = (await auditor.get('/grc/dashboard').expect(200)).body;
+    expect(org.heatMap.total).toBe(2);
+    expect(org.heatMap.inherent[3][3]).toBe(1);
+    expect(org.heatMap.residual[1][0]).toBe(1);
+    expect(org.coverage).toMatchObject({
+      risksWithoutControls: 1,
+      alertRisks: 1,
+      alertRisksWithoutEffectiveControl: 1,
+      keyControlsAttention: 1,
+      requirementsWithoutControls: 1,
+      stepsWithRiskNoControl: 1,
+      processesWithRiskNoControl: 1,
+      overdueReviews: 1,
+    });
+    expect(org.breakdown).toMatchObject({
+      level: 'department',
+      rows: [{ id: dept.id, risks: 2, alerts: 1, withoutControls: 1 }],
+    });
+    const byDept = (await auditor.get(`/grc/dashboard?departmentId=${dept.id}`).expect(200)).body;
+    expect(byDept.breakdown).toMatchObject({
+      level: 'process',
+      rows: [{ id: processId, risks: 2 }],
+    });
+    const byProcess = (await auditor.get(`/grc/dashboard?processId=${processId}`).expect(200)).body;
+    expect(byProcess.breakdown.level).toBe('step');
+    expect(byProcess.breakdown.rows).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ id: 'Task_Approve', nameEn: 'Task_Approve', withoutControls: 1 }),
+      ]),
+    );
+    const other = (await auditor.get(`/grc/dashboard?processId=${otherProcessId}`).expect(200))
+      .body;
+    expect(other.heatMap.total).toBe(0);
+
+    const uncovered = (await auditor.get('/grc/dashboard/uncovered-steps').expect(200)).body;
+    expect(uncovered).toMatchObject([
+      { process: { code: 'S.01' }, bpmnElementId: 'Task_Approve', risks: [{ id: high.id }] },
+    ]);
+
+    const res = await auditor
+      .get('/grc/rcm?locale=ar')
+      .buffer(true)
+      .parse(binary as never)
+      .expect(200);
+    const wb = new ExcelJS.Workbook();
+    await wb.xlsx.load(res.body);
+    const [rcm, coverage, steps] = wb.worksheets;
+    expect(rcm.views[0]).toMatchObject({ rightToLeft: true });
+    expect(rcm.rowCount).toBe(3);
+    const rows = [2, 3].map((n) => rcm.getRow(n).values as unknown[]);
+    expect(rows.find((r) => r[3] === 'R-02')?.[7]).toBe('C-1');
+    expect(rows.find((r) => r[3] === 'R-01')?.[7] || '').toBe('');
+    expect(coverage.getRow(3).getCell(2).value).toBe(1);
+    expect(steps.rowCount).toBe(2);
+    await viewer.get('/grc/dashboard').expect(403);
+    await viewer.get('/grc/rcm').expect(403);
+  });
 });

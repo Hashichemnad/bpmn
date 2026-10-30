@@ -50,6 +50,7 @@ import { PortalPrintPage } from '@/features/portal/PortalPrintPage';
 import { GrcRegisterPage } from '@/features/grc/GrcRegisterPage';
 import { GrcDetailPage } from '@/features/grc/GrcDetailPage';
 import { GrcSettingsPage } from '@/features/grc/GrcSettingsPage';
+import { GrcDashboardPage } from '@/features/grc/GrcDashboardPage';
 
 const P = PERMISSIONS;
 
@@ -162,6 +163,14 @@ export const routes: RouteObject[] = [
                     element: (
                       <RequirePermission all={[P.PORTAL_MANAGE]}>
                         <PortalSettingsPage />
+                      </RequirePermission>
+                    ),
+                  },
+                  {
+                    path: 'grc/dashboard',
+                    element: (
+                      <RequirePermission all={[P.GRC_READ]}>
+                        <GrcDashboardPage />
                       </RequirePermission>
                     ),
                   },

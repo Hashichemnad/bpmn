@@ -22,7 +22,11 @@ import {
   GRC_IMPORT_KINDS,
   GRC_IMPORT_MAX_BYTES,
   PERMISSIONS,
+  grcDashboardQuerySchema,
   grcExportQuerySchema,
+  grcRcmQuerySchema,
+  type GrcDashboardQuery,
+  type GrcRcmQuery,
   grcImportQuerySchema,
   type GrcExportQuery,
   type GrcImportKind,
@@ -61,6 +65,7 @@ import { UuidPipe, ZodPipe } from '../common/zod.pipe';
 import { GrcService } from './grc.service';
 import { GrcSettingsService } from './grc-settings.service';
 import { GrcExcelService, type GrcFile } from './grc-excel.service';
+import { GrcDashboardService } from './grc-dashboard.service';
 
 const kindSchema = z.enum(GRC_IMPORT_KINDS);
 
@@ -86,7 +91,36 @@ export class GrcController {
     private readonly grc: GrcService,
     private readonly settings: GrcSettingsService,
     private readonly excel: GrcExcelService,
+    private readonly dashboards: GrcDashboardService,
   ) {}
+
+  // ---------- Dashboards ----------
+
+  /** Heat maps, coverage figures and the drill-down (organisation, department or process). */
+  @Get('dashboard')
+  @RequirePermissions(READ)
+  dashboard(@Query(new ZodPipe(grcDashboardQuerySchema)) q: GrcDashboardQuery) {
+    return this.dashboards.dashboard(q);
+  }
+
+  @Get('dashboard/uncovered-steps')
+  @RequirePermissions(READ)
+  uncoveredSteps(@Query(new ZodPipe(grcDashboardQuerySchema)) q: GrcDashboardQuery) {
+    return this.dashboards.uncoveredSteps(q);
+  }
+
+  /** Risk–control matrix with the coverage figures (Excel). */
+  @Get('rcm')
+  @RequirePermissions(READ)
+  async rcm(
+    @Query(new ZodPipe(grcRcmQuerySchema)) q: GrcRcmQuery,
+    @CurrentUser() user: AuthUser,
+    @ReqMeta() meta: RequestMeta,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    const { locale, ...scope } = q;
+    return download(res, await this.excel.rcm(scope, locale, user, meta));
+  }
 
   // ---------- Excel ----------
 

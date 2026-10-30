@@ -5,6 +5,8 @@ import type {
   CreateRequirementInput,
   CreateRiskInput,
   GrcActivityDto,
+  GrcDashboardDto,
+  UncoveredStepDto,
   GrcImportKind,
   GrcImportReportDto,
   GrcItemDetailDto,
@@ -157,3 +159,24 @@ export function useGrcImport(kind: GrcImportKind) {
     },
   });
 }
+
+/** Dashboard scope: organisation, a department or a process. */
+export interface GrcScope {
+  departmentId?: string;
+  processId?: string;
+}
+
+export const useGrcDashboard = (scope: GrcScope) =>
+  useQuery({
+    queryKey: ['grc', 'dashboard', scope],
+    queryFn: () => api<GrcDashboardDto>('/grc/dashboard', { query: { ...scope } }),
+    placeholderData: keepPreviousData,
+  });
+
+export const useUncoveredSteps = (scope: GrcScope) =>
+  useQuery({
+    queryKey: ['grc', 'uncovered', scope],
+    queryFn: () =>
+      api<UncoveredStepDto[]>('/grc/dashboard/uncovered-steps', { query: { ...scope } }),
+    placeholderData: keepPreviousData,
+  });
