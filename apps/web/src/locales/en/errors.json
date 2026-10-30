@@ -136,5 +136,8 @@
   "INVALID_FILE_TYPE": "The file is not an Excel workbook (.xlsx).",
   "EMPTY_FILE": "The file has no sheet.",
   "MISSING_CODE_COLUMN": "The sheet needs a \"Code\" column.",
-  "TOO_MANY_ROWS": "At most 2,000 rows per import."
+  "TOO_MANY_ROWS": "At most 2,000 rows per import.",
+  "CHANGE_PENDING": "A change of this item is already waiting for approval.",
+  "NO_CHANGES": "Nothing would change.",
+  "CHANGE_CLOSED": "This change has already been decided or withdrawn."
 }

@@ -186,7 +186,11 @@ export function GrcFormModal({
       { id: item?.id, body: body as never },
       {
         onSuccess: (res) => {
-          message.success(t('grc:detail.saved'));
+          message.success(
+            'pendingChange' in res && res.pendingChange
+              ? t('assurance:changes.submitted')
+              : t('grc:detail.saved'),
+          );
           onSaved?.(res.item);
           onClose();
         },

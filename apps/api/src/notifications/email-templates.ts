@@ -63,6 +63,7 @@ const TEMPLATES: Record<Locale, Record<NotificationType, Template>> = {
       subject: 'Risk & Compliance review due: {code} {title}',
       body: '“{title}” ({code}) is due for review on {due}. Please reassess it in Risk & Compliance.',
     },
+    GRC_CHANGE: { subject: '{kindSubject}', body: '{kindBody}' },
   },
   ar: {
     REVIEW_REQUESTED: {
@@ -112,6 +113,42 @@ const TEMPLATES: Record<Locale, Record<NotificationType, Template>> = {
     GRC_REVIEW: {
       subject: 'موعد مراجعة المخاطر والامتثال: {code} {title}',
       body: 'موعد مراجعة «{title}» ({code}) هو {due}. يرجى إعادة تقييمه في قسم المخاطر والامتثال.',
+    },
+    GRC_CHANGE: { subject: '{kindSubject}', body: '{kindBody}' },
+  },
+};
+
+/**
+ * Phase 4.2 notification types share one template each; the text depends on `params.kind`
+ * (e.g. GRC_CHANGE requested / approved / rejected).
+ */
+const KIND_TEMPLATES: Record<Locale, Record<string, { subject: string; body: string }>> = {
+  en: {
+    'GRC_CHANGE:requested': {
+      subject: 'Approval requested: change of {title}',
+      body: '{actor} proposed a change of “{title}” ({step}). The current values stay in force until it is approved.',
+    },
+    'GRC_CHANGE:approved': {
+      subject: 'Change approved: {title}',
+      body: 'The proposed change of “{title}” was approved and is now in force.',
+    },
+    'GRC_CHANGE:rejected': {
+      subject: 'Change rejected: {title}',
+      body: '{actor} rejected the proposed change of “{title}”. {comment}',
+    },
+  },
+  ar: {
+    'GRC_CHANGE:requested': {
+      subject: 'طلب اعتماد: تعديل {title}',
+      body: 'اقترح {actor} تعديل «{title}» ({step}). تبقى القيم الحالية سارية حتى الاعتماد.',
+    },
+    'GRC_CHANGE:approved': {
+      subject: 'تم اعتماد التعديل: {title}',
+      body: 'تم اعتماد التعديل المقترح على «{title}» وأصبح ساريًا.',
+    },
+    'GRC_CHANGE:rejected': {
+      subject: 'رُفض التعديل: {title}',
+      body: 'رفض {actor} التعديل المقترح على «{title}». {comment}',
     },
   },
 };
@@ -193,6 +230,11 @@ export function templateValues(
     kind: labels[String(params.kind ?? '')] ?? String(params.kind ?? ''),
     reply: String(params.reply ?? ''),
   };
+  const kindTpl = KIND_TEMPLATES[locale][`${type}:${String(params.kind ?? '')}`];
+  if (kindTpl) {
+    values.kindSubject = fill(kindTpl.subject, values);
+    values.kindBody = fill(kindTpl.body, values);
+  }
   if (type === 'REVIEW_OVERDUE') {
     values.overdue = fill(
       OVERDUE[locale][params.kind === 'periodic' ? 'periodic' : 'task'],

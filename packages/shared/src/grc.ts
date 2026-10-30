@@ -99,6 +99,16 @@ export const grcSettingsSchema = z
     portalVisibility: z.enum(GRC_PORTAL_VISIBILITY),
     /** Owners are reminded this many days before a risk or control review is due. */
     reminderDaysBefore: z.number().int().min(0).max(90),
+    /**
+     * Phase 4.2 (D-098): changes to active risks / controls go through an approval workflow.
+     * Off by default; once enabled it applies to the listed types (default: risks and controls).
+     * Drafts are never routed. Workflow: the chosen one, else the governance default workflow.
+     */
+    changeApproval: z.strictObject({
+      enabled: z.boolean(),
+      types: z.array(z.enum(['RISK', 'CONTROL'])).max(2),
+      workflowId: z.guid().nullable(),
+    }),
   })
   .superRefine((v, ctx) => {
     const scores = v.bands.map((b) => b.minScore);
@@ -168,6 +178,7 @@ export const DEFAULT_GRC_SETTINGS: GrcSettings = {
   ],
   portalVisibility: 'OFF',
   reminderDaysBefore: 14,
+  changeApproval: { enabled: false, types: ['RISK', 'CONTROL'], workflowId: null },
 };
 
 /** The stored setting, or the defaults when it is missing or invalid. */
@@ -580,6 +591,8 @@ export type GrcItemDto = RiskDto | ControlDto | RequirementDto;
 export interface GrcItemDetailDto<T extends GrcItemDto = GrcItemDto> {
   item: T;
   steps: GrcStepLinkDto[];
+  /** A change waiting for approval (Phase 4.2); the item shows the current values meanwhile. */
+  pendingChange?: GrcChangeDto | null;
 }
 
 /** Assessment history and comments of one item, newest first. */
@@ -862,4 +875,74 @@ export interface ControlGapsDto {
 /** The rule results of a process (without AI). */
 export interface ProcessGapsDto {
   gaps: ControlGap[];
+}
+
+// ---------- Approval of changes to active risks and controls (Phase 4.2, D-098) ----------
+
+export const GRC_CHANGE_STATUSES = ['PENDING', 'APPROVED', 'REJECTED', 'WITHDRAWN'] as const;
+export type GrcChangeStatus = (typeof GRC_CHANGE_STATUSES)[number];
+export const GRC_CHANGE_TASK_STATUSES = ['PENDING', 'APPROVED', 'REJECTED', 'SKIPPED'] as const;
+export type GrcChangeTaskStatus = (typeof GRC_CHANGE_TASK_STATUSES)[number];
+export type GrcChangeType = 'RISK' | 'CONTROL';
+
+/** Whether an update of an item in `status` needs approval under the settings. */
+export function needsChangeApproval(
+  type: GrcObjectType,
+  status: GrcStatus,
+  settings: Pick<GrcSettings, 'changeApproval'>,
+): boolean {
+  const a = settings.changeApproval;
+  return !!a?.enabled && status !== 'DRAFT' && (a.types as readonly string[]).includes(type);
+}
+
+export const grcChangeDecisionSchema = z.object({
+  decision: z.enum(['APPROVE', 'REJECT']),
+  comment: z.string().trim().max(2000).optional(),
+});
+export type GrcChangeDecisionInput = z.infer<typeof grcChangeDecisionSchema>;
+
+export const grcChangeListQuerySchema = z.object({
+  status: z.enum(GRC_CHANGE_STATUSES).optional(),
+  objectId: z.guid().optional(),
+  /** Only changes waiting for the caller's decision. */
+  mine: z
+    .enum(['true', 'false'])
+    .transform((v) => v === 'true')
+    .optional(),
+});
+export type GrcChangeListQuery = z.infer<typeof grcChangeListQuerySchema>;
+
+export interface GrcChangeFieldDto {
+  field: string;
+  from: unknown;
+  to: unknown;
+}
+
+export interface GrcChangeDto {
+  id: string;
+  object: GrcRef;
+  status: GrcChangeStatus;
+  fields: GrcChangeFieldDto[];
+  comment: string;
+  workflowNameEn: string;
+  workflowNameAr: string;
+  steps: {
+    nameEn: string;
+    nameAr: string;
+    rule: 'ANY' | 'ALL';
+    tasks: {
+      assignee: UserRef | null;
+      status: GrcChangeTaskStatus;
+      comment: string | null;
+      decidedAt: string | null;
+    }[];
+  }[];
+  currentStep: number;
+  submittedBy: UserRef | null;
+  submittedAt: string;
+  completedAt: string | null;
+  /** The caller has an open task on the current step. */
+  canDecide: boolean;
+  /** The caller submitted it (or administers Risk & Compliance) and it is pending. */
+  canWithdraw: boolean;
 }

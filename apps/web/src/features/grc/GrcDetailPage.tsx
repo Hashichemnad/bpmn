@@ -33,6 +33,7 @@ import { PageHeader } from '@/components/PageHeader';
 import { ErrorState, LoadingState } from '@/components/states';
 import { useErrorMessage, useFormatDate, useLocalized } from '@/components/i18n-helpers';
 import { GrcFormModal } from './GrcFormModal';
+import { GrcChangeCard } from '@/features/assurance/GrcChangeCard';
 import { RiskMatrix } from './RiskMatrix';
 import { GRC_ROUTES, grcItemPath, stepHref, useCategoryName, useGrcAccess } from './grc-helpers';
 import { EffectivenessTag, GrcStatusTag, OverdueTag, RatingTag } from './grc-tags';
@@ -227,7 +228,7 @@ export function GrcDetailPage({ type }: { type: GrcObjectType }) {
   if (detail.isLoading) return <LoadingState />;
   if (detail.isError || !detail.data)
     return <ErrorState error={detail.error} onRetry={() => void detail.refetch()} />;
-  const { item, steps } = detail.data;
+  const { item, steps, pendingChange } = detail.data;
   const person = (u: typeof item.owner) => (u ? loc(u) || u.email : '—');
 
   const confirmDelete = () =>
@@ -481,7 +482,12 @@ export function GrcDetailPage({ type }: { type: GrcObjectType }) {
         extra={
           <Flex gap={8} wrap="wrap">
             {access.canChange(item) && (
-              <Button icon={<EditOutlined />} onClick={() => setEditing(true)}>
+              <Button
+                icon={<EditOutlined />}
+                disabled={!!pendingChange}
+                title={pendingChange ? t('assurance:changes.editBlocked') : undefined}
+                onClick={() => setEditing(true)}
+              >
                 {t('edit')}
               </Button>
             )}
@@ -496,6 +502,7 @@ export function GrcDetailPage({ type }: { type: GrcObjectType }) {
       {item.status === 'DRAFT' && (
         <Typography.Paragraph type="warning">{t('grc:detail.proposal')}</Typography.Paragraph>
       )}
+      {pendingChange && <GrcChangeCard change={pendingChange} />}
       <Row gutter={[16, 16]}>
         <Col xs={24} lg={14}>
           <Card style={{ marginBlockEnd: 16 }}>

@@ -311,7 +311,11 @@
       "FEEDBACK_UPDATED": "Your feedback on {{title}} is now: {{status}}",
       "GRC_REVIEW_due": "Review due on {{due}}: {{title}}",
       "GRC_REVIEW_overdue": "Review overdue since {{due}}: {{title}}",
-      "GRC_REVIEW": "Review due on {{due}}: {{title}}"
+      "GRC_REVIEW": "Review due on {{due}}: {{title}}",
+      "GRC_CHANGE": "Change of {{title}}",
+      "GRC_CHANGE_requested": "{{actor}} asks you to approve a change of {{title}}",
+      "GRC_CHANGE_approved": "The change of {{title}} was approved",
+      "GRC_CHANGE_rejected": "{{actor}} rejected the change of {{title}}"
     }
   },
   "prefs": {
@@ -332,7 +336,8 @@
       "REVIEW_DUE": "A periodic review is due soon",
       "FEEDBACK_RECEIVED": "Portal feedback on my items",
       "FEEDBACK_UPDATED": "Updates on feedback I sent",
-      "GRC_REVIEW": "Risk & Compliance review dates"
+      "GRC_REVIEW": "Risk & Compliance review dates",
+      "GRC_CHANGE": "Changes of risks and controls (approvals)"
     }
   },
   "feedback": {

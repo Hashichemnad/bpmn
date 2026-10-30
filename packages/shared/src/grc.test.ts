@@ -9,6 +9,7 @@ import {
   heatMap,
   isEffectiveControl,
   isOverdue,
+  needsChangeApproval,
   rateRisk,
   ratingBand,
   resolveGrcSettings,
@@ -273,5 +274,26 @@ describe('control-gap rules', () => {
       'SEGREGATION_OF_DUTIES',
       'MISSING_REVIEW_EVIDENCE',
     ]);
+  });
+});
+
+describe('approval of changes (Phase 4.2)', () => {
+  it('routes only non-draft items of the configured types while enabled', () => {
+    const on = {
+      changeApproval: { enabled: true, types: ['RISK' as const], workflowId: null },
+    };
+    expect(needsChangeApproval('RISK', 'ACTIVE', on)).toBe(true);
+    expect(needsChangeApproval('RISK', 'RETIRED', on)).toBe(true);
+    expect(needsChangeApproval('RISK', 'DRAFT', on)).toBe(false);
+    expect(needsChangeApproval('CONTROL', 'ACTIVE', on)).toBe(false);
+    expect(needsChangeApproval('RISK', 'ACTIVE', DEFAULT_GRC_SETTINGS)).toBe(false);
+  });
+
+  it('keeps stored settings from before Phase 4.2 valid (approval off)', () => {
+    const { changeApproval: _c, ...old } = DEFAULT_GRC_SETTINGS;
+    expect(resolveGrcSettings({ ...old, reminderDaysBefore: 7 })).toMatchObject({
+      reminderDaysBefore: 7,
+      changeApproval: { enabled: false },
+    });
   });
 });

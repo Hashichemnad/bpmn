@@ -40,8 +40,9 @@ with no per-user licensing. Target: 50–500 users on a single server.
 | 2 | M5 Wiki, M6 Version control, M7 Git integration | ✅ Done (merged into `main`) |
 | 3 | M8 Governance, M9 Knowledge Portal | ✅ Done (merged into `main`) |
 | AI | M16 AI Assistant (after Phase 3) | ✅ Done (merged into `main`) |
-| 4.1 | M10 GRC core: risks, controls, requirements linked to process steps; heat maps, coverage dashboard, RCM export, reminders, AI control-gap check | 🟡 Done on branch `phase-4-1-grc` (D-089 – D-095), awaiting review |
-| 4.2 / 4.3 | M10 control testing, issues and audits; M11 EA; M12 KPIs + Salesforce | ⬜ |
+| 4.1 | M10 GRC core: risks, controls, requirements linked to process steps; heat maps, coverage dashboard, RCM export, reminders, AI control-gap check | ✅ Done (merged into `main`, D-089 – D-097) |
+| 4.2 | M10 assurance: approval of GRC changes, control testing, issues and actions, audits, questionnaires, assurance dashboard | 🟡 In progress on branch `phase-4-2-grc-assurance` (D-098 –) |
+| 4.3 | M11 EA; M12 KPIs + Salesforce; Oracle Fusion Risk Management overlay | ⬜ |
 | 5 | M13 Mining, M14 Execution, simulation | ⬜ |
 | Design A | Modeler design upgrade — Part A: look and feel (colour theme as BPMN-in-Color, renderer, colour picker, fonts/RTL, apply theme) | ✅ Done (merged into `main`, D-067 – D-073) |
 | Design B1 | Modeler design — Part B1: full-screen workspace and modeling productivity (palette, ready-made steps, zoom/mini-map, align, auto-layout, lane roles, badges, portal diagram, print layout) | ✅ Done (merged into `main`, D-074 – D-081); Part B2 in BACKLOG |

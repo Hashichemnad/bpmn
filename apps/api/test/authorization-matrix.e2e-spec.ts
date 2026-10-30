@@ -48,6 +48,8 @@ describe('Authorisation matrix (e2e)', () => {
     'RiskControl',
     'RequirementControl',
     'GrcActivity',
+    'GrcChange',
+    'GrcChangeTask',
   ];
 
   async function fingerprint(): Promise<Record<string, string>> {
@@ -277,7 +279,7 @@ describe('Authorisation matrix (e2e)', () => {
     const viewer = await loggedIn(ctx.app, 'viewer@processhub.local', DEMO_PASSWORD);
     // The RACI export also serves the portal: Viewers get published versions only (reports tests).
     const own =
-      /^\/(portal|auth|notifications|health|tasks|feedback)(\/|$)|^\/settings\/(public|logo)$|^\/ai\/status$|^\/reports\/raci\//;
+      /^\/(portal|auth|notifications|health|tasks|feedback)(\/|$)|^\/assurance\/tasks$|^\/settings\/(public|logo)$|^\/ai\/status$|^\/reports\/raci\//;
     const leaked: string[] = [];
     for (const r of routes.filter((x) => x.method === 'GET' && !own.test(x.path))) {
       for (const url of urls(r.path)) {

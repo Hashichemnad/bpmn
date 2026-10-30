@@ -1087,3 +1087,25 @@ decode-uri-component 0.2.2`, also on `main`; no MinIO release avoids it. Root `p
    them (D-090).
 5. **Warning badge per risk**: confirmed — the badge checks each risk's own mitigating controls; a control on the
    same step that does not mitigate that risk must not hide the warning (D-092).
+
+## D-098 — Approval of changes to active risks and controls (Phase 4.2, 2026-10-30)
+
+- **Setting** `grc.changeApproval` `{ enabled, types, workflowId }`: off by default (stored settings from Phase 4.1 stay
+  valid); once enabled it covers risks and controls unless one type is unticked. The workflow is the one chosen in
+  Settings → Risk & Compliance, else the governance default workflow; without one the change is refused
+  (`NO_WORKFLOW`).
+- **What is routed**: every update of a risk / control whose status is not DRAFT (ratings, owner, description,
+  relations, effectiveness, retirement via status). Drafts edit freely. Excel imports by Risk & Compliance editors
+  still apply directly (bulk administration, audited `IMPORT`); deletion stays a `grc.admin` action.
+- **Model**: `GrcChange` (proposed input as sent, `fields` = before / after at submission, workflow snapshot with the
+  resolved assignees, current step) and `GrcChangeTask` per assignee. A separate model instead of the process / page
+  `Review`, which is tied to versions and publications of content. The Phase 3 rules apply: steps in order, ANY /
+  ALL, four-eyes (the submitter is never an approver; `SELF_APPROVAL_NOT_ALLOWED` / `WORKFLOW_NO_ASSIGNEES`), and
+  approvers need `reviews.decide` (read-only roles never approve) plus `grc.read`.
+- **In force**: the item keeps its current values until the last step approves; the stored input is then applied
+  unchanged through the normal update (assessment history, audit `ASSESS` / `UPDATE`), with `SUBMIT` / `APPROVE` /
+  `REJECT` / `WITHDRAW` audit entries on the risk or control. One pending change per item (`CHANGE_PENDING`); the
+  submitter or a `grc.admin` may withdraw it.
+- **Wiring**: the assurance module registers a change gate on `GrcService` (no module cycle between GRC and
+  governance). Notification `GRC_CHANGE` (`params.kind` requested / approved / rejected) with its own preference;
+  the approvals appear in My tasks ("Change approvals", `GET /assurance/tasks`).

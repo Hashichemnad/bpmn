@@ -192,8 +192,8 @@ export class GrcController {
 
   @Get('risks/:id')
   @RequirePermissions(READ)
-  getRisk(@Param('id', UuidPipe()) id: string) {
-    return this.grc.getRisk(id);
+  getRisk(@Param('id', UuidPipe()) id: string, @CurrentUser() user: AuthUser) {
+    return this.grc.getRisk(id, user);
   }
 
   @Post('risks')
@@ -238,8 +238,8 @@ export class GrcController {
 
   @Get('controls/:id')
   @RequirePermissions(READ)
-  getControl(@Param('id', UuidPipe()) id: string) {
-    return this.grc.getControl(id);
+  getControl(@Param('id', UuidPipe()) id: string, @CurrentUser() user: AuthUser) {
+    return this.grc.getControl(id, user);
   }
 
   @Post('controls')

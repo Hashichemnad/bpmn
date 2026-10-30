@@ -2,7 +2,49 @@
 
 Read this together with `CLAUDE.md` at the start of every session.
 
-## Current state — 2026-10-30 (Phase 4 — Part 1: GRC core, branch `phase-4-1-grc`, done — awaiting review)
+## Current state — 2026-10-30 (Phase 4 — Part 2: GRC assurance, branch `phase-4-2-grc-assurance`)
+
+Everything up to Phase 4.1 (GRC core) is merged into `main`. This branch builds module M10 assurance (DOF RFP §4.5,
+compliance items 32–36): approval of changes to active risks / controls, control testing, issues and action plans,
+audit management, questionnaires and the assurance dashboard. Phase 4.3 (EA, KPIs, Salesforce, Oracle overlay) stays
+in BACKLOG. The session works on `claude/eager-dirac-5r1gd8` (the harness branch) and pushes the same commits to
+`phase-4-2-grc-assurance`.
+
+Local setup used by this session: PostgreSQL 16 (`service postgresql start`; role `processhub` / `devpassword`,
+databases `processhub`, `processhub_test`); S3 for the dev stack: `moto_server -p 7070` from a Python venv (Docker
+Hub pulls of the Versity image hit the rate limit); API from `apps/api/dist` with `SCHEDULER_INTERVAL_MINUTES=0`,
+Vite on 5173; Playwright with `E2E_BASE_URL=http://localhost:5173` and
+`E2E_CHROMIUM_PATH=/opt/pw-browsers/chromium-1243/chrome-linux64/chrome`. Run single API suites with
+`npx jest --runInBand test/<file> --selectProjects e2e` (the path must come before `--selectProjects`).
+
+Steps (tick as they are committed; a new session continues at the first unticked one):
+
+- [x] 0. Approval of changes to active risks and controls (D-098): Settings → Risk & Compliance → "Approval of
+      changes" (off by default; once on: risks and controls, workflow = chosen one or the governance default).
+      An update of a non-draft risk / control becomes a `GrcChange` (proposed input + before / after) routed through
+      the workflow steps (`GrcChangeTask`, ANY / ALL, four-eyes, approvers need `grc.read` + `reviews.decide`); the
+      current values stay in force until the last approval applies the input unchanged; reject / withdraw; one
+      pending change per item (`CHANGE_PENDING`). API `/grc/changes` (list, mine, detail, decision, withdraw), detail
+      `pendingChange`, notification `GRC_CHANGE` (requested / approved / rejected, e-mail EN/AR), My tasks tab
+      "Change approvals" (`GET /assurance/tasks`, new module `assurance`). Web: before / after card with steps and
+      Approve / Reject / Withdraw on the risk / control page. Tests: shared 2, API 4 (`grc-changes.e2e-spec.ts`),
+      Playwright 1 (`assurance.spec.ts`).
+- [ ] 1. Control testing: test plans, cycles (scheduler / manual), execution with samples and evidence, four-eyes
+      review, operating effectiveness on the control, reminders and My tasks.
+- [ ] 2. Issues and action plans: sources, severity scale, actions with progress and evidence, verification,
+      accepted risk, escalation, ageing.
+- [ ] 3. Audit management: universe, annual plan and engagements (role Internal Audit, `audit.manage`), work
+      programme, findings → issues, report .docx (EN / AR).
+- [ ] 4. Questionnaires and surveys: builder, campaigns, responses, results and Excel, RCSA proposals, compliance
+      self-assessment, "Request feedback" on a process.
+- [ ] 5. Assurance dashboard and the heat-map toggle "using tested effectiveness".
+- [ ] 6. Permissions sweep, demo seed, screenshots EN / AR, sample audit report, docs, pull request.
+
+### Next (continue here)
+
+Step 1 — control testing.
+
+## Previous state — 2026-10-30 (Phase 4 — Part 1: GRC core, branch `phase-4-1-grc`, done — awaiting review)
 
 Everything up to Modeler design Part B2 is merged into `main`. This branch builds module M10 core: risks,
 controls and requirements linked to process steps (DOF RFP §4.5). Phase 4.2 / 4.3 items are in BACKLOG.

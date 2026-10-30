@@ -45,6 +45,8 @@ import {
   GRC_OBJECT_TYPES,
   GRC_PORTAL_VISIBILITY,
   GRC_STATUSES,
+  GRC_CHANGE_STATUSES,
+  GRC_CHANGE_TASK_STATUSES,
   REQUIREMENT_LEVELS,
   RISK_RESPONSES,
 } from '@processhub/shared';
@@ -124,6 +126,12 @@ describe('translations', () => {
         ),
       ]),
       ...GRC_STATUSES.map((v) => `grc:status.${v}`),
+      // Assurance (Phase 4.2)
+      ...GRC_CHANGE_STATUSES.map((v) => `assurance:changes.status.${v}`),
+      ...GRC_CHANGE_TASK_STATUSES.map((v) => `assurance:changes.task.${v}`),
+      ...['requested', 'approved', 'rejected'].map(
+        (k) => `governance:notifications.title.GRC_CHANGE_${k}`,
+      ),
       ...RISK_RESPONSES.map((v) => `grc:response.${v}`),
       ...CONTROL_TYPES.map((v) => `grc:controlType.${v}`),
       ...CONTROL_NATURES.map((v) => `grc:nature.${v}`),

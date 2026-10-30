@@ -50,6 +50,7 @@ import { BrandMark } from './BrandMark';
 import { DiagramThemeNotice } from '@/features/settings/DiagramThemeNotice';
 import { GlobalSearch } from '@/features/search/GlobalSearch';
 import { NotificationBell } from '@/features/notifications/NotificationBell';
+import { assuranceTaskCount, useAssuranceTasks } from '@/api/assurance';
 import { useMyTasks } from '@/api/governance';
 
 const { Header, Sider, Content } = Layout;
@@ -91,13 +92,15 @@ export function AppLayout() {
   const [collapsed, setCollapsed] = useState(false);
 
   const tasks = useMyTasks();
+  const assurance = useAssuranceTasks(!!user);
   const taskCount = tasks.data
     ? tasks.data.reviews.length +
       tasks.data.toPublish.length +
       tasks.data.returned.length +
       tasks.data.dueReviews.length +
       tasks.data.grcReviews.length +
-      tasks.data.feedback.length
+      tasks.data.feedback.length +
+      assuranceTaskCount(assurance.data)
     : 0;
 
   const items = useMemo<MenuProps['items']>(() => {

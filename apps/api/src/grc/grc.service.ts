@@ -15,6 +15,7 @@ import {
   type CreateRequirementInput,
   type CreateRiskInput,
   type GrcActivityDto,
+  type GrcChangeDto,
   type GrcItemDetailDto,
   type GrcObjectType,
   type GrcRef,
@@ -280,8 +281,36 @@ const RISK_ASSESSMENT = [
   'residualImpact',
 ] as const;
 
+/**
+ * Approval of changes to active risks and controls (Phase 4.2, D-098), registered by the
+ * assurance module: `submit` returns the item with its pending change when the update needs
+ * approval (null: apply directly); `pending` returns the open change of an item.
+ */
+export interface GrcChangeGate {
+  submit(
+    type: 'RISK' | 'CONTROL',
+    id: string,
+    status: GrcStatus,
+    input: UpdateRiskInput | UpdateControlInput,
+    actor: AuthUser,
+    meta: RequestMeta,
+  ): Promise<GrcItemDetailDto | null>;
+  pending(id: string, actor?: AuthUser): Promise<GrcChangeDto | null>;
+}
+
+/** Options of an update: `approved` applies an approved change (no new approval round). */
+export interface GrcUpdateOptions {
+  approved?: boolean;
+}
+
 @Injectable()
 export class GrcService {
+  private gate?: GrcChangeGate;
+
+  setChangeGate(gate: GrcChangeGate) {
+    this.gate = gate;
+  }
+
   constructor(
     private readonly prisma: PrismaService,
     private readonly audit: AuditService,
@@ -424,14 +453,15 @@ export class GrcService {
     return o;
   }
 
-  async getRisk(id: string): Promise<GrcItemDetailDto<RiskDto>> {
+  async getRisk(id: string, actor?: AuthUser): Promise<GrcItemDetailDto<RiskDto>> {
     await this.findItem(id, 'RISK');
-    const [row, settings, steps] = await Promise.all([
+    const [row, settings, steps, pendingChange] = await Promise.all([
       this.prisma.repoObject.findUniqueOrThrow({ where: { id }, include: riskInclude }),
       this.settings.get(),
       this.steps(id),
+      this.gate?.pending(id, actor) ?? null,
     ]);
-    return { item: toRiskDto(row, settings), steps };
+    return { item: toRiskDto(row, settings), steps, pendingChange };
   }
 
   /** Proposers (no `grc.edit`) always create drafts. */
@@ -529,13 +559,23 @@ export class GrcService {
     };
   }
 
-  async updateRisk(id: string, input: UpdateRiskInput, actor: AuthUser, meta: RequestMeta) {
+  async updateRisk(
+    id: string,
+    input: UpdateRiskInput,
+    actor: AuthUser,
+    meta: RequestMeta,
+    opts: GrcUpdateOptions = {},
+  ): Promise<GrcItemDetailDto<RiskDto>> {
     const o = await this.findItem(id, 'RISK');
     const before = await this.prisma.risk.findUniqueOrThrow({ where: { objectId: id } });
-    this.assertMayChange(o, before.status, actor, input);
+    if (!opts.approved) {
+      this.assertMayChange(o, before.status, actor, input);
+      const pending = await this.gate?.submit('RISK', id, before.status, input, actor, meta);
+      if (pending) return pending as GrcItemDetailDto<RiskDto>;
+    }
     const settings = await this.settings.get();
     this.assertCategory(input.category, settings);
-    if (input.controlIds && !this.canEdit(actor) && input.controlIds.length)
+    if (input.controlIds && !opts.approved && !this.canEdit(actor) && input.controlIds.length)
       await this.assertOwnDrafts(input.controlIds, actor);
     await this.prisma.$transaction(async (tx) => {
       await this.assertRefs(tx, input);
@@ -594,7 +634,7 @@ export class GrcService {
         tx,
       );
     });
-    return this.getRisk(id);
+    return this.getRisk(id, actor);
   }
 
   /** Proposers may relate only their own draft items. */
@@ -710,14 +750,15 @@ export class GrcService {
     );
   }
 
-  async getControl(id: string): Promise<GrcItemDetailDto<ControlDto>> {
+  async getControl(id: string, actor?: AuthUser): Promise<GrcItemDetailDto<ControlDto>> {
     await this.findItem(id, 'CONTROL');
-    const [row, settings, steps] = await Promise.all([
+    const [row, settings, steps, pendingChange] = await Promise.all([
       this.prisma.repoObject.findUniqueOrThrow({ where: { id }, include: controlInclude }),
       this.settings.get(),
       this.steps(id),
+      this.gate?.pending(id, actor) ?? null,
     ]);
-    return { item: toControlDto(row, settings), steps };
+    return { item: toControlDto(row, settings), steps, pendingChange };
   }
 
   async createControl(input: CreateControlInput, actor: AuthUser, meta: RequestMeta) {
@@ -794,16 +835,26 @@ export class GrcService {
     return this.getControl(id);
   }
 
-  async updateControl(id: string, input: UpdateControlInput, actor: AuthUser, meta: RequestMeta) {
+  async updateControl(
+    id: string,
+    input: UpdateControlInput,
+    actor: AuthUser,
+    meta: RequestMeta,
+    opts: GrcUpdateOptions = {},
+  ): Promise<GrcItemDetailDto<ControlDto>> {
     const o = await this.findItem(id, 'CONTROL');
     const before = await this.prisma.control.findUniqueOrThrow({ where: { objectId: id } });
-    this.assertMayChange(o, before.status, actor, input);
-    if (!this.canEdit(actor)) {
+    if (!opts.approved) this.assertMayChange(o, before.status, actor, input);
+    if (!opts.approved && !this.canEdit(actor)) {
       if (input.effectiveness && input.effectiveness !== before.effectiveness)
         throw forbidden('Only Risk & Compliance editors can assess controls');
       if (input.requirementIds?.length)
         throw forbidden('Only Risk & Compliance editors can map requirements');
       if (input.riskIds?.length) await this.assertOwnDrafts(input.riskIds, actor);
+    }
+    if (!opts.approved) {
+      const pending = await this.gate?.submit('CONTROL', id, before.status, input, actor, meta);
+      if (pending) return pending as GrcItemDetailDto<ControlDto>;
     }
     await this.prisma.$transaction(async (tx) => {
       await this.assertRefs(tx, input);
@@ -868,7 +919,7 @@ export class GrcService {
         tx,
       );
     });
-    return this.getControl(id);
+    return this.getControl(id, actor);
   }
 
   /** Replaces the risks or requirements of a control. */

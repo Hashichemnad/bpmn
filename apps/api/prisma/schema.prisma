@@ -426,6 +426,7 @@ model RepoObject {
   /// IT system objects: the controls that run in or depend on them.
   systemControls Control[]     @relation("ControlSystem")
   grcActivities  GrcActivity[]
+  grcChanges     GrcChange[]
 
   @@index([type, status])
 }
@@ -1028,4 +1029,50 @@ model AiUsage {
 
   @@index([createdAt])
   @@index([userId, createdAt])
+}
+
+// ---------- Assurance (M10, Phase 4.2) ----------
+
+/// A proposed change of an active risk or control waiting for approval (D-098).
+/// The current values stay in force until the last workflow step approves.
+model GrcChange {
+  id             String          @id @default(uuid()) @db.Uuid
+  objectId       String          @db.Uuid
+  object         RepoObject      @relation(fields: [objectId], references: [id], onDelete: Cascade)
+  /// PENDING | APPROVED | REJECTED | WITHDRAWN
+  status         String          @default("PENDING")
+  /// The update input as sent (applied unchanged on approval).
+  proposed       Json
+  /// [{ field, from, to }] at submission (the visual before / after).
+  fields         Json
+  comment        String          @default("")
+  workflowId     String?         @db.Uuid
+  workflowNameEn String          @default("")
+  workflowNameAr String          @default("")
+  /// [{ nameEn, nameAr, rule, assigneeIds }]
+  steps          Json
+  currentStep    Int             @default(0)
+  submittedById  String?         @db.Uuid
+  submittedAt    DateTime        @default(now())
+  completedAt    DateTime?
+  tasks          GrcChangeTask[]
+
+  @@index([objectId, status])
+  @@index([status])
+}
+
+model GrcChangeTask {
+  id         String    @id @default(uuid()) @db.Uuid
+  changeId   String    @db.Uuid
+  change     GrcChange @relation(fields: [changeId], references: [id], onDelete: Cascade)
+  stepIndex  Int
+  assigneeId String    @db.Uuid
+  /// PENDING | APPROVED | REJECTED | SKIPPED
+  status     String    @default("PENDING")
+  comment    String?
+  decidedAt  DateTime?
+  createdAt  DateTime  @default(now())
+
+  @@index([assigneeId, status])
+  @@index([changeId])
 }

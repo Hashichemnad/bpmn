@@ -538,6 +538,8 @@ export const NOTIFICATION_TYPES = [
   'FEEDBACK_UPDATED',
   /** Risk, control or requirement review due soon or overdue (params.kind: due | overdue). */
   'GRC_REVIEW',
+  /** Change of an active risk / control: approval requested, approved or rejected (params.kind). */
+  'GRC_CHANGE',
 ] as const;
 export type NotificationType = (typeof NOTIFICATION_TYPES)[number];
 

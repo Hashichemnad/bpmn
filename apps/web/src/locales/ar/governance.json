@@ -326,7 +326,11 @@
       "FEEDBACK_UPDATED": "حالة ملاحظتك على {{title}} الآن: {{status}}",
       "GRC_REVIEW_due": "موعد المراجعة {{due}}: {{title}}",
       "GRC_REVIEW_overdue": "المراجعة متأخرة منذ {{due}}: {{title}}",
-      "GRC_REVIEW": "موعد المراجعة {{due}}: {{title}}"
+      "GRC_REVIEW": "موعد المراجعة {{due}}: {{title}}",
+      "GRC_CHANGE": "تعديل {{title}}",
+      "GRC_CHANGE_requested": "يطلب منك {{actor}} اعتماد تعديل {{title}}",
+      "GRC_CHANGE_approved": "تم اعتماد تعديل {{title}}",
+      "GRC_CHANGE_rejected": "رفض {{actor}} تعديل {{title}}"
     }
   },
   "prefs": {
@@ -347,7 +351,8 @@
       "REVIEW_DUE": "مراجعة دورية مستحقة قريباً",
       "FEEDBACK_RECEIVED": "ملاحظات من البوابة على عناصري",
       "FEEDBACK_UPDATED": "تحديثات على ملاحظات أرسلتها",
-      "GRC_REVIEW": "مواعيد مراجعة المخاطر والامتثال"
+      "GRC_REVIEW": "مواعيد مراجعة المخاطر والامتثال",
+      "GRC_CHANGE": "تعديلات المخاطر والضوابط (الاعتمادات)"
     }
   },
   "feedback": {

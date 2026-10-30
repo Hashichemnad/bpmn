@@ -3,6 +3,9 @@ import { useTranslation } from 'react-i18next';
 import type { NotificationDto } from '@processhub/shared';
 import { useFormatDate, useLocalized } from '@/components/i18n-helpers';
 
+/** Phase 4.2 types: the text depends on `params.kind`. */
+const ASSURANCE_TYPES: string[] = ['GRC_CHANGE'];
+
 /** Translated text of a notification from its type and stored parameters. */
 export function useNotificationText() {
   const { t } = useTranslation();
@@ -33,7 +36,9 @@ export function useNotificationText() {
           ? `REVIEW_OVERDUE_${p.kind === 'periodic' ? 'periodic' : 'task'}`
           : n.type === 'GRC_REVIEW'
             ? `GRC_REVIEW_${p.kind === 'overdue' ? 'overdue' : 'due'}`
-            : n.type;
+            : ASSURANCE_TYPES.includes(n.type) && p.kind
+              ? `${n.type}_${String(p.kind)}`
+              : n.type;
       return {
         title: t(`governance:notifications.title.${key}`, values),
         detail: values.comment || values.reply || '',

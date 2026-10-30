@@ -176,6 +176,7 @@ zod / UUID pipe; file uploads are checked in the service (allow-list, content sn
 | POST   | `/ai/summarise`                              | authenticated                                             | body                                | default    |
 | POST   | `/ai/translate`                              | authenticated                                             | body                                | default    |
 | GET    | `/ai/usage`                                  | `ai.usage.read`                                           | query                               | default    |
+| GET    | `/assurance/tasks`                           | authenticated                                             | —                                   | default    |
 | DELETE | `/attachments/:id`                           | `docs.read` + `docs.edit`                                 | param `id`                          | default    |
 | GET    | `/attachments/:id/content`                   | `docs.read`                                               | param `id`                          | default    |
 | GET    | `/audit-logs`                                | `audit.read`                                              | query                               | default    |
@@ -232,6 +233,10 @@ zod / UUID pipe; file uploads are checked in the service (allow-list, content sn
 | GET    | `/governance/settings`                       | any of `governance.manage`, `processes.read`, `docs.read` | —                                   | default    |
 | PUT    | `/governance/settings`                       | `governance.manage`                                       | body                                | default    |
 | PUT    | `/governance/spaces/:spaceId/workflow`       | any of `governance.manage`, `docs.read`                   | body, param `spaceId`               | default    |
+| GET    | `/grc/changes`                               | `grc.read`                                                | query                               | default    |
+| GET    | `/grc/changes/:id`                           | `grc.read`                                                | param `id`                          | default    |
+| POST   | `/grc/changes/:id/decision`                  | `grc.read` + `reviews.decide`                             | body, param `id`                    | default    |
+| POST   | `/grc/changes/:id/withdraw`                  | `grc.edit`                                                | param `id`                          | default    |
 | GET    | `/grc/controls`                              | `grc.read`                                                | query                               | default    |
 | POST   | `/grc/controls`                              | any of `grc.edit`, `grc.propose`                          | body                                | default    |
 | DELETE | `/grc/controls/:id`                          | any of `grc.edit`, `grc.propose`                          | param `id`                          | default    |

@@ -9,6 +9,8 @@ import {
   Input,
   InputNumber,
   Radio,
+  Select,
+  Switch,
   Row,
   Space,
   Table,
@@ -23,6 +25,8 @@ import {
   type GrcSettings,
 } from '@processhub/shared';
 import { useGrcSettings, useSaveGrcSettings } from '@/api/grc';
+import { useWorkflows } from '@/api/governance';
+import { useLocalized } from '@/components/i18n-helpers';
 import { PageHeader } from '@/components/PageHeader';
 import { ErrorState, LoadingState } from '@/components/states';
 import { useErrorMessage } from '@/components/i18n-helpers';
@@ -35,6 +39,8 @@ export function GrcSettingsPage() {
   const errorMessage = useErrorMessage();
   const query = useGrcSettings();
   const save = useSaveGrcSettings();
+  const workflows = useWorkflows();
+  const loc = useLocalized();
   const [value, setValue] = useState<GrcSettings | null>(null);
 
   useEffect(() => {
@@ -344,6 +350,52 @@ export function GrcSettingsPage() {
               value={value.reminderDaysBefore}
               onChange={(n) => patch({ reminderDaysBefore: n ?? 0 })}
             />
+          </Card>
+          <Card title={t('assurance:changes.settingsTitle')} style={{ marginBlockStart: 16 }}>
+            <Typography.Paragraph type="secondary">
+              {t('assurance:changes.settingsHint')}
+            </Typography.Paragraph>
+            <Space direction="vertical" style={{ width: '100%' }}>
+              <Space>
+                <Switch
+                  data-testid="change-approval-switch"
+                  checked={value.changeApproval.enabled}
+                  onChange={(enabled) =>
+                    patch({ changeApproval: { ...value.changeApproval, enabled } })
+                  }
+                />
+                {t('assurance:changes.enable')}
+              </Space>
+              <Checkbox.Group
+                disabled={!value.changeApproval.enabled}
+                value={value.changeApproval.types}
+                onChange={(types) =>
+                  patch({
+                    changeApproval: {
+                      ...value.changeApproval,
+                      types: types as GrcSettings['changeApproval']['types'],
+                    },
+                  })
+                }
+                options={(['RISK', 'CONTROL'] as const).map((k) => ({
+                  value: k,
+                  label: t(`grc:types.${k}`),
+                }))}
+              />
+              <Select
+                allowClear
+                style={{ width: '100%' }}
+                disabled={!value.changeApproval.enabled}
+                placeholder={t('assurance:changes.defaultWorkflow')}
+                value={value.changeApproval.workflowId ?? undefined}
+                onChange={(workflowId) =>
+                  patch({
+                    changeApproval: { ...value.changeApproval, workflowId: workflowId ?? null },
+                  })
+                }
+                options={(workflows.data ?? []).map((w) => ({ value: w.id, label: loc(w) }))}
+              />
+            </Space>
           </Card>
         </Col>
       </Row>
