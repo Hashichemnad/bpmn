@@ -43,7 +43,9 @@ Steps (tick as they are committed; a new session continues at the first unticked
 - [x] 5. Reviews and notifications (D-094): due / overdue reminders (`GRC_REVIEW`, scheduler, dedupe, e-mail
       template EN/AR, preference), My tasks tab "Risk & control reviews" + menu count, overdue flags. Optional
       approval of GRC changes through governance workflows deferred to BACKLOG (decision requested). Tests: API 1.
-- [ ] 6. AI control-gap check.
+- [x] 6. AI control-gap check (D-095): shared rules `detectControlGaps` + `GET /grc/processes/:id/gaps`, AI feature
+      `CONTROL_GAPS` (`POST /ai/control-gaps`, mocked provider in tests), modeler drawer "Check control gaps" with
+      Accept (link / create control) and Dismiss. Tests: shared 1, API 1.
 - [ ] 7. Demo data, e2e tests, screenshots, docs, verification, pull request.
 
 ## Previous state — 2026-10-29 (Modeler design — Part B2: smarter modeling and reports, branch `modeler-design-b2`)

@@ -6,6 +6,7 @@ import {
   createApp,
   createUser,
   loggedIn,
+  parseSse,
   resetDb,
   sampleBpmn,
   type Client,
@@ -654,5 +655,102 @@ describe('Risk & Compliance (e2e)', () => {
       { id: r.id, type: 'RISK', overdue: false },
     ]);
     expect((await officer.get('/tasks').expect(200)).body.grcReviews).toEqual([]);
+  });
+
+  it('AI control-gap check: rule gaps go to the (mocked) model, invented ids are dropped', async () => {
+    await createUser(ctx.prisma, 'super@test.local', ['SUPER_ADMIN']);
+    const superAdmin = await loggedIn(ctx.app, 'super@test.local');
+    await superAdmin
+      .put('/ai/settings')
+      .send({
+        enabled: true,
+        provider: 'anthropic',
+        model: 'claude-sonnet-5-5',
+        fastModel: 'claude-haiku-5-5',
+        apiKey: 'sk-test-key',
+        allowedRoles: ['RISK_OFFICER', 'MODELER'],
+        userDailyLimit: 0,
+        orgMonthlyLimit: 0,
+        noticeEn: '',
+        noticeAr: '',
+      })
+      .expect(200);
+    const r = (await risk(officer).expect(201)).body.item;
+    const ctl = (await officer.post('/grc/controls').send({ code: 'C-9', nameEn: 'Dual sign-off' }))
+      .body.item;
+    await officer
+      .post(`/processes/${processId}/links`)
+      .send({ bpmnElementId: 'Task_Approve', repoObjectId: r.id })
+      .expect(201);
+
+    const rules = (await officer.get(`/grc/processes/${processId}/gaps`).expect(200)).body;
+    expect(rules.gaps).toEqual([
+      {
+        kind: 'HIGH_RISK_NO_CONTROL',
+        severity: 'HIGH',
+        elementIds: ['Task_Approve'],
+        itemIds: [r.id],
+      },
+    ]);
+
+    ctx.ai.queue = [];
+    ctx.ai.reply({
+      summary: 'One critical risk is not controlled.',
+      findings: [
+        {
+          kind: 'HIGH_RISK_NO_CONTROL',
+          severity: 'HIGH',
+          title: 'Split orders are not prevented',
+          explanation: 'Nothing stops a buyer from splitting orders.',
+          suggestion: 'Link the dual sign-off control.',
+          elementIds: ['Task_Approve', 'Task_Invented'],
+          itemIds: [r.id],
+          action: {
+            type: 'LINK_CONTROL',
+            controlId: ctl.id,
+            nameEn: '',
+            nameAr: '',
+            elementId: 'Task_Approve',
+          },
+        },
+        {
+          kind: 'OTHER',
+          severity: 'LOW',
+          title: 'Made-up control',
+          explanation: 'x',
+          suggestion: 'y',
+          elementIds: [],
+          itemIds: ['00000000-0000-4000-8000-000000000000'],
+          action: {
+            type: 'LINK_CONTROL',
+            controlId: '00000000-0000-4000-8000-000000000000',
+            nameEn: '',
+            nameAr: '',
+            elementId: 'Task_Order',
+          },
+        },
+      ],
+    });
+    const res = await officer
+      .post('/ai/control-gaps')
+      .send({ processId, language: 'en' })
+      .expect(200);
+    const events = parseSse(res.text);
+    const result = events[events.length - 1].data;
+    expect(result.findings[0]).toMatchObject({
+      elementIds: ['Task_Approve'],
+      action: { type: 'LINK_CONTROL', controlId: ctl.id, elementId: 'Task_Approve' },
+    });
+    expect(result.findings[1]).toMatchObject({
+      itemIds: [],
+      action: { type: 'NONE', controlId: null },
+    });
+    const prompt = ctx.ai.requests[0].messages[0].text;
+    expect(prompt).toContain('kind=HIGH_RISK_NO_CONTROL');
+    expect(prompt).toContain(`id=${ctl.id} C-9`);
+    // Nothing was changed by the check.
+    expect(await ctx.prisma.objectLink.count({ where: { repoObjectId: ctl.id } })).toBe(0);
+    await viewer.post('/ai/control-gaps').send({ processId, language: 'en' }).expect(403);
+    await viewer.get(`/grc/processes/${processId}/gaps`).expect(403);
   });
 });

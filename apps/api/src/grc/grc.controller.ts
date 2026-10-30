@@ -339,6 +339,13 @@ export class GrcController {
     return this.grc.comment(id, body.body, user, meta);
   }
 
+  /** Control-gap rules of a process (the AI check explains and suggests on top). */
+  @Get('processes/:id/gaps')
+  @RequirePermissions(READ, PERMISSIONS.PROCESSES_READ)
+  gaps(@Param('id', UuidPipe()) id: string) {
+    return this.grc.gaps(id);
+  }
+
   /** Linked risks / controls / requirements per step of a process (modeler side panel, badges). */
   @Get('processes/:id')
   @RequirePermissions(READ, PERMISSIONS.PROCESSES_READ)

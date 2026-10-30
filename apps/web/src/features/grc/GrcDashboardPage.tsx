@@ -272,7 +272,12 @@ export function GrcDashboardPage() {
                   title: t('grc:fields.title'),
                   render: (_, r) => (
                     <Link to={grcItemPath('RISK', r.id)}>
-                      {r.code && <span dir="ltr">{r.code} · </span>}
+                      {r.code && (
+                        <>
+                          <bdi>{r.code}</bdi>
+                          {' · '}
+                        </>
+                      )}
                       {loc(r)}
                     </Link>
                   ),

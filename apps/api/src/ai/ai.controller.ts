@@ -4,6 +4,8 @@ import type { Request, Response } from 'express';
 import {
   PERMISSIONS,
   aiAnalyseSchema,
+  aiControlGapsSchema,
+  type AiControlGapsInput,
   aiDocToProcessSchema,
   aiPortalQuestionSchema,
   aiGenerateDocSchema,
@@ -38,6 +40,7 @@ import { TranslateService } from './features/translate.service';
 import { DocAiService } from './features/doc-ai.service';
 import { SummaryService } from './features/summary.service';
 import { AnalyseService } from './features/analyse.service';
+import { ControlGapsService } from './features/control-gaps.service';
 import { PortalQaService } from './features/portal-qa.service';
 
 /** Settings → AI and the usage report. The API key is write-only. */
@@ -117,6 +120,7 @@ export class AiController {
     private readonly docAi: DocAiService,
     private readonly summary: SummaryService,
     private readonly analyse: AnalyseService,
+    private readonly controlGaps: ControlGapsService,
     private readonly portalQa: PortalQaService,
   ) {}
 
@@ -203,6 +207,18 @@ export class AiController {
     @Res() res: Response,
   ) {
     await streamSse(req, res, await this.analyse.prepare(body, user, meta));
+  }
+
+  /** Risk & Compliance: control gaps of a process with explanations and proposed fixes. */
+  @Post('control-gaps')
+  async checkControlGaps(
+    @Body(new ZodPipe(aiControlGapsSchema)) body: AiControlGapsInput,
+    @CurrentUser() user: AuthUser,
+    @ReqMeta() meta: RequestMeta,
+    @Req() req: Request,
+    @Res() res: Response,
+  ) {
+    await streamSse(req, res, await this.controlGaps.prepare(body, user, meta));
   }
 
   /** Knowledge Portal assistant: answers only from published content the user may see. */

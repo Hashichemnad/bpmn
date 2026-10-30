@@ -3,6 +3,8 @@ import {
   DEFAULT_GRC_SETTINGS,
   createLinkSchema,
   createRiskSchema,
+  detectControlGaps,
+  parseBpmnGraph,
   grcSettingsSchema,
   heatMap,
   isEffectiveControl,
@@ -189,5 +191,87 @@ describe('per-step coverage', () => {
     expect(s.get('B')).toMatchObject({ alert: false, uncovered: false });
     expect(s.get('C')).toMatchObject({ alert: false, uncovered: true });
     expect(s.has('D')).toBe(false);
+  });
+});
+
+describe('control-gap rules', () => {
+  const xml = `<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:ph="http://processhub.io/schema/bpmn" id="D">
+  <bpmn:process id="P">
+    <bpmn:laneSet id="LS"><bpmn:lane id="Lane_Clerk" name="Clerk"><bpmn:flowNodeRef>Task_Submit</bpmn:flowNodeRef><bpmn:flowNodeRef>Task_Approve</bpmn:flowNodeRef></bpmn:lane>
+    <bpmn:lane id="Lane_Boss" name="Manager"><bpmn:flowNodeRef>Task_Pay</bpmn:flowNodeRef></bpmn:lane></bpmn:laneSet>
+    <bpmn:userTask id="Task_Submit" name="Submit request" />
+    <bpmn:exclusiveGateway id="Gw" />
+    <bpmn:userTask id="Task_Approve" name="Approve request" ph:stepKind="approval" />
+    <bpmn:userTask id="Task_Pay" name="Pay" />
+    <bpmn:sequenceFlow id="F1" sourceRef="Task_Submit" targetRef="Gw" />
+    <bpmn:sequenceFlow id="F2" sourceRef="Gw" targetRef="Task_Approve" />
+    <bpmn:sequenceFlow id="F3" sourceRef="Task_Approve" targetRef="Task_Pay" />
+  </bpmn:process>
+</bpmn:definitions>`;
+  const base = {
+    code: null,
+    nameEn: 'x',
+    nameAr: '',
+    descriptionEn: '',
+    descriptionAr: '',
+    status: 'ACTIVE' as const,
+  };
+  it('finds high risks, segregation of duties, orphan links, uncovered requirements and missing reviews', () => {
+    const graph = parseBpmnGraph(xml);
+    const gaps = detectControlGaps(graph, [
+      {
+        ...base,
+        id: 'r1',
+        type: 'RISK',
+        linkId: '1',
+        bpmnElementId: 'Task_Pay',
+        rating: {
+          inherentScore: 20,
+          inherentBand: 'CRITICAL',
+          residualScore: 20,
+          residualBand: 'CRITICAL',
+          alert: true,
+        },
+        effectivelyControlled: false,
+      },
+      {
+        ...base,
+        id: 'c1',
+        type: 'CONTROL',
+        linkId: '2',
+        bpmnElementId: 'Gone',
+        effectiveness: 'EFFECTIVE',
+      },
+      { ...base, id: 'q1', type: 'REQUIREMENT', linkId: '3', bpmnElementId: '#process' },
+    ]);
+    expect(gaps.map((g) => g.kind).sort()).toEqual(
+      [
+        'HIGH_RISK_NO_CONTROL',
+        'ORPHAN_LINK',
+        'REQUIREMENT_NOT_COVERED',
+        'SEGREGATION_OF_DUTIES',
+      ].sort(),
+    );
+    expect(gaps.find((g) => g.kind === 'SEGREGATION_OF_DUTIES')?.elementIds).toEqual([
+      'Task_Submit',
+      'Task_Approve',
+    ]);
+    const withControl = detectControlGaps(graph, [
+      {
+        ...base,
+        id: 'c2',
+        type: 'CONTROL',
+        linkId: '4',
+        bpmnElementId: 'Task_Pay',
+        effectiveness: 'NOT_ASSESSED',
+        keyControl: true,
+      },
+      { ...base, id: 'q1', type: 'REQUIREMENT', linkId: '3', bpmnElementId: '#process' },
+    ]);
+    expect(withControl.map((g) => g.kind)).toEqual([
+      'SEGREGATION_OF_DUTIES',
+      'MISSING_REVIEW_EVIDENCE',
+    ]);
   });
 });

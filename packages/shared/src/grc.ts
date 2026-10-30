@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import type { DepartmentRef, ElementLabelDto, ProcessSummaryDto, UserRef } from './types';
+import { isStepNode, type BpmnGraph } from './bpmn-graph';
 
 /**
  * Risk & Compliance (Phase 4.1, module M10 — DECISIONS D-089 – D-096): risks, controls and
@@ -603,6 +604,8 @@ export interface ProcessGrcDto {
     /** Risks: at least one of its own mitigating controls is active and (partly) effective. */
     effectivelyControlled?: boolean;
     effectiveness?: ControlEffectiveness;
+    /** Risks and controls: the next review date has passed. */
+    overdue?: boolean;
     keyControl?: boolean;
     controlType?: ControlType;
     descriptionEn: string;
@@ -723,4 +726,140 @@ export interface GrcReviewTaskDto {
   nextReviewAt: string;
   overdue: boolean;
   link: string;
+}
+
+// ---------- Control-gap check (rules; the AI explains and suggests on top) ----------
+
+export const CONTROL_GAP_KINDS = [
+  /** High / critical residual risk at a step whose own controls are not effective (or missing). */
+  'HIGH_RISK_NO_CONTROL',
+  /** An approval step is performed by the same lane / role as the step that submits to it. */
+  'SEGREGATION_OF_DUTIES',
+  /** A risk, control or requirement is linked to an element that is not in the diagram. */
+  'ORPHAN_LINK',
+  /** A requirement is mapped to the process but no step has a control. */
+  'REQUIREMENT_NOT_COVERED',
+  /** A linked control was never assessed, or its review is overdue. */
+  'MISSING_REVIEW_EVIDENCE',
+  /** Anything else the AI points out. */
+  'OTHER',
+] as const;
+export type ControlGapKind = (typeof CONTROL_GAP_KINDS)[number];
+
+export interface ControlGap {
+  kind: ControlGapKind;
+  severity: 'HIGH' | 'MEDIUM' | 'LOW';
+  elementIds: string[];
+  /** Risks, controls or requirements concerned. */
+  itemIds: string[];
+}
+
+/**
+ * Finds control gaps of one process from its diagram and linked GRC items (the same rules run
+ * before the AI is asked, so the check is useful — and testable — without it).
+ */
+export function detectControlGaps(graph: BpmnGraph, items: ProcessGrcDto['items']): ControlGap[] {
+  const gaps: ControlGap[] = [];
+  const ids = new Set([...graph.nodes.map((n) => n.id), ...graph.lanes.map((l) => l.id)]);
+  const live = items.filter((i) => i.status !== 'RETIRED');
+
+  for (const r of live.filter(
+    (i) => i.type === 'RISK' && i.rating?.alert && !i.effectivelyControlled,
+  )) {
+    if (!ids.has(r.bpmnElementId)) continue;
+    gaps.push({
+      kind: 'HIGH_RISK_NO_CONTROL',
+      severity: 'HIGH',
+      elementIds: [r.bpmnElementId],
+      itemIds: [r.id],
+    });
+  }
+
+  // Segregation of duties: the approval's lane is the lane of a step that leads to it (directly or
+  // through gateways / events).
+  const byId = new Map(graph.nodes.map((n) => [n.id, n]));
+  const incoming = new Map<string, string[]>();
+  for (const f of graph.flows) incoming.set(f.to, [...(incoming.get(f.to) ?? []), f.from]);
+  const submitters = (id: string, seen = new Set<string>()): string[] =>
+    (incoming.get(id) ?? []).flatMap((from) => {
+      if (seen.has(from)) return [];
+      seen.add(from);
+      const n = byId.get(from);
+      if (!n) return [];
+      return isStepNode(n) ? [from] : submitters(from, seen);
+    });
+  for (const n of graph.nodes.filter((x) => x.stepType === 'approval' && x.laneId)) {
+    const same = submitters(n.id).filter((s) => byId.get(s)?.laneId === n.laneId);
+    if (same.length)
+      gaps.push({
+        kind: 'SEGREGATION_OF_DUTIES',
+        severity: 'HIGH',
+        elementIds: [...same, n.id],
+        itemIds: [],
+      });
+  }
+
+  for (const i of live)
+    if (i.bpmnElementId !== PROCESS_ELEMENT_ID && !ids.has(i.bpmnElementId))
+      gaps.push({ kind: 'ORPHAN_LINK', severity: 'MEDIUM', elementIds: [], itemIds: [i.id] });
+
+  const stepControls = live.filter(
+    (i) =>
+      i.type === 'CONTROL' && i.bpmnElementId !== PROCESS_ELEMENT_ID && ids.has(i.bpmnElementId),
+  );
+  if (!stepControls.length)
+    for (const q of live.filter((i) => i.type === 'REQUIREMENT'))
+      gaps.push({
+        kind: 'REQUIREMENT_NOT_COVERED',
+        severity: 'MEDIUM',
+        elementIds: [],
+        itemIds: [q.id],
+      });
+
+  const seen = new Set<string>();
+  for (const c of stepControls) {
+    if (seen.has(c.id) || !(c.effectiveness === 'NOT_ASSESSED' || c.overdue)) continue;
+    seen.add(c.id);
+    gaps.push({
+      kind: 'MISSING_REVIEW_EVIDENCE',
+      severity: c.keyControl ? 'MEDIUM' : 'LOW',
+      elementIds: [c.bpmnElementId],
+      itemIds: [c.id],
+    });
+  }
+  return gaps;
+}
+
+/** What accepting a control-gap suggestion does (the user confirms; nothing changes by itself). */
+export const CONTROL_GAP_ACTIONS = ['NONE', 'LINK_CONTROL', 'CREATE_CONTROL'] as const;
+export type ControlGapAction = (typeof CONTROL_GAP_ACTIONS)[number];
+
+export interface ControlGapFindingDto {
+  kind: ControlGapKind;
+  severity: 'HIGH' | 'MEDIUM' | 'LOW';
+  title: string;
+  explanation: string;
+  suggestion: string;
+  elementIds: string[];
+  itemIds: string[];
+  action: {
+    type: ControlGapAction;
+    /** LINK_CONTROL: an existing control. */
+    controlId: string | null;
+    /** CREATE_CONTROL: proposed names (the user edits them in the form). */
+    nameEn: string;
+    nameAr: string;
+    /** Step the control belongs to. */
+    elementId: string | null;
+  };
+}
+
+export interface ControlGapsDto {
+  summary: string;
+  findings: ControlGapFindingDto[];
+}
+
+/** The rule results of a process (without AI). */
+export interface ProcessGapsDto {
+  gaps: ControlGap[];
 }

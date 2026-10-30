@@ -163,6 +163,7 @@ zod / UUID pipe; file uploads are checked in the service (allow-list, content sn
 | Method | Path (under `/api/v1`)                       | Access (server guard)                                     | Validated input                     | Rate limit |
 | ------ | -------------------------------------------- | --------------------------------------------------------- | ----------------------------------- | ---------- |
 | POST   | `/ai/analyse`                                | authenticated                                             | body                                | default    |
+| POST   | `/ai/control-gaps`                           | authenticated                                             | body                                | default    |
 | POST   | `/ai/doc-to-process`                         | authenticated                                             | body                                | default    |
 | POST   | `/ai/generate-doc`                           | authenticated                                             | body                                | default    |
 | POST   | `/ai/generate-process`                       | authenticated                                             | body                                | default    |
@@ -243,6 +244,7 @@ zod / UUID pipe; file uploads are checked in the service (allow-list, content sn
 | POST   | `/grc/items/:id/comments`                    | `grc.read` + `comments.write`                             | body, param `id`                    | default    |
 | GET    | `/grc/items/:id/timeline`                    | `grc.read`                                                | param `id`                          | default    |
 | GET    | `/grc/processes/:id`                         | `grc.read` + `processes.read`                             | param `id`                          | default    |
+| GET    | `/grc/processes/:id/gaps`                    | `grc.read` + `processes.read`                             | param `id`                          | default    |
 | GET    | `/grc/rcm`                                   | `grc.read`                                                | query                               | default    |
 | GET    | `/grc/requirements`                          | `grc.read`                                                | query                               | default    |
 | POST   | `/grc/requirements`                          | `grc.edit`                                                | body                                | default    |

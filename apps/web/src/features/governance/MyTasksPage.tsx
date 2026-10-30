@@ -266,7 +266,12 @@ export function MyTasksPage() {
                       key: 'item',
                       render: (_, r) => (
                         <Link to={r.link}>
-                          {r.code && <span dir="ltr">{r.code} · </span>}
+                          {r.code && (
+                            <>
+                              <bdi>{r.code}</bdi>
+                              {' · '}
+                            </>
+                          )}
                           {loc(r)}
                         </Link>
                       ),

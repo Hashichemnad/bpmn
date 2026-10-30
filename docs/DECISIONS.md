@@ -1051,3 +1051,18 @@ matched to the library by name (spelling variants folded), an unknown role still
   Risk & Compliance editor can activate, which covers the approval of new items; routing changes of active items
   through the Phase 3 workflows needs the review model to support library objects (versions of an object, review
   rounds) and is listed in BACKLOG for Phase 4.2 — a product-owner decision is requested in the pull request.
+
+## D-095 — Control-gap check: rules first, AI explains and proposes (Phase 4.1, 2026-10-30)
+
+- **Rules** (shared `detectControlGaps`, run on the server: `GET /grc/processes/:id/gaps`): high / critical
+  residual risk whose own controls are not effective; segregation of duties (an approval step in the same lane as
+  a step leading to it, directly or through gateways / events); links to elements that are no longer in the
+  diagram; requirements mapped to the process while no step has a control; linked controls never assessed or with
+  an overdue review ("missing evidence of review"). They work without the AI.
+- **AI** (`POST /ai/control-gaps`, feature `CONTROL_GAPS`, same access, limits and audit as the other AI features,
+  plus `grc.read`): the process outline, linked items, rule gaps and the control library go to the model, which
+  explains each gap, may add others (kind OTHER) and proposes an action — link an existing control to a step or
+  create a new one (names EN/AR). Ids the model invents are dropped and impossible actions become "none".
+- **Nothing changes automatically**: in the modeler (Risks & Controls → "Check control gaps") each suggestion has
+  Accept (calls the normal link endpoint, or opens the control form prefilled and links the saved control) and
+  Dismiss (client only). Proposers create drafts as usual.

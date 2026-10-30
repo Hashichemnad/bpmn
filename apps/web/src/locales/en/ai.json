@@ -87,7 +87,8 @@
     "ANALYSE": "Analyse & improve",
     "SUMMARISE": "Summarise",
     "PORTAL_QA": "Portal assistant",
-    "TEST_CONNECTION": "Connection test"
+    "TEST_CONNECTION": "Connection test",
+    "CONTROL_GAPS": "Control-gap check"
   },
   "settings": {
     "title": "AI assistant",

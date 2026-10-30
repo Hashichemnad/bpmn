@@ -31,6 +31,7 @@ export function GrcStepPanel({
   elementName,
   canEditModel,
   locked = false,
+  onCheckGaps,
 }: {
   processId: string;
   /** Selected element, or null for the process as a whole. */
@@ -39,6 +40,8 @@ export function GrcStepPanel({
   canEditModel: boolean;
   /** In review or archived: links cannot change. */
   locked?: boolean;
+  /** Opens the control-gap check of the process. */
+  onCheckGaps?: () => void;
 }) {
   const { t } = useTranslation();
   const loc = useLocalized();
@@ -116,7 +119,12 @@ export function GrcStepPanel({
               >
                 <Space direction="vertical" size={2} style={{ minInlineSize: 0 }}>
                   <Link to={grcItemPath(i.type, i.id)}>
-                    {i.code && <span dir="ltr">{i.code} · </span>}
+                    {i.code && (
+                      <>
+                        <bdi>{i.code}</bdi>
+                        {' · '}
+                      </>
+                    )}
                     {loc(i)}
                   </Link>
                   <Space size={4} wrap>
@@ -135,9 +143,16 @@ export function GrcStepPanel({
   if (!access.canRead) return null;
   return (
     <div className="ph-grc-panel" data-testid="grc-step-panel">
-      <Typography.Paragraph type="secondary" style={{ marginBlockEnd: 8 }}>
-        {elementId ? elementName : t('grc:detail.wholeProcess')}
-      </Typography.Paragraph>
+      <Flex justify="space-between" align="center" gap={8} style={{ marginBlockEnd: 8 }}>
+        <Typography.Text type="secondary">
+          {elementId ? elementName : t('grc:detail.wholeProcess')}
+        </Typography.Text>
+        {onCheckGaps && (
+          <Button size="small" onClick={onCheckGaps} data-testid="grc-check-gaps">
+            {t('grc:gaps.check')}
+          </Button>
+        )}
+      </Flex>
       {summary?.alert && (
         <Alert
           type="error"

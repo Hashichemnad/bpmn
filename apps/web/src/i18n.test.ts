@@ -38,6 +38,7 @@ import {
 import { CONVENTION_RULES, THEME_KINDS } from '@processhub/shared';
 import {
   CONTROL_EFFECTIVENESS,
+  CONTROL_GAP_KINDS,
   CONTROL_FREQUENCIES,
   CONTROL_NATURES,
   CONTROL_TYPES,
@@ -131,6 +132,7 @@ describe('translations', () => {
       ...REQUIREMENT_LEVELS.map((v) => `grc:level.${v}`),
       ...GRC_PORTAL_VISIBILITY.map((v) => `grc:settings.portalOption.${v}`),
       ...['CREATED', 'ASSESSMENT', 'STATUS', 'COMMENT'].map((v) => `grc:activity.${v}`),
+      ...CONTROL_GAP_KINDS.flatMap((k) => [`grc:gaps.kind.${k}`, `grc:gaps.hint.${k}`]),
       ...['ROLE', 'SYSTEM', 'DOCUMENT'].flatMap((o) => [
         `objects:library.${o}.title`,
         `objects:library.${o}.subtitle`,

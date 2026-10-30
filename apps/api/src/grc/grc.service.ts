@@ -23,6 +23,10 @@ import {
   type GrcStepLinkDto,
   type Paginated,
   type ProcessGrcDto,
+  type ProcessGapsDto,
+  type BpmnGraph,
+  detectControlGaps,
+  parseBpmnGraph,
   type ProcessStatus,
   type RequirementDto,
   type RequirementListQuery,
@@ -1275,6 +1279,9 @@ export class GrcService {
           bpmnElementId: l.bpmnElementId,
           descriptionEn: o.descriptionEn,
           descriptionAr: o.descriptionAr,
+          overdue:
+            status === 'ACTIVE' &&
+            isOverdue(o.risk?.nextReviewAt ?? o.control?.nextReviewAt ?? null),
           ...(o.risk
             ? {
                 rating: rateRisk(o.risk, settings.bands),
@@ -1293,6 +1300,22 @@ export class GrcService {
         };
       }),
     };
+  }
+
+  /** Control-gap rules on the working model (or the diagram as shown in the modeler). */
+  async gaps(processId: string, bpmnXml?: string): Promise<ProcessGapsDto & ProcessGrcDto> {
+    const view = await this.forProcess(processId);
+    const xml =
+      bpmnXml ??
+      (await this.prisma.processModel.findUnique({ where: { processId } }))?.bpmnXml ??
+      '';
+    let graph: BpmnGraph = { nodes: [], flows: [], lanes: [], participants: 0 } as BpmnGraph;
+    try {
+      if (xml) graph = parseBpmnGraph(xml);
+    } catch {
+      /* an unreadable diagram has no elements: every link is reported as orphaned */
+    }
+    return { ...view, gaps: detectControlGaps(graph, view.items) };
   }
 
   async comment(id: string, body: string, actor: AuthUser, meta: RequestMeta) {

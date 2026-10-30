@@ -15,6 +15,7 @@ import { DocAiService } from './features/doc-ai.service';
 import { SummaryService } from './features/summary.service';
 import { AiContextService } from './ai-context.service';
 import { AnalyseService } from './features/analyse.service';
+import { ControlGapsService } from './features/control-gaps.service';
 import { PortalQaService } from './features/portal-qa.service';
 
 /** M16 AI Assistant: provider-agnostic gateway, settings, usage and the features. */
@@ -33,6 +34,7 @@ import { PortalQaService } from './features/portal-qa.service';
     DocAiService,
     SummaryService,
     AnalyseService,
+    ControlGapsService,
     PortalQaService,
   ],
 })

@@ -112,6 +112,7 @@ import { themeModule, type ThemeState } from './theme';
 import { colourPickerModule, pickerColours, syncPickerColours } from './color-picker';
 import { ElementPanel } from './ElementPanel';
 import { GrcStepPanel } from '@/features/grc/GrcStepPanel';
+import { ControlGapsDrawer } from '@/features/grc/ControlGapsDrawer';
 import { useGrcSettings, useProcessGrc } from '@/api/grc';
 import { VersionsDrawer } from './VersionsDrawer';
 import { useWorkspacePrefs } from './workspace-prefs';
@@ -209,6 +210,7 @@ export function BpmnEditor({ process, focusElementId, readOnly = false, onClose 
   const [legend, setLegend] = useState<LegendItem[]>([]);
   const [missingCounts, setMissingCounts] = useState({ role: 0, description: 0 });
   const [report, setReport] = useState<ReportKind | null>(null);
+  const [gapsOpen, setGapsOpen] = useState(false);
   useEffect(() => {
     if (view === 'table') setTableOpened(true);
   }, [view]);
@@ -1328,6 +1330,7 @@ export function BpmnEditor({ process, focusElementId, readOnly = false, onClose 
                               locked={
                                 process.status === 'IN_REVIEW' || process.status === 'ARCHIVED'
                               }
+                              onCheckGaps={() => setGapsOpen(true)}
                             />
                           ),
                         },
@@ -1448,6 +1451,21 @@ export function BpmnEditor({ process, focusElementId, readOnly = false, onClose 
         )}
       </div>
 
+      {canReadGrc && gapsOpen && (
+        <ControlGapsDrawer
+          open
+          processId={process.id}
+          getXml={currentXml}
+          nameOf={labelOf}
+          onFocusElement={focusElement}
+          canChange={
+            process.status !== 'IN_REVIEW' &&
+            process.status !== 'ARCHIVED' &&
+            (can(PERMISSIONS.GRC_EDIT) || (process.canEditModel && can(PERMISSIONS.GRC_PROPOSE)))
+          }
+          onClose={() => setGapsOpen(false)}
+        />
+      )}
       <Modal
         title={t('modeler:saveVersionTitle')}
         open={versionOpen}

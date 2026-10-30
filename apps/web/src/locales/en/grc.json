@@ -270,5 +270,34 @@
     "withoutControls": "Steps without controls",
     "uncovered": "Steps with risks but no control",
     "step": "Step"
+  },
+  "gaps": {
+    "title": "Control-gap check",
+    "check": "Check control gaps",
+    "rules_one": "{{count}} gap found by the rules",
+    "rules_other": "{{count}} gaps found by the rules",
+    "none": "No control gaps found.",
+    "runAi": "Explain and suggest fixes",
+    "working": "Checking the controls…",
+    "accepted": "Done",
+    "acceptLink": "Link {{name}} to {{step}}",
+    "acceptCreate": "Create control “{{name}}”",
+    "dismiss": "Dismiss",
+    "kind": {
+      "HIGH_RISK_NO_CONTROL": "High risk without an effective control",
+      "SEGREGATION_OF_DUTIES": "No segregation of duties",
+      "ORPHAN_LINK": "Linked to a step that no longer exists",
+      "REQUIREMENT_NOT_COVERED": "Requirement without controls in this process",
+      "MISSING_REVIEW_EVIDENCE": "Control not assessed or review overdue",
+      "OTHER": "Other gap"
+    },
+    "hint": {
+      "HIGH_RISK_NO_CONTROL": "The residual rating is high or critical and none of the risk's controls is active and effective.",
+      "SEGREGATION_OF_DUTIES": "The same lane (role) submits and approves.",
+      "ORPHAN_LINK": "Remove the link or link the item to the right step.",
+      "REQUIREMENT_NOT_COVERED": "The process must satisfy the requirement but no step has a control.",
+      "MISSING_REVIEW_EVIDENCE": "There is no current evidence that the control works.",
+      "OTHER": "Pointed out by the assistant."
+    }
   }
 }
