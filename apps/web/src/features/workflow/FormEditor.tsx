@@ -91,51 +91,48 @@ export function FormEditor({
           bordered
           dataSource={fields}
           renderItem={(f, i) => (
-            <List.Item
-              actions={
-                disabled
-                  ? []
-                  : [
-                      <Button
-                        key="up"
-                        size="small"
-                        type="text"
-                        icon={<ArrowUpOutlined />}
-                        disabled={i === 0}
-                        onClick={() => move(i, -1)}
-                        aria-label={t('workflow:formEditor.up')}
-                      />,
-                      <Button
-                        key="down"
-                        size="small"
-                        type="text"
-                        icon={<ArrowDownOutlined />}
-                        disabled={i === fields.length - 1}
-                        onClick={() => move(i, 1)}
-                        aria-label={t('workflow:formEditor.down')}
-                      />,
-                      <Button
-                        key="edit"
-                        size="small"
-                        type="text"
-                        icon={<EditOutlined />}
-                        onClick={() => setEditing(i)}
-                        aria-label={t('edit')}
-                      />,
-                      <Button
-                        key="del"
-                        size="small"
-                        type="text"
-                        danger
-                        icon={<DeleteOutlined />}
-                        onClick={() => save(fields.filter((_, j) => j !== i))}
-                        aria-label={t('delete')}
-                      />,
-                    ]
-              }
-            >
+            <List.Item style={{ display: 'block' }}>
+              <Flex justify="space-between" align="center" gap={4}>
+                <Typography.Text strong ellipsis style={{ minWidth: 0 }}>
+                  {fieldLabel(f, locale)}
+                </Typography.Text>
+                {!disabled && (
+                  <Flex gap={0} style={{ flexShrink: 0 }}>
+                    <Button
+                      size="small"
+                      type="text"
+                      icon={<ArrowUpOutlined />}
+                      disabled={i === 0}
+                      onClick={() => move(i, -1)}
+                      aria-label={t('workflow:formEditor.up')}
+                    />
+                    <Button
+                      size="small"
+                      type="text"
+                      icon={<ArrowDownOutlined />}
+                      disabled={i === fields.length - 1}
+                      onClick={() => move(i, 1)}
+                      aria-label={t('workflow:formEditor.down')}
+                    />
+                    <Button
+                      size="small"
+                      type="text"
+                      icon={<EditOutlined />}
+                      onClick={() => setEditing(i)}
+                      aria-label={t('edit')}
+                    />
+                    <Button
+                      size="small"
+                      type="text"
+                      danger
+                      icon={<DeleteOutlined />}
+                      onClick={() => save(fields.filter((_, j) => j !== i))}
+                      aria-label={t('delete')}
+                    />
+                  </Flex>
+                )}
+              </Flex>
               <Space size={4} wrap>
-                <span>{fieldLabel(f, locale)}</span>
                 <Tag>{t(`workflow:fieldTypes.${f.type}`)}</Tag>
                 {f.required && <Tag color="red">{t('workflow:formEditor.required')}</Tag>}
                 {f.readOnly && <Tag>{t('workflow:formEditor.readOnly')}</Tag>}

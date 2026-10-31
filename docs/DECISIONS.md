@@ -2073,3 +2073,51 @@ engine (Camunda / Flowable): it would break the stack in CLAUDE.md §4.
 - Reminders before due (Setting, default 4 working hours before) and escalation after due (to the assignee's
   department manager, the process owner, or both; configurable per process step, default from the Setting), through
   the existing notifications and e-mail preferences (new notification type `WORKFLOW`). Reminders are de-duplicated.
+
+## D-151 — Live event log from executed cases (Phase 5.2, 2026-10-31)
+
+- An executable process with "Feed a live event log" (default on) gets one Phase 5.1 event log (source `WORKFLOW`,
+  `LOG-nnn … — live cases`), owned by the process owner, in the process department (access rules of D-131 apply).
+- Every completed **activity** (user / approval task, business rule task, automatic step, notification, called
+  process) appends one event inside the engine transaction: case id = case number, activity = English step name,
+  start = when the step started, end = completion, resource = performer (user tasks), department = performer's
+  department, attributes `version` and `decision`. The activity is mapped to its BPMN element (mapping `LABEL`), so
+  conformance and the model overlay work without a manual mapping. Cancelled steps are not logged.
+- Each event increments the log's data version and clears the snapshot key; the analysis rebuilds the snapshot from
+  the events table on demand (D-128 cache rules), so results are always current.
+- Pseudonymisation (per process): performers become `R-xxxxxxxx`, a keyed hash (server key + log id) that stays
+  stable over time so variants and handovers remain meaningful; it is not reversible without the server key.
+
+## D-152 — Personal data in requests: retention, visibility, templates (Phase 5.2, 2026-10-31)
+
+- **Retention per process** (`WorkflowProcessConfig.retentionDays`, default _keep_): the job runner removes the
+  form data, task data, comments, uploaded and generated files of requests closed longer ago; case number, steps,
+  dates, decisions and the live event log stay (the event log has its own retention, D-143). Go-live checklist item
+  (DEPLOYMENT.md): DOF sets the period from its records-retention schedule.
+- **Exports and lists** contain only requests the user may see (D-149); the dashboard export is audited (`EXPORT`).
+- **Templates** (notifications, documents) produce plain text: placeholders are replaced with values, control
+  characters removed, e-mails HTML-escape the text, the web client renders it as text, and Word documents use text
+  runs — form data cannot inject markup or formulas. Files use the attachment allow-list with content sniffing and
+  are served as downloads with a sandbox CSP.
+
+## D-153 — Scale: 500 users, 10,000 open requests (Phase 5.2, 2026-10-31)
+
+Measured with `prisma/perf-workflow.ts 10000` in this sandbox (PostgreSQL 16 local, Node 22, ts-node, API services
+in-process): 500 users in 25 departments, the HR-01 leave request deployed, 10,000 requests started (each creates a
+case, its first task, reminder and escalation jobs and the timeline).
+
+| Operation                                                                                       | Time          |
+| ----------------------------------------------------------------------------------------------- | ------------- |
+| Start a request (form validation, case number, engine step, assignment, due date, jobs)         | 44 ms         |
+| Complete an approval (optimistic lock, engine, gateway, set data, notification, live event log) | 60 ms         |
+| Inbox first page of a manager with 418 open tasks / task counters                               | 18 ms / 27 ms |
+| "My requests" of a requester                                                                    | 16 ms         |
+| Monitor (all processes) / monitor case list                                                     | 29 ms / 22 ms |
+| Dashboard (90 days, 10,000 cases, working-time throughput per case)                             | 633 ms        |
+| Job poll with nothing due (runs every 15 s)                                                     | 9 ms          |
+| Case page                                                                                       | 49 ms         |
+
+A few hundred completions per hour are far below what one API instance handles (≈ 60 ms each, sequential); the
+dashboard is the only heavier query (working-time calculation in JavaScript per completed case) and stays under a
+second. No change needed for the target; with much larger volumes the dashboard would move to a materialised
+summary (BACKLOG).

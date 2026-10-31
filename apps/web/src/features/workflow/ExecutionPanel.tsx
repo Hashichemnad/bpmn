@@ -364,7 +364,11 @@ export function ExecutionPanel({ instance, element, process, canEdit }: Props) {
     return (
       <Typography.Paragraph type="secondary">{t('workflow:exec.nothing')}</Typography.Paragraph>
     );
-  return <div className="ph-exec-panel">{sections}</div>;
+  return (
+    <Form layout="vertical" component="div" className="ph-exec-panel">
+      {sections}
+    </Form>
+  );
 }
 
 function Section({

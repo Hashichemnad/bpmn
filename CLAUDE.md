@@ -254,6 +254,19 @@ Phase 5.1 additions (DECISIONS D-128 – D-142):
 - Shared `packages/shared/src/mining/` (timestamps, columnar log, filters, analysis, heuristics miner, conformance,
   simulation, worker task registry); API module `mining` (jobs in worker threads); AI feature `SIMULATION`
 
+Phase 5.2 additions (DECISIONS D-144 – D-153):
+
+- `WorkflowProcessConfig` (per process: enabled, case prefix, start rights, withdraw, monitors, retention, live
+  event log, active deployment), `WorkflowDefinition` (deployed published version: XML, parsed model, DMN
+  decisions), `WorkflowCase` (number, status, variables, token state, optimistic `version`, parent case),
+  `WorkflowTask` (+ `WorkflowTaskCandidate`), `WorkflowJob` (timers, documents, call activities, reminders,
+  escalation), `WorkflowEvent` (timeline), `WorkflowFile`, `WorkflowCaseComment`, `WorkflowCaseCounter`;
+  `User.outOfOfficeFrom/To/substituteId`; `EventLogSource.WORKFLOW`
+- BPMN XML: `ph:exec` (JSON execution settings per element) + standard conditions, default flows, timers, error /
+  terminate events; permissions `workflow.design|start|monitor|admin`; notification `WORKFLOW`; Setting `workflow`
+- Shared `packages/shared/src/workflow/` (S-FEEL, server DMN, forms, model reader, executable check, pure engine,
+  business calendar, templates); API module `workflow`; admin guide `docs/WORKFLOWS.md`
+
 ## 10. Definition of Done (every phase)
 
 1. Features work end to end in both Arabic (RTL) and English.

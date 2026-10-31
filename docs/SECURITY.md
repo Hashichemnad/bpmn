@@ -677,6 +677,8 @@ already the default; check them anyway if you changed the setup.
       off by default); portal "Performance" section off until real logs exist; access to event logs only by
       owner / department / explicit grant (Admins do not see all logs); the central public holiday list checked
       for the year.
+- [ ] Workflow execution (D-152): form data retention set per executable process (default: keep); start rights
+      and monitors reviewed; Settings → Workflow execution checked (working week, escalation).
 - [ ] Settings → Knowledge Portal → Start page: empty until the real enterprise value chain is approved and
       published, then set to it (DEPLOYMENT.md §6 step 10, D-127). A production install without demo data starts
       with it off.

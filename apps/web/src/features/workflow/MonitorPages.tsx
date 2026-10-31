@@ -24,7 +24,7 @@ import { DownloadOutlined, RedoOutlined, StopOutlined, SwapOutlined } from '@ant
 import type { Dayjs } from 'dayjs';
 import {
   Bar,
-  BarChart,
+  ComposedChart,
   CartesianGrid,
   Legend,
   Line,
@@ -457,7 +457,7 @@ export function WorkflowDashboardPage() {
             ) : (
               <div style={{ inlineSize: '100%', blockSize: 280 }} dir="ltr">
                 <ResponsiveContainer>
-                  <BarChart data={d.series}>
+                  <ComposedChart data={d.series}>
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis dataKey="period" reversed={locale === 'ar'} />
                     <YAxis
@@ -486,7 +486,7 @@ export function WorkflowDashboardPage() {
                       name={t('workflow:dashboard.meanHours')}
                       stroke="#b45309"
                     />
-                  </BarChart>
+                  </ComposedChart>
                 </ResponsiveContainer>
               </div>
             )}

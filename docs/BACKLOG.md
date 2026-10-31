@@ -3,6 +3,22 @@
 Ideas and follow-ups noted during development, outside the current phase scope. Group by the phase
 where they belong; move items into the plan when that phase starts.
 
+## Phase 5.2 — workflow execution follow-ups (noted during the work)
+
+- Service tasks calling external systems (REST, Salesforce, Oracle) — integrations phase (4.4).
+- Case migration of running requests to a newer deployed version (today each case stays on its version).
+- E-signature of approvals and generated documents; mobile app / push notifications.
+- Ad-hoc (case-management) tasks added at run time; embedded sub-processes and event sub-processes; message,
+  signal and conditional events; multi-instance tasks (e.g. "all department heads approve").
+- Form designer: conditional sections / fields shown by an expression, repeating groups (tables), calculated
+  fields, lookups from the object library; Word templates uploaded as .docx with placeholders (today: text
+  templates rendered with the docx generator).
+- Notification templates with rich text; SLA pause while waiting for the requester (return for correction).
+- Workflow monitor: bulk retry / cancel, case search by form data; dashboard drill-down to case lists per step.
+- Dashboard: a materialised daily summary when volumes grow far beyond 10,000 requests (D-153).
+- A queue (instead of in-process polling) when ProcessHub runs on several API instances (jobs are already claimed
+  with a conditional update, so two instances do not run the same job).
+
 ## Phase 5.1 — process mining and simulation follow-ups (noted during the work)
 
 - Workflow execution (Phase 5.2, M14): run approved processes as task flows; its own runs then become event logs.
