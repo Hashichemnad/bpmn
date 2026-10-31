@@ -60,8 +60,14 @@ test('application catalogue: create an application, capability and data object; 
   const cap = page.getByRole('dialog');
   await cap.locator('#code').fill(`CAP-${stamp}`);
   await cap.locator('#nameEn').fill(`Grant management ${stamp}`);
-  await cap.locator('#applicationIds').click({ force: true });
-  await page.keyboard.type(`APP-${stamp}`);
+  // Open the select (retried until it reports open: a click during the modal's opening animation
+  // can be lost), then type into its own search box so the new application's option is rendered.
+  const appInput = cap.locator('#applicationIds');
+  await expect(async () => {
+    await cap.locator('.ant-select', { has: page.locator('#applicationIds') }).click();
+    await expect(appInput).toHaveAttribute('aria-expanded', 'true', { timeout: 1000 });
+  }).toPass({ timeout: 15_000 });
+  await appInput.fill(`APP-${stamp}`);
   await page
     .locator('.ant-select-dropdown:visible .ant-select-item-option', { hasText: `APP-${stamp}` })
     .click();
