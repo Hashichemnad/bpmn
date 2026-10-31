@@ -93,7 +93,7 @@ describe('Seed (e2e)', () => {
     expect(await ctx.prisma.capability.count({ where: { level: 3 } })).toBeGreaterThan(0);
     expect(await ctx.prisma.capabilityProcess.count()).toBeGreaterThanOrEqual(10);
     expect(await ctx.prisma.strategicObjective.count()).toBe(2);
-    expect(await ctx.prisma.kpi.count()).toBe(8);
+    expect(await ctx.prisma.kpi.count()).toBe(9); // 8 + KPI-M01 from the event log (Phase 5.1)
     expect(
       await ctx.prisma.kpiMeasurement.count({ where: { kpi: { object: { code: 'KPI-01' } } } }),
     ).toBe(12);
@@ -156,6 +156,28 @@ describe('Seed (e2e)', () => {
       `ph:decisionRef="${diagrams.find((d) => d.code === 'DMN-001')!.id}"`,
     );
     expect(await ctx.prisma.process.count({ where: { code: 'S.01.03' } })).toBe(1);
+    // Process mining demo (Phase 5.1): log mapped to S.01.04, KPI from the log, simulation run.
+    const log = await ctx.prisma.eventLog.findFirstOrThrow({
+      include: { process: true, activities: true },
+    });
+    expect(log).toMatchObject({
+      code: 'LOG-001',
+      status: 'READY',
+      caseCount: 5000,
+      hasStartTimes: true,
+    });
+    expect(log.process?.code).toBe('S.01.04');
+    expect(log.activities.every((a) => a.bpmnElementId)).toBe(true);
+    expect(await ctx.prisma.miningEvent.count({ where: { logId: log.id } })).toBe(log.eventCount);
+    const kpi = await ctx.prisma.kpi.findFirstOrThrow({ where: { dataSource: 'EVENT_LOG' } });
+    expect(
+      await ctx.prisma.kpiMeasurement.count({ where: { kpiId: kpi.objectId } }),
+    ).toBeGreaterThan(0);
+    const scenarios = await ctx.prisma.simulationScenario.findMany({
+      orderBy: { sortOrder: 'asc' },
+    });
+    expect(scenarios.map((s) => s.kind)).toEqual(['AS_IS', 'TO_BE', 'TO_BE']);
+    expect(scenarios.every((s) => s.result)).toBe(true);
   });
 
   it('a production install without demo data has no value chain portal start page', async () => {
@@ -168,6 +190,8 @@ describe('Seed (e2e)', () => {
       process.env.SEED_DEMO_DATA = before;
     }
     expect(await ctx.prisma.diagram.count()).toBe(0);
+    expect(await ctx.prisma.eventLog.count()).toBe(0);
+    expect(await ctx.prisma.simulation.count()).toBe(0);
     // Switched on at go-live once the real value chain is published (DEPLOYMENT.md checklist).
     const portal = await ctx.prisma.setting.findUnique({ where: { key: 'portal' } });
     expect(

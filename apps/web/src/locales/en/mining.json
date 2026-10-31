@@ -1,7 +1,8 @@
 {
   "nav": {
     "group": "Process mining",
-    "logs": "Event logs"
+    "logs": "Event logs",
+    "simulations": "Simulations"
   },
   "status": {
     "DRAFT": "Draft",
@@ -373,5 +374,123 @@
     "confirm": "Update the model",
     "confirmText": "The selected steps get the measured values and the process gets a new version with this note:",
     "applied": "New version saved"
+  },
+  "sim": {
+    "title": "Simulations",
+    "subtitle": "What-if analysis of processes: run as-is and to-be scenarios and compare them",
+    "new": "New simulation",
+    "newHelp": "Simulates the process with its step attributes (duration, cost, frequency) and lanes as resources. An as-is scenario is created; add to-be scenarios to compare.",
+    "empty": "No simulations yet",
+    "scenarios": "Scenarios",
+    "lastRun": "Last run",
+    "defaultsFrom": "Defaults from event log",
+    "defaultsHelp": "Branch probabilities and arrivals are taken from the cases of this log (else equal branches and the model's frequency).",
+    "kind": "Scenario",
+    "kinds": {
+      "AS_IS": "As-is",
+      "TO_BE": "To-be"
+    },
+    "processVersion": "Process model",
+    "workingModel": "Working model",
+    "arrivals": "Case arrivals",
+    "arrivalUnit": {
+      "model": "From the model",
+      "month": "Per month",
+      "day": "Per working day"
+    },
+    "fromModel": "{{n}} per month (step attribute \"frequency per month\")",
+    "caseSla": "Case SLA (hours)",
+    "none": "None",
+    "startDate": "First day",
+    "days": "Simulated days",
+    "warmup": "Warm-up days",
+    "seed": "Random seed",
+    "calendar": "Working calendar",
+    "week": "Working week",
+    "weeks": {
+      "SUN_THU": "Sunday – Thursday",
+      "MON_FRI": "Monday – Friday",
+      "ALL": "Every day, 24 h"
+    },
+    "hours": "Working hours",
+    "alwaysOpen": "24 / 7",
+    "holidays": "Public holidays",
+    "addUae": "Add the UAE public holidays",
+    "distribution": "Duration",
+    "distributions": {
+      "fixed": "Fixed",
+      "normal": "Normal",
+      "triangular": "Triangular",
+      "exponential": "Exponential",
+      "uniform": "Uniform"
+    },
+    "minutes": "Minutes",
+    "params": {
+      "mean": "mean",
+      "sd": "sd",
+      "min": "min",
+      "mode": "likely",
+      "max": "max"
+    },
+    "cost": "Cost / execution",
+    "lane": "Lane / role",
+    "capacity": "People (capacity)",
+    "costPerHour": "Cost per hour",
+    "noGateways": "The model has no exclusive or inclusive gateways.",
+    "sum": "Sum {{sum}} %",
+    "editScenario": "Scenario: {{name}}",
+    "save": "Save",
+    "tabs": {
+      "general": "General",
+      "steps": "Steps",
+      "resources": "Resources",
+      "probabilities": "Branch probabilities"
+    },
+    "onModel": "Bottlenecks on the model",
+    "runAll": "Run all scenarios",
+    "deleteConfirm": "Delete this simulation and its results?",
+    "copy": "Copy as to-be scenario",
+    "deleteScenario": "Delete this scenario?",
+    "daysShort": "{{days}} days",
+    "ranAt": "Run {{date}}",
+    "stale": "changed since the run",
+    "notRun": "Not run yet",
+    "addScenario": "Add scenario",
+    "noResults": "Run the scenarios to compare them.",
+    "issues": {
+      "NO_START": "The model has no start event.",
+      "NO_END": "The model has no end event.",
+      "NO_ARRIVALS": "No case arrivals: set a rate or the \"frequency per month\" of a step.",
+      "MISSING_DURATION": "\"{{name}}\" has no duration (0 minutes is used).",
+      "PROBABILITIES_SUM": "The branches of \"{{name}}\" add up to {{value}} % instead of 100 %.",
+      "LANE_WITHOUT_CAPACITY": "Lane \"{{name}}\" has no people (capacity)."
+    },
+    "ai": "AI assistant",
+    "explain": "Explain these results",
+    "suggest": "Suggest improvement scenarios",
+    "aiNotice": "AI explanation — check it against the figures.",
+    "proposalsNotice": "Proposals only: nothing changes until you create a scenario from one.",
+    "createScenario": "Create scenario",
+    "proposalAdded": "Scenario added",
+    "comparison": "Comparison",
+    "measure": "Measure",
+    "m": {
+      "completed": "Cases completed",
+      "inProgress": "Cases in progress at the end",
+      "mean": "Throughput time (mean)",
+      "p90": "Throughput time (P90)",
+      "costPerCase": "Cost per case",
+      "totalCost": "Total cost",
+      "sla": "Cases within SLA",
+      "stepSla": "Step executions within SLA",
+      "utilisation": "Utilisation: {{lane}}",
+      "queue": "Queue (mean / max): {{lane}}"
+    },
+    "chart": {
+      "mean": "Mean throughput (hours)",
+      "p90": "P90 throughput (hours)",
+      "cost": "Cost per case",
+      "utilisation": "Resource utilisation (%)"
+    }
   }
 }

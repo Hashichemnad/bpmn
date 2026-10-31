@@ -22,6 +22,7 @@ import { seedGrcDemo } from './seed-grc';
 import { ensureGrcChangeWorkflow, seedAssuranceDemo } from './seed-assurance';
 import { seedDiagramsDemo } from './seed-diagrams';
 import { seedEaKpiDemo } from './seed-ea-kpi';
+import { seedMiningDemo } from './seed-mining';
 
 const prisma = new PrismaClient();
 
@@ -434,6 +435,7 @@ export async function main() {
     await seedAssuranceDemo(prisma, adminId);
     await seedEaKpiDemo(prisma, adminId);
     await seedDiagramsDemo(prisma, adminId);
+    await seedMiningDemo(prisma, adminId);
   }
   // After the demo data: the governance demo only seeds into an installation without workflows.
   await ensureGrcChangeWorkflow(prisma, adminId);

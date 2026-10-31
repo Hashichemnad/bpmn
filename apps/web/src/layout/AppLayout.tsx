@@ -279,6 +279,15 @@ export function AppLayout() {
             icon: <NodeIndexOutlined />,
             label: <Link to="/mining/logs">{t('mining:nav.logs')}</Link>,
           },
+          ...(can(PERMISSIONS.PROCESSES_READ)
+            ? [
+                {
+                  key: '/mining/simulations',
+                  icon: <ExperimentOutlined />,
+                  label: <Link to="/mining/simulations">{t('mining:nav.simulations')}</Link>,
+                },
+              ]
+            : []),
         ],
       });
     }

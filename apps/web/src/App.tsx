@@ -79,6 +79,7 @@ import { KpiDashboardPage } from '@/features/kpi/KpiDashboardPage';
 import { LogsPage } from '@/features/mining/LogsPage';
 import { MiningLogPage } from '@/features/mining/MiningLogPage';
 import { ImportMappingPage, UploadLogPage } from '@/features/mining/ImportWizard';
+import { SimulationPage, SimulationsPage } from '@/features/mining/SimulationPages';
 import { SalesforceSettingsPage } from '@/features/settings/SalesforceSettingsPage';
 import { DiagramDetailPage } from '@/features/diagrams/DiagramDetailPage';
 import { DiagramWorkspacePage } from '@/features/diagrams/DiagramWorkspacePage';
@@ -456,6 +457,22 @@ export const routes: RouteObject[] = [
                     element: (
                       <RequirePermission all={[P.MINING_MANAGE]}>
                         <ImportMappingPage />
+                      </RequirePermission>
+                    ),
+                  },
+                  {
+                    path: 'mining/simulations',
+                    element: (
+                      <RequirePermission all={[P.MINING_READ, P.PROCESSES_READ]}>
+                        <SimulationsPage />
+                      </RequirePermission>
+                    ),
+                  },
+                  {
+                    path: 'mining/simulations/:id',
+                    element: (
+                      <RequirePermission all={[P.MINING_READ, P.PROCESSES_READ]}>
+                        <SimulationPage />
                       </RequirePermission>
                     ),
                   },

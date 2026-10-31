@@ -197,3 +197,62 @@ test('conformance: deviations and the overlay on the BPMN model', async ({ page 
   await expect(page.locator('.ph-metric-badge').first()).toBeVisible();
   await expect(page.locator('.ph-metric-flow').first()).toContainText('6');
 });
+
+test('simulation: as-is and to-be scenarios, comparison and bottleneck view', async ({ page }) => {
+  await login(page, DEMO.modeler);
+  const code = `E2E.S${Date.now() % 1_000_000}`;
+  const proc = await apiCall<{ id: string }>(page, 'POST', '/processes', {
+    code,
+    nameEn: 'E2E simulated purchase',
+    category: 'SUPPORT',
+  });
+  // Lanes (resources) and step attributes: 600 requests a month, the check takes 40 minutes.
+  const xml = purchaseBpmn()
+    .replace(
+      '<bpmn:startEvent id="Start" />',
+      '<bpmn:laneSet id="LS"><bpmn:lane id="Clerks" name="Clerks"><bpmn:flowNodeRef>Start</bpmn:flowNodeRef><bpmn:flowNodeRef>Create</bpmn:flowNodeRef></bpmn:lane><bpmn:lane id="Finance" name="Finance"><bpmn:flowNodeRef>Check</bpmn:flowNodeRef><bpmn:flowNodeRef>Approve</bpmn:flowNodeRef><bpmn:flowNodeRef>End</bpmn:flowNodeRef></bpmn:lane></bpmn:laneSet><bpmn:startEvent id="Start" />',
+    )
+    .replace('ph:durationMinutes="10" />', 'ph:durationMinutes="10" ph:frequencyPerMonth="600" />')
+    .replace('ph:durationMinutes="60" />', 'ph:durationMinutes="40" ph:costPerExecution="30" />');
+  expect(
+    (await apiCall(page, 'PUT', `/processes/${proc.data.id}/model`, { bpmnXml: xml })).status,
+  ).toBe(200);
+
+  await login(page, DEMO.performance);
+  await page.goto('/mining/simulations');
+  await page.getByTestId('new-simulation').click();
+  const dlg = page.getByRole('dialog');
+  await dlg.getByTestId('sim-process').click();
+  await page.keyboard.type(code);
+  await page.locator('.ant-select-dropdown:visible .ant-select-item-option').first().click();
+  await dlg.getByLabel('Name (English)').fill('E2E staffing');
+  await dlg.getByRole('button', { name: 'OK' }).click();
+  await expect(page.getByTestId('sim-scenario')).toHaveCount(1);
+  await expect(page.getByTestId('sim-scenario')).toContainText('As-is');
+
+  // To-be: copy and give Finance two people.
+  await page.getByTestId('sim-copy').click();
+  await expect(page.getByTestId('sim-scenario')).toHaveCount(2);
+  await page.getByTestId('sim-edit').nth(1).click();
+  await page.getByRole('tab', { name: 'Resources' }).click();
+  await page
+    .locator(
+      'input[data-testid="sim-capacity-Finance"], [data-testid="sim-capacity-Finance"] input',
+    )
+    .first()
+    .fill('2');
+  await page.getByTestId('sim-save-scenario').click();
+  await expect(page.getByTestId('sim-scenario').nth(1)).toContainText('Finance: 2');
+
+  await page.getByTestId('sim-run').click();
+  const table = page.getByTestId('sim-comparison');
+  await expect(table).toContainText('Cases completed', { timeout: 60_000 });
+  await expect(table).toContainText('Utilisation: Finance');
+  await expect(table.locator('thead th')).toHaveCount(3);
+
+  // Bottlenecks on the model (Colour by → Simulation: utilisation).
+  await page.getByTestId('sim-on-model').click();
+  await expect(page.locator('.ph-colour-legend')).toContainText('Simulation: utilisation');
+  await expect(page.getByTestId('colour-by-note')).toContainText('SIM-');
+  await expect(page.locator('.ph-metric-badge').first()).toBeVisible();
+});

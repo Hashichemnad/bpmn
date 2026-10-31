@@ -104,7 +104,8 @@
     "SUMMARISE": "التلخيص",
     "PORTAL_QA": "مساعد البوابة",
     "TEST_CONNECTION": "اختبار الاتصال",
-    "CONTROL_GAPS": "فحص فجوات الضوابط"
+    "CONTROL_GAPS": "فحص فجوات الضوابط",
+    "SIMULATION": "تحليل المحاكاة"
   },
   "settings": {
     "title": "المساعد الذكي",

@@ -1,0 +1,1117 @@
+case_id,activity,start_time,end_time,resource,department,amount,channel
+INV-000001,Register invoice,2026-04-01 09:13,2026-04-01 09:27,Huda,Accounts Payable,Low,Portal
+INV-000001,Match with purchase order,2026-04-01 09:43,2026-04-01 10:04,Huda,Accounts Payable,Low,Portal
+INV-000001,Approve invoice,2026-04-02 07:44,2026-04-02 07:54,Fatima,Finance,Low,Portal
+INV-000001,Schedule payment,2026-04-02 08:22,2026-04-02 08:30,Noor,Treasury,Low,Portal
+INV-000001,Pay supplier,2026-04-02 10:15,2026-04-02 10:22,Yousef,Treasury,Low,Portal
+INV-000002,Register invoice,2026-04-02 07:36,2026-04-02 07:52,Sara,Accounts Payable,Low,Email
+INV-000002,Match with purchase order,2026-04-02 07:57,2026-04-02 08:23,Sara,Accounts Payable,Low,Email
+INV-000002,Approve invoice,2026-04-05 07:30,2026-04-05 07:40,Khalid,Finance,Low,Email
+INV-000002,Schedule payment,2026-04-05 09:26,2026-04-05 09:32,Yousef,Treasury,Low,Email
+INV-000002,Pay supplier,2026-04-05 11:45,2026-04-05 11:49,Noor,Treasury,Low,Email
+INV-000003,Register invoice,2026-04-05 07:41,2026-04-05 07:55,Omar,Accounts Payable,Low,Portal
+INV-000003,Match with purchase order,2026-04-05 09:08,2026-04-05 09:31,Omar,Accounts Payable,Low,Portal
+INV-000003,Approve invoice,2026-04-05 11:40,2026-04-05 11:53,Fatima,Finance,Low,Portal
+INV-000003,Schedule payment,2026-04-05 12:06,2026-04-05 12:17,Noor,Treasury,Low,Portal
+INV-000003,Pay supplier,2026-04-05 12:30,2026-04-05 12:36,Noor,Treasury,Low,Portal
+INV-000004,Register invoice,2026-04-05 07:45,2026-04-05 08:01,Sara,Accounts Payable,Medium,Email
+INV-000004,Match with purchase order,2026-04-05 11:15,2026-04-05 11:41,Sara,Accounts Payable,Medium,Email
+INV-000004,Approve invoice,2026-04-06 07:30,2026-04-06 07:42,Khalid,Finance,Medium,Email
+INV-000004,Schedule payment,2026-04-06 08:26,2026-04-06 08:34,Noor,Treasury,Medium,Email
+INV-000004,Pay supplier,2026-04-06 12:33,2026-04-06 12:39,Yousef,Treasury,Medium,Email
+INV-000005,Register invoice,2026-04-05 07:46,2026-04-05 07:58,Huda,Accounts Payable,Medium,Email
+INV-000005,Match with purchase order,2026-04-05 07:59,2026-04-05 08:11,Huda,Accounts Payable,Medium,Email
+INV-000005,Approve invoice,2026-04-05 08:24,2026-04-05 08:35,Khalid,Finance,Medium,Email
+INV-000005,Schedule payment,2026-04-05 09:51,2026-04-05 10:05,Yousef,Treasury,Medium,Email
+INV-000005,Pay supplier,2026-04-06 07:31,2026-04-06 07:37,Noor,Treasury,Medium,Email
+INV-000006,Register invoice,2026-04-06 07:46,2026-04-06 07:57,Huda,Accounts Payable,Medium,Email
+INV-000006,Match with purchase order,2026-04-06 08:11,2026-04-06 08:36,Huda,Accounts Payable,Medium,Email
+INV-000006,Approve invoice,2026-04-09 07:30,2026-04-09 07:40,Khalid,Finance,Medium,Email
+INV-000006,Schedule payment,2026-04-09 10:47,2026-04-09 10:57,Yousef,Treasury,Medium,Email
+INV-000006,Pay supplier,2026-04-09 15:20,2026-04-09 15:26,Noor,Treasury,Medium,Email
+INV-000007,Register invoice,2026-04-07 07:35,2026-04-07 07:50,Sara,Accounts Payable,Medium,Email
+INV-000007,Match with purchase order,2026-04-07 08:01,2026-04-07 08:13,Sara,Accounts Payable,Medium,Email
+INV-000007,Clarify with supplier,2026-04-07 08:16,2026-04-07 08:47,Sara,Accounts Payable,Medium,Email
+INV-000007,Match with purchase order,2026-04-08 07:30,2026-04-08 07:57,Sara,Accounts Payable,Medium,Email
+INV-000007,Clarify with supplier,2026-04-08 08:20,2026-04-08 09:02,Sara,Accounts Payable,Medium,Email
+INV-000007,Match with purchase order,2026-04-08 11:48,2026-04-08 12:11,Sara,Accounts Payable,Medium,Email
+INV-000007,Approve invoice,2026-04-09 07:30,2026-04-09 07:42,Khalid,Finance,Medium,Email
+INV-000007,Schedule payment,2026-04-09 09:18,2026-04-09 09:27,Yousef,Treasury,Medium,Email
+INV-000007,Pay supplier,2026-04-09 11:11,2026-04-09 11:16,Yousef,Treasury,Medium,Email
+INV-000008,Register invoice,2026-04-08 07:59,2026-04-08 08:13,Ali,Accounts Payable,Medium,Portal
+INV-000008,Match with purchase order,2026-04-08 10:45,2026-04-08 11:01,Ali,Accounts Payable,Medium,Portal
+INV-000008,Approve invoice,2026-04-09 07:30,2026-04-09 07:43,Khalid,Finance,Medium,Portal
+INV-000008,Schedule payment,2026-04-09 08:18,2026-04-09 08:26,Yousef,Treasury,Medium,Portal
+INV-000008,Pay supplier,2026-04-09 10:11,2026-04-09 10:17,Yousef,Treasury,Medium,Portal
+INV-000009,Register invoice,2026-04-09 07:30,2026-04-09 07:50,Omar,Accounts Payable,Low,Paper
+INV-000009,Match with purchase order,2026-04-09 08:54,2026-04-09 09:19,Omar,Accounts Payable,Low,Paper
+INV-000009,Approve invoice,2026-04-12 07:30,2026-04-12 07:39,Khalid,Finance,Low,Paper
+INV-000009,Schedule payment,2026-04-12 07:44,2026-04-12 07:56,Noor,Treasury,Low,Paper
+INV-000009,Pay supplier,2026-04-13 07:30,2026-04-13 07:34,Yousef,Treasury,Low,Paper
+INV-000010,Register invoice,2026-04-09 13:47,2026-04-09 14:06,Ali,Accounts Payable,Low,Portal
+INV-000010,Match with purchase order,2026-04-09 14:21,2026-04-09 14:49,Ali,Accounts Payable,Low,Portal
+INV-000010,Approve invoice,2026-04-12 07:30,2026-04-12 07:42,Fatima,Finance,Low,Portal
+INV-000010,Schedule payment,2026-04-12 08:59,2026-04-12 09:10,Yousef,Treasury,Low,Portal
+INV-000010,Pay supplier,2026-04-12 10:45,2026-04-12 10:52,Yousef,Treasury,Low,Portal
+INV-000011,Register invoice,2026-04-12 07:46,2026-04-12 08:02,Omar,Accounts Payable,Low,Portal
+INV-000011,Match with purchase order,2026-04-12 11:05,2026-04-12 11:19,Omar,Accounts Payable,Low,Portal
+INV-000011,Clarify with supplier,2026-04-12 12:00,2026-04-12 12:46,Omar,Accounts Payable,Low,Portal
+INV-000011,Match with purchase order,2026-04-12 14:46,2026-04-12 15:12,Omar,Accounts Payable,Low,Portal
+INV-000011,Approve invoice,2026-04-13 07:30,2026-04-13 07:39,Khalid,Finance,Low,Portal
+INV-000011,Schedule payment,2026-04-13 08:47,2026-04-13 08:59,Yousef,Treasury,Low,Portal
+INV-000011,Pay supplier,2026-04-14 07:30,2026-04-14 07:36,Noor,Treasury,Low,Portal
+INV-000012,Register invoice,2026-04-12 07:31,2026-04-12 07:51,Sara,Accounts Payable,Medium,Portal
+INV-000012,Match with purchase order,2026-04-12 08:45,2026-04-12 09:01,Sara,Accounts Payable,Medium,Portal
+INV-000012,Approve invoice,2026-04-13 07:30,2026-04-13 07:43,Fatima,Finance,Medium,Portal
+INV-000012,Schedule payment,2026-04-13 07:49,2026-04-13 07:58,Noor,Treasury,Medium,Portal
+INV-000012,Pay supplier,2026-04-13 13:50,2026-04-13 13:54,Yousef,Treasury,Medium,Portal
+INV-000013,Register invoice,2026-04-12 07:45,2026-04-12 07:56,Omar,Accounts Payable,Low,Portal
+INV-000013,Match with purchase order,2026-04-12 08:18,2026-04-12 08:41,Omar,Accounts Payable,Low,Portal
+INV-000013,Approve invoice,2026-04-13 07:30,2026-04-13 07:43,Fatima,Finance,Low,Portal
+INV-000013,Schedule payment,2026-04-13 09:33,2026-04-13 09:44,Noor,Treasury,Low,Portal
+INV-000013,Pay supplier,2026-04-13 10:14,2026-04-13 10:17,Noor,Treasury,Low,Portal
+INV-000014,Register invoice,2026-04-13 07:44,2026-04-13 07:58,Sara,Accounts Payable,Medium,Portal
+INV-000014,Match with purchase order,2026-04-13 08:09,2026-04-13 08:33,Sara,Accounts Payable,Medium,Portal
+INV-000014,Clarify with supplier,2026-04-13 09:05,2026-04-13 09:40,Sara,Accounts Payable,Medium,Portal
+INV-000014,Match with purchase order,2026-04-14 07:30,2026-04-14 07:42,Sara,Accounts Payable,Medium,Portal
+INV-000014,Clarify with supplier,2026-04-14 13:20,2026-04-14 14:20,Sara,Accounts Payable,Medium,Portal
+INV-000014,Match with purchase order,2026-04-15 07:30,2026-04-15 07:51,Sara,Accounts Payable,Medium,Portal
+INV-000014,Approve invoice,2026-04-15 09:00,2026-04-15 09:11,Khalid,Finance,Medium,Portal
+INV-000014,Schedule payment,2026-04-15 11:03,2026-04-15 11:10,Yousef,Treasury,Medium,Portal
+INV-000014,Pay supplier,2026-04-15 13:28,2026-04-15 13:32,Yousef,Treasury,Medium,Portal
+INV-000015,Register invoice,2026-04-14 08:01,2026-04-14 08:20,Omar,Accounts Payable,Medium,Portal
+INV-000015,Match with purchase order,2026-04-14 09:49,2026-04-14 10:12,Omar,Accounts Payable,Medium,Portal
+INV-000015,Approve invoice,2026-04-15 07:30,2026-04-15 07:38,Khalid,Finance,Medium,Portal
+INV-000015,Schedule payment,2026-04-15 08:43,2026-04-15 08:51,Noor,Treasury,Medium,Portal
+INV-000015,Pay supplier,2026-04-15 12:17,2026-04-15 12:23,Noor,Treasury,Medium,Portal
+INV-000016,Register invoice,2026-04-15 07:41,2026-04-15 07:55,Huda,Accounts Payable,Medium,Email
+INV-000016,Match with purchase order,2026-04-15 08:03,2026-04-15 08:24,Huda,Accounts Payable,Medium,Email
+INV-000016,Approve invoice,2026-04-15 09:36,2026-04-15 09:46,Khalid,Finance,Medium,Email
+INV-000016,Schedule payment,2026-04-15 11:01,2026-04-15 11:11,Yousef,Treasury,Medium,Email
+INV-000016,Pay supplier,2026-04-15 13:05,2026-04-15 13:12,Yousef,Treasury,Medium,Email
+INV-000017,Register invoice,2026-04-16 07:35,2026-04-16 07:54,Omar,Accounts Payable,Low,Email
+INV-000017,Match with purchase order,2026-04-16 08:40,2026-04-16 09:07,Omar,Accounts Payable,Low,Email
+INV-000017,Clarify with supplier,2026-04-16 10:26,2026-04-16 10:59,Omar,Accounts Payable,Low,Email
+INV-000017,Match with purchase order,2026-04-16 11:09,2026-04-16 11:33,Omar,Accounts Payable,Low,Email
+INV-000017,Approve invoice,2026-04-19 07:30,2026-04-19 07:41,Fatima,Finance,Low,Email
+INV-000017,Schedule payment,2026-04-19 08:27,2026-04-19 08:40,Noor,Treasury,Low,Email
+INV-000017,Pay supplier,2026-04-19 12:41,2026-04-19 12:46,Noor,Treasury,Low,Email
+INV-000018,Register invoice,2026-04-19 07:45,2026-04-19 08:00,Sara,Accounts Payable,Low,Portal
+INV-000018,Match with purchase order,2026-04-19 09:42,2026-04-19 10:06,Sara,Accounts Payable,Low,Portal
+INV-000018,Approve invoice,2026-04-20 07:30,2026-04-20 07:40,Khalid,Finance,Low,Portal
+INV-000018,Schedule payment,2026-04-20 08:35,2026-04-20 08:47,Yousef,Treasury,Low,Portal
+INV-000018,Pay supplier,2026-04-20 15:11,2026-04-20 15:17,Yousef,Treasury,Low,Portal
+INV-000019,Register invoice,2026-04-19 07:34,2026-04-19 07:54,Ali,Accounts Payable,Medium,Email
+INV-000019,Approve invoice,2026-04-20 10:02,2026-04-20 10:10,Khalid,Finance,Medium,Email
+INV-000019,Schedule payment,2026-04-20 10:34,2026-04-20 10:45,Noor,Treasury,Medium,Email
+INV-000019,Pay supplier,2026-04-20 12:45,2026-04-20 12:48,Yousef,Treasury,Medium,Email
+INV-000020,Register invoice,2026-04-19 07:56,2026-04-19 08:05,Omar,Accounts Payable,Low,Email
+INV-000020,Match with purchase order,2026-04-19 08:05,2026-04-19 08:33,Omar,Accounts Payable,Low,Email
+INV-000020,Approve invoice,2026-04-20 07:30,2026-04-20 07:42,Khalid,Finance,Low,Email
+INV-000020,Schedule payment,2026-04-20 08:09,2026-04-20 08:20,Noor,Treasury,Low,Email
+INV-000020,Pay supplier,2026-04-20 12:13,2026-04-20 12:19,Yousef,Treasury,Low,Email
+INV-000021,Register invoice,2026-04-19 12:56,2026-04-19 13:15,Omar,Accounts Payable,Low,Email
+INV-000021,Match with purchase order,2026-04-19 13:38,2026-04-19 13:52,Omar,Accounts Payable,Low,Email
+INV-000021,Approve invoice,2026-04-20 07:30,2026-04-20 07:41,Khalid,Finance,Low,Email
+INV-000021,Schedule payment,2026-04-20 07:42,2026-04-20 07:50,Yousef,Treasury,Low,Email
+INV-000021,Pay supplier,2026-04-20 10:30,2026-04-20 10:35,Noor,Treasury,Low,Email
+INV-000022,Register invoice,2026-04-20 11:00,2026-04-20 11:17,Sara,Accounts Payable,Low,Portal
+INV-000022,Match with purchase order,2026-04-20 11:38,2026-04-20 11:51,Sara,Accounts Payable,Low,Portal
+INV-000022,Approve invoice,2026-04-21 07:30,2026-04-21 07:41,Khalid,Finance,Low,Portal
+INV-000022,Schedule payment,2026-04-21 10:57,2026-04-21 11:06,Yousef,Treasury,Low,Portal
+INV-000022,Pay supplier,2026-04-22 07:30,2026-04-22 07:36,Yousef,Treasury,Low,Portal
+INV-000023,Register invoice,2026-04-21 08:55,2026-04-21 09:13,Ali,Accounts Payable,Medium,Email
+INV-000023,Match with purchase order,2026-04-21 10:04,2026-04-21 10:26,Ali,Accounts Payable,Medium,Email
+INV-000023,Clarify with supplier,2026-04-21 11:39,2026-04-21 12:30,Ali,Accounts Payable,Medium,Email
+INV-000023,Match with purchase order,2026-04-22 07:30,2026-04-22 07:46,Ali,Accounts Payable,Medium,Email
+INV-000023,Clarify with supplier,2026-04-22 09:29,2026-04-22 10:13,Ali,Accounts Payable,Medium,Email
+INV-000023,Match with purchase order,2026-04-22 10:24,2026-04-22 10:37,Ali,Accounts Payable,Medium,Email
+INV-000023,Approve invoice,2026-04-23 07:30,2026-04-23 07:42,Khalid,Finance,Medium,Email
+INV-000023,Schedule payment,2026-04-23 09:13,2026-04-23 09:23,Yousef,Treasury,Medium,Email
+INV-000023,Pay supplier,2026-04-26 07:30,2026-04-26 07:35,Yousef,Treasury,Medium,Email
+INV-000024,Register invoice,2026-04-22 07:43,2026-04-22 07:57,Ali,Accounts Payable,High,Portal
+INV-000024,Match with purchase order,2026-04-22 08:38,2026-04-22 09:06,Ali,Accounts Payable,High,Portal
+INV-000024,Approve invoice,2026-04-26 07:30,2026-04-26 07:41,Khalid,Finance,High,Portal
+INV-000024,Schedule payment,2026-04-26 08:39,2026-04-26 08:51,Yousef,Treasury,High,Portal
+INV-000024,Pay supplier,2026-04-27 07:30,2026-04-27 07:36,Noor,Treasury,High,Portal
+INV-000025,Register invoice,2026-04-23 07:44,2026-04-23 07:58,Ali,Accounts Payable,Low,Portal
+INV-000025,Match with purchase order,2026-04-23 12:36,2026-04-23 12:51,Ali,Accounts Payable,Low,Portal
+INV-000025,Approve invoice,2026-04-26 07:30,2026-04-26 07:40,Khalid,Finance,Low,Portal
+INV-000025,Schedule payment,2026-04-26 08:48,2026-04-26 08:59,Noor,Treasury,Low,Portal
+INV-000025,Pay supplier,2026-04-26 09:30,2026-04-26 09:34,Yousef,Treasury,Low,Portal
+INV-000026,Register invoice,2026-04-26 08:03,2026-04-26 08:14,Omar,Accounts Payable,Medium,Email
+INV-000026,Match with purchase order,2026-04-26 08:52,2026-04-26 09:14,Omar,Accounts Payable,Medium,Email
+INV-000026,Clarify with supplier,2026-04-27 07:30,2026-04-27 07:59,Omar,Accounts Payable,Medium,Email
+INV-000026,Match with purchase order,2026-04-27 11:54,2026-04-27 12:14,Omar,Accounts Payable,Medium,Email
+INV-000026,Approve invoice,2026-04-28 07:30,2026-04-28 07:36,Khalid,Finance,Medium,Email
+INV-000026,Schedule payment,2026-04-28 08:29,2026-04-28 08:37,Noor,Treasury,Medium,Email
+INV-000026,Pay supplier,2026-04-28 11:28,2026-04-28 11:32,Noor,Treasury,Medium,Email
+INV-000027,Register invoice,2026-04-26 07:51,2026-04-26 08:08,Ali,Accounts Payable,Low,Portal
+INV-000027,Match with purchase order,2026-04-26 08:34,2026-04-26 08:47,Ali,Accounts Payable,Low,Portal
+INV-000027,Approve invoice,2026-04-28 07:30,2026-04-28 07:36,Khalid,Finance,Low,Portal
+INV-000027,Schedule payment,2026-04-28 07:41,2026-04-28 07:50,Noor,Treasury,Low,Portal
+INV-000027,Pay supplier,2026-04-29 07:30,2026-04-29 07:33,Yousef,Treasury,Low,Portal
+INV-000028,Register invoice,2026-04-26 07:42,2026-04-26 07:52,Ali,Accounts Payable,High,Portal
+INV-000028,Match with purchase order,2026-04-26 09:31,2026-04-26 09:45,Ali,Accounts Payable,High,Portal
+INV-000028,Approve invoice,2026-04-27 07:30,2026-04-27 07:40,Khalid,Finance,High,Portal
+INV-000028,Schedule payment,2026-04-27 08:51,2026-04-27 09:03,Yousef,Treasury,High,Portal
+INV-000028,Pay supplier,2026-04-27 10:04,2026-04-27 10:11,Noor,Treasury,High,Portal
+INV-000029,Register invoice,2026-04-27 07:32,2026-04-27 07:41,Ali,Accounts Payable,Medium,Portal
+INV-000029,Match with purchase order,2026-04-27 09:53,2026-04-27 10:18,Ali,Accounts Payable,Medium,Portal
+INV-000029,Approve invoice,2026-04-28 07:30,2026-04-28 07:38,Fatima,Finance,Medium,Portal
+INV-000029,Schedule payment,2026-04-28 08:17,2026-04-28 08:25,Noor,Treasury,Medium,Portal
+INV-000029,Pay supplier,2026-04-28 10:27,2026-04-28 10:32,Noor,Treasury,Medium,Portal
+INV-000030,Register invoice,2026-04-28 08:22,2026-04-28 08:41,Sara,Accounts Payable,Low,Paper
+INV-000030,Match with purchase order,2026-04-28 10:45,2026-04-28 11:19,Sara,Accounts Payable,Low,Paper
+INV-000030,Approve invoice,2026-04-29 07:30,2026-04-29 07:37,Khalid,Finance,Low,Paper
+INV-000030,Schedule payment,2026-04-29 07:40,2026-04-29 07:46,Noor,Treasury,Low,Paper
+INV-000030,Pay supplier,2026-04-29 08:13,2026-04-29 08:16,Yousef,Treasury,Low,Paper
+INV-000031,Register invoice,2026-04-29 07:38,2026-04-29 07:59,Huda,Accounts Payable,Low,Portal
+INV-000031,Match with purchase order,2026-04-29 08:16,2026-04-29 08:38,Huda,Accounts Payable,Low,Portal
+INV-000031,Approve invoice,2026-04-29 09:19,2026-04-29 09:32,Khalid,Finance,Low,Portal
+INV-000031,Schedule payment,2026-04-29 11:07,2026-04-29 11:13,Yousef,Treasury,Low,Portal
+INV-000031,Pay supplier,2026-04-29 12:29,2026-04-29 12:34,Noor,Treasury,Low,Portal
+INV-000032,Register invoice,2026-04-29 13:55,2026-04-29 14:11,Sara,Accounts Payable,Low,Portal
+INV-000032,Match with purchase order,2026-04-29 14:46,2026-04-29 15:12,Sara,Accounts Payable,Low,Portal
+INV-000032,Approve invoice,2026-04-30 07:30,2026-04-30 07:39,Fatima,Finance,Low,Portal
+INV-000032,Schedule payment,2026-04-30 09:40,2026-04-30 09:50,Yousef,Treasury,Low,Portal
+INV-000032,Pay supplier,2026-05-03 07:30,2026-05-03 07:36,Yousef,Treasury,Low,Portal
+INV-000033,Register invoice,2026-04-30 11:36,2026-04-30 11:50,Sara,Accounts Payable,Low,Portal
+INV-000033,Match with purchase order,2026-04-30 11:51,2026-04-30 12:07,Sara,Accounts Payable,Low,Portal
+INV-000033,Approve invoice,2026-05-03 07:30,2026-05-03 07:41,Khalid,Finance,Low,Portal
+INV-000033,Schedule payment,2026-05-03 09:35,2026-05-03 09:44,Noor,Treasury,Low,Portal
+INV-000033,Pay supplier,2026-05-03 12:17,2026-05-03 12:21,Yousef,Treasury,Low,Portal
+INV-000034,Register invoice,2026-05-03 08:02,2026-05-03 08:12,Sara,Accounts Payable,Medium,Portal
+INV-000034,Match with purchase order,2026-05-03 08:37,2026-05-03 08:58,Sara,Accounts Payable,Medium,Portal
+INV-000034,Clarify with supplier,2026-05-03 09:08,2026-05-03 09:37,Sara,Accounts Payable,Medium,Portal
+INV-000034,Match with purchase order,2026-05-03 14:56,2026-05-03 15:12,Sara,Accounts Payable,Medium,Portal
+INV-000034,Approve invoice,2026-05-04 07:30,2026-05-04 07:39,Khalid,Finance,Medium,Portal
+INV-000034,Schedule payment,2026-05-04 07:51,2026-05-04 08:04,Noor,Treasury,Medium,Portal
+INV-000034,Pay supplier,2026-05-04 15:24,2026-05-04 15:29,Noor,Treasury,Medium,Portal
+INV-000035,Register invoice,2026-05-03 07:51,2026-05-03 08:12,Huda,Accounts Payable,High,Email
+INV-000035,Match with purchase order,2026-05-03 09:11,2026-05-03 09:29,Huda,Accounts Payable,High,Email
+INV-000035,Clarify with supplier,2026-05-03 12:54,2026-05-03 13:53,Huda,Accounts Payable,High,Email
+INV-000035,Match with purchase order,2026-05-04 07:30,2026-05-04 07:46,Huda,Accounts Payable,High,Email
+INV-000035,Approve invoice,2026-05-05 07:30,2026-05-05 07:39,Fatima,Finance,High,Email
+INV-000035,Schedule payment,2026-05-05 10:14,2026-05-05 10:25,Yousef,Treasury,High,Email
+INV-000035,Pay supplier,2026-05-05 12:44,2026-05-05 12:49,Yousef,Treasury,High,Email
+INV-000036,Register invoice,2026-05-03 07:46,2026-05-03 08:04,Omar,Accounts Payable,Low,Portal
+INV-000036,Match with purchase order,2026-05-03 09:22,2026-05-03 09:35,Omar,Accounts Payable,Low,Portal
+INV-000036,Approve invoice,2026-05-04 07:30,2026-05-04 07:41,Fatima,Finance,Low,Portal
+INV-000036,Schedule payment,2026-05-04 08:48,2026-05-04 08:58,Noor,Treasury,Low,Portal
+INV-000036,Pay supplier,2026-05-04 11:10,2026-05-04 11:15,Noor,Treasury,Low,Portal
+INV-000037,Register invoice,2026-05-04 07:38,2026-05-04 07:48,Huda,Accounts Payable,Low,Portal
+INV-000037,Match with purchase order,2026-05-04 10:38,2026-05-04 10:53,Huda,Accounts Payable,Low,Portal
+INV-000037,Approve invoice,2026-05-04 13:39,2026-05-04 13:52,Khalid,Finance,Low,Portal
+INV-000037,Schedule payment,2026-05-05 07:30,2026-05-05 07:39,Noor,Treasury,Low,Portal
+INV-000037,Pay supplier,2026-05-05 09:35,2026-05-05 09:40,Yousef,Treasury,Low,Portal
+INV-000038,Register invoice,2026-05-05 07:32,2026-05-05 07:42,Omar,Accounts Payable,Medium,Email
+INV-000038,Match with purchase order,2026-05-05 07:42,2026-05-05 08:04,Omar,Accounts Payable,Medium,Email
+INV-000038,Approve invoice,2026-05-05 08:52,2026-05-05 09:03,Khalid,Finance,Medium,Email
+INV-000038,Schedule payment,2026-05-05 11:14,2026-05-05 11:26,Noor,Treasury,Medium,Email
+INV-000038,Pay supplier,2026-05-05 12:20,2026-05-05 12:27,Noor,Treasury,Medium,Email
+INV-000039,Register invoice,2026-05-06 07:41,2026-05-06 07:57,Huda,Accounts Payable,Medium,Email
+INV-000039,Match with purchase order,2026-05-06 08:59,2026-05-06 09:12,Huda,Accounts Payable,Medium,Email
+INV-000039,Approve invoice,2026-05-06 14:08,2026-05-06 14:19,Khalid,Finance,Medium,Email
+INV-000039,Schedule payment,2026-05-06 14:55,2026-05-06 15:05,Yousef,Treasury,Medium,Email
+INV-000039,Pay supplier,2026-05-07 07:30,2026-05-07 07:35,Noor,Treasury,Medium,Email
+INV-000040,Register invoice,2026-05-07 07:31,2026-05-07 07:44,Huda,Accounts Payable,Low,Paper
+INV-000040,Match with purchase order,2026-05-07 08:32,2026-05-07 09:21,Huda,Accounts Payable,Low,Paper
+INV-000040,Approve invoice,2026-05-10 07:30,2026-05-10 07:42,Khalid,Finance,Low,Paper
+INV-000040,Schedule payment,2026-05-10 08:21,2026-05-10 08:28,Yousef,Treasury,Low,Paper
+INV-000040,Pay supplier,2026-05-11 07:30,2026-05-11 07:35,Noor,Treasury,Low,Paper
+INV-000041,Register invoice,2026-05-10 07:49,2026-05-10 07:58,Omar,Accounts Payable,High,Portal
+INV-000041,Match with purchase order,2026-05-10 08:56,2026-05-10 09:11,Omar,Accounts Payable,High,Portal
+INV-000041,Approve invoice,2026-05-12 07:30,2026-05-12 07:40,Fatima,Finance,High,Portal
+INV-000041,Schedule payment,2026-05-12 07:52,2026-05-12 08:02,Noor,Treasury,High,Portal
+INV-000041,Pay supplier,2026-05-12 09:33,2026-05-12 09:37,Yousef,Treasury,High,Portal
+INV-000042,Register invoice,2026-05-10 08:13,2026-05-10 08:28,Huda,Accounts Payable,Medium,Portal
+INV-000042,Match with purchase order,2026-05-10 08:40,2026-05-10 09:01,Huda,Accounts Payable,Medium,Portal
+INV-000042,Approve invoice,2026-05-11 07:30,2026-05-11 07:38,Khalid,Finance,Medium,Portal
+INV-000042,Schedule payment,2026-05-11 09:51,2026-05-11 10:05,Yousef,Treasury,Medium,Portal
+INV-000042,Pay supplier,2026-05-12 07:30,2026-05-12 07:33,Yousef,Treasury,Medium,Portal
+INV-000043,Register invoice,2026-05-10 08:03,2026-05-10 08:15,Sara,Accounts Payable,Low,Email
+INV-000043,Match with purchase order,2026-05-10 09:00,2026-05-10 09:14,Sara,Accounts Payable,Low,Email
+INV-000043,Approve invoice,2026-05-11 09:33,2026-05-11 09:45,Khalid,Finance,Low,Email
+INV-000043,Schedule payment,2026-05-11 10:00,2026-05-11 10:10,Yousef,Treasury,Low,Email
+INV-000043,Pay supplier,2026-05-12 07:30,2026-05-12 07:34,Yousef,Treasury,Low,Email
+INV-000044,Register invoice,2026-05-10 11:50,2026-05-10 12:06,Ali,Accounts Payable,Low,Email
+INV-000044,Match with purchase order,2026-05-10 13:31,2026-05-10 13:47,Ali,Accounts Payable,Low,Email
+INV-000044,Clarify with supplier,2026-05-10 14:08,2026-05-10 14:46,Ali,Accounts Payable,Low,Email
+INV-000044,Match with purchase order,2026-05-11 07:30,2026-05-11 07:50,Ali,Accounts Payable,Low,Email
+INV-000044,Approve invoice,2026-05-12 08:35,2026-05-12 08:45,Khalid,Finance,Low,Email
+INV-000044,Schedule payment,2026-05-12 09:09,2026-05-12 09:19,Noor,Treasury,Low,Email
+INV-000044,Pay supplier,2026-05-12 09:58,2026-05-12 10:03,Yousef,Treasury,Low,Email
+INV-000045,Register invoice,2026-05-11 10:02,2026-05-11 10:13,Ali,Accounts Payable,Medium,Paper
+INV-000045,Approve invoice,2026-05-11 15:23,2026-05-11 15:37,Khalid,Finance,Medium,Paper
+INV-000045,Schedule payment,2026-05-12 07:30,2026-05-12 07:43,Noor,Treasury,Medium,Paper
+INV-000045,Pay supplier,2026-05-12 08:31,2026-05-12 08:34,Yousef,Treasury,Medium,Paper
+INV-000046,Register invoice,2026-05-12 07:44,2026-05-12 08:01,Omar,Accounts Payable,Low,Email
+INV-000046,Match with purchase order,2026-05-12 09:23,2026-05-12 09:47,Omar,Accounts Payable,Low,Email
+INV-000046,Approve invoice,2026-05-17 07:30,2026-05-17 07:40,Fatima,Finance,Low,Email
+INV-000046,Schedule payment,2026-05-17 09:34,2026-05-17 09:48,Noor,Treasury,Low,Email
+INV-000046,Pay supplier,2026-05-17 12:10,2026-05-17 12:13,Noor,Treasury,Low,Email
+INV-000047,Register invoice,2026-05-13 07:40,2026-05-13 08:01,Huda,Accounts Payable,Low,Portal
+INV-000047,Match with purchase order,2026-05-13 09:07,2026-05-13 09:34,Huda,Accounts Payable,Low,Portal
+INV-000047,Clarify with supplier,2026-05-13 11:00,2026-05-13 11:38,Huda,Accounts Payable,Low,Portal
+INV-000047,Match with purchase order,2026-05-13 11:50,2026-05-13 12:17,Huda,Accounts Payable,Low,Portal
+INV-000047,Clarify with supplier,2026-05-13 14:44,2026-05-13 15:18,Huda,Accounts Payable,Low,Portal
+INV-000047,Match with purchase order,2026-05-14 07:30,2026-05-14 07:42,Huda,Accounts Payable,Low,Portal
+INV-000047,Approve invoice,2026-05-14 13:18,2026-05-14 13:28,Fatima,Finance,Low,Portal
+INV-000047,Schedule payment,2026-05-14 13:42,2026-05-14 13:48,Noor,Treasury,Low,Portal
+INV-000047,Pay supplier,2026-05-17 07:30,2026-05-17 07:36,Noor,Treasury,Low,Portal
+INV-000048,Register invoice,2026-05-14 07:50,2026-05-14 07:59,Sara,Accounts Payable,Low,Paper
+INV-000048,Match with purchase order,2026-05-14 08:44,2026-05-14 09:13,Sara,Accounts Payable,Low,Paper
+INV-000048,Clarify with supplier,2026-05-14 09:54,2026-05-14 10:49,Sara,Accounts Payable,Low,Paper
+INV-000048,Match with purchase order,2026-05-14 11:50,2026-05-14 12:14,Sara,Accounts Payable,Low,Paper
+INV-000048,Approve invoice,2026-05-17 07:30,2026-05-17 07:40,Fatima,Finance,Low,Paper
+INV-000048,Schedule payment,2026-05-17 07:55,2026-05-17 08:04,Yousef,Treasury,Low,Paper
+INV-000048,Pay supplier,2026-05-17 09:10,2026-05-17 09:17,Noor,Treasury,Low,Paper
+INV-000049,Register invoice,2026-05-17 07:37,2026-05-17 07:53,Ali,Accounts Payable,Medium,Email
+INV-000049,Match with purchase order,2026-05-17 08:16,2026-05-17 08:33,Ali,Accounts Payable,Medium,Email
+INV-000049,Clarify with supplier,2026-05-17 09:52,2026-05-17 10:52,Ali,Accounts Payable,Medium,Email
+INV-000049,Match with purchase order,2026-05-18 07:30,2026-05-18 07:45,Ali,Accounts Payable,Medium,Email
+INV-000049,Approve invoice,2026-05-18 14:20,2026-05-18 14:28,Fatima,Finance,Medium,Email
+INV-000049,Schedule payment,2026-05-18 15:21,2026-05-18 15:34,Yousef,Treasury,Medium,Email
+INV-000049,Pay supplier,2026-05-19 07:30,2026-05-19 07:35,Yousef,Treasury,Medium,Email
+INV-000050,Register invoice,2026-05-17 07:57,2026-05-17 08:13,Ali,Accounts Payable,Low,Email
+INV-000050,Match with purchase order,2026-05-17 12:22,2026-05-17 12:44,Ali,Accounts Payable,Low,Email
+INV-000050,Approve invoice,2026-05-18 07:30,2026-05-18 07:38,Fatima,Finance,Low,Email
+INV-000050,Schedule payment,2026-05-18 08:33,2026-05-18 08:45,Noor,Treasury,Low,Email
+INV-000050,Pay supplier,2026-05-18 14:15,2026-05-18 14:20,Yousef,Treasury,Low,Email
+INV-000051,Register invoice,2026-05-17 07:30,2026-05-17 07:41,Sara,Accounts Payable,Low,Portal
+INV-000051,Match with purchase order,2026-05-17 07:55,2026-05-17 08:08,Sara,Accounts Payable,Low,Portal
+INV-000051,Approve invoice,2026-05-17 12:42,2026-05-17 12:50,Khalid,Finance,Low,Portal
+INV-000051,Schedule payment,2026-05-17 14:26,2026-05-17 14:35,Noor,Treasury,Low,Portal
+INV-000051,Pay supplier,2026-05-17 14:42,2026-05-17 14:47,Noor,Treasury,Low,Portal
+INV-000052,Register invoice,2026-05-18 07:48,2026-05-18 08:01,Huda,Accounts Payable,Low,Paper
+INV-000052,Match with purchase order,2026-05-18 08:16,2026-05-18 08:48,Huda,Accounts Payable,Low,Paper
+INV-000052,Approve invoice,2026-05-19 07:30,2026-05-19 07:41,Khalid,Finance,Low,Paper
+INV-000052,Schedule payment,2026-05-19 07:41,2026-05-19 07:49,Noor,Treasury,Low,Paper
+INV-000052,Pay supplier,2026-05-19 08:35,2026-05-19 08:41,Noor,Treasury,Low,Paper
+INV-000053,Register invoice,2026-05-19 07:33,2026-05-19 07:43,Sara,Accounts Payable,Low,Portal
+INV-000053,Match with purchase order,2026-05-19 09:03,2026-05-19 09:30,Sara,Accounts Payable,Low,Portal
+INV-000053,Clarify with supplier,2026-05-19 09:46,2026-05-19 10:29,Sara,Accounts Payable,Low,Portal
+INV-000053,Match with purchase order,2026-05-19 10:41,2026-05-19 11:05,Sara,Accounts Payable,Low,Portal
+INV-000053,Approve invoice,2026-05-19 13:42,2026-05-19 13:51,Khalid,Finance,Low,Portal
+INV-000053,Schedule payment,2026-05-19 14:09,2026-05-19 14:21,Noor,Treasury,Low,Portal
+INV-000053,Pay supplier,2026-05-20 07:30,2026-05-20 07:35,Noor,Treasury,Low,Portal
+INV-000054,Register invoice,2026-05-19 14:00,2026-05-19 14:14,Huda,Accounts Payable,Low,Portal
+INV-000054,Match with purchase order,2026-05-19 15:26,2026-05-19 15:41,Huda,Accounts Payable,Low,Portal
+INV-000054,Approve invoice,2026-05-20 08:14,2026-05-20 08:21,Fatima,Finance,Low,Portal
+INV-000054,Schedule payment,2026-05-20 11:04,2026-05-20 11:16,Yousef,Treasury,Low,Portal
+INV-000054,Pay supplier,2026-05-21 07:30,2026-05-21 07:34,Noor,Treasury,Low,Portal
+INV-000055,Register invoice,2026-05-20 12:11,2026-05-20 12:24,Sara,Accounts Payable,Medium,Portal
+INV-000055,Match with purchase order,2026-05-20 13:10,2026-05-20 13:25,Sara,Accounts Payable,Medium,Portal
+INV-000055,Clarify with supplier,2026-05-21 07:30,2026-05-21 08:28,Sara,Accounts Payable,Medium,Portal
+INV-000055,Match with purchase order,2026-05-21 09:17,2026-05-21 09:41,Sara,Accounts Payable,Medium,Portal
+INV-000055,Approve invoice,2026-05-24 07:30,2026-05-24 07:38,Fatima,Finance,Medium,Portal
+INV-000055,Schedule payment,2026-05-24 10:18,2026-05-24 10:24,Yousef,Treasury,Medium,Portal
+INV-000055,Pay supplier,2026-05-24 12:40,2026-05-24 12:44,Noor,Treasury,Medium,Portal
+INV-000056,Register invoice,2026-05-21 10:11,2026-05-21 10:26,Sara,Accounts Payable,Medium,Portal
+INV-000056,Match with purchase order,2026-05-21 10:47,2026-05-21 11:11,Sara,Accounts Payable,Medium,Portal
+INV-000056,Approve invoice,2026-05-21 14:00,2026-05-21 14:09,Khalid,Finance,Medium,Portal
+INV-000056,Schedule payment,2026-05-21 14:23,2026-05-21 14:35,Noor,Treasury,Medium,Portal
+INV-000056,Pay supplier,2026-05-24 07:30,2026-05-24 07:36,Noor,Treasury,Medium,Portal
+INV-000057,Register invoice,2026-05-24 07:44,2026-05-24 08:05,Omar,Accounts Payable,Medium,Portal
+INV-000057,Match with purchase order,2026-05-24 08:56,2026-05-24 09:22,Omar,Accounts Payable,Medium,Portal
+INV-000057,Clarify with supplier,2026-05-24 11:01,2026-05-24 11:39,Omar,Accounts Payable,Medium,Portal
+INV-000057,Match with purchase order,2026-05-24 12:15,2026-05-24 12:36,Omar,Accounts Payable,Medium,Portal
+INV-000057,Approve invoice,2026-05-27 07:30,2026-05-27 07:39,Khalid,Finance,Medium,Portal
+INV-000057,Schedule payment,2026-05-27 08:56,2026-05-27 09:06,Noor,Treasury,Medium,Portal
+INV-000057,Pay supplier,2026-05-28 07:30,2026-05-28 07:34,Yousef,Treasury,Medium,Portal
+INV-000058,Register invoice,2026-05-24 07:53,2026-05-24 08:11,Sara,Accounts Payable,Medium,Paper
+INV-000058,Match with purchase order,2026-05-24 12:59,2026-05-24 13:26,Sara,Accounts Payable,Medium,Paper
+INV-000058,Clarify with supplier,2026-05-24 13:32,2026-05-24 14:05,Sara,Accounts Payable,Medium,Paper
+INV-000058,Match with purchase order,2026-05-25 07:30,2026-05-25 07:47,Sara,Accounts Payable,Medium,Paper
+INV-000058,Approve invoice,2026-05-26 09:46,2026-05-26 09:52,Khalid,Finance,Medium,Paper
+INV-000058,Schedule payment,2026-05-26 11:15,2026-05-26 11:24,Noor,Treasury,Medium,Paper
+INV-000058,Pay supplier,2026-05-26 12:22,2026-05-26 12:29,Yousef,Treasury,Medium,Paper
+INV-000059,Register invoice,2026-05-24 07:57,2026-05-24 08:11,Ali,Accounts Payable,Medium,Email
+INV-000059,Approve invoice,2026-05-24 11:52,2026-05-24 12:02,Fatima,Finance,Medium,Email
+INV-000059,Schedule payment,2026-05-24 12:50,2026-05-24 13:00,Noor,Treasury,Medium,Email
+INV-000059,Pay supplier,2026-05-25 07:30,2026-05-25 07:35,Noor,Treasury,Medium,Email
+INV-000060,Register invoice,2026-05-25 07:30,2026-05-25 07:50,Huda,Accounts Payable,Medium,Paper
+INV-000060,Match with purchase order,2026-05-25 07:50,2026-05-25 08:20,Huda,Accounts Payable,Medium,Paper
+INV-000060,Approve invoice,2026-05-25 11:03,2026-05-25 11:10,Khalid,Finance,Medium,Paper
+INV-000060,Schedule payment,2026-05-25 12:26,2026-05-25 12:39,Noor,Treasury,Medium,Paper
+INV-000060,Pay supplier,2026-05-26 07:30,2026-05-26 07:35,Noor,Treasury,Medium,Paper
+INV-000061,Register invoice,2026-05-26 07:45,2026-05-26 08:01,Huda,Accounts Payable,Low,Portal
+INV-000061,Match with purchase order,2026-05-26 08:47,2026-05-26 09:14,Huda,Accounts Payable,Low,Portal
+INV-000061,Approve invoice,2026-05-31 07:30,2026-05-31 07:39,Fatima,Finance,Low,Portal
+INV-000061,Schedule payment,2026-05-31 08:32,2026-05-31 08:45,Noor,Treasury,Low,Portal
+INV-000061,Pay supplier,2026-05-31 10:43,2026-05-31 10:49,Noor,Treasury,Low,Portal
+INV-000062,Register invoice,2026-05-27 07:43,2026-05-27 07:53,Sara,Accounts Payable,Low,Email
+INV-000062,Match with purchase order,2026-05-27 07:58,2026-05-27 08:12,Sara,Accounts Payable,Low,Email
+INV-000062,Clarify with supplier,2026-05-27 09:05,2026-05-27 09:54,Sara,Accounts Payable,Low,Email
+INV-000062,Match with purchase order,2026-05-27 12:59,2026-05-27 13:27,Sara,Accounts Payable,Low,Email
+INV-000062,Approve invoice,2026-05-27 14:43,2026-05-27 14:50,Khalid,Finance,Low,Email
+INV-000062,Schedule payment,2026-05-28 07:30,2026-05-28 07:37,Yousef,Treasury,Low,Email
+INV-000062,Pay supplier,2026-05-28 11:04,2026-05-28 11:11,Yousef,Treasury,Low,Email
+INV-000063,Register invoice,2026-05-28 07:30,2026-05-28 07:45,Sara,Accounts Payable,Medium,Email
+INV-000063,Match with purchase order,2026-05-28 08:42,2026-05-28 09:01,Sara,Accounts Payable,Medium,Email
+INV-000063,Clarify with supplier,2026-05-28 11:02,2026-05-28 11:30,Sara,Accounts Payable,Medium,Email
+INV-000063,Match with purchase order,2026-05-28 12:23,2026-05-28 12:46,Sara,Accounts Payable,Medium,Email
+INV-000063,Approve invoice,2026-05-31 07:30,2026-05-31 07:41,Khalid,Finance,Medium,Email
+INV-000063,Schedule payment,2026-05-31 08:47,2026-05-31 08:55,Yousef,Treasury,Medium,Email
+INV-000063,Pay supplier,2026-05-31 11:40,2026-05-31 11:45,Noor,Treasury,Medium,Email
+INV-000064,Register invoice,2026-05-31 07:33,2026-05-31 07:46,Huda,Accounts Payable,Low,Portal
+INV-000064,Match with purchase order,2026-05-31 08:45,2026-05-31 09:09,Huda,Accounts Payable,Low,Portal
+INV-000064,Clarify with supplier,2026-05-31 11:26,2026-05-31 12:07,Huda,Accounts Payable,Low,Portal
+INV-000064,Match with purchase order,2026-05-31 13:17,2026-05-31 13:36,Huda,Accounts Payable,Low,Portal
+INV-000064,Approve invoice,2026-06-01 07:30,2026-06-01 07:36,Fatima,Finance,Low,Portal
+INV-000064,Schedule payment,2026-06-01 07:57,2026-06-01 08:10,Yousef,Treasury,Low,Portal
+INV-000064,Pay supplier,2026-06-02 07:30,2026-06-02 07:36,Noor,Treasury,Low,Portal
+INV-000065,Register invoice,2026-05-31 08:28,2026-05-31 08:48,Sara,Accounts Payable,Low,Portal
+INV-000065,Match with purchase order,2026-05-31 09:51,2026-05-31 10:09,Sara,Accounts Payable,Low,Portal
+INV-000065,Approve invoice,2026-06-01 07:30,2026-06-01 07:39,Fatima,Finance,Low,Portal
+INV-000065,Schedule payment,2026-06-01 08:24,2026-06-01 08:33,Yousef,Treasury,Low,Portal
+INV-000065,Pay supplier,2026-06-02 07:30,2026-06-02 07:34,Yousef,Treasury,Low,Portal
+INV-000066,Register invoice,2026-05-31 07:51,2026-05-31 08:06,Huda,Accounts Payable,Low,Email
+INV-000066,Match with purchase order,2026-05-31 08:53,2026-05-31 09:07,Huda,Accounts Payable,Low,Email
+INV-000066,Approve invoice,2026-06-01 07:30,2026-06-01 07:37,Khalid,Finance,Low,Email
+INV-000066,Schedule payment,2026-06-01 08:09,2026-06-01 08:21,Yousef,Treasury,Low,Email
+INV-000066,Pay supplier,2026-06-01 10:51,2026-06-01 10:57,Yousef,Treasury,Low,Email
+INV-000067,Register invoice,2026-05-31 10:21,2026-05-31 10:31,Omar,Accounts Payable,Low,Paper
+INV-000067,Match with purchase order,2026-05-31 11:05,2026-05-31 11:31,Omar,Accounts Payable,Low,Paper
+INV-000067,Approve invoice,2026-05-31 13:33,2026-05-31 13:43,Fatima,Finance,Low,Paper
+INV-000067,Schedule payment,2026-05-31 13:55,2026-05-31 14:04,Yousef,Treasury,Low,Paper
+INV-000067,Pay supplier,2026-06-01 07:30,2026-06-01 07:35,Noor,Treasury,Low,Paper
+INV-000068,Register invoice,2026-06-01 08:50,2026-06-01 08:59,Sara,Accounts Payable,Low,Email
+INV-000068,Match with purchase order,2026-06-01 09:09,2026-06-01 09:30,Sara,Accounts Payable,Low,Email
+INV-000068,Approve invoice,2026-06-02 07:30,2026-06-02 07:39,Fatima,Finance,Low,Email
+INV-000068,Schedule payment,2026-06-02 08:35,2026-06-02 08:43,Yousef,Treasury,Low,Email
+INV-000068,Pay supplier,2026-06-02 10:56,2026-06-02 11:02,Yousef,Treasury,Low,Email
+INV-000069,Register invoice,2026-06-02 07:39,2026-06-02 07:52,Omar,Accounts Payable,Medium,Paper
+INV-000069,Match with purchase order,2026-06-02 08:14,2026-06-02 08:56,Omar,Accounts Payable,Medium,Paper
+INV-000069,Approve invoice,2026-06-03 08:57,2026-06-03 09:04,Fatima,Finance,Medium,Paper
+INV-000069,Schedule payment,2026-06-03 12:15,2026-06-03 12:26,Noor,Treasury,Medium,Paper
+INV-000069,Pay supplier,2026-06-04 07:30,2026-06-04 07:33,Yousef,Treasury,Medium,Paper
+INV-000070,Register invoice,2026-06-03 07:31,2026-06-03 07:45,Sara,Accounts Payable,Low,Email
+INV-000070,Match with purchase order,2026-06-03 08:47,2026-06-03 09:00,Sara,Accounts Payable,Low,Email
+INV-000070,Clarify with supplier,2026-06-03 11:12,2026-06-03 11:59,Sara,Accounts Payable,Low,Email
+INV-000070,Match with purchase order,2026-06-03 12:06,2026-06-03 12:32,Sara,Accounts Payable,Low,Email
+INV-000070,Approve invoice,2026-06-04 07:30,2026-06-04 07:39,Fatima,Finance,Low,Email
+INV-000070,Schedule payment,2026-06-04 07:42,2026-06-04 07:55,Yousef,Treasury,Low,Email
+INV-000070,Pay supplier,2026-06-04 08:07,2026-06-04 08:13,Noor,Treasury,Low,Email
+INV-000071,Register invoice,2026-06-04 07:47,2026-06-04 08:08,Ali,Accounts Payable,Medium,Portal
+INV-000071,Match with purchase order,2026-06-04 09:20,2026-06-04 09:40,Ali,Accounts Payable,Medium,Portal
+INV-000071,Clarify with supplier,2026-06-04 10:13,2026-06-04 10:42,Ali,Accounts Payable,Medium,Portal
+INV-000071,Match with purchase order,2026-06-04 15:29,2026-06-04 15:43,Ali,Accounts Payable,Medium,Portal
+INV-000071,Approve invoice,2026-06-07 07:30,2026-06-07 07:40,Khalid,Finance,Medium,Portal
+INV-000071,Schedule payment,2026-06-07 08:53,2026-06-07 09:02,Yousef,Treasury,Medium,Portal
+INV-000071,Pay supplier,2026-06-07 14:28,2026-06-07 14:32,Noor,Treasury,Medium,Portal
+INV-000072,Register invoice,2026-06-07 07:35,2026-06-07 07:44,Huda,Accounts Payable,Low,Email
+INV-000072,Match with purchase order,2026-06-07 08:06,2026-06-07 08:30,Huda,Accounts Payable,Low,Email
+INV-000072,Clarify with supplier,2026-06-07 08:55,2026-06-07 09:24,Huda,Accounts Payable,Low,Email
+INV-000072,Match with purchase order,2026-06-07 12:37,2026-06-07 12:59,Huda,Accounts Payable,Low,Email
+INV-000072,Approve invoice,2026-06-09 07:30,2026-06-09 07:36,Khalid,Finance,Low,Email
+INV-000072,Schedule payment,2026-06-09 08:16,2026-06-09 08:23,Noor,Treasury,Low,Email
+INV-000072,Pay supplier,2026-06-09 13:12,2026-06-09 13:18,Noor,Treasury,Low,Email
+INV-000073,Register invoice,2026-06-07 07:36,2026-06-07 07:53,Ali,Accounts Payable,Low,Portal
+INV-000073,Match with purchase order,2026-06-07 08:16,2026-06-07 08:36,Ali,Accounts Payable,Low,Portal
+INV-000073,Approve invoice,2026-06-08 07:30,2026-06-08 07:37,Khalid,Finance,Low,Portal
+INV-000073,Schedule payment,2026-06-08 07:45,2026-06-08 07:53,Noor,Treasury,Low,Portal
+INV-000073,Pay supplier,2026-06-08 10:04,2026-06-08 10:07,Noor,Treasury,Low,Portal
+INV-000074,Register invoice,2026-06-07 07:58,2026-06-07 08:15,Huda,Accounts Payable,Low,Email
+INV-000074,Match with purchase order,2026-06-07 09:11,2026-06-07 09:26,Huda,Accounts Payable,Low,Email
+INV-000074,Approve invoice,2026-06-07 10:07,2026-06-07 10:19,Fatima,Finance,Low,Email
+INV-000074,Schedule payment,2026-06-07 11:17,2026-06-07 11:29,Noor,Treasury,Low,Email
+INV-000074,Pay supplier,2026-06-07 11:39,2026-06-07 11:46,Noor,Treasury,Low,Email
+INV-000075,Register invoice,2026-06-08 08:08,2026-06-08 08:22,Ali,Accounts Payable,Low,Portal
+INV-000075,Match with purchase order,2026-06-08 08:33,2026-06-08 09:01,Ali,Accounts Payable,Low,Portal
+INV-000075,Approve invoice,2026-06-08 10:34,2026-06-08 10:48,Fatima,Finance,Low,Portal
+INV-000075,Schedule payment,2026-06-08 12:18,2026-06-08 12:26,Noor,Treasury,Low,Portal
+INV-000075,Pay supplier,2026-06-09 07:30,2026-06-09 07:33,Noor,Treasury,Low,Portal
+INV-000076,Register invoice,2026-06-09 07:30,2026-06-09 07:49,Omar,Accounts Payable,Medium,Portal
+INV-000076,Match with purchase order,2026-06-09 10:03,2026-06-09 10:23,Omar,Accounts Payable,Medium,Portal
+INV-000076,Approve invoice,2026-06-10 07:30,2026-06-10 07:40,Khalid,Finance,Medium,Portal
+INV-000076,Schedule payment,2026-06-10 08:07,2026-06-10 08:16,Yousef,Treasury,Medium,Portal
+INV-000076,Pay supplier,2026-06-10 11:07,2026-06-10 11:12,Yousef,Treasury,Medium,Portal
+INV-000077,Register invoice,2026-06-09 12:05,2026-06-09 12:16,Huda,Accounts Payable,Low,Portal
+INV-000077,Match with purchase order,2026-06-09 12:26,2026-06-09 12:48,Huda,Accounts Payable,Low,Portal
+INV-000077,Clarify with supplier,2026-06-10 07:30,2026-06-10 07:59,Huda,Accounts Payable,Low,Portal
+INV-000077,Match with purchase order,2026-06-10 11:37,2026-06-10 12:04,Huda,Accounts Payable,Low,Portal
+INV-000077,Schedule payment,2026-06-10 12:14,2026-06-10 12:25,Yousef,Treasury,Low,Portal
+INV-000077,Approve invoice,2026-06-14 07:30,2026-06-14 07:41,Khalid,Finance,Low,Portal
+INV-000077,Pay supplier,2026-06-14 08:57,2026-06-14 09:03,Yousef,Treasury,Low,Portal
+INV-000078,Register invoice,2026-06-10 10:22,2026-06-10 10:38,Huda,Accounts Payable,Medium,Paper
+INV-000078,Match with purchase order,2026-06-10 11:16,2026-06-10 11:51,Huda,Accounts Payable,Medium,Paper
+INV-000078,Clarify with supplier,2026-06-10 12:37,2026-06-10 13:22,Huda,Accounts Payable,Medium,Paper
+INV-000078,Match with purchase order,2026-06-11 07:30,2026-06-11 07:48,Huda,Accounts Payable,Medium,Paper
+INV-000078,Approve invoice,2026-06-11 08:02,2026-06-11 08:09,Fatima,Finance,Medium,Paper
+INV-000078,Schedule payment,2026-06-11 10:38,2026-06-11 10:51,Noor,Treasury,Medium,Paper
+INV-000078,Pay supplier,2026-06-11 12:01,2026-06-11 12:08,Noor,Treasury,Medium,Paper
+INV-000079,Register invoice,2026-06-11 08:06,2026-06-11 08:21,Sara,Accounts Payable,Low,Portal
+INV-000079,Match with purchase order,2026-06-11 10:15,2026-06-11 10:42,Sara,Accounts Payable,Low,Portal
+INV-000079,Clarify with supplier,2026-06-11 14:30,2026-06-11 14:58,Sara,Accounts Payable,Low,Portal
+INV-000079,Match with purchase order,2026-06-14 07:30,2026-06-14 07:50,Sara,Accounts Payable,Low,Portal
+INV-000079,Approve invoice,2026-06-14 09:22,2026-06-14 09:32,Fatima,Finance,Low,Portal
+INV-000079,Schedule payment,2026-06-14 10:38,2026-06-14 10:44,Noor,Treasury,Low,Portal
+INV-000079,Pay supplier,2026-06-14 13:46,2026-06-14 13:50,Noor,Treasury,Low,Portal
+INV-000080,Register invoice,2026-06-14 07:50,2026-06-14 08:05,Omar,Accounts Payable,High,Email
+INV-000080,Approve invoice,2026-06-15 07:30,2026-06-15 07:42,Khalid,Finance,High,Email
+INV-000080,Schedule payment,2026-06-15 08:13,2026-06-15 08:25,Noor,Treasury,High,Email
+INV-000080,Pay supplier,2026-06-16 07:30,2026-06-16 07:36,Noor,Treasury,High,Email
+INV-000081,Register invoice,2026-06-14 07:33,2026-06-14 07:53,Ali,Accounts Payable,Low,Portal
+INV-000081,Match with purchase order,2026-06-14 08:00,2026-06-14 08:28,Ali,Accounts Payable,Low,Portal
+INV-000081,Clarify with supplier,2026-06-14 09:29,2026-06-14 09:58,Ali,Accounts Payable,Low,Portal
+INV-000081,Match with purchase order,2026-06-14 12:49,2026-06-14 13:04,Ali,Accounts Payable,Low,Portal
+INV-000081,Approve invoice,2026-06-17 07:30,2026-06-17 07:39,Fatima,Finance,Low,Portal
+INV-000081,Schedule payment,2026-06-17 07:46,2026-06-17 07:52,Yousef,Treasury,Low,Portal
+INV-000081,Pay supplier,2026-06-18 07:30,2026-06-18 07:35,Noor,Treasury,Low,Portal
+INV-000082,Register invoice,2026-06-14 09:05,2026-06-14 09:16,Sara,Accounts Payable,Low,Portal
+INV-000082,Match with purchase order,2026-06-14 09:49,2026-06-14 10:05,Sara,Accounts Payable,Low,Portal
+INV-000082,Approve invoice,2026-06-16 07:30,2026-06-16 07:38,Khalid,Finance,Low,Portal
+INV-000082,Schedule payment,2026-06-16 08:41,2026-06-16 08:50,Yousef,Treasury,Low,Portal
+INV-000082,Pay supplier,2026-06-16 09:32,2026-06-16 09:35,Noor,Treasury,Low,Portal
+INV-000083,Register invoice,2026-06-15 07:31,2026-06-15 07:46,Ali,Accounts Payable,Low,Portal
+INV-000083,Match with purchase order,2026-06-15 09:34,2026-06-15 09:49,Ali,Accounts Payable,Low,Portal
+INV-000083,Clarify with supplier,2026-06-15 10:37,2026-06-15 11:30,Ali,Accounts Payable,Low,Portal
+INV-000083,Match with purchase order,2026-06-15 14:52,2026-06-15 15:15,Ali,Accounts Payable,Low,Portal
+INV-000083,Approve invoice,2026-06-16 07:30,2026-06-16 07:41,Fatima,Finance,Low,Portal
+INV-000083,Schedule payment,2026-06-16 10:05,2026-06-16 10:14,Noor,Treasury,Low,Portal
+INV-000083,Pay supplier,2026-06-16 10:42,2026-06-16 10:47,Noor,Treasury,Low,Portal
+INV-000084,Register invoice,2026-06-16 07:40,2026-06-16 07:56,Huda,Accounts Payable,Low,Portal
+INV-000084,Match with purchase order,2026-06-16 08:06,2026-06-16 08:25,Huda,Accounts Payable,Low,Portal
+INV-000084,Approve invoice,2026-06-18 07:30,2026-06-18 07:39,Fatima,Finance,Low,Portal
+INV-000084,Schedule payment,2026-06-18 10:36,2026-06-18 10:46,Yousef,Treasury,Low,Portal
+INV-000084,Pay supplier,2026-06-18 11:26,2026-06-18 11:32,Yousef,Treasury,Low,Portal
+INV-000085,Register invoice,2026-06-17 07:34,2026-06-17 07:54,Ali,Accounts Payable,Low,Email
+INV-000085,Match with purchase order,2026-06-17 08:36,2026-06-17 08:59,Ali,Accounts Payable,Low,Email
+INV-000085,Approve invoice,2026-06-21 07:30,2026-06-21 07:40,Khalid,Finance,Low,Email
+INV-000085,Schedule payment,2026-06-21 08:26,2026-06-21 08:36,Noor,Treasury,Low,Email
+INV-000085,Pay supplier,2026-06-22 07:30,2026-06-22 07:34,Noor,Treasury,Low,Email
+INV-000086,Register invoice,2026-06-18 08:27,2026-06-18 08:38,Sara,Accounts Payable,Low,Portal
+INV-000086,Match with purchase order,2026-06-18 10:15,2026-06-18 10:38,Sara,Accounts Payable,Low,Portal
+INV-000086,Clarify with supplier,2026-06-18 14:36,2026-06-18 15:27,Sara,Accounts Payable,Low,Portal
+INV-000086,Match with purchase order,2026-06-21 07:30,2026-06-21 07:46,Sara,Accounts Payable,Low,Portal
+INV-000086,Approve invoice,2026-06-22 07:30,2026-06-22 07:40,Fatima,Finance,Low,Portal
+INV-000086,Schedule payment,2026-06-22 13:29,2026-06-22 13:38,Yousef,Treasury,Low,Portal
+INV-000086,Pay supplier,2026-06-23 07:30,2026-06-23 07:36,Noor,Treasury,Low,Portal
+INV-000087,Register invoice,2026-06-18 15:01,2026-06-18 15:16,Sara,Accounts Payable,Low,Portal
+INV-000087,Match with purchase order,2026-06-21 07:30,2026-06-21 07:48,Sara,Accounts Payable,Low,Portal
+INV-000087,Approve invoice,2026-06-21 11:15,2026-06-21 11:29,Khalid,Finance,Low,Portal
+INV-000087,Schedule payment,2026-06-21 12:15,2026-06-21 12:23,Noor,Treasury,Low,Portal
+INV-000087,Pay supplier,2026-06-21 13:59,2026-06-21 14:04,Yousef,Treasury,Low,Portal
+INV-000088,Register invoice,2026-06-21 08:05,2026-06-21 08:15,Huda,Accounts Payable,High,Email
+INV-000088,Match with purchase order,2026-06-21 08:18,2026-06-21 08:34,Huda,Accounts Payable,High,Email
+INV-000088,Approve invoice,2026-06-24 08:24,2026-06-24 08:31,Fatima,Finance,High,Email
+INV-000088,Schedule payment,2026-06-24 09:46,2026-06-24 09:55,Yousef,Treasury,High,Email
+INV-000088,Pay supplier,2026-06-24 12:32,2026-06-24 12:37,Noor,Treasury,High,Email
+INV-000089,Register invoice,2026-06-21 08:15,2026-06-21 08:32,Ali,Accounts Payable,Low,Portal
+INV-000089,Match with purchase order,2026-06-21 09:43,2026-06-21 09:55,Ali,Accounts Payable,Low,Portal
+INV-000089,Clarify with supplier,2026-06-21 11:11,2026-06-21 12:08,Ali,Accounts Payable,Low,Portal
+INV-000089,Match with purchase order,2026-06-22 07:30,2026-06-22 07:50,Ali,Accounts Payable,Low,Portal
+INV-000089,Approve invoice,2026-06-23 07:30,2026-06-23 07:41,Khalid,Finance,Low,Portal
+INV-000089,Schedule payment,2026-06-23 11:17,2026-06-23 11:27,Yousef,Treasury,Low,Portal
+INV-000089,Pay supplier,2026-06-24 07:30,2026-06-24 07:36,Noor,Treasury,Low,Portal
+INV-000090,Register invoice,2026-06-21 09:15,2026-06-21 09:35,Omar,Accounts Payable,Low,Portal
+INV-000090,Match with purchase order,2026-06-21 09:36,2026-06-21 09:56,Omar,Accounts Payable,Low,Portal
+INV-000090,Approve invoice,2026-06-21 13:15,2026-06-21 13:25,Fatima,Finance,Low,Portal
+INV-000090,Schedule payment,2026-06-21 14:34,2026-06-21 14:41,Yousef,Treasury,Low,Portal
+INV-000090,Pay supplier,2026-06-22 07:30,2026-06-22 07:36,Noor,Treasury,Low,Portal
+INV-000091,Register invoice,2026-06-22 08:23,2026-06-22 08:36,Huda,Accounts Payable,Low,Paper
+INV-000091,Match with purchase order,2026-06-22 09:38,2026-06-22 10:21,Huda,Accounts Payable,Low,Paper
+INV-000091,Approve invoice,2026-06-23 07:30,2026-06-23 07:42,Khalid,Finance,Low,Paper
+INV-000091,Schedule payment,2026-06-23 09:38,2026-06-23 09:50,Yousef,Treasury,Low,Paper
+INV-000091,Pay supplier,2026-06-23 10:47,2026-06-23 10:52,Noor,Treasury,Low,Paper
+INV-000092,Register invoice,2026-06-23 07:35,2026-06-23 07:48,Omar,Accounts Payable,Low,Portal
+INV-000092,Match with purchase order,2026-06-23 09:08,2026-06-23 09:22,Omar,Accounts Payable,Low,Portal
+INV-000092,Approve invoice,2026-06-24 07:30,2026-06-24 07:36,Khalid,Finance,Low,Portal
+INV-000092,Schedule payment,2026-06-24 08:18,2026-06-24 08:25,Noor,Treasury,Low,Portal
+INV-000092,Pay supplier,2026-06-24 08:58,2026-06-24 09:02,Yousef,Treasury,Low,Portal
+INV-000093,Register invoice,2026-06-24 08:12,2026-06-24 08:22,Omar,Accounts Payable,High,Portal
+INV-000093,Match with purchase order,2026-06-24 10:51,2026-06-24 11:08,Omar,Accounts Payable,High,Portal
+INV-000093,Clarify with supplier,2026-06-24 11:50,2026-06-24 12:29,Omar,Accounts Payable,High,Portal
+INV-000093,Match with purchase order,2026-06-25 07:30,2026-06-25 07:50,Omar,Accounts Payable,High,Portal
+INV-000093,Clarify with supplier,2026-06-25 08:59,2026-06-25 09:47,Omar,Accounts Payable,High,Portal
+INV-000093,Match with purchase order,2026-06-28 07:30,2026-06-28 07:50,Omar,Accounts Payable,High,Portal
+INV-000093,Approve invoice,2026-06-29 07:30,2026-06-29 07:39,Khalid,Finance,High,Portal
+INV-000093,Schedule payment,2026-06-29 08:22,2026-06-29 08:34,Yousef,Treasury,High,Portal
+INV-000093,Pay supplier,2026-06-30 07:30,2026-06-30 07:34,Noor,Treasury,High,Portal
+INV-000094,Register invoice,2026-06-25 07:55,2026-06-25 08:14,Ali,Accounts Payable,Medium,Email
+INV-000094,Match with purchase order,2026-06-25 08:29,2026-06-25 08:47,Ali,Accounts Payable,Medium,Email
+INV-000094,Approve invoice,2026-06-25 10:08,2026-06-25 10:18,Fatima,Finance,Medium,Email
+INV-000094,Schedule payment,2026-06-25 10:29,2026-06-25 10:42,Noor,Treasury,Medium,Email
+INV-000094,Pay supplier,2026-06-28 07:30,2026-06-28 07:35,Yousef,Treasury,Medium,Email
+INV-000095,Register invoice,2026-06-28 08:08,2026-06-28 08:19,Ali,Accounts Payable,Medium,Portal
+INV-000095,Match with purchase order,2026-06-28 08:25,2026-06-28 08:38,Ali,Accounts Payable,Medium,Portal
+INV-000095,Approve invoice,2026-06-30 08:52,2026-06-30 09:04,Khalid,Finance,Medium,Portal
+INV-000095,Schedule payment,2026-06-30 14:36,2026-06-30 14:43,Yousef,Treasury,Medium,Portal
+INV-000095,Pay supplier,2026-07-01 07:30,2026-07-01 07:35,Noor,Treasury,Medium,Portal
+INV-000096,Register invoice,2026-06-28 07:31,2026-06-28 07:45,Huda,Accounts Payable,High,Email
+INV-000096,Match with purchase order,2026-06-28 07:45,2026-06-28 07:58,Huda,Accounts Payable,High,Email
+INV-000096,Approve invoice,2026-06-30 13:28,2026-06-30 13:40,Khalid,Finance,High,Email
+INV-000096,Schedule payment,2026-07-01 07:30,2026-07-01 07:41,Yousef,Treasury,High,Email
+INV-000096,Pay supplier,2026-07-01 08:26,2026-07-01 08:31,Noor,Treasury,High,Email
+INV-000097,Register invoice,2026-06-28 07:35,2026-06-28 07:52,Sara,Accounts Payable,Low,Email
+INV-000097,Approve invoice,2026-06-29 07:30,2026-06-29 07:43,Fatima,Finance,Low,Email
+INV-000097,Schedule payment,2026-06-29 07:45,2026-06-29 07:57,Noor,Treasury,Low,Email
+INV-000097,Pay supplier,2026-06-29 08:40,2026-06-29 08:45,Noor,Treasury,Low,Email
+INV-000098,Register invoice,2026-06-28 14:42,2026-06-28 14:52,Ali,Accounts Payable,Low,Email
+INV-000098,Match with purchase order,2026-06-29 07:30,2026-06-29 07:55,Ali,Accounts Payable,Low,Email
+INV-000098,Approve invoice,2026-06-30 07:30,2026-06-30 07:40,Fatima,Finance,Low,Email
+INV-000098,Schedule payment,2026-06-30 10:23,2026-06-30 10:33,Yousef,Treasury,Low,Email
+INV-000098,Pay supplier,2026-07-01 07:30,2026-07-01 07:33,Yousef,Treasury,Low,Email
+INV-000099,Register invoice,2026-06-29 13:00,2026-06-29 13:10,Sara,Accounts Payable,Low,Email
+INV-000099,Match with purchase order,2026-06-29 13:49,2026-06-29 14:08,Sara,Accounts Payable,Low,Email
+INV-000099,Approve invoice,2026-06-30 07:30,2026-06-30 07:38,Khalid,Finance,Low,Email
+INV-000099,Schedule payment,2026-06-30 10:39,2026-06-30 10:47,Noor,Treasury,Low,Email
+INV-000099,Pay supplier,2026-07-01 07:30,2026-07-01 07:34,Yousef,Treasury,Low,Email
+INV-000100,Register invoice,2026-06-30 11:59,2026-06-30 12:11,Huda,Accounts Payable,Low,Portal
+INV-000100,Match with purchase order,2026-06-30 12:30,2026-06-30 12:43,Huda,Accounts Payable,Low,Portal
+INV-000100,Approve invoice,2026-06-30 15:08,2026-06-30 15:20,Fatima,Finance,Low,Portal
+INV-000100,Schedule payment,2026-07-01 07:30,2026-07-01 07:40,Noor,Treasury,Low,Portal
+INV-000100,Pay supplier,2026-07-01 13:37,2026-07-01 13:42,Noor,Treasury,Low,Portal
+INV-000101,Register invoice,2026-07-01 08:15,2026-07-01 08:27,Sara,Accounts Payable,Medium,Portal
+INV-000101,Match with purchase order,2026-07-01 10:22,2026-07-01 10:42,Sara,Accounts Payable,Medium,Portal
+INV-000101,Clarify with supplier,2026-07-01 12:27,2026-07-01 13:19,Sara,Accounts Payable,Medium,Portal
+INV-000101,Match with purchase order,2026-07-02 07:30,2026-07-02 07:48,Sara,Accounts Payable,Medium,Portal
+INV-000101,Approve invoice,2026-07-05 07:30,2026-07-05 07:40,Fatima,Finance,Medium,Portal
+INV-000101,Schedule payment,2026-07-05 07:49,2026-07-05 07:59,Noor,Treasury,Medium,Portal
+INV-000101,Pay supplier,2026-07-05 08:00,2026-07-05 08:06,Noor,Treasury,Medium,Portal
+INV-000102,Register invoice,2026-07-02 07:31,2026-07-02 07:44,Omar,Accounts Payable,Low,Portal
+INV-000102,Match with purchase order,2026-07-02 08:07,2026-07-02 08:19,Omar,Accounts Payable,Low,Portal
+INV-000102,Approve invoice,2026-07-05 07:30,2026-07-05 07:43,Fatima,Finance,Low,Portal
+INV-000102,Schedule payment,2026-07-05 08:12,2026-07-05 08:19,Yousef,Treasury,Low,Portal
+INV-000102,Pay supplier,2026-07-06 07:30,2026-07-06 07:36,Noor,Treasury,Low,Portal
+INV-000103,Register invoice,2026-07-05 08:21,2026-07-05 08:34,Omar,Accounts Payable,Low,Portal
+INV-000103,Match with purchase order,2026-07-05 09:08,2026-07-05 09:25,Omar,Accounts Payable,Low,Portal
+INV-000103,Approve invoice,2026-07-06 07:30,2026-07-06 07:39,Fatima,Finance,Low,Portal
+INV-000103,Schedule payment,2026-07-06 08:19,2026-07-06 08:30,Yousef,Treasury,Low,Portal
+INV-000103,Pay supplier,2026-07-06 08:49,2026-07-06 08:53,Noor,Treasury,Low,Portal
+INV-000104,Register invoice,2026-07-05 07:30,2026-07-05 07:39,Huda,Accounts Payable,Medium,Email
+INV-000104,Match with purchase order,2026-07-05 08:25,2026-07-05 08:44,Huda,Accounts Payable,Medium,Email
+INV-000104,Approve invoice,2026-07-07 07:30,2026-07-07 07:36,Fatima,Finance,Medium,Email
+INV-000104,Schedule payment,2026-07-07 09:57,2026-07-07 10:04,Yousef,Treasury,Medium,Email
+INV-000104,Pay supplier,2026-07-07 10:06,2026-07-07 10:12,Noor,Treasury,Medium,Email
+INV-000105,Register invoice,2026-07-05 07:35,2026-07-05 07:44,Omar,Accounts Payable,Medium,Portal
+INV-000105,Match with purchase order,2026-07-05 08:02,2026-07-05 08:21,Omar,Accounts Payable,Medium,Portal
+INV-000105,Approve invoice,2026-07-05 08:33,2026-07-05 08:45,Fatima,Finance,Medium,Portal
+INV-000105,Schedule payment,2026-07-05 12:41,2026-07-05 12:50,Yousef,Treasury,Medium,Portal
+INV-000105,Pay supplier,2026-07-05 13:45,2026-07-05 13:49,Yousef,Treasury,Medium,Portal
+INV-000106,Register invoice,2026-07-06 07:45,2026-07-06 07:56,Sara,Accounts Payable,High,Email
+INV-000106,Match with purchase order,2026-07-06 09:06,2026-07-06 09:21,Sara,Accounts Payable,High,Email
+INV-000106,Clarify with supplier,2026-07-06 11:10,2026-07-06 11:50,Sara,Accounts Payable,High,Email
+INV-000106,Match with purchase order,2026-07-07 07:30,2026-07-07 07:53,Sara,Accounts Payable,High,Email
+INV-000106,Approve invoice,2026-07-09 07:30,2026-07-09 07:41,Khalid,Finance,High,Email
+INV-000106,Schedule payment,2026-07-09 07:42,2026-07-09 07:54,Noor,Treasury,High,Email
+INV-000106,Pay supplier,2026-07-09 08:08,2026-07-09 08:13,Yousef,Treasury,High,Email
+INV-000107,Register invoice,2026-07-07 08:04,2026-07-07 08:23,Huda,Accounts Payable,Low,Portal
+INV-000107,Match with purchase order,2026-07-07 09:09,2026-07-07 09:22,Huda,Accounts Payable,Low,Portal
+INV-000107,Clarify with supplier,2026-07-07 11:50,2026-07-07 12:19,Huda,Accounts Payable,Low,Portal
+INV-000107,Match with purchase order,2026-07-08 07:30,2026-07-08 07:51,Huda,Accounts Payable,Low,Portal
+INV-000107,Clarify with supplier,2026-07-08 07:57,2026-07-08 08:34,Huda,Accounts Payable,Low,Portal
+INV-000107,Match with purchase order,2026-07-09 07:30,2026-07-09 07:49,Huda,Accounts Payable,Low,Portal
+INV-000107,Approve invoice,2026-07-09 12:15,2026-07-09 12:27,Fatima,Finance,Low,Portal
+INV-000107,Schedule payment,2026-07-09 13:02,2026-07-09 13:16,Yousef,Treasury,Low,Portal
+INV-000107,Pay supplier,2026-07-09 13:26,2026-07-09 13:30,Noor,Treasury,Low,Portal
+INV-000108,Register invoice,2026-07-08 07:47,2026-07-08 08:04,Sara,Accounts Payable,Low,Email
+INV-000108,Match with purchase order,2026-07-08 08:37,2026-07-08 08:56,Sara,Accounts Payable,Low,Email
+INV-000108,Approve invoice,2026-07-09 07:30,2026-07-09 07:40,Khalid,Finance,Low,Email
+INV-000108,Schedule payment,2026-07-09 07:43,2026-07-09 07:49,Yousef,Treasury,Low,Email
+INV-000108,Pay supplier,2026-07-09 10:05,2026-07-09 10:10,Noor,Treasury,Low,Email
+INV-000109,Register invoice,2026-07-09 07:30,2026-07-09 07:42,Huda,Accounts Payable,Medium,Portal
+INV-000109,Match with purchase order,2026-07-09 08:26,2026-07-09 08:44,Huda,Accounts Payable,Medium,Portal
+INV-000109,Approve invoice,2026-07-12 07:30,2026-07-12 07:41,Fatima,Finance,Medium,Portal
+INV-000109,Schedule payment,2026-07-12 10:05,2026-07-12 10:18,Noor,Treasury,Medium,Portal
+INV-000109,Pay supplier,2026-07-12 12:09,2026-07-12 12:13,Noor,Treasury,Medium,Portal
+INV-000110,Register invoice,2026-07-09 12:43,2026-07-09 12:59,Sara,Accounts Payable,High,Email
+INV-000110,Match with purchase order,2026-07-09 13:51,2026-07-09 14:10,Sara,Accounts Payable,High,Email
+INV-000110,Approve invoice,2026-07-12 07:30,2026-07-12 07:36,Fatima,Finance,High,Email
+INV-000110,Schedule payment,2026-07-12 08:20,2026-07-12 08:30,Noor,Treasury,High,Email
+INV-000110,Pay supplier,2026-07-12 11:39,2026-07-12 11:43,Noor,Treasury,High,Email
+INV-000111,Register invoice,2026-07-12 08:04,2026-07-12 08:15,Huda,Accounts Payable,Low,Email
+INV-000111,Match with purchase order,2026-07-12 09:22,2026-07-12 09:41,Huda,Accounts Payable,Low,Email
+INV-000111,Clarify with supplier,2026-07-12 12:57,2026-07-12 13:27,Huda,Accounts Payable,Low,Email
+INV-000111,Match with purchase order,2026-07-13 07:30,2026-07-13 07:47,Huda,Accounts Payable,Low,Email
+INV-000111,Approve invoice,2026-07-13 13:04,2026-07-13 13:15,Fatima,Finance,Low,Email
+INV-000111,Schedule payment,2026-07-13 13:31,2026-07-13 13:41,Yousef,Treasury,Low,Email
+INV-000111,Pay supplier,2026-07-14 07:30,2026-07-14 07:33,Yousef,Treasury,Low,Email
+INV-000112,Register invoice,2026-07-12 08:08,2026-07-12 08:27,Omar,Accounts Payable,Low,Email
+INV-000112,Match with purchase order,2026-07-12 09:29,2026-07-12 09:55,Omar,Accounts Payable,Low,Email
+INV-000112,Clarify with supplier,2026-07-12 11:41,2026-07-12 12:40,Omar,Accounts Payable,Low,Email
+INV-000112,Match with purchase order,2026-07-12 14:42,2026-07-12 15:07,Omar,Accounts Payable,Low,Email
+INV-000112,Approve invoice,2026-07-13 07:30,2026-07-13 07:39,Khalid,Finance,Low,Email
+INV-000112,Schedule payment,2026-07-13 07:41,2026-07-13 07:51,Yousef,Treasury,Low,Email
+INV-000112,Pay supplier,2026-07-13 09:42,2026-07-13 09:47,Noor,Treasury,Low,Email
+INV-000113,Register invoice,2026-07-12 07:41,2026-07-12 07:53,Omar,Accounts Payable,Low,Email
+INV-000113,Schedule payment,2026-07-12 08:26,2026-07-12 08:37,Yousef,Treasury,Low,Email
+INV-000113,Approve invoice,2026-07-12 12:15,2026-07-12 12:22,Khalid,Finance,Low,Email
+INV-000113,Pay supplier,2026-07-13 07:30,2026-07-13 07:34,Yousef,Treasury,Low,Email
+INV-000114,Register invoice,2026-07-13 07:30,2026-07-13 07:50,Omar,Accounts Payable,Low,Email
+INV-000114,Match with purchase order,2026-07-13 09:50,2026-07-13 10:13,Omar,Accounts Payable,Low,Email
+INV-000114,Approve invoice,2026-07-14 07:30,2026-07-14 07:38,Fatima,Finance,Low,Email
+INV-000114,Schedule payment,2026-07-14 09:35,2026-07-14 09:49,Yousef,Treasury,Low,Email
+INV-000114,Pay supplier,2026-07-14 11:09,2026-07-14 11:15,Noor,Treasury,Low,Email
+INV-000115,Register invoice,2026-07-14 07:55,2026-07-14 08:15,Omar,Accounts Payable,Low,Portal
+INV-000115,Match with purchase order,2026-07-14 08:16,2026-07-14 08:41,Omar,Accounts Payable,Low,Portal
+INV-000115,Clarify with supplier,2026-07-14 11:49,2026-07-14 12:49,Omar,Accounts Payable,Low,Portal
+INV-000115,Match with purchase order,2026-07-15 07:30,2026-07-15 07:47,Omar,Accounts Payable,Low,Portal
+INV-000115,Approve invoice,2026-07-15 14:20,2026-07-15 14:26,Khalid,Finance,Low,Portal
+INV-000115,Schedule payment,2026-07-15 15:01,2026-07-15 15:09,Yousef,Treasury,Low,Portal
+INV-000115,Pay supplier,2026-07-16 07:30,2026-07-16 07:34,Noor,Treasury,Low,Portal
+INV-000116,Register invoice,2026-07-15 07:31,2026-07-15 07:51,Ali,Accounts Payable,Medium,Portal
+INV-000116,Match with purchase order,2026-07-15 08:02,2026-07-15 08:20,Ali,Accounts Payable,Medium,Portal
+INV-000116,Approve invoice,2026-07-16 07:30,2026-07-16 07:40,Fatima,Finance,Medium,Portal
+INV-000116,Schedule payment,2026-07-16 07:54,2026-07-16 08:02,Noor,Treasury,Medium,Portal
+INV-000116,Pay supplier,2026-07-16 13:37,2026-07-16 13:42,Noor,Treasury,Medium,Portal
+INV-000117,Register invoice,2026-07-16 07:45,2026-07-16 08:03,Sara,Accounts Payable,Medium,Portal
+INV-000117,Match with purchase order,2026-07-16 08:22,2026-07-16 08:37,Sara,Accounts Payable,Medium,Portal
+INV-000117,Approve invoice,2026-07-19 07:30,2026-07-19 07:41,Khalid,Finance,Medium,Portal
+INV-000117,Schedule payment,2026-07-19 09:14,2026-07-19 09:23,Noor,Treasury,Medium,Portal
+INV-000117,Pay supplier,2026-07-20 07:30,2026-07-20 07:36,Noor,Treasury,Medium,Portal
+INV-000118,Register invoice,2026-07-19 07:58,2026-07-19 08:17,Omar,Accounts Payable,Medium,Email
+INV-000118,Match with purchase order,2026-07-19 10:30,2026-07-19 10:51,Omar,Accounts Payable,Medium,Email
+INV-000118,Clarify with supplier,2026-07-19 10:54,2026-07-19 11:27,Omar,Accounts Payable,Medium,Email
+INV-000118,Match with purchase order,2026-07-19 12:49,2026-07-19 13:14,Omar,Accounts Payable,Medium,Email
+INV-000118,Approve invoice,2026-07-20 07:30,2026-07-20 07:43,Fatima,Finance,Medium,Email
+INV-000118,Schedule payment,2026-07-20 07:44,2026-07-20 07:52,Noor,Treasury,Medium,Email
+INV-000118,Pay supplier,2026-07-20 10:09,2026-07-20 10:15,Yousef,Treasury,Medium,Email
+INV-000119,Register invoice,2026-07-19 07:35,2026-07-19 07:50,Omar,Accounts Payable,Low,Email
+INV-000119,Match with purchase order,2026-07-19 08:16,2026-07-19 08:38,Omar,Accounts Payable,Low,Email
+INV-000119,Approve invoice,2026-07-20 07:30,2026-07-20 07:37,Khalid,Finance,Low,Email
+INV-000119,Schedule payment,2026-07-20 08:03,2026-07-20 08:13,Noor,Treasury,Low,Email
+INV-000119,Pay supplier,2026-07-20 10:55,2026-07-20 10:59,Yousef,Treasury,Low,Email
+INV-000120,Register invoice,2026-07-19 07:31,2026-07-19 07:51,Ali,Accounts Payable,Low,Paper
+INV-000120,Match with purchase order,2026-07-19 08:27,2026-07-19 09:03,Ali,Accounts Payable,Low,Paper
+INV-000120,Approve invoice,2026-07-20 07:30,2026-07-20 07:37,Fatima,Finance,Low,Paper
+INV-000120,Schedule payment,2026-07-20 08:31,2026-07-20 08:42,Yousef,Treasury,Low,Paper
+INV-000120,Pay supplier,2026-07-20 08:54,2026-07-20 09:01,Yousef,Treasury,Low,Paper
+INV-000121,Register invoice,2026-07-19 14:10,2026-07-19 14:24,Huda,Accounts Payable,Medium,Portal
+INV-000121,Match with purchase order,2026-07-20 07:30,2026-07-20 07:46,Huda,Accounts Payable,Medium,Portal
+INV-000121,Approve invoice,2026-07-21 07:30,2026-07-21 07:37,Khalid,Finance,Medium,Portal
+INV-000121,Schedule payment,2026-07-21 07:45,2026-07-21 07:51,Noor,Treasury,Medium,Portal
+INV-000121,Pay supplier,2026-07-21 12:16,2026-07-21 12:22,Noor,Treasury,Medium,Portal
+INV-000122,Register invoice,2026-07-20 11:17,2026-07-20 11:37,Omar,Accounts Payable,Medium,Email
+INV-000122,Match with purchase order,2026-07-20 11:50,2026-07-20 12:03,Omar,Accounts Payable,Medium,Email
+INV-000122,Approve invoice,2026-07-21 07:30,2026-07-21 07:37,Khalid,Finance,Medium,Email
+INV-000122,Schedule payment,2026-07-21 08:04,2026-07-21 08:13,Noor,Treasury,Medium,Email
+INV-000122,Pay supplier,2026-07-21 10:06,2026-07-21 10:09,Noor,Treasury,Medium,Email
+INV-000123,Register invoice,2026-07-21 09:36,2026-07-21 09:50,Ali,Accounts Payable,Low,Email
+INV-000123,Match with purchase order,2026-07-21 11:09,2026-07-21 11:25,Ali,Accounts Payable,Low,Email
+INV-000123,Approve invoice,2026-07-22 07:30,2026-07-22 07:41,Khalid,Finance,Low,Email
+INV-000123,Schedule payment,2026-07-22 08:02,2026-07-22 08:15,Yousef,Treasury,Low,Email
+INV-000123,Pay supplier,2026-07-22 09:27,2026-07-22 09:31,Yousef,Treasury,Low,Email
+INV-000124,Register invoice,2026-07-22 07:53,2026-07-22 08:08,Ali,Accounts Payable,Low,Portal
+INV-000124,Match with purchase order,2026-07-22 08:38,2026-07-22 08:58,Ali,Accounts Payable,Low,Portal
+INV-000124,Approve invoice,2026-07-23 07:30,2026-07-23 07:43,Fatima,Finance,Low,Portal
+INV-000124,Schedule payment,2026-07-23 07:58,2026-07-23 08:05,Yousef,Treasury,Low,Portal
+INV-000124,Pay supplier,2026-07-26 07:30,2026-07-26 07:36,Noor,Treasury,Low,Portal
+INV-000125,Register invoice,2026-07-23 07:41,2026-07-23 07:55,Sara,Accounts Payable,Medium,Portal
+INV-000125,Match with purchase order,2026-07-23 08:12,2026-07-23 08:29,Sara,Accounts Payable,Medium,Portal
+INV-000125,Approve invoice,2026-07-23 15:01,2026-07-23 15:11,Fatima,Finance,Medium,Portal
+INV-000125,Schedule payment,2026-07-26 07:30,2026-07-26 07:39,Yousef,Treasury,Medium,Portal
+INV-000125,Pay supplier,2026-07-26 09:01,2026-07-26 09:04,Noor,Treasury,Medium,Portal
+INV-000126,Register invoice,2026-07-26 08:16,2026-07-26 08:33,Huda,Accounts Payable,Medium,Portal
+INV-000126,Match with purchase order,2026-07-26 09:47,2026-07-26 10:13,Huda,Accounts Payable,Medium,Portal
+INV-000126,Approve invoice,2026-07-26 13:37,2026-07-26 13:43,Khalid,Finance,Medium,Portal
+INV-000126,Schedule payment,2026-07-27 07:30,2026-07-27 07:43,Yousef,Treasury,Medium,Portal
+INV-000126,Pay supplier,2026-07-27 08:25,2026-07-27 08:30,Noor,Treasury,Medium,Portal
+INV-000127,Register invoice,2026-07-26 07:36,2026-07-26 07:52,Sara,Accounts Payable,Medium,Email
+INV-000127,Match with purchase order,2026-07-26 08:07,2026-07-26 08:29,Sara,Accounts Payable,Medium,Email
+INV-000127,Approve invoice,2026-07-27 07:30,2026-07-27 07:38,Khalid,Finance,Medium,Email
+INV-000127,Schedule payment,2026-07-27 08:24,2026-07-27 08:37,Noor,Treasury,Medium,Email
+INV-000127,Pay supplier,2026-07-27 08:47,2026-07-27 08:50,Yousef,Treasury,Medium,Email
+INV-000128,Register invoice,2026-07-26 07:30,2026-07-26 07:44,Sara,Accounts Payable,Low,Paper
+INV-000128,Match with purchase order,2026-07-26 09:11,2026-07-26 09:48,Sara,Accounts Payable,Low,Paper
+INV-000128,Approve invoice,2026-07-27 07:30,2026-07-27 07:42,Fatima,Finance,Low,Paper
+INV-000128,Schedule payment,2026-07-27 08:09,2026-07-27 08:22,Noor,Treasury,Low,Paper
+INV-000128,Pay supplier,2026-07-27 10:36,2026-07-27 10:40,Noor,Treasury,Low,Paper
+INV-000129,Register invoice,2026-07-27 07:39,2026-07-27 07:52,Ali,Accounts Payable,Low,Portal
+INV-000129,Match with purchase order,2026-07-27 08:19,2026-07-27 08:43,Ali,Accounts Payable,Low,Portal
+INV-000129,Clarify with supplier,2026-07-27 08:44,2026-07-27 09:11,Ali,Accounts Payable,Low,Portal
+INV-000129,Match with purchase order,2026-07-27 12:42,2026-07-27 13:01,Ali,Accounts Payable,Low,Portal
+INV-000129,Approve invoice,2026-07-28 07:30,2026-07-28 07:41,Khalid,Finance,Low,Portal
+INV-000129,Schedule payment,2026-07-28 08:11,2026-07-28 08:21,Yousef,Treasury,Low,Portal
+INV-000129,Pay supplier,2026-07-28 12:09,2026-07-28 12:13,Yousef,Treasury,Low,Portal
+INV-000130,Register invoice,2026-07-28 07:48,2026-07-28 07:57,Sara,Accounts Payable,Low,Email
+INV-000130,Match with purchase order,2026-07-28 08:03,2026-07-28 08:23,Sara,Accounts Payable,Low,Email
+INV-000130,Approve invoice,2026-07-28 09:56,2026-07-28 10:02,Fatima,Finance,Low,Email
+INV-000130,Schedule payment,2026-07-28 10:04,2026-07-28 10:15,Noor,Treasury,Low,Email
+INV-000130,Pay supplier,2026-07-28 10:54,2026-07-28 10:58,Yousef,Treasury,Low,Email
+INV-000131,Register invoice,2026-07-29 07:30,2026-07-29 07:43,Huda,Accounts Payable,High,Portal
+INV-000131,Match with purchase order,2026-07-29 08:36,2026-07-29 09:01,Huda,Accounts Payable,High,Portal
+INV-000131,Approve invoice,2026-08-02 07:30,2026-08-02 07:41,Fatima,Finance,High,Portal
+INV-000131,Schedule payment,2026-08-02 08:04,2026-08-02 08:16,Noor,Treasury,High,Portal
+INV-000131,Pay supplier,2026-08-03 07:30,2026-08-03 07:33,Noor,Treasury,High,Portal
+INV-000132,Register invoice,2026-07-29 14:01,2026-07-29 14:19,Omar,Accounts Payable,Medium,Email
+INV-000132,Approve invoice,2026-07-30 07:30,2026-07-30 07:39,Khalid,Finance,Medium,Email
+INV-000132,Schedule payment,2026-07-30 07:50,2026-07-30 07:58,Yousef,Treasury,Medium,Email
+INV-000132,Pay supplier,2026-07-30 08:59,2026-07-30 09:02,Yousef,Treasury,Medium,Email
+INV-000133,Register invoice,2026-07-30 11:41,2026-07-30 11:55,Huda,Accounts Payable,Medium,Portal
+INV-000133,Match with purchase order,2026-07-30 11:59,2026-07-30 12:22,Huda,Accounts Payable,Medium,Portal
+INV-000133,Clarify with supplier,2026-07-30 13:02,2026-07-30 13:48,Huda,Accounts Payable,Medium,Portal
+INV-000133,Match with purchase order,2026-08-02 07:30,2026-08-02 07:56,Huda,Accounts Payable,Medium,Portal
+INV-000133,Clarify with supplier,2026-08-02 10:25,2026-08-02 11:16,Huda,Accounts Payable,Medium,Portal
+INV-000133,Match with purchase order,2026-08-02 13:25,2026-08-02 13:45,Huda,Accounts Payable,Medium,Portal
+INV-000133,Approve invoice,2026-08-04 07:30,2026-08-04 07:40,Khalid,Finance,Medium,Portal
+INV-000133,Schedule payment,2026-08-04 07:52,2026-08-04 08:06,Noor,Treasury,Medium,Portal
+INV-000133,Pay supplier,2026-08-05 07:30,2026-08-05 07:33,Noor,Treasury,Medium,Portal
+INV-000134,Register invoice,2026-08-02 08:27,2026-08-02 08:46,Huda,Accounts Payable,Medium,Portal
+INV-000134,Match with purchase order,2026-08-02 09:29,2026-08-02 09:56,Huda,Accounts Payable,Medium,Portal
+INV-000134,Approve invoice,2026-08-02 13:21,2026-08-02 13:33,Khalid,Finance,Medium,Portal
+INV-000134,Schedule payment,2026-08-02 14:11,2026-08-02 14:19,Yousef,Treasury,Medium,Portal
+INV-000134,Pay supplier,2026-08-03 07:30,2026-08-03 07:36,Noor,Treasury,Medium,Portal
+INV-000135,Register invoice,2026-08-02 07:30,2026-08-02 07:48,Sara,Accounts Payable,High,Paper
+INV-000135,Match with purchase order,2026-08-02 08:14,2026-08-02 08:56,Sara,Accounts Payable,High,Paper
+INV-000135,Clarify with supplier,2026-08-02 09:11,2026-08-02 09:59,Sara,Accounts Payable,High,Paper
+INV-000135,Match with purchase order,2026-08-02 10:03,2026-08-02 10:16,Sara,Accounts Payable,High,Paper
+INV-000135,Approve invoice,2026-08-05 07:30,2026-08-05 07:43,Fatima,Finance,High,Paper
+INV-000135,Schedule payment,2026-08-05 08:32,2026-08-05 08:44,Noor,Treasury,High,Paper
+INV-000135,Pay supplier,2026-08-06 07:30,2026-08-06 07:34,Noor,Treasury,High,Paper
+INV-000136,Register invoice,2026-08-02 07:32,2026-08-02 07:41,Omar,Accounts Payable,Low,Paper
+INV-000136,Match with purchase order,2026-08-02 07:43,2026-08-02 08:11,Omar,Accounts Payable,Low,Paper
+INV-000136,Approve invoice,2026-08-02 12:48,2026-08-02 12:59,Fatima,Finance,Low,Paper
+INV-000136,Schedule payment,2026-08-03 07:30,2026-08-03 07:36,Noor,Treasury,Low,Paper
+INV-000136,Pay supplier,2026-08-03 10:18,2026-08-03 10:21,Noor,Treasury,Low,Paper
+INV-000137,Register invoice,2026-08-03 07:33,2026-08-03 07:45,Ali,Accounts Payable,Low,Portal
+INV-000137,Match with purchase order,2026-08-03 09:28,2026-08-03 09:42,Ali,Accounts Payable,Low,Portal
+INV-000137,Approve invoice,2026-08-03 11:13,2026-08-03 11:25,Fatima,Finance,Low,Portal
+INV-000137,Schedule payment,2026-08-03 12:30,2026-08-03 12:41,Yousef,Treasury,Low,Portal
+INV-000137,Pay supplier,2026-08-03 15:13,2026-08-03 15:17,Noor,Treasury,Low,Portal
+INV-000138,Register invoice,2026-08-04 07:36,2026-08-04 07:47,Omar,Accounts Payable,Low,Paper
+INV-000138,Match with purchase order,2026-08-04 07:55,2026-08-04 08:20,Omar,Accounts Payable,Low,Paper
+INV-000138,Clarify with supplier,2026-08-04 12:38,2026-08-04 13:25,Omar,Accounts Payable,Low,Paper
+INV-000138,Match with purchase order,2026-08-04 15:02,2026-08-04 15:14,Omar,Accounts Payable,Low,Paper
+INV-000138,Approve invoice,2026-08-05 07:30,2026-08-05 07:37,Fatima,Finance,Low,Paper
+INV-000138,Schedule payment,2026-08-05 07:51,2026-08-05 08:00,Noor,Treasury,Low,Paper
+INV-000138,Pay supplier,2026-08-05 13:22,2026-08-05 13:26,Noor,Treasury,Low,Paper
+INV-000139,Register invoice,2026-08-05 08:38,2026-08-05 08:48,Sara,Accounts Payable,High,Portal
+INV-000139,Match with purchase order,2026-08-05 09:59,2026-08-05 10:23,Sara,Accounts Payable,High,Portal
+INV-000139,Approve invoice,2026-08-06 07:30,2026-08-06 07:43,Khalid,Finance,High,Portal
+INV-000139,Schedule payment,2026-08-06 07:48,2026-08-06 07:56,Noor,Treasury,High,Portal
+INV-000139,Pay supplier,2026-08-06 13:59,2026-08-06 14:02,Yousef,Treasury,High,Portal
+INV-000140,Register invoice,2026-08-06 07:44,2026-08-06 07:55,Omar,Accounts Payable,High,Portal
+INV-000140,Match with purchase order,2026-08-06 09:37,2026-08-06 09:56,Omar,Accounts Payable,High,Portal
+INV-000140,Approve invoice,2026-08-09 07:30,2026-08-09 07:43,Khalid,Finance,High,Portal
+INV-000140,Schedule payment,2026-08-09 11:20,2026-08-09 11:32,Noor,Treasury,High,Portal
+INV-000140,Pay supplier,2026-08-10 07:30,2026-08-10 07:34,Yousef,Treasury,High,Portal
+INV-000141,Register invoice,2026-08-09 07:52,2026-08-09 08:07,Sara,Accounts Payable,High,Portal
+INV-000141,Match with purchase order,2026-08-09 08:36,2026-08-09 09:02,Sara,Accounts Payable,High,Portal
+INV-000141,Clarify with supplier,2026-08-09 10:00,2026-08-09 10:54,Sara,Accounts Payable,High,Portal
+INV-000141,Match with purchase order,2026-08-09 11:31,2026-08-09 11:46,Sara,Accounts Payable,High,Portal
+INV-000141,Approve invoice,2026-08-16 07:30,2026-08-16 07:41,Khalid,Finance,High,Portal
+INV-000141,Schedule payment,2026-08-16 08:11,2026-08-16 08:23,Yousef,Treasury,High,Portal
+INV-000141,Pay supplier,2026-08-16 13:43,2026-08-16 13:48,Noor,Treasury,High,Portal
+INV-000142,Register invoice,2026-08-09 07:34,2026-08-09 07:45,Huda,Accounts Payable,Medium,Portal
+INV-000142,Match with purchase order,2026-08-09 07:52,2026-08-09 08:08,Huda,Accounts Payable,Medium,Portal
+INV-000142,Clarify with supplier,2026-08-09 08:57,2026-08-09 09:45,Huda,Accounts Payable,Medium,Portal
+INV-000142,Match with purchase order,2026-08-09 11:30,2026-08-09 11:51,Huda,Accounts Payable,Medium,Portal
+INV-000142,Approve invoice,2026-08-09 14:40,2026-08-09 14:53,Khalid,Finance,Medium,Portal
+INV-000142,Schedule payment,2026-08-10 07:30,2026-08-10 07:41,Noor,Treasury,Medium,Portal
+INV-000142,Pay supplier,2026-08-10 07:44,2026-08-10 07:49,Noor,Treasury,Medium,Portal
+INV-000143,Register invoice,2026-08-09 07:33,2026-08-09 07:52,Sara,Accounts Payable,Low,Paper
+INV-000143,Match with purchase order,2026-08-09 08:10,2026-08-09 08:55,Sara,Accounts Payable,Low,Paper
+INV-000143,Approve invoice,2026-08-10 07:30,2026-08-10 07:40,Fatima,Finance,Low,Paper
+INV-000143,Schedule payment,2026-08-10 08:10,2026-08-10 08:16,Yousef,Treasury,Low,Paper
+INV-000143,Pay supplier,2026-08-11 07:30,2026-08-11 07:34,Noor,Treasury,Low,Paper
+INV-000144,Register invoice,2026-08-09 11:47,2026-08-09 12:01,Omar,Accounts Payable,Medium,Portal
+INV-000144,Approve invoice,2026-08-10 07:30,2026-08-10 07:42,Fatima,Finance,Medium,Portal
+INV-000144,Schedule payment,2026-08-10 08:45,2026-08-10 08:52,Noor,Treasury,Medium,Portal
+INV-000144,Pay supplier,2026-08-11 07:30,2026-08-11 07:36,Yousef,Treasury,Medium,Portal
+INV-000145,Register invoice,2026-08-10 09:05,2026-08-10 09:26,Omar,Accounts Payable,Low,Paper
+INV-000145,Match with purchase order,2026-08-10 09:54,2026-08-10 10:37,Omar,Accounts Payable,Low,Paper
+INV-000145,Clarify with supplier,2026-08-10 12:42,2026-08-10 13:27,Omar,Accounts Payable,Low,Paper
+INV-000145,Match with purchase order,2026-08-11 07:30,2026-08-11 07:46,Omar,Accounts Payable,Low,Paper
+INV-000145,Schedule payment,2026-08-11 10:02,2026-08-11 10:12,Yousef,Treasury,Low,Paper
+INV-000145,Approve invoice,2026-08-11 13:45,2026-08-11 13:57,Khalid,Finance,Low,Paper
+INV-000145,Pay supplier,2026-08-11 14:33,2026-08-11 14:36,Noor,Treasury,Low,Paper
+INV-000146,Register invoice,2026-08-11 07:45,2026-08-11 07:57,Sara,Accounts Payable,Low,Portal
+INV-000146,Match with purchase order,2026-08-11 11:22,2026-08-11 11:35,Sara,Accounts Payable,Low,Portal
+INV-000146,Approve invoice,2026-08-11 14:13,2026-08-11 14:24,Khalid,Finance,Low,Portal
+INV-000146,Schedule payment,2026-08-11 15:05,2026-08-11 15:16,Noor,Treasury,Low,Portal
+INV-000146,Pay supplier,2026-08-12 07:30,2026-08-12 07:34,Yousef,Treasury,Low,Portal
+INV-000147,Register invoice,2026-08-12 07:44,2026-08-12 07:58,Huda,Accounts Payable,Medium,Portal
+INV-000147,Match with purchase order,2026-08-12 08:23,2026-08-12 08:42,Huda,Accounts Payable,Medium,Portal
+INV-000147,Clarify with supplier,2026-08-12 10:38,2026-08-12 11:09,Huda,Accounts Payable,Medium,Portal
+INV-000147,Match with purchase order,2026-08-12 12:20,2026-08-12 12:39,Huda,Accounts Payable,Medium,Portal
+INV-000147,Approve invoice,2026-08-16 07:30,2026-08-16 07:36,Fatima,Finance,Medium,Portal
+INV-000147,Schedule payment,2026-08-16 07:57,2026-08-16 08:04,Noor,Treasury,Medium,Portal
+INV-000147,Pay supplier,2026-08-16 13:23,2026-08-16 13:29,Noor,Treasury,Medium,Portal
+INV-000148,Register invoice,2026-08-13 07:30,2026-08-13 07:48,Ali,Accounts Payable,Low,Portal
+INV-000148,Match with purchase order,2026-08-13 07:57,2026-08-13 08:24,Ali,Accounts Payable,Low,Portal
+INV-000148,Clarify with supplier,2026-08-13 10:21,2026-08-13 11:16,Ali,Accounts Payable,Low,Portal
+INV-000148,Match with purchase order,2026-08-13 12:24,2026-08-13 12:43,Ali,Accounts Payable,Low,Portal
+INV-000148,Approve invoice,2026-08-16 07:30,2026-08-16 07:39,Fatima,Finance,Low,Portal
+INV-000148,Schedule payment,2026-08-16 07:45,2026-08-16 07:57,Noor,Treasury,Low,Portal
+INV-000148,Pay supplier,2026-08-16 08:15,2026-08-16 08:19,Noor,Treasury,Low,Portal
+INV-000149,Register invoice,2026-08-16 07:34,2026-08-16 07:47,Ali,Accounts Payable,Low,Portal
+INV-000149,Match with purchase order,2026-08-16 08:14,2026-08-16 08:42,Ali,Accounts Payable,Low,Portal
+INV-000149,Approve invoice,2026-08-16 10:31,2026-08-16 10:42,Khalid,Finance,Low,Portal
+INV-000149,Schedule payment,2026-08-16 12:24,2026-08-16 12:35,Noor,Treasury,Low,Portal
+INV-000149,Pay supplier,2026-08-17 07:30,2026-08-17 07:35,Yousef,Treasury,Low,Portal
+INV-000150,Register invoice,2026-08-16 08:10,2026-08-16 08:30,Huda,Accounts Payable,Medium,Portal
+INV-000150,Match with purchase order,2026-08-16 09:49,2026-08-16 10:16,Huda,Accounts Payable,Medium,Portal
+INV-000150,Approve invoice,2026-08-16 15:29,2026-08-16 15:36,Fatima,Finance,Medium,Portal
+INV-000150,Schedule payment,2026-08-17 07:30,2026-08-17 07:37,Yousef,Treasury,Medium,Portal
+INV-000150,Pay supplier,2026-08-18 07:30,2026-08-18 07:33,Yousef,Treasury,Medium,Portal
+INV-000151,Register invoice,2026-08-16 07:45,2026-08-16 07:56,Ali,Accounts Payable,High,Portal
+INV-000151,Match with purchase order,2026-08-16 11:26,2026-08-16 11:42,Ali,Accounts Payable,High,Portal
+INV-000151,Clarify with supplier,2026-08-16 14:03,2026-08-16 14:56,Ali,Accounts Payable,High,Portal
+INV-000151,Match with purchase order,2026-08-17 07:30,2026-08-17 07:43,Ali,Accounts Payable,High,Portal
+INV-000151,Approve invoice,2026-08-19 07:30,2026-08-19 07:36,Khalid,Finance,High,Portal
+INV-000151,Schedule payment,2026-08-19 08:24,2026-08-19 08:32,Yousef,Treasury,High,Portal
+INV-000151,Pay supplier,2026-08-19 11:24,2026-08-19 11:29,Yousef,Treasury,High,Portal
+INV-000152,Register invoice,2026-08-17 07:42,2026-08-17 07:54,Huda,Accounts Payable,Low,Email
+INV-000152,Match with purchase order,2026-08-17 08:02,2026-08-17 08:26,Huda,Accounts Payable,Low,Email
+INV-000152,Approve invoice,2026-08-18 07:30,2026-08-18 07:38,Fatima,Finance,Low,Email
+INV-000152,Schedule payment,2026-08-18 08:58,2026-08-18 09:11,Noor,Treasury,Low,Email
+INV-000152,Pay supplier,2026-08-19 14:09,2026-08-19 14:14,Noor,Treasury,Low,Email
+INV-000153,Register invoice,2026-08-18 07:38,2026-08-18 07:58,Huda,Accounts Payable,Medium,Email
+INV-000153,Match with purchase order,2026-08-18 09:42,2026-08-18 09:58,Huda,Accounts Payable,Medium,Email
+INV-000153,Approve invoice,2026-08-19 07:44,2026-08-19 07:51,Khalid,Finance,Medium,Email
+INV-000153,Schedule payment,2026-08-19 09:15,2026-08-19 09:22,Noor,Treasury,Medium,Email
+INV-000153,Pay supplier,2026-08-19 10:28,2026-08-19 10:33,Yousef,Treasury,Medium,Email
+INV-000154,Register invoice,2026-08-18 14:16,2026-08-18 14:28,Omar,Accounts Payable,Low,Portal
+INV-000154,Match with purchase order,2026-08-18 15:14,2026-08-18 15:29,Omar,Accounts Payable,Low,Portal
+INV-000154,Approve invoice,2026-08-19 07:30,2026-08-19 07:40,Khalid,Finance,Low,Portal
+INV-000154,Schedule payment,2026-08-19 08:09,2026-08-19 08:23,Yousef,Treasury,Low,Portal
+INV-000154,Pay supplier,2026-08-20 07:30,2026-08-20 07:34,Noor,Treasury,Low,Portal
+INV-000155,Register invoice,2026-08-19 13:03,2026-08-19 13:16,Ali,Accounts Payable,Low,Portal
+INV-000155,Approve invoice,2026-08-20 07:30,2026-08-20 07:43,Khalid,Finance,Low,Portal
+INV-000155,Schedule payment,2026-08-20 08:35,2026-08-20 08:41,Noor,Treasury,Low,Portal
+INV-000155,Pay supplier,2026-08-20 13:55,2026-08-20 14:00,Yousef,Treasury,Low,Portal
+INV-000156,Register invoice,2026-08-20 09:23,2026-08-20 09:34,Ali,Accounts Payable,Medium,Portal
+INV-000156,Match with purchase order,2026-08-20 10:46,2026-08-20 11:12,Ali,Accounts Payable,Medium,Portal
+INV-000156,Approve invoice,2026-08-23 07:30,2026-08-23 07:39,Fatima,Finance,Medium,Portal
+INV-000156,Schedule payment,2026-08-23 07:41,2026-08-23 07:52,Yousef,Treasury,Medium,Portal
+INV-000156,Pay supplier,2026-08-23 09:08,2026-08-23 09:13,Yousef,Treasury,Medium,Portal
+INV-000157,Register invoice,2026-08-23 07:43,2026-08-23 07:59,Omar,Accounts Payable,Medium,Email
+INV-000157,Match with purchase order,2026-08-23 08:30,2026-08-23 08:56,Omar,Accounts Payable,Medium,Email
+INV-000157,Approve invoice,2026-08-23 12:59,2026-08-23 13:12,Khalid,Finance,Medium,Email
+INV-000157,Schedule payment,2026-08-23 13:40,2026-08-23 13:46,Yousef,Treasury,Medium,Email
+INV-000157,Pay supplier,2026-08-24 07:30,2026-08-24 07:35,Noor,Treasury,Medium,Email
+INV-000158,Register invoice,2026-08-23 07:40,2026-08-23 08:00,Huda,Accounts Payable,Low,Portal
+INV-000158,Match with purchase order,2026-08-23 08:31,2026-08-23 08:46,Huda,Accounts Payable,Low,Portal
+INV-000158,Approve invoice,2026-08-23 08:55,2026-08-23 09:08,Khalid,Finance,Low,Portal
+INV-000158,Schedule payment,2026-08-23 10:20,2026-08-23 10:33,Noor,Treasury,Low,Portal
+INV-000158,Pay supplier,2026-08-23 14:50,2026-08-23 14:53,Noor,Treasury,Low,Portal
+INV-000159,Register invoice,2026-08-23 07:53,2026-08-23 08:10,Huda,Accounts Payable,Low,Email
+INV-000159,Match with purchase order,2026-08-23 08:35,2026-08-23 08:49,Huda,Accounts Payable,Low,Email
+INV-000159,Clarify with supplier,2026-08-23 10:12,2026-08-23 11:14,Huda,Accounts Payable,Low,Email
+INV-000159,Match with purchase order,2026-08-24 07:30,2026-08-24 07:54,Huda,Accounts Payable,Low,Email
+INV-000159,Approve invoice,2026-08-24 09:53,2026-08-24 10:03,Khalid,Finance,Low,Email
+INV-000159,Schedule payment,2026-08-24 11:47,2026-08-24 11:54,Noor,Treasury,Low,Email
+INV-000159,Pay supplier,2026-08-25 07:30,2026-08-25 07:33,Yousef,Treasury,Low,Email
+INV-000160,Register invoice,2026-08-24 07:54,2026-08-24 08:06,Sara,Accounts Payable,Low,Portal
+INV-000160,Match with purchase order,2026-08-24 09:23,2026-08-24 09:43,Sara,Accounts Payable,Low,Portal
+INV-000160,Approve invoice,2026-08-26 12:34,2026-08-26 12:45,Fatima,Finance,Low,Portal
+INV-000160,Schedule payment,2026-08-26 13:44,2026-08-26 13:53,Yousef,Treasury,Low,Portal
+INV-000160,Pay supplier,2026-08-27 07:30,2026-08-27 07:33,Yousef,Treasury,Low,Portal
+INV-000161,Register invoice,2026-08-25 07:40,2026-08-25 07:55,Ali,Accounts Payable,Medium,Portal
+INV-000161,Match with purchase order,2026-08-25 08:07,2026-08-25 08:21,Ali,Accounts Payable,Medium,Portal
+INV-000161,Approve invoice,2026-08-26 07:30,2026-08-26 07:42,Khalid,Finance,Medium,Portal
+INV-000161,Schedule payment,2026-08-26 11:07,2026-08-26 11:13,Noor,Treasury,Medium,Portal
+INV-000161,Pay supplier,2026-08-26 11:41,2026-08-26 11:46,Noor,Treasury,Medium,Portal
+INV-000162,Register invoice,2026-08-26 07:32,2026-08-26 07:47,Huda,Accounts Payable,Low,Paper
+INV-000162,Match with purchase order,2026-08-26 08:13,2026-08-26 08:36,Huda,Accounts Payable,Low,Paper
+INV-000162,Approve invoice,2026-08-26 13:25,2026-08-26 13:33,Khalid,Finance,Low,Paper
+INV-000162,Schedule payment,2026-08-26 13:36,2026-08-26 13:43,Noor,Treasury,Low,Paper
+INV-000162,Pay supplier,2026-08-26 14:14,2026-08-26 14:19,Yousef,Treasury,Low,Paper
+INV-000163,Register invoice,2026-08-27 07:45,2026-08-27 07:58,Ali,Accounts Payable,Low,Portal
+INV-000163,Match with purchase order,2026-08-27 08:46,2026-08-27 09:10,Ali,Accounts Payable,Low,Portal
+INV-000163,Clarify with supplier,2026-08-27 13:27,2026-08-27 14:28,Ali,Accounts Payable,Low,Portal
+INV-000163,Match with purchase order,2026-08-30 07:30,2026-08-30 07:50,Ali,Accounts Payable,Low,Portal
+INV-000163,Schedule payment,2026-08-30 08:02,2026-08-30 08:16,Noor,Treasury,Low,Portal
+INV-000163,Approve invoice,2026-08-31 07:30,2026-08-31 07:38,Khalid,Finance,Low,Portal
+INV-000163,Pay supplier,2026-08-31 09:20,2026-08-31 09:25,Noor,Treasury,Low,Portal
+INV-000164,Register invoice,2026-08-30 07:42,2026-08-30 07:52,Huda,Accounts Payable,Low,Portal
+INV-000164,Match with purchase order,2026-08-30 07:53,2026-08-30 08:15,Huda,Accounts Payable,Low,Portal
+INV-000164,Approve invoice,2026-08-31 07:30,2026-08-31 07:41,Khalid,Finance,Low,Portal
+INV-000164,Schedule payment,2026-08-31 10:09,2026-08-31 10:17,Noor,Treasury,Low,Portal
+INV-000164,Pay supplier,2026-08-31 13:28,2026-08-31 13:34,Noor,Treasury,Low,Portal
+INV-000165,Register invoice,2026-08-30 07:48,2026-08-30 08:02,Ali,Accounts Payable,Low,Paper
+INV-000165,Approve invoice,2026-08-30 13:54,2026-08-30 14:00,Khalid,Finance,Low,Paper
+INV-000165,Schedule payment,2026-08-31 07:30,2026-08-31 07:37,Noor,Treasury,Low,Paper
+INV-000165,Pay supplier,2026-08-31 12:10,2026-08-31 12:16,Noor,Treasury,Low,Paper
+INV-000166,Register invoice,2026-08-30 08:09,2026-08-30 08:29,Omar,Accounts Payable,Low,Email
+INV-000166,Match with purchase order,2026-08-30 08:37,2026-08-30 08:55,Omar,Accounts Payable,Low,Email
+INV-000166,Approve invoice,2026-08-31 13:27,2026-08-31 13:38,Khalid,Finance,Low,Email
+INV-000166,Schedule payment,2026-08-31 13:47,2026-08-31 13:55,Noor,Treasury,Low,Email
+INV-000166,Pay supplier,2026-08-31 13:57,2026-08-31 14:02,Noor,Treasury,Low,Email
+INV-000167,Register invoice,2026-08-30 10:18,2026-08-30 10:37,Sara,Accounts Payable,Low,Paper
+INV-000167,Match with purchase order,2026-08-30 11:08,2026-08-30 11:34,Sara,Accounts Payable,Low,Paper
+INV-000167,Approve invoice,2026-08-31 07:30,2026-08-31 07:42,Khalid,Finance,Low,Paper
+INV-000167,Schedule payment,2026-08-31 07:43,2026-08-31 07:53,Noor,Treasury,Low,Paper
+INV-000167,Pay supplier,2026-08-31 09:44,2026-08-31 09:51,Noor,Treasury,Low,Paper
+INV-000168,Register invoice,2026-08-31 07:43,2026-08-31 07:55,Omar,Accounts Payable,Low,Portal
+INV-000168,Approve invoice,2026-09-01 07:30,2026-09-01 07:37,Fatima,Finance,Low,Portal
+INV-000168,Schedule payment,2026-09-01 07:52,2026-09-01 07:59,Yousef,Treasury,Low,Portal
+INV-000168,Pay supplier,2026-09-01 12:10,2026-09-01 12:16,Noor,Treasury,Low,Portal
+INV-000169,Register invoice,2026-09-01 07:40,2026-09-01 07:53,Omar,Accounts Payable,Medium,Email
+INV-000169,Approve invoice,2026-09-01 09:01,2026-09-01 09:08,Fatima,Finance,Medium,Email
+INV-000169,Schedule payment,2026-09-01 11:07,2026-09-01 11:20,Noor,Treasury,Medium,Email
+INV-000169,Pay supplier,2026-09-02 07:30,2026-09-02 07:36,Yousef,Treasury,Medium,Email
+INV-000170,Register invoice,2026-09-02 07:42,2026-09-02 07:57,Huda,Accounts Payable,Medium,Portal
+INV-000170,Match with purchase order,2026-09-02 08:10,2026-09-02 08:34,Huda,Accounts Payable,Medium,Portal
+INV-000170,Clarify with supplier,2026-09-02 12:37,2026-09-02 13:28,Huda,Accounts Payable,Medium,Portal
+INV-000170,Match with purchase order,2026-09-02 13:57,2026-09-02 14:10,Huda,Accounts Payable,Medium,Portal
+INV-000170,Clarify with supplier,2026-09-02 14:29,2026-09-02 15:03,Huda,Accounts Payable,Medium,Portal
+INV-000170,Match with purchase order,2026-09-03 07:30,2026-09-03 07:56,Huda,Accounts Payable,Medium,Portal
+INV-000170,Approve invoice,2026-09-06 07:30,2026-09-06 07:39,Khalid,Finance,Medium,Portal
+INV-000170,Schedule payment,2026-09-06 08:42,2026-09-06 08:54,Yousef,Treasury,Medium,Portal
+INV-000170,Pay supplier,2026-09-06 10:10,2026-09-06 10:14,Yousef,Treasury,Medium,Portal
+INV-000171,Register invoice,2026-09-03 07:31,2026-09-03 07:44,Omar,Accounts Payable,Low,Portal
+INV-000171,Match with purchase order,2026-09-03 09:39,2026-09-03 09:54,Omar,Accounts Payable,Low,Portal
+INV-000171,Approve invoice,2026-09-06 07:30,2026-09-06 07:38,Khalid,Finance,Low,Portal
+INV-000171,Schedule payment,2026-09-06 07:51,2026-09-06 08:04,Yousef,Treasury,Low,Portal
+INV-000171,Pay supplier,2026-09-06 13:23,2026-09-06 13:30,Noor,Treasury,Low,Portal
+INV-000172,Register invoice,2026-09-06 07:45,2026-09-06 07:54,Huda,Accounts Payable,Low,Email
+INV-000172,Match with purchase order,2026-09-06 08:12,2026-09-06 08:29,Huda,Accounts Payable,Low,Email
+INV-000172,Approve invoice,2026-09-06 14:38,2026-09-06 14:51,Fatima,Finance,Low,Email
+INV-000172,Schedule payment,2026-09-06 15:09,2026-09-06 15:17,Noor,Treasury,Low,Email
+INV-000172,Pay supplier,2026-09-07 07:30,2026-09-07 07:34,Yousef,Treasury,Low,Email
+INV-000173,Register invoice,2026-09-06 07:30,2026-09-06 07:43,Huda,Accounts Payable,Low,Email
+INV-000173,Match with purchase order,2026-09-06 07:45,2026-09-06 08:05,Huda,Accounts Payable,Low,Email
+INV-000173,Approve invoice,2026-09-07 07:30,2026-09-07 07:39,Khalid,Finance,Low,Email
+INV-000173,Schedule payment,2026-09-07 08:21,2026-09-07 08:32,Yousef,Treasury,Low,Email
+INV-000173,Pay supplier,2026-09-07 10:18,2026-09-07 10:22,Yousef,Treasury,Low,Email
+INV-000174,Register invoice,2026-09-06 07:43,2026-09-06 08:02,Huda,Accounts Payable,High,Email
+INV-000174,Match with purchase order,2026-09-06 09:09,2026-09-06 09:26,Huda,Accounts Payable,High,Email
+INV-000174,Approve invoice,2026-09-08 11:54,2026-09-08 12:04,Fatima,Finance,High,Email
+INV-000174,Schedule payment,2026-09-08 12:34,2026-09-08 12:46,Yousef,Treasury,High,Email
+INV-000174,Pay supplier,2026-09-09 07:30,2026-09-09 07:33,Yousef,Treasury,High,Email
+INV-000175,Register invoice,2026-09-07 08:04,2026-09-07 08:17,Sara,Accounts Payable,High,Email
+INV-000175,Match with purchase order,2026-09-07 09:06,2026-09-07 09:33,Sara,Accounts Payable,High,Email
+INV-000175,Approve invoice,2026-09-08 07:30,2026-09-08 07:36,Khalid,Finance,High,Email
+INV-000175,Schedule payment,2026-09-08 08:10,2026-09-08 08:23,Yousef,Treasury,High,Email
+INV-000175,Pay supplier,2026-09-09 07:30,2026-09-09 07:35,Yousef,Treasury,High,Email
+INV-000176,Register invoice,2026-09-07 15:09,2026-09-07 15:26,Omar,Accounts Payable,Low,Email
+INV-000176,Match with purchase order,2026-09-07 15:28,2026-09-07 15:41,Omar,Accounts Payable,Low,Email
+INV-000176,Approve invoice,2026-09-08 07:30,2026-09-08 07:39,Fatima,Finance,Low,Email
+INV-000176,Schedule payment,2026-09-08 07:47,2026-09-08 07:55,Noor,Treasury,Low,Email
+INV-000176,Pay supplier,2026-09-08 13:24,2026-09-08 13:29,Noor,Treasury,Low,Email
+INV-000177,Register invoice,2026-09-08 12:07,2026-09-08 12:18,Ali,Accounts Payable,High,Email
+INV-000177,Match with purchase order,2026-09-08 12:35,2026-09-08 13:03,Ali,Accounts Payable,High,Email
+INV-000177,Approve invoice,2026-09-08 14:00,2026-09-08 14:11,Fatima,Finance,High,Email
+INV-000177,Schedule payment,2026-09-08 14:51,2026-09-08 15:03,Yousef,Treasury,High,Email
+INV-000177,Pay supplier,2026-09-09 07:30,2026-09-09 07:33,Noor,Treasury,High,Email
+INV-000178,Register invoice,2026-09-09 11:13,2026-09-09 11:29,Sara,Accounts Payable,Low,Portal
+INV-000178,Match with purchase order,2026-09-09 11:55,2026-09-09 12:08,Sara,Accounts Payable,Low,Portal
+INV-000178,Approve invoice,2026-09-13 07:30,2026-09-13 07:37,Fatima,Finance,Low,Portal
+INV-000178,Schedule payment,2026-09-13 08:23,2026-09-13 08:32,Noor,Treasury,Low,Portal
+INV-000178,Pay supplier,2026-09-13 12:14,2026-09-13 12:20,Noor,Treasury,Low,Portal
+INV-000179,Register invoice,2026-09-10 07:47,2026-09-10 08:03,Omar,Accounts Payable,Low,Portal
+INV-000179,Match with purchase order,2026-09-10 08:38,2026-09-10 09:03,Omar,Accounts Payable,Low,Portal
+INV-000179,Approve invoice,2026-09-13 07:30,2026-09-13 07:37,Fatima,Finance,Low,Portal
+INV-000179,Schedule payment,2026-09-13 08:01,2026-09-13 08:09,Yousef,Treasury,Low,Portal
+INV-000179,Pay supplier,2026-09-13 09:16,2026-09-13 09:21,Yousef,Treasury,Low,Portal
+INV-000180,Register invoice,2026-09-13 07:42,2026-09-13 07:55,Omar,Accounts Payable,Low,Email
+INV-000180,Match with purchase order,2026-09-13 08:20,2026-09-13 08:44,Omar,Accounts Payable,Low,Email
+INV-000180,Approve invoice,2026-09-14 11:14,2026-09-14 11:26,Khalid,Finance,Low,Email
+INV-000180,Schedule payment,2026-09-14 15:26,2026-09-14 15:33,Noor,Treasury,Low,Email
+INV-000180,Pay supplier,2026-09-15 07:30,2026-09-15 07:36,Yousef,Treasury,Low,Email
+INV-000181,Register invoice,2026-09-13 07:58,2026-09-13 08:14,Sara,Accounts Payable,Low,Portal
+INV-000181,Match with purchase order,2026-09-13 08:48,2026-09-13 09:12,Sara,Accounts Payable,Low,Portal
+INV-000181,Approve invoice,2026-09-14 07:30,2026-09-14 07:40,Fatima,Finance,Low,Portal
+INV-000181,Schedule payment,2026-09-14 08:45,2026-09-14 08:55,Noor,Treasury,Low,Portal
+INV-000181,Pay supplier,2026-09-15 07:30,2026-09-15 07:36,Yousef,Treasury,Low,Portal
+INV-000182,Register invoice,2026-09-13 07:51,2026-09-13 08:10,Sara,Accounts Payable,Medium,Email
+INV-000182,Match with purchase order,2026-09-13 10:23,2026-09-13 10:40,Sara,Accounts Payable,Medium,Email
+INV-000182,Clarify with supplier,2026-09-13 11:06,2026-09-13 11:35,Sara,Accounts Payable,Medium,Email
+INV-000182,Match with purchase order,2026-09-13 13:04,2026-09-13 13:27,Sara,Accounts Payable,Medium,Email
+INV-000182,Clarify with supplier,2026-09-14 07:30,2026-09-14 08:01,Sara,Accounts Payable,Medium,Email
+INV-000182,Match with purchase order,2026-09-14 10:37,2026-09-14 11:05,Sara,Accounts Payable,Medium,Email
+INV-000182,Approve invoice,2026-09-15 07:30,2026-09-15 07:36,Khalid,Finance,Medium,Email
+INV-000182,Schedule payment,2026-09-15 08:35,2026-09-15 08:46,Yousef,Treasury,Medium,Email
+INV-000182,Pay supplier,2026-09-15 09:12,2026-09-15 09:18,Yousef,Treasury,Medium,Email
+INV-000183,Register invoice,2026-09-14 07:49,2026-09-14 08:07,Ali,Accounts Payable,Low,Portal
+INV-000183,Match with purchase order,2026-09-14 08:34,2026-09-14 08:58,Ali,Accounts Payable,Low,Portal
+INV-000183,Approve invoice,2026-09-15 14:01,2026-09-15 14:13,Khalid,Finance,Low,Portal
+INV-000183,Schedule payment,2026-09-15 14:18,2026-09-15 14:27,Noor,Treasury,Low,Portal
+INV-000183,Pay supplier,2026-09-16 07:30,2026-09-16 07:33,Yousef,Treasury,Low,Portal
+INV-000184,Register invoice,2026-09-15 08:25,2026-09-15 08:41,Ali,Accounts Payable,Low,Portal
+INV-000184,Match with purchase order,2026-09-15 08:48,2026-09-15 09:04,Ali,Accounts Payable,Low,Portal
+INV-000184,Approve invoice,2026-09-16 07:30,2026-09-16 07:37,Fatima,Finance,Low,Portal
+INV-000184,Schedule payment,2026-09-16 07:49,2026-09-16 07:55,Noor,Treasury,Low,Portal
+INV-000184,Pay supplier,2026-09-16 08:15,2026-09-16 08:18,Yousef,Treasury,Low,Portal
+INV-000185,Register invoice,2026-09-16 07:37,2026-09-16 07:50,Huda,Accounts Payable,Low,Portal
+INV-000185,Match with purchase order,2026-09-16 07:51,2026-09-16 08:07,Huda,Accounts Payable,Low,Portal
+INV-000185,Approve invoice,2026-09-17 07:30,2026-09-17 07:38,Khalid,Finance,Low,Portal
+INV-000185,Schedule payment,2026-09-17 08:14,2026-09-17 08:28,Noor,Treasury,Low,Portal
+INV-000185,Pay supplier,2026-09-17 09:25,2026-09-17 09:28,Yousef,Treasury,Low,Portal
+INV-000186,Register invoice,2026-09-17 07:35,2026-09-17 07:56,Huda,Accounts Payable,Medium,Email
+INV-000186,Match with purchase order,2026-09-17 08:21,2026-09-17 08:40,Huda,Accounts Payable,Medium,Email
+INV-000186,Approve invoice,2026-09-17 09:18,2026-09-17 09:29,Fatima,Finance,Medium,Email
+INV-000186,Schedule payment,2026-09-17 09:30,2026-09-17 09:38,Yousef,Treasury,Medium,Email
+INV-000186,Pay supplier,2026-09-17 13:34,2026-09-17 13:38,Noor,Treasury,Medium,Email
+INV-000187,Register invoice,2026-09-17 15:13,2026-09-17 15:28,Sara,Accounts Payable,Low,Portal
+INV-000187,Match with purchase order,2026-09-20 07:30,2026-09-20 07:43,Sara,Accounts Payable,Low,Portal
+INV-000187,Clarify with supplier,2026-09-20 10:23,2026-09-20 11:09,Sara,Accounts Payable,Low,Portal
+INV-000187,Match with purchase order,2026-09-20 13:22,2026-09-20 13:50,Sara,Accounts Payable,Low,Portal
+INV-000187,Approve invoice,2026-09-21 07:30,2026-09-21 07:40,Fatima,Finance,Low,Portal
+INV-000187,Schedule payment,2026-09-21 08:02,2026-09-21 08:11,Noor,Treasury,Low,Portal
+INV-000187,Pay supplier,2026-09-21 12:07,2026-09-21 12:14,Noor,Treasury,Low,Portal
+INV-000188,Register invoice,2026-09-20 07:55,2026-09-20 08:06,Sara,Accounts Payable,Medium,Portal
+INV-000188,Match with purchase order,2026-09-20 08:18,2026-09-20 08:32,Sara,Accounts Payable,Medium,Portal
+INV-000188,Approve invoice,2026-09-21 07:30,2026-09-21 07:41,Khalid,Finance,Medium,Portal
+INV-000188,Schedule payment,2026-09-21 09:29,2026-09-21 09:41,Noor,Treasury,Medium,Portal
+INV-000188,Pay supplier,2026-09-22 07:30,2026-09-22 07:34,Yousef,Treasury,Medium,Portal
+INV-000189,Register invoice,2026-09-20 07:33,2026-09-20 07:53,Huda,Accounts Payable,Low,Email
+INV-000189,Match with purchase order,2026-09-20 09:40,2026-09-20 09:55,Huda,Accounts Payable,Low,Email
+INV-000189,Clarify with supplier,2026-09-21 07:30,2026-09-21 08:01,Huda,Accounts Payable,Low,Email
+INV-000189,Match with purchase order,2026-09-21 13:15,2026-09-21 13:38,Huda,Accounts Payable,Low,Email
+INV-000189,Clarify with supplier,2026-09-21 14:22,2026-09-21 14:56,Huda,Accounts Payable,Low,Email
+INV-000189,Match with purchase order,2026-09-22 07:30,2026-09-22 07:53,Huda,Accounts Payable,Low,Email
+INV-000189,Clarify with supplier,2026-09-22 08:12,2026-09-22 09:06,Huda,Accounts Payable,Low,Email
+INV-000189,Match with purchase order,2026-09-23 07:30,2026-09-23 07:52,Huda,Accounts Payable,Low,Email
+INV-000189,Approve invoice,2026-09-24 10:43,2026-09-24 10:53,Khalid,Finance,Low,Email
+INV-000189,Schedule payment,2026-09-24 12:57,2026-09-24 13:05,Noor,Treasury,Low,Email
+INV-000189,Pay supplier,2026-09-24 14:13,2026-09-24 14:18,Yousef,Treasury,Low,Email
+INV-000190,Register invoice,2026-09-20 08:28,2026-09-20 08:46,Sara,Accounts Payable,High,Email
+INV-000190,Match with purchase order,2026-09-20 09:34,2026-09-20 09:55,Sara,Accounts Payable,High,Email
+INV-000190,Approve invoice,2026-09-20 13:27,2026-09-20 13:39,Khalid,Finance,High,Email
+INV-000190,Schedule payment,2026-09-20 14:46,2026-09-20 15:00,Noor,Treasury,High,Email
+INV-000190,Pay supplier,2026-09-21 07:30,2026-09-21 07:33,Yousef,Treasury,High,Email
+INV-000191,Register invoice,2026-09-21 07:43,2026-09-21 07:55,Omar,Accounts Payable,Low,Email
+INV-000191,Match with purchase order,2026-09-21 08:35,2026-09-21 08:48,Omar,Accounts Payable,Low,Email
+INV-000191,Approve invoice,2026-09-21 15:17,2026-09-21 15:24,Khalid,Finance,Low,Email
+INV-000191,Schedule payment,2026-09-21 15:26,2026-09-21 15:39,Noor,Treasury,Low,Email
+INV-000191,Pay supplier,2026-09-22 07:30,2026-09-22 07:36,Yousef,Treasury,Low,Email
+INV-000192,Register invoice,2026-09-22 07:31,2026-09-22 07:46,Omar,Accounts Payable,Medium,Email
+INV-000192,Match with purchase order,2026-09-22 07:55,2026-09-22 08:21,Omar,Accounts Payable,Medium,Email
+INV-000192,Approve invoice,2026-09-23 07:30,2026-09-23 07:39,Fatima,Finance,Medium,Email
+INV-000192,Schedule payment,2026-09-23 09:45,2026-09-23 09:55,Noor,Treasury,Medium,Email
+INV-000192,Pay supplier,2026-09-23 10:35,2026-09-23 10:42,Noor,Treasury,Medium,Email
+INV-000193,Register invoice,2026-09-23 07:47,2026-09-23 08:02,Huda,Accounts Payable,Low,Email
+INV-000193,Match with purchase order,2026-09-23 09:08,2026-09-23 09:22,Huda,Accounts Payable,Low,Email
+INV-000193,Approve invoice,2026-09-24 07:30,2026-09-24 07:40,Khalid,Finance,Low,Email
+INV-000193,Schedule payment,2026-09-24 09:29,2026-09-24 09:40,Noor,Treasury,Low,Email
+INV-000193,Pay supplier,2026-09-24 13:11,2026-09-24 13:14,Noor,Treasury,Low,Email
+INV-000194,Register invoice,2026-09-24 07:42,2026-09-24 07:59,Omar,Accounts Payable,Medium,Portal
+INV-000194,Match with purchase order,2026-09-24 08:05,2026-09-24 08:23,Omar,Accounts Payable,Medium,Portal
+INV-000194,Approve invoice,2026-09-27 07:30,2026-09-27 07:36,Fatima,Finance,Medium,Portal
+INV-000194,Schedule payment,2026-09-27 09:21,2026-09-27 09:35,Yousef,Treasury,Medium,Portal
+INV-000194,Pay supplier,2026-09-27 14:12,2026-09-27 14:18,Noor,Treasury,Medium,Portal
+INV-000195,Register invoice,2026-09-27 07:36,2026-09-27 07:55,Ali,Accounts Payable,High,Portal
+INV-000195,Match with purchase order,2026-09-27 08:18,2026-09-27 08:41,Ali,Accounts Payable,High,Portal
+INV-000195,Approve invoice,2026-09-29 07:30,2026-09-29 07:36,Fatima,Finance,High,Portal
+INV-000195,Schedule payment,2026-09-29 07:44,2026-09-29 07:57,Noor,Treasury,High,Portal
+INV-000195,Pay supplier,2026-09-29 11:29,2026-09-29 11:33,Yousef,Treasury,High,Portal
+INV-000196,Register invoice,2026-09-27 08:19,2026-09-27 08:33,Sara,Accounts Payable,High,Email
+INV-000196,Match with purchase order,2026-09-27 08:48,2026-09-27 09:14,Sara,Accounts Payable,High,Email
+INV-000196,Approve invoice,2026-09-29 07:30,2026-09-29 07:43,Fatima,Finance,High,Email
+INV-000196,Schedule payment,2026-09-29 08:08,2026-09-29 08:20,Yousef,Treasury,High,Email
+INV-000196,Pay supplier,2026-09-29 09:45,2026-09-29 09:49,Yousef,Treasury,High,Email
+INV-000197,Register invoice,2026-09-27 07:32,2026-09-27 07:50,Sara,Accounts Payable,Low,Email
+INV-000197,Match with purchase order,2026-09-27 08:45,2026-09-27 09:00,Sara,Accounts Payable,Low,Email
+INV-000197,Approve invoice,2026-09-28 07:30,2026-09-28 07:39,Khalid,Finance,Low,Email
+INV-000197,Schedule payment,2026-09-28 07:56,2026-09-28 08:05,Yousef,Treasury,Low,Email
+INV-000197,Pay supplier,2026-09-28 10:16,2026-09-28 10:19,Noor,Treasury,Low,Email
+INV-000198,Register invoice,2026-09-28 07:30,2026-09-28 07:43,Huda,Accounts Payable,Low,Portal
+INV-000198,Match with purchase order,2026-09-28 09:25,2026-09-28 09:46,Huda,Accounts Payable,Low,Portal
+INV-000198,Approve invoice,2026-09-29 07:30,2026-09-29 07:37,Fatima,Finance,Low,Portal
+INV-000198,Schedule payment,2026-09-29 10:02,2026-09-29 10:14,Noor,Treasury,Low,Portal
+INV-000198,Pay supplier,2026-09-30 07:30,2026-09-30 07:35,Noor,Treasury,Low,Portal
+INV-000199,Register invoice,2026-09-28 12:38,2026-09-28 12:53,Ali,Accounts Payable,Low,Email
+INV-000199,Match with purchase order,2026-09-28 14:06,2026-09-28 14:31,Ali,Accounts Payable,Low,Email
+INV-000199,Approve invoice,2026-09-29 07:30,2026-09-29 07:38,Fatima,Finance,Low,Email
+INV-000199,Schedule payment,2026-09-29 09:26,2026-09-29 09:34,Yousef,Treasury,Low,Email
+INV-000199,Pay supplier,2026-09-30 07:30,2026-09-30 07:35,Yousef,Treasury,Low,Email
+INV-000200,Register invoice,2026-09-29 10:50,2026-09-29 11:03,Sara,Accounts Payable,High,Email
+INV-000200,Match with purchase order,2026-09-29 11:08,2026-09-29 11:28,Sara,Accounts Payable,High,Email
+INV-000200,Approve invoice,2026-09-30 07:37,2026-09-30 07:44,Khalid,Finance,High,Email
+INV-000200,Schedule payment,2026-09-30 08:26,2026-09-30 08:39,Noor,Treasury,High,Email
+INV-000200,Pay supplier,2026-09-30 09:42,2026-09-30 09:47,Yousef,Treasury,High,Email

@@ -65,9 +65,18 @@ Steps (tick as they are committed; a new session continues at the first unticked
       Recalculate. Tests: shared +4 (`mining/conformance.test.ts` incl. the textbook replay example), API 4
       (`mining-conformance.e2e-spec.ts`: replay, suggestions → version, mining KPIs, XML attributes), Playwright
       `mining.spec.ts` "conformance: deviations and the overlay on the BPMN model".
-- [ ] 4. Simulation: shared discrete-event engine (distributions, seeded RNG, calendars, resources, gateways),
-      scenarios (as-is / to-be), validation, runs as jobs, comparison (charts + Excel), bottleneck colour-by, AI
-      explain / suggest (proposals only). Tests (incl. M/M/1) + Playwright.
+- [x] 4. Simulation (D-138 – D-140): shared `mining/simulation.ts` (scenario schema, Mulberry32, distributions,
+      `WorkCalendar` Sun–Thu / Mon–Fri / 24·7 with holidays, `validateScenario`, `simulate`: arrivals, lanes as
+      resources with FIFO queues, gateways incl. inclusive joins, planned waiting, SLA, costs, weekly series),
+      `UAE_HOLIDAYS`; `Simulation` / `SimulationScenario` (migration `*_simulation`); API `/simulations` (CRUD,
+      scenarios, defaults from mining, run → `SIMULATE` jobs, Excel comparison, AI explain / suggest via
+      `AiGatewayService`, feature `SIMULATION`). Web: menu "Process mining → Simulations", list + new dialog, simulation
+      page (scenario cards with validation messages, copy as to-be, drawer editor: general / calendar / holidays /
+      steps with distributions and costs / resources / branch probabilities; run all with progress; comparison
+      table + Recharts; AI explain and proposals → "Create scenario"), modeler "Colour by → Simulation: utilisation /
+      waiting time". Tests: shared 8 (`mining/simulation.test.ts`: M/M/1, M/M/2, reproducibility, branching,
+      fork / join, calendar, distributions, validation), API 3 (`mining-simulation.e2e-spec.ts`), Playwright
+      `mining.spec.ts` "simulation: as-is and to-be scenarios, comparison and bottleneck view".
 - [ ] 5. Portal "Performance" tab (setting, off by default), handbook "Performance analysis", demo seed (~5,000 cases,
       simulation with as-is + two to-be), `docs/samples/` CSV + XES, permission matrix, 1M-event performance script
       with measured timings, screenshots EN / AR (`docs/screenshots/phase-5-1/`), docs, audit, PR.

@@ -220,5 +220,10 @@
   "EMPTY_LOG": "No cases are left after the filters.",
   "LOG_NOT_FOUND": "The event log does not exist.",
   "MINING_KPI_REQUIRED": "Choose an event log and a mining measure.",
-  "PROCESS_WITHOUT_MODEL": "The process has no BPMN model yet."
+  "PROCESS_WITHOUT_MODEL": "The process has no BPMN model yet.",
+  "SIMULATION_INVALID": "Fix the errors of the scenarios before running them.",
+  "LAST_SCENARIO": "A simulation needs at least one scenario.",
+  "NO_RESULTS": "Run the scenarios first.",
+  "VERSION_NOT_FOUND": "The process version does not exist.",
+  "NO_START": "The model has no start event."
 }

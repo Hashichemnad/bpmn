@@ -1857,3 +1857,55 @@ Supersedes the "act as the Super Admin" rule of D-116.
   20 % (or nothing is planned) and the step has at least 5 observations. The user selects steps; the accepted values
   are written into the working model (server-side attribute update) and saved as a **new process version** with a
   change note (model edit rights and the governance lock apply as for any version).
+
+## D-138 — Discrete-event simulation engine (Phase 5.1, 2026-10-31)
+
+- **Engine** (shared `simulate`, worker thread): event list as a binary heap; **case arrivals** form a Poisson
+  process in working time (rate per working day, per month, or the model's largest `ph:frequencyPerMonth`); tokens
+  follow the top-level sequence flows; **tasks** first wait the planned `ph:waitingMinutes` (no person), then seize
+  a person of their **lane** (capacity from the scenario, FIFO queue; tasks outside lanes have no queue) for a
+  sampled working time; **gateways**: exclusive and inclusive split by branch probability (inclusive: each branch
+  independently, at least one), parallel forks; parallel joins wait for every incoming flow, inclusive joins until
+  no other token of the case can still reach them; intermediate catch events delay by their duration; a case ends
+  when its last token is consumed.
+- **Durations**: fixed (default: the step's `ph:durationMinutes`), normal (truncated at 0), triangular
+  (min / most likely / max), exponential, uniform — in **working minutes** on a calendar: Sun–Thu (default, UAE) or
+  Mon–Fri, working hours (default 07:30–15:30), editable public holidays (the UAE list of the year is offered), or
+  24 / 7. **Seeded** Mulberry32 random numbers: the same scenario gives the same result.
+- **Measured** after the warm-up and until the end of the simulated period: cases arrived / completed / in progress,
+  throughput time in calendar hours (mean, median, P90, max), cost per case and total (step `ph:costPerExecution`
+  or scenario cost + person hours × cost per hour), case SLA share (scenario hours) and step SLA share
+  (`ph:slaMinutes` against queue + work), per step executions, mean waiting and processing, per lane
+  **utilisation** (busy working minutes / capacity × working minutes), time-average and maximum queue, weekly
+  completions. A cap of 5 million events stops runaway models (flagged as truncated).
+- **Verification**: unit tests compare with queueing theory — M/M/1 (λ = 0.5, μ = 1: Wq = 1 min, Lq = 0.5, ρ = 0.5)
+  and M/M/2 (λ = 1.5, μ = 1: Erlang C Wq = 9/7 min) within 5–7 % over ~100,000 cases — plus calendar, branching,
+  fork / join and reproducibility tests.
+
+## D-139 — Simulation scenarios and comparison (Phase 5.1, 2026-10-31)
+
+- `Simulation` (SIM-001 …, process, optional event log for defaults) with `SimulationScenario`s (as-is / to-be,
+  parameters JSON validated by `scenarioParamsSchema`, optional **process version** — default the working model —,
+  the last result and what it ran against: version or working-model hash + parameter hash, so a result is marked
+  **stale** when either changes). A new simulation gets an as-is scenario: arrivals from the model (or the log's
+  cases per month), one person per lane, the UAE holidays of the year, and **branch probabilities from the cases
+  of a linked event log** (conformance flow counts) or equal branches.
+- **Validation before a run** (shared `validateScenario`, bilingual messages): no start event / no arrivals /
+  exclusive branches not adding up to 100 % / lanes without people are errors that block the run (`400
+SIMULATION_INVALID` with the issues); missing durations (0 used) and no end event are warnings.
+- Runs are `SIMULATE` jobs (one per scenario, worker threads, progress, cancel). The comparison shows cases
+  completed / in progress, throughput mean / P90, cost per case / total, SLA shares, utilisation and queues per lane
+  side by side, with charts and an Excel export (comparison + per-step sheet, audited). "Bottlenecks on the model"
+  opens the "Colour by → Simulation: utilisation / waiting time" views (bands: utilisation > 85 % high, > 60 %
+  medium; waiting by thirds of the maximum) — view only, like every colour-by view.
+- Permissions: `mining.read` + `processes.read` see simulations and results; `mining.manage` creates, edits and runs
+  them (simulations hold no personal data, so no per-owner restriction).
+
+## D-140 — AI on simulation results: proposals only (Phase 5.1, 2026-10-31)
+
+- AI feature `SIMULATION` (same gateway, role access, limits and usage log as every AI feature, D-038 –): "Explain
+  these results" sends the model facts (steps, lanes) and the figures of the scenarios that ran and returns a short
+  explanation (bottleneck, drivers of time and cost; instructed not to invent numbers). "Suggest improvement
+  scenarios" returns up to three proposals (bilingual name, rationale, lane capacities, step durations); ids the
+  model invents are dropped. Nothing changes until the user clicks **Create scenario** on a proposal, which creates
+  a to-be scenario through the normal endpoint. Tests mock the provider.
