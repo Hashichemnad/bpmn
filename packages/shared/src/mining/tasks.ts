@@ -1,5 +1,9 @@
 import { analyseLog, type AnalysisRequest } from './analysis';
 import { heuristicsMiner, netToStructure, type HeuristicsOptions } from './heuristics';
+import { parseBpmnGraph } from '../bpmn-graph';
+import type { KpiFrequency, MiningMetric } from '../kpi';
+import { miningKpiSeries } from './kpis';
+import { checkConformance, type ConformanceRequest } from './conformance';
 import { decodeLogData, encodeLogData, sortRawLog, summariseLog, type RawLog } from './log-data';
 
 /**
@@ -24,6 +28,35 @@ const TASKS = {
   discover: (input: { bytes: Uint8Array; options: Partial<HeuristicsOptions> }) => {
     const net = heuristicsMiner(decodeLogData(input.bytes), input.options);
     return { net, structure: netToStructure(net) };
+  },
+  /** Token-based replay of the log on a BPMN model (activity → element mapping). */
+  conformance: (
+    input: {
+      bytes: Uint8Array;
+      bpmnXml: string;
+      mapping: Record<string, string | null>;
+      request: Partial<ConformanceRequest>;
+    },
+    progress: ProgressFn,
+  ) =>
+    checkConformance(
+      decodeLogData(input.bytes),
+      parseBpmnGraph(input.bpmnXml),
+      input.mapping,
+      input.request,
+      (v) => progress(v, 'replay'),
+    ),
+  /** Values per period of KPIs calculated from the log. */
+  miningKpis: (input: {
+    bytes: Uint8Array;
+    kpis: { id: string; metric: MiningMetric; frequency: KpiFrequency }[];
+    slaByActivity: Record<string, number>;
+  }) => {
+    const log = decodeLogData(input.bytes);
+    return input.kpis.map((k) => ({
+      id: k.id,
+      values: miningKpiSeries(log, k.metric, k.frequency, input.slaByActivity),
+    }));
   },
   /** Health check of the worker set-up. */
   ping: (input: { bytes?: Uint8Array }) => ({

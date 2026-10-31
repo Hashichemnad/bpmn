@@ -372,3 +372,45 @@ export interface DiscoverResultDto {
   gateways: number;
   lanes: number;
 }
+
+// ---------- Conformance (step 3) ----------
+
+export interface ProcessLogDto {
+  id: string;
+  code: string;
+  nameEn: string;
+  nameAr: string;
+  caseCount: number;
+  periodStart: string | null;
+  periodEnd: string | null;
+  mappedActivities: number;
+}
+
+/** Planned (model) vs measured (log) step times; minutes. */
+export interface StepSuggestionDto {
+  elementId: string;
+  nameEn: string;
+  nameAr: string;
+  observations: number;
+  plannedDuration: number | null;
+  measuredDuration: number | null;
+  plannedWaiting: number | null;
+  measuredWaiting: number | null;
+  suggestDuration: boolean;
+  suggestWaiting: boolean;
+}
+
+export const applySuggestionsSchema = z.object({
+  items: z
+    .array(
+      z.object({
+        elementId: z.string().max(200),
+        durationMinutes: z.number().min(0).max(1_000_000).nullable().optional(),
+        waitingMinutes: z.number().min(0).max(1_000_000).nullable().optional(),
+      }),
+    )
+    .min(1)
+    .max(500),
+  changeNote: z.string().trim().min(1).max(2000),
+});
+export type ApplySuggestionsInput = z.infer<typeof applySuggestionsSchema>;

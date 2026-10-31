@@ -23,6 +23,10 @@ import {
   PERMISSIONS,
   activityMappingSchema,
   analysisExportSchema,
+  applySuggestionsSchema,
+  conformanceRequestSchema,
+  type ApplySuggestionsInput,
+  type ConformanceRequest,
   analysisRequestSchema,
   discoverProcessSchema,
   filterPresetSchema,
@@ -64,6 +68,8 @@ import { MiningJobsService, toJobDto } from './jobs/mining-jobs.service';
 import { MiningSettingsService } from './mining-settings.service';
 import { MiningAnalysisService } from './analysis.service';
 import { download } from '../ea/ea.controller';
+import { ConformanceService } from './conformance.service';
+import { MiningKpiService } from './mining-kpi.service';
 
 const READ = PERMISSIONS.MINING_READ;
 const MANAGE = PERMISSIONS.MINING_MANAGE;
@@ -96,6 +102,8 @@ export class MiningController {
     private readonly settings: MiningSettingsService,
     private readonly prisma: PrismaService,
     private readonly analysis: MiningAnalysisService,
+    private readonly conformanceService: ConformanceService,
+    private readonly kpis: MiningKpiService,
   ) {}
 
   // ---------- Settings ----------
@@ -404,5 +412,51 @@ export class MiningController {
     @ReqMeta() meta: RequestMeta,
   ) {
     return this.analysis.discover(id, body, user, meta);
+  }
+
+  // ---------- Conformance (step 3) ----------
+
+  @Post('logs/:id/conformance')
+  @HttpCode(200)
+  @RequirePermissions(READ)
+  conformance(
+    @Param('id', UuidPipe()) id: string,
+    @Body(new ZodPipe(conformanceRequestSchema.partial())) body: Partial<ConformanceRequest>,
+    @CurrentUser() user: AuthUser,
+  ) {
+    return this.conformanceService.conformance(id, body, user);
+  }
+
+  /** Imported logs of a process the user may see (modeler overlay, process page). */
+  @Get('processes/:processId/logs')
+  @RequirePermissions(READ)
+  processLogs(@Param('processId', UuidPipe()) processId: string, @CurrentUser() user: AuthUser) {
+    return this.conformanceService.processLogs(processId, user);
+  }
+
+  @Get('logs/:id/step-suggestions')
+  @RequirePermissions(READ)
+  suggestions(@Param('id', UuidPipe()) id: string, @CurrentUser() user: AuthUser) {
+    return this.conformanceService.suggestions(id, user);
+  }
+
+  /** Accepted planned-vs-measured updates → new process version (model rights are checked). */
+  @Post('logs/:id/step-suggestions/apply')
+  @RequirePermissions(READ)
+  applySuggestions(
+    @Param('id', UuidPipe()) id: string,
+    @Body(new ZodPipe(applySuggestionsSchema)) body: ApplySuggestionsInput,
+    @CurrentUser() user: AuthUser,
+    @ReqMeta() meta: RequestMeta,
+  ) {
+    return this.conformanceService.applySuggestions(id, body, user, meta);
+  }
+
+  /** KPIs calculated from an event log: recalculate now. */
+  @Post('kpis/:kpiId/recalculate')
+  @HttpCode(200)
+  @RequirePermissions(PERMISSIONS.KPI_EDIT)
+  async recalculateKpi(@Param('kpiId', UuidPipe()) kpiId: string, @CurrentUser() user: AuthUser) {
+    return toJobDto(await this.kpis.recalculate(kpiId, user));
   }
 }

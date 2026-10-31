@@ -6,3 +6,5 @@ export * from './tasks';
 export * from './filters';
 export * from './analysis';
 export * from './heuristics';
+export * from './conformance';
+export * from './kpis';

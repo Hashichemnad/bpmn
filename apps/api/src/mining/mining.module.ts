@@ -2,6 +2,8 @@ import { Module } from '@nestjs/common';
 import { ProcessesModule } from '../processes/processes.module';
 import { ModelsModule } from '../models/models.module';
 import { MiningAnalysisService } from './analysis.service';
+import { ConformanceService } from './conformance.service';
+import { MiningKpiService } from './mining-kpi.service';
 import { MiningController } from './mining.controller';
 import { EventLogsService } from './event-logs.service';
 import { LogImportService } from './log-import.service';
@@ -18,6 +20,8 @@ import { SnapshotService } from './snapshot.service';
     EventLogsService,
     LogImportService,
     MiningAnalysisService,
+    ConformanceService,
+    MiningKpiService,
     MiningJobsService,
     MiningSettingsService,
     MiningScheduler,

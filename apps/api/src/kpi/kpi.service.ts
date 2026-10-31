@@ -15,6 +15,7 @@ import {
   thresholdsFor,
   type BpmnElementLabel,
   type CalculatedMetric,
+  type MiningMetric,
   type CreateKpiInput,
   type CreateObjectiveInput,
   type KpiDetailDto,
@@ -56,6 +57,7 @@ const kpiInclude = {
     include: {
       department: { select: { id: true, nameEn: true, nameAr: true } },
       calculatedProcess: { select: { id: true, code: true, nameEn: true, nameAr: true } },
+      miningLog: { select: { id: true, code: true, nameEn: true, nameAr: true } },
       periodTargets: { orderBy: { period: 'asc' } },
       objectives: {
         where: { objective: { deletedAt: null } },
@@ -113,6 +115,7 @@ const KPI_FIELDS = [
   'status',
   'calculatedMetric',
   'calculatedProcessId',
+  'miningLogId',
 ];
 
 const codeOrNull = (v: string | null | undefined) => (v === undefined ? undefined : v || null);
@@ -156,8 +159,9 @@ export function toKpiDto(o: KpiRow, now = new Date(), asOf?: string): KpiDto {
     owner: o.owner ?? null,
     department: k.department ?? null,
     dataSource: k.dataSource,
-    calculatedMetric: (k.calculatedMetric as CalculatedMetric | null) ?? null,
+    calculatedMetric: (k.calculatedMetric as CalculatedMetric | MiningMetric | null) ?? null,
     calculatedProcess: k.calculatedProcess ?? null,
+    miningLog: k.miningLog ?? null,
     periodTargets: k.periodTargets.map((p) => ({
       period: p.period,
       target: p.target,
@@ -249,6 +253,8 @@ export class KpiService {
       });
       if (!d) throw badRequest('INVALID_DEPARTMENT');
     }
+    if (input.miningLogId && !(await tx.eventLog.findUnique({ where: { id: input.miningLogId } })))
+      throw badRequest('LOG_NOT_FOUND');
     const count = async (n: number, ids: string[] | undefined, code: string) => {
       if (ids?.length && n !== ids.length) throw badRequest(code);
     };
@@ -472,7 +478,7 @@ export class KpiService {
 
   /** Current value of a calculated KPI from the working model of its process. */
   async calculatedNow(metric: string | null, processId: string | null) {
-    if (!metric || !processId) return null;
+    if (!metric || !processId || metric.startsWith('MINING_')) return null;
     const model = await this.prisma.processModel.findUnique({ where: { processId } });
     if (!model) return null;
     return calculatedValue(
@@ -509,6 +515,7 @@ export class KpiService {
       status: input.status,
       calculatedMetric: input.calculatedMetric,
       calculatedProcessId: input.calculatedProcessId,
+      miningLogId: input.miningLogId,
     };
   }
 
@@ -646,6 +653,9 @@ export class KpiService {
         ? before.kpi.calculatedProcessId
         : input.calculatedProcessId;
     if (dataSource === 'CALCULATED' && (!metric || !proc)) throw badRequest('CALCULATION_REQUIRED');
+    const miningLog = input.miningLogId === undefined ? before.kpi.miningLogId : input.miningLogId;
+    if (dataSource === 'EVENT_LOG' && (!metric?.startsWith('MINING_') || !miningLog))
+      throw badRequest('MINING_KPI_REQUIRED');
     if (input.frequency && input.frequency !== before.kpi.frequency) {
       const n = await this.prisma.kpiMeasurement.count({ where: { kpiId: id } });
       if (n) throw conflict('FREQUENCY_HAS_VALUES');
