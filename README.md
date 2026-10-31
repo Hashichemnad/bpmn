@@ -29,7 +29,9 @@
 | **Enterprise architecture** | Application catalogue (the IT systems linked to steps: type, vendor, owners, hosting country, lifecycle, criticality, data classification), interfaces, data objects with system of record and CRUD matrix, 3-level capability map with "colour by" (coverage, applications, lifecycle, risk), application landscape diagram (SVG / PNG), traceability capability → process → step → application → data (+ risks / controls), impact analysis of an application, Excel import / export, modeler "colour by application lifecycle", handbook "Systems and data" | 4.3 |
 | **KPIs & dashboards** | KPI catalogue (formula, unit, direction, frequency, targets and green / amber / red thresholds per period, owner, data source), strategic objectives, key risk indicators, links to processes and steps; values with comment and evidence, owner reminders in My tasks, Excel import, history; KPIs calculated from step attributes (duration, waiting, cost, handovers, automation rate); KPI dashboard by objective with sparklines and drill-down chart, KPI badges and "colour by KPI status" in the modeler, process performance card, optional portal section; optional read-only **Salesforce** KPI link (mapping, preview, scheduled sync, sync log) | 4.3 |
 | **More diagram types** | One framework for **value chains** (chevrons / blocks / frames, drill-down to processes and value chains, status / KPI / risk badges, "colour by", generation from the process house), **organisation charts** (units, positions, persons, reporting and staff lines; generated from departments, roles and people with merge-by-id regeneration and preview; a position shows the steps it performs with RACI), **DMN decision tables** (dmn-js, bilingual names, hit policies, typed inputs / outputs, FEEL "Test decision", validation, import / export, linked to BPMN business rule tasks), **EPC** (ARIS notation, syntax rules as warnings, conversion to a draft BPMN process with mapping report) and **SIPOC** (generated from a process); versions with visual compare, review workflow, comments on elements, object links, where used, Knowledge Portal (browse by type, value chain start page), handbook sections, export SVG / PNG / PDF | Diagrams |
-| **Process Mining & Execution** | Event-log analysis, bottlenecks, running approved processes as workflows | 5 |
+| **Process mining** | Event logs from CSV / Excel / XES (streaming import, column mapping with templates, timestamp and time-zone detection, validation report, pseudonymisation, access per owner / department / grant, retention) or from ProcessHub's own reviews; process map with frequency / performance views and activity / path sliders, variants with compare, stackable saved filters, statistics (throughput, trend, rework, resources, handovers), bottlenecks with the cases behind them, Excel exports; "Generate BPMN" with the heuristics miner; conformance by token replay (fitness, skipped / inserted / wrong-order steps) with a "colour by" overlay on the BPMN model, KPIs calculated from logs, measured vs planned step times; optional portal "Performance" section and handbook section | 5.1 |
+| **Simulation** | Discrete-event what-if simulation from the step attributes: distributions, lanes as resources with capacity, Sun–Thu working calendar with UAE holidays, branch probabilities (from mining), as-is and to-be scenarios on any process version, validation, side-by-side comparison with charts and Excel, bottleneck view on the model, AI explanation and proposals | 5.1 |
+| **Workflow execution** | Running approved processes as task flows | 5.2 |
 
 ## Quick start (Docker)
 
@@ -73,6 +75,23 @@ content in every lifecycle state, comments, notifications and portal feedback.
 
 Demo users are only created on a demo installation (`SEED_DEMO_DATA=true`, the default). **Emails** sent by
 the demo installation go to the bundled **Mailpit** at **http://localhost:8025** — nothing leaves the machine.
+
+### A short tour of Phase 5.1 — process mining and simulation
+
+- As `performance@processhub.local`: **Process mining → Event logs** lists **LOG-001 Invoice processing** (5,000
+  generated invoices of the demo process *S.01.04 Invoice processing*). Its tabs: **Process map** (switch to
+  *Performance*, move the *Activities* and *Paths* sliders), **Variants** (select two to compare, *Show on map*),
+  **Statistics**, **Bottlenecks** (the finance approval waits longest — click a case to see its events),
+  **Conformance** (fitness, deviations such as payments without PO matching, planned vs measured step times →
+  *Update steps* saves a new process version) and **Activities and steps** (mapping to the BPMN steps).
+- *Show on the model* opens S.01.04 with **Colour by → Mining: deviations / measured time / cases per step**.
+- **Import log** with `docs/samples/invoice-processing-log.csv` (or `.xes`) walks through upload → mapping →
+  validation report → import; **Create log from ProcessHub** turns the governance reviews into a log.
+- **Process mining → Simulations → SIM-001**: as-is (one finance approver, the bottleneck at ~90 % utilisation),
+  *Second finance approver* and *Automatic PO matching*; edit a scenario (durations, people, calendar, branch
+  probabilities), *Run all scenarios*, compare, export to Excel, *Bottlenecks on the model*. **KPI-M01 Invoice cycle
+  time** is calculated from the log (KPIs → data source *Calculated from an event log*).
+- Settings (Super Admin): retention of logs and the optional portal "Performance" section on published processes.
 
 ### A short tour of the diagram types — value chain, organisation chart, DMN, EPC, SIPOC
 

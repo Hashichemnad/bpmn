@@ -269,6 +269,28 @@ export function AppLayout() {
         ],
       });
     }
+    if (can(PERMISSIONS.MINING_READ)) {
+      list.push({
+        type: 'group',
+        label: t('mining:nav.group'),
+        children: [
+          {
+            key: '/mining/logs',
+            icon: <NodeIndexOutlined />,
+            label: <Link to="/mining/logs">{t('mining:nav.logs')}</Link>,
+          },
+          ...(can(PERMISSIONS.PROCESSES_READ)
+            ? [
+                {
+                  key: '/mining/simulations',
+                  icon: <ExperimentOutlined />,
+                  label: <Link to="/mining/simulations">{t('mining:nav.simulations')}</Link>,
+                },
+              ]
+            : []),
+        ],
+      });
+    }
     if (can(PERMISSIONS.EA_READ)) {
       list.push({
         type: 'group',
@@ -436,6 +458,8 @@ export function AppLayout() {
       '/grc/issues',
       '/grc/audits',
       '/grc/surveys',
+      '/mining/logs',
+      '/mining/simulations',
       '/admin/users',
       '/admin/departments',
       '/admin/audit',

@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import {
@@ -28,12 +29,14 @@ import { EmailSettingsCard } from './EmailSettingsCard';
 import { AiSettingsCard } from './AiSettingsCard';
 import { AuthSettingsCard } from './AuthSettingsCard';
 import { DiagramThemeCard } from './DiagramThemeCard';
+import { HolidaysModal } from '@/features/mining/HolidaysModal';
 
 export function SettingsPage() {
   const { t } = useTranslation();
   const { message } = App.useApp();
   const errorMessage = useErrorMessage();
   const settings = useSettings();
+  const [holidaysOpen, setHolidaysOpen] = useState(false);
   const update = useUpdateSettings();
   const upload = useUploadLogo();
   const removeLogo = useRemoveLogo();
@@ -194,6 +197,15 @@ export function SettingsPage() {
               <Button>{t('admin:salesforce.open')}</Button>
             </Link>
           </Card>
+        </Col>
+        <Col span={24}>
+          <Card title={t('mining:holidays.card')} data-testid="holidays-card">
+            <Typography.Paragraph type="secondary">
+              {t('mining:holidays.cardHint')}
+            </Typography.Paragraph>
+            <Button onClick={() => setHolidaysOpen(true)}>{t('mining:holidays.button')}</Button>
+          </Card>
+          {holidaysOpen && <HolidaysModal onClose={() => setHolidaysOpen(false)} />}
         </Col>
       </Row>
     </>

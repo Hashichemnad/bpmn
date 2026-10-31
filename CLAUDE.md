@@ -43,9 +43,10 @@ with no per-user licensing. Target: 50–500 users on a single server.
 | 4.1 | M10 GRC core: risks, controls, requirements linked to process steps; heat maps, coverage dashboard, RCM export, reminders, AI control-gap check | ✅ Done (merged into `main`, D-089 – D-097) |
 | 4.2 | M10 assurance: approval of GRC changes, control testing, issues and actions, audits, questionnaires, assurance dashboard | ✅ Done (merged into `main`, D-098 – D-106) |
 | 4.3 | M11 EA (application catalogue, interfaces, data objects, capability map, traceability); M12 KPIs, dashboards + Salesforce KPI link | ✅ Done (merged into `main`, D-107 – D-119); the Salesforce KPI sync stays in the code but is not used (KPIs and risks are managed in ProcessHub) |
-| Diagrams | More diagram types (ARIS / GBTEC / Signavio parity, DOF RFP modeling items): shared diagram framework (Diagram entity, versions, governance, portal, links), value chain, organisation chart, DMN decision tables, EPC (+ conversion to BPMN), SIPOC | ✅ Done on branch `diagram-types` (D-120 – D-127), awaiting review / merge into `main` |
+| Diagrams | More diagram types (ARIS / GBTEC / Signavio parity, DOF RFP modeling items): shared diagram framework (Diagram entity, versions, governance, portal, links), value chain, organisation chart, DMN decision tables, EPC (+ conversion to BPMN), SIPOC | ✅ Done (merged into `main`, D-120 – D-127) |
 | 4.4 | Integration & export: Oracle Fusion Risk Management overlay, Salesforce risk / other connectors, API keys, webhooks, Word/HTML/XPDL export | ⬜ (later phase, see BACKLOG) |
-| 5 | M13 Mining, M14 Execution, simulation | ⬜ |
+| 5.1 | M13 Process mining and simulation: event log import (CSV / Excel / XES, ProcessHub reviews), discovery (process map, variants, filters, statistics, bottlenecks, heuristics miner → BPMN), conformance (token replay, overlay on BPMN, mining KPIs, step attribute suggestions), discrete-event simulation with scenarios | ✅ Done on branch `phase-5-1-mining-simulation` (D-128 – D-142), awaiting review / merge into `main` |
+| 5.2 | M14 Workflow execution: run approved processes as task flows (forms, assignments, approvals) | ⬜ |
 | Design A | Modeler design upgrade — Part A: look and feel (colour theme as BPMN-in-Color, renderer, colour picker, fonts/RTL, apply theme) | ✅ Done (merged into `main`, D-067 – D-073) |
 | Design B1 | Modeler design — Part B1: full-screen workspace and modeling productivity (palette, ready-made steps, zoom/mini-map, align, auto-layout, lane roles, badges, portal diagram, print layout) | ✅ Done (merged into `main`, D-074 – D-081); Part B2 in BACKLOG |
 | Design B2 | Modeler design — Part B2: smarter modeling and reports (Playwright e2e in CI, Dictionary with label autocomplete, Quick Model, step attributes and "colour by", handbook / RACI / object reports, modeling conventions) | ✅ Done (merged into `main`, D-083 – D-088) |
@@ -240,6 +241,18 @@ Diagram types additions (DECISIONS D-120 – D-127):
   `ph:annotationEn/Ar`
 - Shared `diagrams.ts`, `value-chain.ts`, `org-chart.ts`, `epc.ts`, `sipoc.ts`; web kit
   `apps/web/src/features/diagrams/kit/` (diagram-js), dmn-js 17, feelin 8
+
+Phase 5.1 additions (DECISIONS D-128 – D-142):
+
+- `EventLog` (LOG-001 …, source FILE / PROCESSHUB, status, linked process, owner, department, file + mapping, time
+  zone, pseudonymised, `dataVersion` + snapshot key, counts, period), `EventLogGrant`, `MiningEvent` (log, case,
+  activity, start / end, resource, department, attributes; index `(logId, caseId, endAt)`), `MiningActivity`
+  (activity → BPMN element, LABEL / SYNONYM / MANUAL), `MiningJob` (background jobs), `MiningResultCache`,
+  `MiningMappingTemplate`, `MiningFilterPreset`; permissions `mining.read`, `mining.manage`; Setting `mining`
+- KPI data source `EVENT_LOG` + `Kpi.miningLogId`, metrics `MINING_*`
+- `Simulation` (SIM-001 …) + `SimulationScenario` (AS_IS / TO_BE, params JSON, process version, result + model it ran on)
+- Shared `packages/shared/src/mining/` (timestamps, columnar log, filters, analysis, heuristics miner, conformance,
+  simulation, worker task registry); API module `mining` (jobs in worker threads); AI feature `SIMULATION`
 
 ## 10. Definition of Done (every phase)
 

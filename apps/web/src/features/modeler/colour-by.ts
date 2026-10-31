@@ -36,9 +36,31 @@ export const COLOUR_BY_MODES = [
   'appLifecycle',
   // KPIs (Phase 4.3): worst latest status of the step's KPIs.
   'kpiStatus',
+  // Process mining (Phase 5.1): cases per step, measured time, deviations (from an event log).
+  'miningFrequency',
+  'miningDuration',
+  'miningDeviations',
+  // Simulation (Phase 5.1): resource utilisation and waiting time per step (last run).
+  'simUtilisation',
+  'simWaiting',
 ] as const;
 export type ColourByMode = (typeof COLOUR_BY_MODES)[number];
 
+/** Modes fed by measured / simulated values (`ColourByContext.metric`). */
+export const METRIC_MODES: readonly ColourByMode[] = [
+  'miningFrequency',
+  'miningDuration',
+  'miningDeviations',
+  'simUtilisation',
+  'simWaiting',
+];
+export type MetricBand = 'low' | 'medium' | 'high';
+
+/** Values of a metric view: a band and a badge text per step, a weight and text per sequence flow. */
+export interface MetricValues {
+  elements: Map<string, { band: MetricBand; label: string }>;
+  flows: Map<string, { weight: number; label: string }>;
+}
 export interface LegendItem {
   key: string;
   /** Text shown in the legend (already translated / localised by the caller's `label`). */
@@ -90,6 +112,13 @@ const FIXED: Record<string, { fill: string; stroke: string }> = {
   'kpi:AMBER': { fill: '#FEF3C7', stroke: '#D97706' },
   'kpi:RED': { fill: '#FEE2E2', stroke: '#DC2626' },
   'kpi:noValue': { fill: '#E2E8F0', stroke: '#64748B' },
+  'freq:low': { fill: '#DBEAFE', stroke: '#60A5FA' },
+  'freq:medium': { fill: '#93C5FD', stroke: '#2563EB' },
+  'freq:high': { fill: '#3B82F6', stroke: '#1E3A8A' },
+  'heat:low': { fill: '#DCFCE7', stroke: '#16A34A' },
+  'heat:medium': { fill: '#FEF3C7', stroke: '#D97706' },
+  'heat:high': { fill: '#FEE2E2', stroke: '#DC2626' },
+  'metric:none': { fill: '#F1F5F9', stroke: '#CBD5E1' },
 };
 
 /** What a step lacks in the "missing information" view. */
@@ -106,6 +135,8 @@ export interface ColourByContext {
   lifecycles?: Map<string, AppLifecycle>;
   /** Latest status of the KPIs of each step (element id → statuses), Phase 4.3. */
   kpis?: Map<string, (KpiRag | null)[]>;
+  /** Measured (mining) or simulated values of the metric modes (Phase 5.1). */
+  metric?: MetricValues;
 }
 
 export interface ColourByResult {
@@ -132,6 +163,13 @@ function categoryOf(
     ctx.links.filter((l) => l.bpmnElementId === el.id && l.relation === rel);
   const name = (o: { nameEn: string; nameAr: string }) =>
     pickLabel({ nameEn: o.nameEn, nameAr: o.nameAr }, ctx.locale);
+  if (METRIC_MODES.includes(mode)) {
+    if (!isStep) return null;
+    const v = ctx.metric?.elements.get(el.id);
+    if (!v) return { key: 'metric:none', label: ctx.label('metric:none') };
+    const key = `${mode === 'miningFrequency' ? 'freq' : 'heat'}:${v.band}`;
+    return { key, label: ctx.label(`${mode}:${v.band}`) };
+  }
   switch (mode) {
     case 'type': {
       const t: StepType = rowTypeOf(el);
@@ -223,6 +261,8 @@ function categoryOf(
       const key = lacks.length ? 'missing:incomplete' : 'missing:complete';
       return { key, label: ctx.label(key) };
     }
+    default:
+      return null;
   }
 }
 
@@ -267,22 +307,31 @@ export function planColourBy(
     colours.set(el.id, { fill: item.fill, stroke: item.stroke });
   }
   const items = [...legend.values()];
-  // "None" / "complete" last, then by count.
-  items.sort(
-    (a, b) =>
-      Number(a.key === 'none') - Number(b.key === 'none') ||
-      ([
-        'type',
-        'duration',
-        'missing',
-        'riskRating',
-        'riskControl',
-        'appLifecycle',
-        'kpiStatus',
-      ].includes(mode)
-        ? 0
-        : b.count - a.count),
-  );
+  const BAND = ['low', 'medium', 'high'];
+  const bandRank = (k: string) => {
+    const i = BAND.indexOf(k.split(':')[1] ?? '');
+    return i < 0 ? 9 : i;
+  };
+  if (METRIC_MODES.includes(mode)) items.sort((a, b) => bandRank(a.key) - bandRank(b.key));
+  else
+    // "None" / "complete" last, then by count.
+    items.sort(
+      (a, b) =>
+        Number(a.key === 'none' || a.key === 'metric:none') -
+          Number(b.key === 'none' || b.key === 'metric:none') ||
+        ([
+          'type',
+          'duration',
+          'missing',
+          'riskRating',
+          'riskControl',
+          'appLifecycle',
+          'kpiStatus',
+          ...METRIC_MODES,
+        ].includes(mode)
+          ? 0
+          : b.count - a.count),
+    );
   return { legend: items, missing, classes, colours };
 }
 
@@ -331,4 +380,91 @@ export function applyColourBy(
   ].join('\n');
   document.head.append(style);
   return plan;
+}
+
+const METRIC_STYLE_ID = 'ph-colour-by-metric-style';
+const metricOverlays = new WeakMap<BpmnInstance, { flows: string[] }>();
+
+interface OverlaysService {
+  add(
+    element: string,
+    type: string,
+    overlay: { position: Record<string, number>; html: HTMLElement },
+  ): string;
+  remove(filter: { type: string }): void;
+}
+
+/** Badges on steps and flows plus flow widths of a metric view (removed by `clearMetricOverlays`). */
+export function applyMetricOverlays(instance: BpmnInstance, metric: MetricValues | undefined) {
+  clearMetricOverlays(instance);
+  if (!metric) return;
+  const canvas = instance.get<Canvas>('canvas');
+  const registry = instance.get<ElementRegistry>('elementRegistry');
+  const overlays = instance.get<OverlaysService>('overlays');
+  const badge = (text: string, cls: string) => {
+    const div = document.createElement('div');
+    div.className = cls;
+    div.textContent = text;
+    return div;
+  };
+  for (const [id, v] of metric.elements) {
+    const el = registry.get(id);
+    if (!el || !v.label) continue;
+    overlays.add(id, 'ph-metric', {
+      position: { bottom: 2, left: 2 },
+      html: badge(v.label, 'ph-metric-badge'),
+    });
+  }
+  const flows: string[] = [];
+  const rules: string[] = [];
+  for (const [id, v] of metric.flows) {
+    const el = registry.get(id) as
+      (DiagramElement & { waypoints?: { x: number; y: number }[] }) | undefined;
+    if (!el?.waypoints?.length) continue;
+    const cls = `ph-mf-${flows.length}`;
+    canvas.addMarker(id, cls);
+    flows.push(id);
+    const w = 1.5 + 1.5 * Math.max(0, Math.min(1, v.weight));
+    rules.push(
+      `.djs-element.${cls} .djs-visual > path { stroke: #7C3AED !important; stroke-width: ${w.toFixed(1)}px !important; }`,
+    );
+    if (v.label) {
+      const mid = el.waypoints[Math.floor((el.waypoints.length - 1) / 2)];
+      const next = el.waypoints[Math.floor((el.waypoints.length - 1) / 2) + 1] ?? mid;
+      overlays.add(id, 'ph-metric', {
+        position: {
+          left: (mid.x + next.x) / 2 - Math.min(...el.waypoints.map((p) => p.x)),
+          top: (mid.y + next.y) / 2 - Math.min(...el.waypoints.map((p) => p.y)) - 10,
+        },
+        html: badge(v.label, 'ph-metric-flow'),
+      });
+    }
+  }
+  metricOverlays.set(instance, { flows });
+  const style = document.createElement('style');
+  style.id = METRIC_STYLE_ID;
+  style.textContent = rules.join('\n');
+  document.head.append(style);
+}
+
+export function clearMetricOverlays(instance: BpmnInstance) {
+  const prev = metricOverlays.get(instance);
+  if (prev) {
+    const canvas = instance.get<Canvas>('canvas');
+    const registry = instance.get<ElementRegistry>('elementRegistry');
+    prev.flows.forEach((id, i) => registry.get(id) && canvas.removeMarker(id, `ph-mf-${i}`));
+    metricOverlays.delete(instance);
+  }
+  try {
+    instance.get<OverlaysService>('overlays').remove({ type: 'ph-metric' });
+  } catch {
+    /* viewer without overlays */
+  }
+  document.getElementById(METRIC_STYLE_ID)?.remove();
+}
+
+/** Bands by thirds of the maximum (0 = no data). */
+export function bandOf(value: number, max: number): MetricBand {
+  const r = max > 0 ? value / max : 0;
+  return r > 2 / 3 ? 'high' : r > 1 / 3 ? 'medium' : 'low';
 }

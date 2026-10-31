@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react';
-import { useBlocker, useNavigate } from 'react-router-dom';
+import { useBlocker, useNavigate, useSearchParams } from 'react-router-dom';
 import {
   Alert,
   App,
@@ -145,12 +145,16 @@ import { applyRows, diagramToRows, quickModelModule, type QuickRow } from './qui
 import { QuickModelView } from './QuickModelView';
 import {
   COLOUR_BY_MODES,
+  METRIC_MODES,
   applyColourBy,
+  applyMetricOverlays,
   clearColourBy,
+  clearMetricOverlays,
   type ColourByMode,
   type LegendItem,
 } from './colour-by';
 import { ColourByLegend } from './ColourByLegend';
+import { useMetricValues } from '@/features/mining/useMetricValues';
 import { ReportDialog, type ReportKind } from '@/features/reports/ReportDialog';
 
 type PanelTab = 'properties' | 'grc' | 'kpis' | 'issues' | 'comments' | 'ai';
@@ -211,7 +215,14 @@ export function BpmnEditor({ process, focusElementId, readOnly = false, onClose 
   const [view, setView] = useState<'diagram' | 'table'>('diagram');
   const [tableOpened, setTableOpened] = useState(false);
   /** "Colour by" view (view only, stored colours never change). */
-  const [colourBy, setColourBy] = useState<ColourByMode>('none');
+  const [searchParams] = useSearchParams();
+  const [colourBy, setColourBy] = useState<ColourByMode>(() => {
+    const m = searchParams.get('colourBy');
+    return (COLOUR_BY_MODES as readonly string[]).includes(m ?? '') ? (m as ColourByMode) : 'none';
+  });
+  // Process mining / simulation views (Phase 5.1): measured or simulated values per step and flow.
+  const metricValues = useMetricValues(process.id, colourBy);
+  const metric = metricValues.metric;
   // KPIs of the process and its steps (Phase 4.3): side panel, badges, "Colour by → KPI status".
   const canReadKpi = can(PERMISSIONS.KPI_READ);
   const processKpis = useProcessKpis(process.id, canReadKpi);
@@ -364,7 +375,9 @@ export function BpmnEditor({ process, focusElementId, readOnly = false, onClose 
           grc: { steps: grcSteps, bands: grcConfig.data?.bands ?? DEFAULT_GRC_SETTINGS.bands },
           lifecycles,
           kpis: kpiSteps,
+          metric,
         });
+        applyMetricOverlays(instance, METRIC_MODES.includes(colourBy) ? metric : undefined);
         setLegend(result.legend);
         const lacks = [...result.missing.values()];
         setMissingCounts({
@@ -380,6 +393,7 @@ export function BpmnEditor({ process, focusElementId, readOnly = false, onClose 
       cancelAnimationFrame(frame);
       eventBus.off(['commandStack.changed', 'import.done'], apply);
       clearColourBy(instance);
+      clearMetricOverlays(instance);
     };
   }, [
     instance,
@@ -392,6 +406,7 @@ export function BpmnEditor({ process, focusElementId, readOnly = false, onClose 
     grcConfig.data,
     lifecycles,
     kpiSteps,
+    metric,
   ]);
 
   // The colour theme (Settings → Branding) applies to new elements and the colour picker.
@@ -1069,7 +1084,8 @@ export function BpmnEditor({ process, focusElementId, readOnly = false, onClose 
                     (m) =>
                       (canReadGrc || (m !== 'riskRating' && m !== 'riskControl')) &&
                       (canReadEa || m !== 'appLifecycle') &&
-                      (canReadKpi || m !== 'kpiStatus'),
+                      (canReadKpi || m !== 'kpiStatus') &&
+                      (!METRIC_MODES.includes(m) || metricValues.available.includes(m)),
                   ).map((mode) => ({
                     key: `colourBy-${mode}`,
                     label: t(`modeler:colourBy.modes.${mode}`),
@@ -1270,6 +1286,7 @@ export function BpmnEditor({ process, focusElementId, readOnly = false, onClose 
               mode={colourBy}
               items={legend}
               missing={missingCounts}
+              note={metricValues.loading ? t('modeler:colourBy.loading') : metricValues.note}
               onClose={() => setColourBy('none')}
             />
           )}

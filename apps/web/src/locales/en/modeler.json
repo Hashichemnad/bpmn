@@ -425,7 +425,12 @@
       "riskRating": "Residual risk rating",
       "riskControl": "Risks without controls",
       "appLifecycle": "Application lifecycle",
-      "kpiStatus": "KPI status"
+      "kpiStatus": "KPI status",
+      "miningFrequency": "Mining: cases per step",
+      "miningDuration": "Mining: measured time",
+      "miningDeviations": "Mining: deviations",
+      "simUtilisation": "Simulation: utilisation",
+      "simWaiting": "Simulation: waiting time"
     },
     "categories": {
       "none": "Not set",
@@ -464,12 +469,41 @@
         "AMBER": "Watch",
         "RED": "Off target",
         "noValue": "KPI without a value"
+      },
+      "metric": {
+        "none": "No data"
+      },
+      "miningFrequency": {
+        "low": "Few cases",
+        "medium": "Some cases",
+        "high": "Most cases"
+      },
+      "miningDuration": {
+        "low": "Fast",
+        "medium": "Medium",
+        "high": "Slow"
+      },
+      "miningDeviations": {
+        "low": "No deviations",
+        "medium": "Under 10 % of cases deviate",
+        "high": "10 % or more deviate"
+      },
+      "simUtilisation": {
+        "low": "Low utilisation",
+        "medium": "Medium utilisation",
+        "high": "High utilisation (bottleneck)"
+      },
+      "simWaiting": {
+        "low": "Short wait",
+        "medium": "Medium wait",
+        "high": "Long wait (bottleneck)"
       }
     },
     "missingRole_one": "{{count}} step without a role",
     "missingRole_other": "{{count}} steps without a role",
     "missingDescription_one": "{{count}} step without a description",
-    "missingDescription_other": "{{count}} steps without a description"
+    "missingDescription_other": "{{count}} steps without a description",
+    "loading": "Loading the values…"
   },
   "conventions": {
     "title": "Modeling conventions",

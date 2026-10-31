@@ -19,8 +19,14 @@
 		-Server
 	}
 
-	# Uploads: attachments are at most 10 MB; the API enforces the exact limits per route.
-	request_body {
+	# Uploads: attachments are at most 10 MB, event log files (process mining) MINING_UPLOAD_MAX_MB
+	# (default 200 MB); the API enforces the exact limits per route.
+	@miningUpload path /api/v1/mining/logs/upload
+	request_body @miningUpload {
+		max_size 210MB
+	}
+	@otherUploads not path /api/v1/mining/logs/upload
+	request_body @otherUploads {
 		max_size 12MB
 	}
 

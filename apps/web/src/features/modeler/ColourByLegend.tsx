@@ -8,8 +8,11 @@ export function ColourByLegend({
   mode,
   items,
   missing,
+  note,
   onClose,
 }: {
+  /** Source of a metric view (event log, simulation run). */
+  note?: string;
   mode: ColourByMode;
   items: LegendItem[];
   /** Missing-information view: how many steps lack a role / a description. */
@@ -33,6 +36,11 @@ export function ColourByLegend({
       <Typography.Text type="secondary" className="ph-colour-legend-hint">
         {t('modeler:colourBy.viewOnly')}
       </Typography.Text>
+      {note && (
+        <Typography.Text className="ph-colour-legend-hint" data-testid="colour-by-note">
+          {note}
+        </Typography.Text>
+      )}
       <ul>
         {items.map((i) => (
           <li key={i.key}>

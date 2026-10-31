@@ -286,6 +286,14 @@ export async function createApp(): Promise<TestContext> {
 }
 
 const TABLES = [
+  'MiningFilterPreset',
+  'MiningMappingTemplate',
+  'MiningResultCache',
+  'MiningJob',
+  'MiningActivity',
+  'MiningEvent',
+  'EventLogGrant',
+  'EventLog',
   'SalesforceSyncRun',
   'KpiRisk',
   'KpiCapability',
@@ -462,3 +470,15 @@ export function sampleBpmn(ids: string[] = ['Task_1']): string {
 }
 
 export const PNG_BYTES = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0, 0, 0, 0]);
+
+/** Waits for a mining job to finish (long-polls the job endpoint) and returns it. */
+export async function waitJob(c: Client, jobId: string, timeoutMs = 60_000) {
+  const until = Date.now() + timeoutMs;
+  for (;;) {
+    const res = await c.get(`/mining/jobs/${jobId}?wait=5`);
+    if (res.status !== 200)
+      throw new Error(`job ${jobId}: ${res.status} ${JSON.stringify(res.body)}`);
+    if (['DONE', 'FAILED', 'CANCELLED'].includes(res.body.status)) return res.body;
+    if (Date.now() > until) throw new Error(`job ${jobId} still ${res.body.status}`);
+  }
+}

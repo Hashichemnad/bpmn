@@ -87,6 +87,10 @@ export const PERMISSIONS = {
   KPI_MEASURE: 'kpi.measure',
   /** Preview and run the Salesforce KPI sync and read its log (credentials stay with Super Admins). */
   KPI_SYNC: 'kpi.sync',
+  /** Process mining (Phase 5.1): event logs one may see, analyses, conformance, simulation results. */
+  MINING_READ: 'mining.read',
+  /** Import event logs, map activities, manage access, run discovery and simulations. */
+  MINING_MANAGE: 'mining.manage',
 } as const;
 export type Permission = (typeof PERMISSIONS)[keyof typeof PERMISSIONS];
 export const ALL_PERMISSIONS: Permission[] = Object.values(PERMISSIONS);
@@ -155,6 +159,8 @@ export const SYSTEM_ROLES: Record<
       P.EA_READ,
       P.KPI_READ,
       P.KPI_MEASURE,
+      P.MINING_READ,
+      P.MINING_MANAGE,
     ],
   },
   MODELER: {
@@ -174,6 +180,7 @@ export const SYSTEM_ROLES: Record<
       P.SURVEYS_RESPOND,
       P.EA_READ,
       P.KPI_READ,
+      P.MINING_READ,
     ],
   },
   REVIEWER: {
@@ -207,6 +214,7 @@ export const SYSTEM_ROLES: Record<
       P.SURVEYS_RESPOND,
       P.EA_READ,
       P.KPI_READ,
+      P.MINING_READ,
     ],
   },
   RISK_OFFICER: {
@@ -228,6 +236,7 @@ export const SYSTEM_ROLES: Record<
       P.SURVEYS_RESPOND,
       P.EA_READ,
       P.KPI_READ,
+      P.MINING_READ,
     ],
   },
   INTERNAL_AUDIT: {
@@ -246,6 +255,8 @@ export const SYSTEM_ROLES: Record<
       P.SURVEYS_RESPOND,
       P.EA_READ,
       P.KPI_READ,
+      P.MINING_READ,
+      P.MINING_MANAGE,
     ],
   },
   ENTERPRISE_ARCHITECT: {
@@ -262,6 +273,7 @@ export const SYSTEM_ROLES: Record<
       P.EA_EDIT,
       P.EA_ADMIN,
       P.KPI_READ,
+      P.MINING_READ,
     ],
   },
   PERFORMANCE_OFFICER: {
@@ -280,6 +292,8 @@ export const SYSTEM_ROLES: Record<
       P.KPI_EDIT,
       P.KPI_MEASURE,
       P.KPI_SYNC,
+      P.MINING_READ,
+      P.MINING_MANAGE,
     ],
   },
   VIEWER: {
@@ -443,6 +457,8 @@ export const AUDIT_ENTITY_TYPES = [
   'Diagram',
   'DiagramVersion',
   'DiagramLink',
+  'EventLog',
+  'SimulationScenario',
 ] as const;
 export type AuditEntityType = (typeof AUDIT_ENTITY_TYPES)[number];
 
@@ -469,6 +485,10 @@ export const SETTING_KEYS = {
   KPI: 'kpi',
   /** Salesforce KPI link (Phase 4.3): connection (secret sealed), mapping, schedule. */
   SALESFORCE: 'integrations.salesforce',
+  /** Process mining (Phase 5.1): retention, job concurrency, portal performance tab, time zone. */
+  MINING: 'mining',
+  /** Central public holiday list used by simulation scenarios (D-143). */
+  MINING_HOLIDAYS: 'mining.holidays',
 } as const;
 
 /** Logo upload limits. */

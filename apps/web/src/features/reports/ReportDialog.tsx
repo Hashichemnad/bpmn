@@ -35,6 +35,7 @@ export function ReportDialog({ kind, process, hasChildren, publishedOnly, onClos
     includeSipoc: boolean;
     includeDecisions: boolean;
     includeOrgChart: boolean;
+    includePerformance: boolean;
   }>();
   const { can } = useAuth();
   const [submitting, setSubmitting] = useState(false);
@@ -54,6 +55,7 @@ export function ReportDialog({ kind, process, hasChildren, publishedOnly, onClos
             includeSipoc: !!v.includeSipoc,
             includeDecisions: !!v.includeDecisions,
             includeOrgChart: !!v.includeOrgChart,
+            includePerformance: !!v.includePerformance,
             source,
             locale: v.locale,
           })
@@ -122,6 +124,17 @@ export function ReportDialog({ kind, process, hasChildren, publishedOnly, onClos
               <Checkbox data-testid={`handbook-${name}`}>{t(`diagrams:handbook.${name}`)}</Checkbox>
             </Form.Item>
           ))}
+        {kind === 'handbook' && !publishedOnly && can(PERMISSIONS.MINING_READ) && (
+          <Form.Item
+            name="includePerformance"
+            valuePropName="checked"
+            style={{ marginBlockEnd: 4 }}
+          >
+            <Checkbox data-testid="handbook-includePerformance">
+              {t('mining:handbook.includePerformance')}
+            </Checkbox>
+          </Form.Item>
+        )}
       </Form>
     </Modal>
   );

@@ -2,7 +2,132 @@
 
 Read this together with `CLAUDE.md` at the start of every session.
 
-## Current state — 2026-10-31 (More diagram types, branch `diagram-types`, done — awaiting review)
+## Current state — 2026-10-31 (Phase 5 — Part 1: Process mining and simulation, branch `phase-5-1-mining-simulation`, done — awaiting review)
+
+Everything up to the diagram types is merged into `main`. This branch builds module M13 (process mining) and
+simulation — Signavio Process Intelligence / ARIS Process Mining parity, DOF RFP analysis items. Workflow execution
+(M14) is Phase 5.2; connectors that pull logs from other systems stay in BACKLOG (integrations). The session works
+on `claude/lucid-dirac-tw2e44` (the harness branch) and pushes the same commits to `phase-5-1-mining-simulation`.
+
+Technical approach (D-128): everything in TypeScript — algorithms in `packages/shared/src/mining/` with unit tests
+against small published logs, no Python service; heavy work (import, analysis of large logs, simulation runs) runs as
+**mining jobs** (`MiningJob`: queued / running / done / failed / cancelled, progress, cancel) off the request thread —
+CPU work in worker threads that load the shared package, I/O (streaming parse, batched inserts) in async chunks —,
+with a result cache per log data version and filter set.
+
+Local setup: PostgreSQL 16 (`service postgresql start`; role `processhub` / `devpassword`, databases `processhub`,
+`processhub_test`); API suites `npx jest --runInBand test/<file> --selectProjects e2e`.
+
+Steps (tick as they are committed; a new session continues at the first unticked one):
+
+- [x] 0. CLAUDE.md phase table (diagram types merged; Phase 5 split into 5.1 / 5.2), this plan, D-128 approach.
+- [x] 1. Event logs — import and data (D-129 – D-132): `EventLog` / `MiningEvent` / `MiningActivity` /
+      `EventLogGrant` / `MiningJob` / `MiningResultCache` / `MiningMappingTemplate` / `MiningFilterPreset` (migration
+      `20261031080623_mining_event_logs`), permissions `mining.read` / `mining.manage` (bundles in D-131), Setting
+      `mining`; shared `mining/` (timestamps with format detection and IANA zones, columnar `LogData` + binary
+      snapshot, label matching, schemas, worker task registry `runMiningTask`); API module `mining`:
+      `MiningJobsService` (queue, progress, cancel, long-poll `GET /mining/jobs/:id?wait=`, restart cleanup),
+      `runInWorker` (inline worker loading the compiled shared package), streaming readers (csv-parse, exceljs, saxes),
+      `RowNormaliser` (validation report, duplicates, pseudonyms), import / validate / delete jobs, snapshot in the
+      file storage (gzip, LRU, rebuild from events), ProcessHub reviews source, activity auto-match (labels + dictionary
+      synonyms) and manual mapping, grants, templates, retention via `MiningScheduler`; nginx / Caddy 210 MB on the
+      upload route, `MINING_UPLOAD_MAX_MB`, `MINING_WORKERS`. Web: menu "Process mining → Event logs", logs list,
+      "Create log from ProcessHub" dialog, import wizard (upload → mapping with preview, templates, delimiter / sheet,
+      time zone, pseudonymise → validation report → import progress), log page (overview + report, activities ↔
+      steps, access), EN / AR. Tests: shared 8 (`mining/import.test.ts`), API 7 (`mining-logs.e2e-spec.ts`),
+      Playwright `mining.spec.ts` (import CSV with mapping → validation → import → Arabic → viewer denied).
+      Note: API tests run the worker on `packages/shared/dist` — build the shared package after changing it.
+- [x] 2. Discovery and analysis (D-133, D-134): shared `mining/filters.ts` (stackable case filters, variant ids),
+      `mining/analysis.ts` (`analyseLog`: DFG frequency / performance with activity projection, variants, statistics,
+      rework, resources, handovers, bottlenecks with slow cases), `mining/heuristics.ts` (heuristics miner, AND / XOR,
+      loops, `netToStructure`); worker tasks `analyse` / `discover`. API `MiningAnalysisService`:
+      `POST /mining/logs/:id/analysis` (cache `MiningResultCache`, job + 8 s wait, deduplicated), `POST …/export`
+      (Excel, audited), filter presets per user (`/mining/logs/:id/presets`, `DELETE /mining/presets/:id`),
+      `POST …/discover` (new draft process with lanes via `structureToBpmn`). Web: log tabs Process map (dagre SVG,
+      frequency / performance, activity slider server side, path slider, zoom, variant highlight), Variants (share,
+      times, expand with example cases, compare two with LCS diff, show on map), Statistics (tiles, weekly / monthly
+      trend, histogram, rework, resources, handover graph + department table), Bottlenecks (slowest transitions /
+      activities, waiting share, slow cases → case drawer), filter bar (8 filter types, saved filters), Excel buttons,
+      "Generate BPMN" dialog. Tests: shared +9 (`mining/discovery.test.ts`: L1 DFG, projection, durations, rework,
+      filters, heuristics on L1, AND / XOR, loops), API 4 (`mining-analysis.e2e-spec.ts`), Playwright `mining.spec.ts`
+      extended (map, performance, attribute filter, variants on map + compare, statistics, bottlenecks).
+- [x] 3. Conformance (D-135 – D-137): shared `mining/conformance.ts` (`bpmnToPetriNet`, `replayTrace`,
+      `checkConformance`: fitness, conforming cases, skipped / inserted / wrong-order deviations with example cases,
+      per-step stats, flow counts, unobserved steps), `mining/kpis.ts` (`miningKpiSeries`), worker tasks
+      `conformance` / `miningKpis`; KPI data source `EVENT_LOG` + `Kpi.miningLogId` + `MINING_METRICS` (migration
+      `20261031*_mining_kpis`). API `ConformanceService` (`POST /mining/logs/:id/conformance` cached per model hash +
+      mapping, `GET /mining/processes/:id/logs`, `GET|POST /mining/logs/:id/step-suggestions[/apply]` → new process
+      version via `setPhAttributes`), `MiningKpiService` (job after import / daily / `POST /mining/kpis/:id/recalculate`).
+      Web: Conformance tab (fitness gauge, conforming share, deviations with example cases, unobserved steps, planned
+      vs measured step times with apply + change note, "Show on the model"), modeler "Colour by → Mining: cases per
+      step / measured time / deviations" (+ simulation modes prepared) with step / flow badges and flow widths
+      (`applyMetricOverlays`, `useMetricValues`, `?colourBy=&log=`), KPI form "Calculated from an event log" and
+      Recalculate. Tests: shared +4 (`mining/conformance.test.ts` incl. the textbook replay example), API 4
+      (`mining-conformance.e2e-spec.ts`: replay, suggestions → version, mining KPIs, XML attributes), Playwright
+      `mining.spec.ts` "conformance: deviations and the overlay on the BPMN model".
+- [x] 4. Simulation (D-138 – D-140): shared `mining/simulation.ts` (scenario schema, Mulberry32, distributions,
+      `WorkCalendar` Sun–Thu / Mon–Fri / 24·7 with holidays, `validateScenario`, `simulate`: arrivals, lanes as
+      resources with FIFO queues, gateways incl. inclusive joins, planned waiting, SLA, costs, weekly series),
+      `UAE_HOLIDAYS`; `Simulation` / `SimulationScenario` (migration `*_simulation`); API `/simulations` (CRUD,
+      scenarios, defaults from mining, run → `SIMULATE` jobs, Excel comparison, AI explain / suggest via
+      `AiGatewayService`, feature `SIMULATION`). Web: menu "Process mining → Simulations", list + new dialog, simulation
+      page (scenario cards with validation messages, copy as to-be, drawer editor: general / calendar / holidays /
+      steps with distributions and costs / resources / branch probabilities; run all with progress; comparison
+      table + Recharts; AI explain and proposals → "Create scenario"), modeler "Colour by → Simulation: utilisation /
+      waiting time". Tests: shared 8 (`mining/simulation.test.ts`: M/M/1, M/M/2, reproducibility, branching,
+      fork / join, calendar, distributions, validation), API 3 (`mining-simulation.e2e-spec.ts`), Playwright
+      `mining.spec.ts` "simulation: as-is and to-be scenarios, comparison and bottleneck view".
+- [x] 5. Portal, reports, demo data, tests, docs (D-141, D-142):
+  - Portal "Performance" section on published processes (Setting `mining.portalPerformance`, off by default;
+    `GET /mining/portal/processes/:id/performance`, aggregated only) and the mining settings dialog (retention,
+    portal, concurrency, time zone; Super Admin) on the event log list.
+  - Handbook option "Performance analysis" (`includePerformance`, `MiningReportService`: mining summary of the most
+    recent visible log + the latest simulation's scenarios).
+  - Demo seed `prisma/seed-mining.ts` (demo installations only, once): process **S.01.04 Invoice processing**
+    (lanes, step attributes), **LOG-001** 5,000 generated cases / 27,585 events (`prisma/demo-event-log.ts`: rework
+    loop, finance approval bottleneck, payments without PO matching, late approvals) with mapped activities,
+    **KPI-M01 Invoice cycle time** (EVENT_LOG, monthly values), **SIM-001** with as-is, _Second finance approver_
+    and _Automatic PO matching_ (results computed in the seed). Asserted in `seed.e2e-spec.ts`.
+  - `docs/samples/invoice-processing-log.csv` (200 cases) / `.xes` (40 cases, start / complete) + README section on
+    the column format (`prisma/generate-mining-samples.ts`).
+  - Authorization matrix: watches the mining / simulation tables, fills the routes with the demo log, simulation and
+    scenario; read-only POSTs (analysis, conformance, export, own filters, AI explanations) are allowed for readers.
+    `docs/SECURITY.md` route table regenerated; route-security allow-list has the upload route.
+  - Performance script `prisma/perf-mining.ts` (timings below, D-141); screenshots EN / AR in
+    `docs/screenshots/phase-5-1/` (spec `screenshots-phase-5-1.spec.ts`, `SCREENSHOTS=1`): import mapping, process
+    map, variants, statistics, conformance, conformance overlay on BPMN, simulation scenarios, comparison, bottleneck
+    view.
+  - Docs: README (feature table, Phase 5.1 tour), CLAUDE.md (phase table, data model), DECISIONS D-128 – D-142,
+    BACKLOG (Phase 5.1 follow-ups), DEPLOYMENT.md (sizing / upload limit / retention note), `.env.example*`.
+    csv-parse upgraded to 7.0.2 (GHSA-8cw4-87c7-c6xx).
+
+Measured timings (D-141, `npx ts-node --transpile-only prisma/perf-mining.ts 180000` in this sandbox, PostgreSQL 16
+local, Node 22): 994,022 events / 180,000 cases (CSV 92 MB) — import (stream parse + validate + batched inserts)
+115 s, of which inserts 96 s; snapshot 39 MB (6 MB gzip) in 1.8 s, decode < 0.1 s; analysis bundle 1.2 s (with a
+filter and the activity slider 0.2 s); heuristics miner < 0.1 s; token replay 0.6 s; case drill-down 0.1 s; delete
+8.9 s. Simulation: 90 days of the demo (≈ 2,100 cases) in well under a second; the M/M/1 unit test (~110,000 cases)
+in a few seconds.
+
+Verification on 2026-10-31: shared 192, web 91, API 407 tests pass (64 suites; the only failure of the first full
+run was the regenerated SECURITY.md table, fixed); Playwright `mining.spec.ts` (import → map / filters / variants /
+statistics / bottlenecks; conformance → overlay; simulation → comparison → bottleneck view) passes locally; lint,
+format, type-check clean; `pnpm build` succeeds; `pnpm audit --audit-level high --prod` clean (9 moderate, as
+before). **Not verified here:** Docker image builds and the full Playwright suite in Docker (CI runs both).
+
+Product owner answers (D-143), implemented afterwards: event log access stays narrow (owner / department / grants
+/ Super Admins); retention off by default, set at go-live (suggested 24 months, DEPLOYMENT §6 step 11, SECURITY §7);
+portal "Performance" off until real logs exist; **central public holiday list** (Setting `mining.holidays`,
+`GET|PUT /simulations/holidays`, editor in Simulations → _Public holidays_ and Settings, Islamic holidays
+"expected (moon sighting)" until confirmed) used by every scenario unless it switches to its own list
+(`calendar.useCentralHolidays`); a change marks results that used it as stale. Tests: shared +2, API +1.
+
+### Next (continue here)
+
+1. Review and merge the pull request `phase-5-1-mining-simulation` → `main`.
+2. Then Phase 5.2 (workflow execution), Phase 4.4 (integrations, incl. log connectors), M15 migration; final
+   performance / polish session last.
+
+## Previous state — 2026-10-31 (More diagram types, branch `diagram-types`, done — awaiting review)
 
 Everything up to Phase 4.3 (GRC, EA, KPIs) is merged into `main`. The Salesforce KPI sync stays in the code but is not
 used (DOF manages KPIs and risks inside ProcessHub). External integrations (API keys, webhooks, Salesforce risk /

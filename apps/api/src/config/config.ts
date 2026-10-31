@@ -62,6 +62,10 @@ const envSchema = z.object({
     .transform((v) => v.replace(/\/+$/, '')),
   /** How often reminders (review dates, overdue reviews) are checked; 0 turns the scheduler off. */
   SCHEDULER_INTERVAL_MINUTES: z.coerce.number().int().min(0).default(60),
+  /** Process mining (Phase 5.1): upload limit of an event log file (MB). */
+  MINING_UPLOAD_MAX_MB: z.coerce.number().int().min(1).max(2048).default(200),
+  /** Run CPU-heavy mining work (analysis, discovery, simulation) in worker threads (D-128). */
+  MINING_WORKERS: bool(true),
   /** Timeout for one SMTP delivery, in milliseconds. */
   SMTP_TIMEOUT_MS: z.coerce.number().int().min(1000).default(15000),
   /** Timeout for one call to the AI provider, in milliseconds (generation can take a while). */

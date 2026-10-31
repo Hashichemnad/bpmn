@@ -17,6 +17,7 @@ import { MinusCircleOutlined, PlusOutlined } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
 import {
   CALCULATED_METRICS,
+  MINING_METRICS,
   KPI_DIRECTIONS,
   KPI_FREQUENCIES,
   KPI_STATUSES,
@@ -29,10 +30,11 @@ import { useSaveKpi } from '@/api/kpi';
 import { useObjectiveTreeData } from './kpi-helpers';
 import { useAuth } from '@/auth/AuthProvider';
 import { BilingualFields } from '@/components/BilingualFields';
-import { useErrorMessage } from '@/components/i18n-helpers';
+import { useErrorMessage, useLocalized } from '@/components/i18n-helpers';
 import { useDepartmentTreeData } from '@/features/admin/useDepartmentTreeData';
 import { UserSelect } from '@/features/governance/UserSelect';
 import { GrcItemSelect } from '@/features/grc/GrcItemSelect';
+import { useEventLogs } from '@/api/mining';
 import { useProcessTreeOptions } from '@/features/modeler/process-tree-options';
 import { CapabilitySelect } from '@/features/ea/ea-components';
 
@@ -65,6 +67,8 @@ export function KpiFormModal({
   const departments = useDepartmentTreeData();
   const objectives = useObjectiveTreeData();
   const processes = useProcessTreeOptions('');
+  const loc = useLocalized();
+  const logs = useEventLogs({ pageSize: 100, status: 'READY' }, can(PERMISSIONS.MINING_READ));
   const item = detail?.item;
   const locked = new Set(item?.lockedFields ?? []);
   const dataSource = Form.useWatch('dataSource', form) as string | undefined;
@@ -77,6 +81,7 @@ export function KpiFormModal({
         ownerId: item.owner?.id ?? null,
         departmentId: item.department?.id ?? null,
         calculatedProcessId: item.calculatedProcess?.id ?? null,
+        miningLogId: item.miningLog?.id ?? null,
         objectiveIds: item.objectives.map((o) => o.id),
         capabilityIds: item.capabilities.map((c) => c.id),
         riskIds: item.risks.map((r) => r.id),
@@ -118,7 +123,11 @@ export function KpiFormModal({
       departmentId: v.departmentId ?? null,
       dataSource: v.dataSource,
       status: v.status,
-      calculatedMetric: v.dataSource === 'CALCULATED' ? (v.calculatedMetric ?? null) : null,
+      calculatedMetric:
+        v.dataSource === 'CALCULATED' || v.dataSource === 'EVENT_LOG'
+          ? (v.calculatedMetric ?? null)
+          : null,
+      miningLogId: v.dataSource === 'EVENT_LOG' ? (v.miningLogId ?? null) : null,
       calculatedProcessId: v.dataSource === 'CALCULATED' ? (v.calculatedProcessId ?? null) : null,
       objectiveIds: v.objectiveIds ?? [],
       capabilityIds: v.capabilityIds ?? [],
@@ -302,7 +311,12 @@ export function KpiFormModal({
             <Form.Item name="dataSource" label={t('kpi:fields.dataSource')}>
               <Select
                 disabled={item?.dataSource === 'SALESFORCE'}
-                options={options('dataSource', ['MANUAL', 'EXCEL', 'CALCULATED']).concat(
+                options={options('dataSource', [
+                  'MANUAL',
+                  'EXCEL',
+                  'CALCULATED',
+                  ...(can(PERMISSIONS.MINING_READ) ? ['EVENT_LOG'] : []),
+                ]).concat(
                   item?.dataSource === 'SALESFORCE'
                     ? [{ value: 'SALESFORCE', label: t('kpi:dataSource.SALESFORCE') }]
                     : [],
@@ -333,6 +347,35 @@ export function KpiFormModal({
                   showSearch
                   treeNodeFilterProp="title"
                   treeDefaultExpandAll
+                />
+              </Form.Item>
+            </Col>
+          </Row>
+        )}
+        {dataSource === 'EVENT_LOG' && (
+          <Row gutter={16}>
+            <Col xs={24} md={12}>
+              <Form.Item
+                name="calculatedMetric"
+                label={t('kpi:fields.calculatedMetric')}
+                rules={[{ required: true }]}
+              >
+                <Select options={options('metric', MINING_METRICS)} />
+              </Form.Item>
+            </Col>
+            <Col xs={24} md={12}>
+              <Form.Item
+                name="miningLogId"
+                label={t('kpi:fields.miningLog')}
+                rules={[{ required: true }]}
+              >
+                <Select
+                  showSearch
+                  optionFilterProp="label"
+                  options={(logs.data?.items ?? []).map((l) => ({
+                    value: l.id,
+                    label: `${l.code} ${loc(l)}`,
+                  }))}
                 />
               </Form.Item>
             </Col>

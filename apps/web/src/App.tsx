@@ -76,6 +76,10 @@ import { KpisPage } from '@/features/kpi/KpisPage';
 import { KpiDetailPage } from '@/features/kpi/KpiDetailPage';
 import { ObjectivesPage } from '@/features/kpi/ObjectivesPage';
 import { KpiDashboardPage } from '@/features/kpi/KpiDashboardPage';
+import { LogsPage } from '@/features/mining/LogsPage';
+import { MiningLogPage } from '@/features/mining/MiningLogPage';
+import { ImportMappingPage, UploadLogPage } from '@/features/mining/ImportWizard';
+import { SimulationPage, SimulationsPage } from '@/features/mining/SimulationPages';
 import { SalesforceSettingsPage } from '@/features/settings/SalesforceSettingsPage';
 import { DiagramDetailPage } from '@/features/diagrams/DiagramDetailPage';
 import { DiagramWorkspacePage } from '@/features/diagrams/DiagramWorkspacePage';
@@ -429,6 +433,54 @@ export const routes: RouteObject[] = [
                     element: (
                       <RequirePermission all={[P.EA_READ]}>
                         <DataObjectsPage />
+                      </RequirePermission>
+                    ),
+                  },
+                  {
+                    path: 'mining/logs',
+                    element: (
+                      <RequirePermission all={[P.MINING_READ]}>
+                        <LogsPage />
+                      </RequirePermission>
+                    ),
+                  },
+                  {
+                    path: 'mining/logs/new',
+                    element: (
+                      <RequirePermission all={[P.MINING_MANAGE]}>
+                        <UploadLogPage />
+                      </RequirePermission>
+                    ),
+                  },
+                  {
+                    path: 'mining/logs/:id/import',
+                    element: (
+                      <RequirePermission all={[P.MINING_MANAGE]}>
+                        <ImportMappingPage />
+                      </RequirePermission>
+                    ),
+                  },
+                  {
+                    path: 'mining/simulations',
+                    element: (
+                      <RequirePermission all={[P.MINING_READ, P.PROCESSES_READ]}>
+                        <SimulationsPage />
+                      </RequirePermission>
+                    ),
+                  },
+                  {
+                    path: 'mining/simulations/:id',
+                    element: (
+                      <RequirePermission all={[P.MINING_READ, P.PROCESSES_READ]}>
+                        <SimulationPage />
+                      </RequirePermission>
+                    ),
+                  },
+                  {
+                    path: 'mining/logs/:id/:tab?',
+                    element: (
+                      <RequirePermission all={[P.MINING_READ]}>
+                        <MiningLogPage />
                       </RequirePermission>
                     ),
                   },

@@ -1,0 +1,532 @@
+{
+  "nav": {
+    "group": "Process mining",
+    "logs": "Event logs",
+    "simulations": "Simulations"
+  },
+  "status": {
+    "DRAFT": "Draft",
+    "IMPORTING": "Importing",
+    "READY": "Ready",
+    "FAILED": "Failed",
+    "DELETING": "Deleting"
+  },
+  "source": {
+    "FILE": "Uploaded file",
+    "PROCESSHUB": "ProcessHub reviews"
+  },
+  "units": {
+    "s": "{{n}} s",
+    "min": "{{n}} min",
+    "h": "{{n}} h",
+    "d": "{{n}} d",
+    "dh": "{{d}} d {{h}} h",
+    "minutes": "{{n}} min"
+  },
+  "job": {
+    "kind": {
+      "VALIDATE": "Validation",
+      "IMPORT": "Import",
+      "DELETE": "Deletion",
+      "ANALYSE": "Analysis",
+      "DISCOVER": "Discovery",
+      "CONFORMANCE": "Conformance check",
+      "KPI": "KPI calculation",
+      "SIMULATE": "Simulation"
+    },
+    "status": {
+      "QUEUED": "queued",
+      "RUNNING": "running",
+      "DONE": "done",
+      "FAILED": "failed",
+      "CANCELLED": "cancelled"
+    },
+    "cancel": "Cancel",
+    "failed": "The job failed: {{error}}"
+  },
+  "fields": {
+    "code": "Code",
+    "name": "Name",
+    "nameEn": "Name (English)",
+    "nameAr": "Name (Arabic)",
+    "descriptionEn": "Description (English)",
+    "descriptionAr": "Description (Arabic)",
+    "process": "Linked process",
+    "status": "Status",
+    "cases": "Cases",
+    "events": "Events",
+    "activities": "Activities",
+    "resources": "Resources",
+    "period": "Period",
+    "owner": "Owner",
+    "department": "Department",
+    "source": "Source",
+    "file": "File",
+    "timestamps": "Timestamps",
+    "startAndEnd": "Start and end",
+    "endOnly": "One timestamp per event",
+    "importedAt": "Imported",
+    "pseudonymised": "Pseudonymised"
+  },
+  "logs": {
+    "title": "Event logs",
+    "subtitle": "Import event logs from other systems and analyse how processes really run",
+    "import": "Import log",
+    "fromProcessHub": "Create log from ProcessHub",
+    "search": "Search code or name",
+    "empty": "No event logs yet"
+  },
+  "processhub": {
+    "title": "Create log from ProcessHub",
+    "help": "Each governance review becomes a case: submitted, decisions per review step (with waiting and processing time), published or withdrawn.",
+    "create": "Create log",
+    "started": "The log is being built",
+    "items": "Reviews of",
+    "item": {
+      "PROCESS": "Processes",
+      "PAGE": "Pages",
+      "DIAGRAM": "Diagrams"
+    },
+    "period": "Submitted between",
+    "language": "Language of the activity names"
+  },
+  "import": {
+    "title": "Import event log",
+    "steps": {
+      "upload": "Upload",
+      "mapping": "Column mapping",
+      "validate": "Validation",
+      "import": "Import"
+    },
+    "file": "File",
+    "fileRequired": "Choose a file first",
+    "drop": "Click or drag a CSV, Excel (.xlsx) or XES file here",
+    "hint": "Up to {{mb}} MB. One row per event: case id, activity, timestamp(s).",
+    "processHint": "Optional: activities can then be mapped to the steps of its BPMN model.",
+    "uploadNext": "Upload and continue",
+    "loadTemplate": "Load a saved mapping",
+    "saveTemplate": "Save mapping as template",
+    "templateName": "Template name",
+    "templateSaved": "Mapping template saved",
+    "delimiter": "Delimiter",
+    "delimiters": {
+      "comma": "Comma ,",
+      "semicolon": "Semicolon ;",
+      "tab": "Tab",
+      "pipe": "Pipe |"
+    },
+    "sheet": "Worksheet",
+    "preview": "Preview (first rows)",
+    "validate": "Validate",
+    "back": "Back to mapping",
+    "run": "Import {{count}} events",
+    "done": "Event log imported"
+  },
+  "mapping": {
+    "caseColumn": "Case id",
+    "activityColumn": "Activity",
+    "startColumn": "Start time",
+    "endColumn": "End time (or timestamp)",
+    "resourceColumn": "Resource",
+    "departmentColumn": "Department",
+    "attributes": "Other attributes (filters)",
+    "none": "— not used —",
+    "timestampFormat": "Timestamp format",
+    "timeZone": "Time zone",
+    "ambiguous": "day/month unclear",
+    "pseudonymise": "Pseudonymise case ids and resources",
+    "pseudonymiseHint": "Real ids are replaced at import and the uploaded file is deleted afterwards.",
+    "dropDuplicates": "Skip duplicate events",
+    "formats": {
+      "auto": "Detect automatically",
+      "iso": "ISO 8601 (2026-03-01 08:15)",
+      "dmy": "Day first (01/03/2026 08:15)",
+      "mdy": "Month first (03/01/2026 8:15 AM)",
+      "ymd": "Year first (2026/03/01 08:15)",
+      "excel": "Excel serial number",
+      "epochSeconds": "Unix time (seconds)",
+      "epochMillis": "Unix time (milliseconds)"
+    }
+  },
+  "report": {
+    "rows": "Rows read",
+    "events": "Valid events",
+    "cases": "Cases",
+    "activities": "Activities",
+    "skipped": "Skipped",
+    "format": "Timestamp format",
+    "ambiguous": "Day and month could not be told apart from the values (all ≤ 12): day first was assumed. Choose the format explicitly if this is wrong.",
+    "clean": "No problems found",
+    "issues": "Some rows will be skipped",
+    "missingCase": "{{count}} rows without a case id",
+    "missingActivity": "{{count}} rows without an activity",
+    "missingTimestamp": "{{count}} rows without a timestamp",
+    "unparsableTimestamp": "{{count}} rows with a timestamp that cannot be read",
+    "startAfterEnd": "{{count}} rows where the start is after the end",
+    "duplicates": "{{count}} duplicate events",
+    "row": "Row",
+    "column": "Column",
+    "value": "Value"
+  },
+  "tabs": {
+    "overview": "Overview",
+    "activities": "Activities and steps",
+    "access": "Access",
+    "map": "Process map",
+    "variants": "Variants",
+    "statistics": "Statistics",
+    "bottlenecks": "Bottlenecks",
+    "conformance": "Conformance"
+  },
+  "log": {
+    "edit": "Edit",
+    "continueImport": "Continue import",
+    "reimport": "Re-import",
+    "delete": "Delete",
+    "deleteConfirm": "Delete this event log for good?",
+    "deleteHint": "All events are deleted permanently. This cannot be undone.",
+    "failed": "The last import failed. Check the mapping and import again.",
+    "report": "Last validation / import",
+    "processHint": "Changing the process clears the activity mapping."
+  },
+  "activities": {
+    "title": "Activities and BPMN steps",
+    "autoMatch": "Match automatically",
+    "matched": "{{count}} activities matched",
+    "noProcess": "Link the log to a process (Edit) to map activities to its BPMN steps.",
+    "summary": "{{mapped}} of {{total}} activities are mapped to steps of the process.",
+    "activity": "Activity in the log",
+    "step": "BPMN step",
+    "unmapped": "Not in the model",
+    "match": "Matched by",
+    "matchKind": {
+      "LABEL": "Label",
+      "SYNONYM": "Dictionary synonym",
+      "MANUAL": "Manual"
+    }
+  },
+  "access": {
+    "title": "Who can see this log",
+    "help": "The owner, members of the log's department and the users below. Event logs can contain personal data: grant access only where needed.",
+    "grant": "Grant access",
+    "revoke": "Remove",
+    "user": "User",
+    "email": "E-mail"
+  },
+  "analysis": {
+    "cases": "{{cases}} of {{total}} cases",
+    "excel": "Excel"
+  },
+  "map": {
+    "title": "Process map",
+    "paths": "Paths",
+    "activities": "Activities",
+    "shown": "{{edges}} of {{total}} paths shown",
+    "zoomIn": "Zoom in",
+    "zoomOut": "Zoom out",
+    "zoomReset": "Fit",
+    "frequency": "Frequency",
+    "performance": "Performance",
+    "mean": "mean",
+    "median": "median",
+    "max": "max",
+    "wait": "wait",
+    "work": "work",
+    "variantShown": "Variant highlighted",
+    "noStartTimes": "No start times in this log: the performance view shows the time between events only."
+  },
+  "filters": {
+    "none": "No filters: all cases",
+    "add": "Add filter",
+    "clear": "Clear",
+    "save": "Save filters",
+    "presets": "Saved filters",
+    "presetName": "Name of the saved filters",
+    "apply": "Apply",
+    "not": "not",
+    "cases": "Cases",
+    "range": "Period",
+    "periodModeLabel": "Cases that",
+    "periodMode": {
+      "intersecting": "Run in the period",
+      "started": "Started in the period",
+      "completed": "Completed in the period",
+      "contained": "Started and completed in the period"
+    },
+    "activityMode": {
+      "contains": "Contain",
+      "notContains": "Do not contain"
+    },
+    "attribute": "Attribute",
+    "values": "Values",
+    "activities": "Activities",
+    "from": "From",
+    "to": "To",
+    "directly": "Directly followed (no step in between)",
+    "exclude": "Exclude these cases instead",
+    "minHours": "Minimum (hours)",
+    "maxHours": "Maximum (hours)",
+    "types": {
+      "period": "Period",
+      "attribute": "Attribute value",
+      "variant": "Variant",
+      "throughput": "Throughput time",
+      "activity": "Contains activity",
+      "follows": "Follows relation",
+      "resource": "Resource",
+      "department": "Department",
+      "cases": "Cases"
+    }
+  },
+  "variants": {
+    "compare": "Compare variants",
+    "variant": "Variant {{n}}",
+    "difference": "Difference: {{time}} mean throughput time, {{steps}} steps",
+    "summary": "{{total}} variants in the filtered cases; the {{shown}} most frequent are listed. Select two to compare.",
+    "examples": "Example cases:",
+    "share": "Share",
+    "mean": "Mean",
+    "median": "Median",
+    "steps": "Steps",
+    "path": "Path",
+    "onMap": "Show on map"
+  },
+  "stats": {
+    "variants": "Variants",
+    "mean": "Mean throughput",
+    "median": "Median throughput",
+    "p90": "90th percentile",
+    "rework": "Cases with rework",
+    "eventsPerCase": "Events per case",
+    "trend": {
+      "week": "Cases started and mean throughput time per week",
+      "month": "Cases started and mean throughput time per month"
+    },
+    "started": "Cases started",
+    "meanHours": "Mean throughput (hours)",
+    "histogram": "Throughput time distribution",
+    "max": "max",
+    "reworkTitle": "Rework (repeated activities)",
+    "repeats": "Repetitions",
+    "resources": "Activities per resource",
+    "handovers": "Handovers of work",
+    "noHandovers": "No resources in this log.",
+    "departmentHandovers": "Between departments",
+    "resourceHandovers": "Between resources",
+    "count": "Count"
+  },
+  "bottlenecks": {
+    "noStart": "The log has one timestamp per event: waiting and processing time cannot be separated; transitions show the time between events.",
+    "edges": "Slowest transitions",
+    "activities": "Slowest activities (waiting vs processing)",
+    "transition": "Transition",
+    "slowCases": "Cases that drive it",
+    "waiting": "Mean waiting",
+    "processing": "Mean processing",
+    "waitShare": "Share waiting"
+  },
+  "case": {
+    "title": "Case {{id}}",
+    "end": "End"
+  },
+  "discover": {
+    "button": "Generate BPMN",
+    "title": "Generate BPMN from the log",
+    "help": "The heuristics miner builds a process model from the filtered cases: tasks, gateways (AND / XOR from the data) and lanes from the departments or resources. The result is a new draft process for a person to review — it is never published automatically.",
+    "generate": "Generate",
+    "open": "Open in the modeler",
+    "done": "Draft process {{code}} created.",
+    "review": "Review the model, rename the steps and link roles before submitting it for review.",
+    "dependency": "Dependency threshold",
+    "dependencyHint": "Higher = only strong relations (simpler model); every activity keeps its strongest input and output.",
+    "lanes": "Lanes from departments / resources"
+  },
+  "conformance": {
+    "noProcess": "Link the log to a process (Edit) to compare it with the model.",
+    "noMapping": "No activity is mapped to a step yet (tab \"Activities and steps\").",
+    "showOnModel": "Show on the model",
+    "fitness": "Fitness (token replay)",
+    "conforming": "Conforming cases",
+    "deviationTypes": "Kinds of deviation",
+    "unobserved": "Steps of the model never seen in the log (treated as silent): {{steps}}",
+    "deviations": "Deviations",
+    "kind": "Kind",
+    "kinds": {
+      "SKIPPED": "Skipped step",
+      "INSERTED": "Inserted activity",
+      "WRONG_ORDER": "Wrong order"
+    },
+    "what": "What happened",
+    "wrongOrder": "\"{{step}}\" happened before \"{{other}}\"",
+    "repeated": "\"{{step}}\" repeated (not in the model)",
+    "inserted": "\"{{activity}}\" is not in the model",
+    "skipped": "\"{{step}}\" was skipped",
+    "share": "Share"
+  },
+  "suggestions": {
+    "title": "Planned vs measured step times",
+    "help": "Medians measured in the log compared with the step attributes of the model. Select the steps to update: a new version of the process is saved with your change note.",
+    "observations": "Observations",
+    "duration": "Duration (planned → measured)",
+    "waiting": "Waiting (planned → measured)",
+    "apply": "Update {{count}} steps",
+    "defaultNote": "Step times updated from event log {{code}}",
+    "confirm": "Update the model",
+    "confirmText": "The selected steps get the measured values and the process gets a new version with this note:",
+    "applied": "New version saved"
+  },
+  "sim": {
+    "title": "Simulations",
+    "subtitle": "What-if analysis of processes: run as-is and to-be scenarios and compare them",
+    "new": "New simulation",
+    "newHelp": "Simulates the process with its step attributes (duration, cost, frequency) and lanes as resources. An as-is scenario is created; add to-be scenarios to compare.",
+    "empty": "No simulations yet",
+    "scenarios": "Scenarios",
+    "lastRun": "Last run",
+    "defaultsFrom": "Defaults from event log",
+    "defaultsHelp": "Branch probabilities and arrivals are taken from the cases of this log (else equal branches and the model's frequency).",
+    "kind": "Scenario",
+    "kinds": {
+      "AS_IS": "As-is",
+      "TO_BE": "To-be"
+    },
+    "processVersion": "Process model",
+    "workingModel": "Working model",
+    "arrivals": "Case arrivals",
+    "arrivalUnit": {
+      "model": "From the model",
+      "month": "Per month",
+      "day": "Per working day"
+    },
+    "fromModel": "{{n}} per month (step attribute \"frequency per month\")",
+    "caseSla": "Case SLA (hours)",
+    "none": "None",
+    "startDate": "First day",
+    "days": "Simulated days",
+    "warmup": "Warm-up days",
+    "seed": "Random seed",
+    "calendar": "Working calendar",
+    "week": "Working week",
+    "weeks": {
+      "SUN_THU": "Sunday – Thursday",
+      "MON_FRI": "Monday – Friday",
+      "ALL": "Every day, 24 h"
+    },
+    "hours": "Working hours",
+    "alwaysOpen": "24 / 7",
+    "holidays": "Public holidays",
+    "distribution": "Duration",
+    "distributions": {
+      "fixed": "Fixed",
+      "normal": "Normal",
+      "triangular": "Triangular",
+      "exponential": "Exponential",
+      "uniform": "Uniform"
+    },
+    "minutes": "Minutes",
+    "params": {
+      "mean": "mean",
+      "sd": "sd",
+      "min": "min",
+      "mode": "likely",
+      "max": "max"
+    },
+    "cost": "Cost / execution",
+    "lane": "Lane / role",
+    "capacity": "People (capacity)",
+    "costPerHour": "Cost per hour",
+    "noGateways": "The model has no exclusive or inclusive gateways.",
+    "sum": "Sum {{sum}} %",
+    "editScenario": "Scenario: {{name}}",
+    "save": "Save",
+    "tabs": {
+      "general": "General",
+      "steps": "Steps",
+      "resources": "Resources",
+      "probabilities": "Branch probabilities"
+    },
+    "onModel": "Bottlenecks on the model",
+    "runAll": "Run all scenarios",
+    "deleteConfirm": "Delete this simulation and its results?",
+    "copy": "Copy as to-be scenario",
+    "deleteScenario": "Delete this scenario?",
+    "daysShort": "{{days}} days",
+    "ranAt": "Run {{date}}",
+    "stale": "changed since the run",
+    "notRun": "Not run yet",
+    "addScenario": "Add scenario",
+    "noResults": "Run the scenarios to compare them.",
+    "issues": {
+      "NO_START": "The model has no start event.",
+      "NO_END": "The model has no end event.",
+      "NO_ARRIVALS": "No case arrivals: set a rate or the \"frequency per month\" of a step.",
+      "MISSING_DURATION": "\"{{name}}\" has no duration (0 minutes is used).",
+      "PROBABILITIES_SUM": "The branches of \"{{name}}\" add up to {{value}} % instead of 100 %.",
+      "LANE_WITHOUT_CAPACITY": "Lane \"{{name}}\" has no people (capacity)."
+    },
+    "ai": "AI assistant",
+    "explain": "Explain these results",
+    "suggest": "Suggest improvement scenarios",
+    "aiNotice": "AI explanation — check it against the figures.",
+    "proposalsNotice": "Proposals only: nothing changes until you create a scenario from one.",
+    "createScenario": "Create scenario",
+    "proposalAdded": "Scenario added",
+    "comparison": "Comparison",
+    "measure": "Measure",
+    "m": {
+      "completed": "Cases completed",
+      "inProgress": "Cases in progress at the end",
+      "mean": "Throughput time (mean)",
+      "p90": "Throughput time (P90)",
+      "costPerCase": "Cost per case",
+      "totalCost": "Total cost",
+      "sla": "Cases within SLA",
+      "stepSla": "Step executions within SLA",
+      "utilisation": "Utilisation: {{lane}}",
+      "queue": "Queue (mean / max): {{lane}}"
+    },
+    "chart": {
+      "mean": "Mean throughput (hours)",
+      "p90": "P90 throughput (hours)",
+      "cost": "Cost per case",
+      "utilisation": "Resource utilisation (%)"
+    },
+    "useCentral": "Use the central holiday list",
+    "centralInfo": "{{count}} holidays from the central list ({{expected}} expected)",
+    "ownList": "Own holiday list of this scenario",
+    "copyCentral": "Copy the central list"
+  },
+  "portal": {
+    "title": "Performance",
+    "basis": "Measured on {{cases}} cases from {{from}} to {{to}} (event log).",
+    "conformance": "Cases following the model",
+    "completed": "Cases completed"
+  },
+  "settings": {
+    "button": "Settings",
+    "title": "Process mining settings",
+    "retention": "Delete event logs after (months)",
+    "retentionHint": "Logs whose last event is older are deleted for good (empty = keep).",
+    "portal": "\"Performance\" on published processes in the portal",
+    "portalHint": "Throughput time trend and conformance only — no cases, people or logs.",
+    "concurrency": "Jobs at the same time",
+    "timeZone": "Default time zone"
+  },
+  "handbook": {
+    "includePerformance": "Performance analysis (process mining summary and last simulation)"
+  },
+  "holidays": {
+    "title": "Public holidays",
+    "button": "Public holidays",
+    "help": "The central holiday list used by every simulation scenario (a scenario can use its own list instead). Admins maintain it each year. Islamic holidays depend on the moon sighting: keep them \"expected\" until the official announcement.",
+    "date": "Date",
+    "status": "Status",
+    "expected": "Expected (moon sighting)",
+    "confirmed": "Confirmed",
+    "add": "Add holiday",
+    "saved": "Holiday list saved",
+    "duplicate": "A date appears twice.",
+    "card": "Public holidays (simulation)",
+    "cardHint": "Central list of public holidays used by the simulation's working calendar."
+  }
+}

@@ -97,6 +97,8 @@ services:
       SSO_HTTP_TIMEOUT_MS: ${SSO_HTTP_TIMEOUT_MS:-15000}
       APP_URL: ${APP_URL:-http://localhost:8080}
       SCHEDULER_INTERVAL_MINUTES: ${SCHEDULER_INTERVAL_MINUTES:-60}
+      MINING_UPLOAD_MAX_MB: ${MINING_UPLOAD_MAX_MB:-200}
+      MINING_WORKERS: ${MINING_WORKERS:-true}
     volumes:
       - api-data:/app/data
     depends_on:

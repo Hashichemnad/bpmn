@@ -1684,3 +1684,277 @@ Supersedes the "act as the Super Admin" rule of D-116.
   `SEED_DEMO_DATA=false`. It is switched on at go-live once the real enterprise value chain is approved and
   published (DEPLOYMENT.md §6 step 10, SECURITY.md §7 checklist). Asserted in `seed.e2e-spec.ts` (a seed without
   demo data creates no diagrams and no start page).
+
+## D-128 — Process mining and simulation in TypeScript, heavy work as jobs (Phase 5.1, 2026-10-31)
+
+- **No Python service.** The algorithms Phase 5.1 needs are standard, well documented and small enough to implement
+  and test in TypeScript: directly-follows graph with frequency / performance, variants, statistics, the
+  **heuristics miner** (Weijters & van der Aalst: dependency measure with dependency / positive-observation /
+  relative-to-best thresholds, length-one / length-two loops, AND / XOR splits from the AND measure), **token-based
+  replay** fitness (Rozinat & van der Aalst: `½(1 − m/c) + ½(1 − r/p)`) on a Petri net translated from the BPMN
+  model, and a **discrete-event simulation** engine. They live in `packages/shared/src/mining/` (pure functions, no
+  I/O) with unit tests against small logs whose results are published or computed by hand. pm4py (GPL-3.0) would
+  force a separate service, a second runtime in the Docker stack and a licence review for the self-hosted product;
+  none of the required features needs it. Alignment-based conformance, inductive miner and object-centric mining
+  are not in scope (BACKLOG) — if they are wanted later, a sidecar can be reconsidered then.
+- **Jobs off the request thread.** A `MiningJob` row (kind, status `QUEUED` / `RUNNING` / `DONE` / `FAILED` /
+  `CANCELLED`, progress 0–1, message, result, error, `cancelRequested`, requested by) is created for every import,
+  validation, analysis of a large log, BPMN discovery, KPI calculation and simulation run. The in-process
+  `MiningJobRunner` executes them one or two at a time (Setting), never inside the HTTP request: I/O-bound steps
+  (streaming CSV / XLSX / XES parsing, batched `createMany` inserts of 5,000 events) are async and yield between
+  chunks; CPU-bound steps (analysis, discovery, conformance, simulation) run in a **worker thread** that loads the
+  compiled shared package (`new Worker(…, { eval: true })`, so it works the same under ts-node, Jest and the built
+  image). Progress is written at most twice a second; a cancel request is checked between chunks / iterations; jobs
+  still `RUNNING` at start-up are marked `FAILED` ("interrupted by a restart"). Small requests wait up to a few
+  seconds for their job and get the result directly; otherwise the client polls `GET /mining/jobs/:id`.
+- **Storage.** Events are rows of `MiningEvent` (log, case id, activity, start / end time, resource, department,
+  extra attributes as JSON) with an index on `(logId, caseId, endAt)` — the source of truth and the base for case
+  drill-down. For analysis each import also writes a **columnar snapshot** of the log (dictionary-encoded strings,
+  typed arrays, sorted by case and time, gzip) to the existing S3-compatible file storage, keyed by the log's
+  `dataVersion`; a worker decodes 1 M events in well under a second. Analysis results are cached in
+  `MiningResultCache` keyed by log, data version and a hash of the request (filters, options) and dropped when the
+  data version changes or the log is deleted.
+
+## D-129 — Event log import: formats, mapping, time zones, validation (Phase 5.1, 2026-10-31)
+
+- **Formats**: CSV (any of `,` `;` tab `|`, detected from the first lines; UTF-8 with or without BOM), Excel `.xlsx`
+  (first or chosen worksheet, date cells read as wall-clock times) and XES (IEEE 1849; `lifecycle:transition`
+  start / complete pairs of the same activity become one event with start and end, other transitions are ignored;
+  trace attributes become `case:<key>` columns). The type is checked from the **content** (zip magic number for
+  `.xlsx`, `<log` for XES, text without NUL bytes for CSV), never only from the extension; the size limit is
+  `MINING_UPLOAD_MAX_MB` (default 200 MB, nginx / Caddy allow 210 MB on the upload route only). Files are stored in
+  the existing S3-compatible storage (`mining/<log>/source.<ext>`) and read as streams (csv-parse, exceljs
+  `WorkbookReader`, saxes) — never fully in memory.
+- **Flow**: upload creates a draft log → **preview** (first 20 rows, detected timestamp format per column, suggested
+  mapping from column names in English and Arabic and from the values) → **mapping** (case id, activity, start and / or
+  end time, resource, department, up to 20 extra attributes; timestamp format or "detect"; IANA time zone, default
+  **Asia/Dubai**; skip duplicates; pseudonymise) → **validation** job (dry run: missing case / activity / timestamp,
+  unparsable timestamps, start after end, duplicates — counts and up to 50 example rows) → **import** job. Invalid
+  rows are skipped and reported, never "fixed". Mappings can be saved as **templates** (per format).
+- **Timestamps**: ISO 8601 (with or without offset), day-first, month-first, year-first, Excel serial numbers, Unix
+  seconds / milliseconds. Detection picks the format that parses most of the first 500 values; when day and month
+  cannot be told apart (all parts ≤ 12) **day first** is assumed (UAE convention) and the report says so. Wall-clock
+  times are converted with the zone's offset from `Intl` (DST-safe, cached per hour).
+- **Storage of the import**: events in batches of 5,000 (`createMany`), the old events of a re-import deleted in
+  batches first; the columnar snapshot is sorted in a worker thread; `dataVersion` + 1, cached results dropped.
+
+## D-130 — Activities ↔ BPMN steps (Phase 5.1, 2026-10-31)
+
+- A log can be linked to a process. Its activities (`MiningActivity`: name, events, cases) are matched to the flow
+  nodes of the **working model** (tasks, sub-processes, call activities and events — events so that "Request
+  received" can be the start event): first by label (English or Arabic, normalised: case, punctuation, Arabic
+  diacritics / tatweel / alef, ya and ta marbuta variants), then by the **dictionary**: the synonyms of the term the
+  step label is linked to (`ph:labelRef`) or of the term named like the step. Unmatched activities are mapped by hand
+  (or left as "not in the model"); manual mappings are kept on re-import, all mappings are cleared when another
+  process is linked. Mapping changes drop the cached conformance results.
+
+## D-131 — Event log privacy and access (Phase 5.1, 2026-10-31)
+
+- Permissions `mining.read` (see logs one has access to, analyses, simulation results) and `mining.manage` (import,
+  map, grant, delete, run discovery and simulations). Bundles: Process Owner, Internal Audit and Performance Officer
+  read + manage; Modeler, Auditor, Risk & Compliance Officer and Enterprise Architect read; Admin and Super Admin
+  everything; Viewer and Reviewer nothing.
+- A log is **visible** to its owner, to members of its department and to users granted access (`EventLogGrant`);
+  Super Admins (`settings.manage`) see all logs. Others get 404 (ids are not confirmed). It can be **changed** by its
+  owner, by `mining.manage` holders of its department and by Super Admins. Admins do not see all logs by default —
+  event logs can hold personal data (who did what when).
+- **Pseudonymisation** at import replaces case ids and resources with `C-…` / `R-…` keyed hashes (HMAC-SHA-256 with a
+  random key per import that is never stored: consistent within the log, not reversible) and **deletes the uploaded
+  file** afterwards (a re-import then needs a new upload).
+- **Delete is a hard delete**: the log disappears at once (status `DELETING`, hidden), a job removes the events in
+  batches, the file and the snapshot; audited (`DELETE` with counts). **Retention** (Setting `mining.retentionMonths`,
+  off by default): the scheduler deletes logs whose last event is older, audited as a system action.
+
+## D-132 — "Create log from ProcessHub" (Phase 5.1, 2026-10-31)
+
+- ProcessHub's own governance data as an event log — a ready demo and a real use (how long do approvals take, where
+  do reviews loop): one **case per review** (`<code> v<version> #<id>`), events "Submit for review" (submitter),
+  one event per decided review task "Approve / Request changes / Reject: <step name>" with **start = when the step
+  became active** and end = decision (so waiting vs processing is known), "Publish" and "Withdraw". Attributes:
+  item type and workflow; resources and departments are the users'. Filters: item kinds, submission period, language
+  of the activity names. Built as an import job like a file; re-import refreshes it.
+
+## D-133 — Discovery and analysis: one analysis bundle per filter set (Phase 5.1, 2026-10-31)
+
+- **One pass, one bundle.** `analyseLog` (shared, worker thread) computes for the filtered cases: the
+  **directly-follows graph** with frequency (events, cases, start / end counts per activity; count and cases per
+  edge, start ▶ and end ■ markers) and performance (edge time = end of one event → start of the next; per activity
+  processing = end − start and waiting = previous end → start when the log has start times; mean, median, max,
+  P90, total), the **variants** (most frequent 300 with share, mean / median throughput time, example cases; a
+  variant id is a hash of the activity sequence), **statistics** (throughput mean / median / P10–P95, weekly or
+  monthly trend of cases started and mean throughput of completed cases, histogram, rework per activity, activities
+  per resource, resource and department **handovers**), **bottlenecks** (slowest 25 transitions and activities with
+  the 5 slowest cases each) and the filter choices. The bundle is cached (`MiningResultCache`) per log data version
+  and request; the UI's tabs share it.
+- **Sliders.** The **activity slider** keeps the most frequent activities and _projects_ the others out (their
+  predecessor and successor get connected), computed on the server; the **path slider** is client-side: it keeps the
+  most frequent edges but never leaves an activity without its strongest incoming and outgoing edge. Layout with
+  **dagre** (`@dagrejs/dagre`, MIT, top to bottom in both languages). Case animation is not built (BACKLOG).
+- **Filters** (stackable, AND, case level): period (cases running / started / completed / contained in a range),
+  attribute values, variants, throughput time range, contains / does not contain activities, follows relation
+  (directly or eventually, include or exclude), resources, departments. Filter stacks are saved **per user**
+  (`MiningFilterPreset`, per log or for all logs).
+- **Responsiveness**: the request waits up to 8 s for the analysis job, otherwise the client long-polls the job
+  (progress shown); identical requests share one job. Excel exports (variants, bottlenecks, activities, resources,
+  handovers; EN / AR headers, RTL sheets in Arabic) are audited (`EXPORT`).
+
+## D-134 — "Generate BPMN from log": heuristics miner (Phase 5.1, 2026-10-31)
+
+- Algorithm: heuristics miner (Weijters & van der Aalst 2006) with the usual thresholds — dependency (default 0.9,
+  a slider in the dialog), positive observations, relative-to-best, length-two loops, AND measure (0.1) — and the
+  all-tasks-connected heuristic (every activity keeps its best input and output). Splits and joins are AND when
+  every pair of branches passes the AND measure, otherwise XOR (mixed groups become XOR — a known simplification;
+  the result is a draft).
+- The net becomes the AI builder's `ProcessStructure` (one task per activity, join / split gateways, one start and
+  end event, XOR gateways for several start / end activities) and is laid out by the shared layered layout
+  (`structureToBpmn`, theme colours). **Lanes** come from the most frequent department (or resource) of each
+  activity. Labels go to `nameEn` or `nameAr` by script. The result is a **new draft process** owned by the
+  requester (needs `mining.manage`, `processes.create` and model rights), never published automatically; audited as
+  `EXPORT` on the log.
+
+## D-135 — Conformance: token-based replay on the BPMN model (Phase 5.1, 2026-10-31)
+
+- **Model → workflow net** (shared `bpmnToPetriNet`): one place per sequence flow plus source and sink; top-level
+  flow nodes only (a sub-process is one step); tasks / events / call activities are transitions (several incoming
+  flows = exclusive join, several outgoing = parallel split, BPMN semantics); exclusive and event-based gateways
+  are a silent transition per incoming × outgoing pair, parallel gateways one silent transition, inclusive gateways
+  a silent transition per subset (up to 4 branches; more = exclusive). Steps and events that **no activity of the
+  log is mapped to are silent** (and listed as "not seen in the log") — so a log that records only some steps can
+  still be checked.
+- **Replay** (Rozinat & van der Aalst 2008): per variant (cases with the same sequence share the result); before a
+  step that is not enabled the shortest sequence of silent transitions that enables it is fired (bounded search,
+  400 markings / 12 steps); otherwise the missing tokens are created and counted. Fitness = ½(1 − m/c) + ½(1 − r/p),
+  log level from the summed counts, plus the mean case fitness. Unit tests reproduce the textbook example
+  (⟨a,d,c,e,h⟩ on the sequential net: p = c = 6, m = r = 1, fitness 5/6).
+- **Deviations**: _inserted_ — an activity not mapped to the model, or a mapped step repeated where the model does
+  not allow it (not replayed, so rework does not distort the token counts); _wrong order_ — a missing token whose
+  producing step occurs later in the case; _skipped_ — the producing step never occurs (also steps not reached
+  before the case ended). Each deviation has its frequency (cases) and up to 5 example cases. A case **conforms**
+  when it has no missing / remaining tokens and no deviation.
+- **Per step / flow values** for the overlay: cases and events per step, processing and waiting time (median /
+  mean), cases with a deviation; cases per sequence flow (tokens produced). Cached like the analysis, keyed also by
+  a hash of the working model and the activity mapping (a model change never shows stale values).
+- **Overlay**: three new "Colour by" views (D-086 mechanism, view only): _Mining: cases per step_, _measured time_,
+  _deviations_ — bands by thirds of the maximum, a badge per step (cases / time / deviations) and per flow (cases),
+  flows drawn in violet with a width by frequency. Available in the modeler and the read-only view when the user
+  can see a log linked to the process; the log is the most recent one or `?log=`; the legend names it.
+
+## D-136 — KPIs calculated from event logs (Phase 5.1, 2026-10-31)
+
+- New KPI data source **EVENT_LOG** (`Kpi.miningLogId`, migration `mining_kpis`) with the measures _mean throughput
+  time (hours)_, _step executions within SLA (%)_ — each mapped step execution (waiting since the previous event +
+  processing) against the step's `ph:slaMinutes` —, _cases with rework (%)_ and _cases completed_. A case counts in
+  the KPI period in which it was **completed**; only completed periods are written.
+- A `KPI` mining job writes one measurement per period (source `EVENT_LOG`, comment "LOG-xxx: n cases"), audited as
+  `SYNC`; status comes from the KPI thresholds like any measurement. It runs after every import of the log, daily
+  (02:00 UTC tick of the mining scheduler) and on "Recalculate" on the KPI page (`POST /mining/kpis/:id/recalculate`,
+  `kpi.edit`).
+
+## D-137 — Planned vs measured step times (Phase 5.1, 2026-10-31)
+
+- From the conformance result: per step the median processing and waiting time measured in the log against the B2
+  attributes `ph:durationMinutes` / `ph:waitingMinutes`. A change is suggested when the difference is more than
+  20 % (or nothing is planned) and the step has at least 5 observations. The user selects steps; the accepted values
+  are written into the working model (server-side attribute update) and saved as a **new process version** with a
+  change note (model edit rights and the governance lock apply as for any version).
+
+## D-138 — Discrete-event simulation engine (Phase 5.1, 2026-10-31)
+
+- **Engine** (shared `simulate`, worker thread): event list as a binary heap; **case arrivals** form a Poisson
+  process in working time (rate per working day, per month, or the model's largest `ph:frequencyPerMonth`); tokens
+  follow the top-level sequence flows; **tasks** first wait the planned `ph:waitingMinutes` (no person), then seize
+  a person of their **lane** (capacity from the scenario, FIFO queue; tasks outside lanes have no queue) for a
+  sampled working time; **gateways**: exclusive and inclusive split by branch probability (inclusive: each branch
+  independently, at least one), parallel forks; parallel joins wait for every incoming flow, inclusive joins until
+  no other token of the case can still reach them; intermediate catch events delay by their duration; a case ends
+  when its last token is consumed.
+- **Durations**: fixed (default: the step's `ph:durationMinutes`), normal (truncated at 0), triangular
+  (min / most likely / max), exponential, uniform — in **working minutes** on a calendar: Sun–Thu (default, UAE) or
+  Mon–Fri, working hours (default 07:30–15:30), editable public holidays (the UAE list of the year is offered), or
+  24 / 7. **Seeded** Mulberry32 random numbers: the same scenario gives the same result.
+- **Measured** after the warm-up and until the end of the simulated period: cases arrived / completed / in progress,
+  throughput time in calendar hours (mean, median, P90, max), cost per case and total (step `ph:costPerExecution`
+  or scenario cost + person hours × cost per hour), case SLA share (scenario hours) and step SLA share
+  (`ph:slaMinutes` against queue + work), per step executions, mean waiting and processing, per lane
+  **utilisation** (busy working minutes / capacity × working minutes), time-average and maximum queue, weekly
+  completions. A cap of 5 million events stops runaway models (flagged as truncated).
+- **Verification**: unit tests compare with queueing theory — M/M/1 (λ = 0.5, μ = 1: Wq = 1 min, Lq = 0.5, ρ = 0.5)
+  and M/M/2 (λ = 1.5, μ = 1: Erlang C Wq = 9/7 min) within 5–7 % over ~100,000 cases — plus calendar, branching,
+  fork / join and reproducibility tests.
+
+## D-139 — Simulation scenarios and comparison (Phase 5.1, 2026-10-31)
+
+- `Simulation` (SIM-001 …, process, optional event log for defaults) with `SimulationScenario`s (as-is / to-be,
+  parameters JSON validated by `scenarioParamsSchema`, optional **process version** — default the working model —,
+  the last result and what it ran against: version or working-model hash + parameter hash, so a result is marked
+  **stale** when either changes). A new simulation gets an as-is scenario: arrivals from the model (or the log's
+  cases per month), one person per lane, the UAE holidays of the year, and **branch probabilities from the cases
+  of a linked event log** (conformance flow counts) or equal branches.
+- **Validation before a run** (shared `validateScenario`, bilingual messages): no start event / no arrivals /
+  exclusive branches not adding up to 100 % / lanes without people are errors that block the run (`400
+SIMULATION_INVALID` with the issues); missing durations (0 used) and no end event are warnings.
+- Runs are `SIMULATE` jobs (one per scenario, worker threads, progress, cancel). The comparison shows cases
+  completed / in progress, throughput mean / P90, cost per case / total, SLA shares, utilisation and queues per lane
+  side by side, with charts and an Excel export (comparison + per-step sheet, audited). "Bottlenecks on the model"
+  opens the "Colour by → Simulation: utilisation / waiting time" views (bands: utilisation > 85 % high, > 60 %
+  medium; waiting by thirds of the maximum) — view only, like every colour-by view.
+- Permissions: `mining.read` + `processes.read` see simulations and results; `mining.manage` creates, edits and runs
+  them (simulations hold no personal data, so no per-owner restriction).
+
+## D-140 — AI on simulation results: proposals only (Phase 5.1, 2026-10-31)
+
+- AI feature `SIMULATION` (same gateway, role access, limits and usage log as every AI feature, D-038 –): "Explain
+  these results" sends the model facts (steps, lanes) and the figures of the scenarios that ran and returns a short
+  explanation (bottleneck, drivers of time and cost; instructed not to invent numbers). "Suggest improvement
+  scenarios" returns up to three proposals (bilingual name, rationale, lane capacities, step durations); ids the
+  model invents are dropped. Nothing changes until the user clicks **Create scenario** on a proposal, which creates
+  a to-be scenario through the normal endpoint. Tests mock the provider.
+
+## D-141 — Scale: 1 million events / 100,000 cases (Phase 5.1, 2026-10-31)
+
+- Measured with `apps/api/prisma/perf-mining.ts` (same reader, normaliser, batched inserts and analyses as the jobs)
+  on the development sandbox (PostgreSQL 16 on the same host, Node 22): **994,022 events / 180,000 cases** — CSV
+  92 MB — import (stream parse + validation + inserts in batches of 5,000) **115 s**, of which inserts 96 s;
+  columnar snapshot 39 MB (6 MB gzip) built in 1.8 s and decoded in < 0.1 s; analysis bundle (map, variants,
+  statistics, bottlenecks) **1.2 s**, with a filter and the activity slider 0.2 s; heuristics miner < 0.1 s;
+  token replay **0.6 s** (per variant); case drill-down 0.1 s (index `(logId, caseId, endAt)`); delete in batches
+  8.9 s. The API stays responsive because inserts are awaited chunk by chunk and all CPU work runs in worker threads;
+  analysis results are cached.
+- The import is dominated by row inserts (Prisma `createMany`); PostgreSQL `COPY` would be ~5× faster but needs raw
+  SQL streaming — kept in BACKLOG, the current time is acceptable for a background job with progress. Memory: the
+  script's 1.7 GB RSS includes the generated events and CSV kept for the test; the import job keeps only the
+  columnar builder (~60 MB for 1 M events) and the duplicate-check set. The production stack's API heap
+  (`API_NODE_HEAP_MB`, default 1,536 MB) and the worker heap limit (2 GB per worker) are sufficient; DEPLOYMENT.md
+  notes the upload limit and heap.
+- Not in CI (minutes); documented script instead (PROGRESS.md "Verification").
+
+## D-142 — Mining results in the portal and the handbook (Phase 5.1, 2026-10-31)
+
+- **Portal "Performance"** on a published process: off by default (Setting `mining.portalPerformance`, Process
+  mining → Settings, Super Admin). Shows the throughput time (mean, median, P90), the weekly / monthly trend of
+  completed cases and mean throughput time, and the share of cases following the model — from the most recent
+  imported log linked to the process, computed with system access but **aggregated only**: no case ids, resources,
+  attributes or the log itself reach the portal (logs stay restricted, D-131). 404 when off, unpublished or no log.
+- **Handbook "Performance analysis"** (optional, workspace handbook, users with `mining.read`): per process the
+  mining summary of the most recent log the user may see (period, cases, throughput, variants, rework, slowest
+  transition, conformance) and the scenarios of its latest simulation (throughput, P90, cost per case, highest
+  utilisation).
+
+## D-143 — Product owner answers on process mining and simulation (Phase 5.1, 2026-10-31)
+
+- **Who sees event logs — confirmed narrow (D-131):** the owner, members of the log's department, users granted
+  access and Super Admins. Admins do **not** see all logs (they do not need to see who did what and when); anyone
+  else gets access only by an explicit grant on the log.
+- **Retention — off by default in the product** (Setting `mining.retentionMonths` = none). At go-live DOF sets the
+  period from its records-retention policy; **24 months** is the suggested starting point (DEPLOYMENT.md §6,
+  SECURITY.md §7 checklist).
+- **Portal "Performance" section — stays off** (D-142); switched on after go-live once real event logs exist.
+- **Public holidays — one central list plus per-scenario override.** A central list (Setting `mining.holidays`:
+  date, English / Arabic name, _expected_) is maintained by admins each year — Process mining → Simulations →
+  _Public holidays_, and Settings (Super Admin) — through `GET|PUT /simulations/holidays` (read: `mining.read`;
+  change: Super Admin or Admin, i.e. `settings.manage` or `departments.manage`; audited with added / removed /
+  confirmed dates). Its default is the UAE federal list 2026–2027 with the **Islamic holidays marked "expected
+  (moon sighting)"** until an admin confirms them. Every scenario uses the central list by default
+  (`calendar.useCentralHolidays`, default on; resolved when a scenario is validated and run); a scenario can switch
+  to its own list (starting from a copy of the central one). Results record the holidays they ran with: a change
+  of the central list marks the results of the scenarios that use it as "changed since the run".

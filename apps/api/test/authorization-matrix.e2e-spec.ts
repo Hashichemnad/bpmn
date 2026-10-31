@@ -85,6 +85,15 @@ describe('Authorisation matrix (e2e)', () => {
     'Diagram',
     'DiagramVersion',
     'DiagramLink',
+    // Process mining and simulation (Phase 5.1).
+    'EventLog',
+    'EventLogGrant',
+    'MiningEvent',
+    'MiningActivity',
+    'MiningMappingTemplate',
+    'Simulation',
+    'SimulationScenario',
+    'KpiMeasurement',
   ];
 
   async function fingerprint(): Promise<Record<string, string>> {
@@ -207,6 +216,10 @@ describe('Authorisation matrix (e2e)', () => {
       diagram: await anyId(p.diagram.findFirst({ where: { type: 'EPC' } })),
       diagramVersion: await anyId(p.diagramVersion.findFirst()),
       diagramLink: '00000000-0000-4000-8000-000000000000',
+      // Process mining and simulation demo (Phase 5.1).
+      eventLog: await anyId(p.eventLog.findFirst()),
+      simulation: await anyId(p.simulation.findFirst()),
+      scenario: await anyId(p.simulationScenario.findFirst()),
     });
   });
 
@@ -265,6 +278,8 @@ describe('Authorisation matrix (e2e)', () => {
       issues: ids.issue,
       audits: ids.engagement,
       surveys: ids.campaign,
+      mining: ids.eventLog,
+      simulations: ids.simulation,
     };
     return path
       .replace(':type', type)
@@ -282,6 +297,9 @@ describe('Authorisation matrix (e2e)', () => {
         ':linkId',
         first === 'pages' ? ids.pageLink : first === 'diagrams' ? ids.diagramLink : ids.processLink,
       )
+      .replace(':scenarioId', ids.scenario)
+      .replace(':kpiId', ids.kpi)
+      .replace(':caseId', 'INV-000001')
       .replace(':roleId', ids.object)
       .replace(':measurementId', ids.measurement)
       .replace(':processId', ids.process)
@@ -330,6 +348,11 @@ describe('Authorisation matrix (e2e)', () => {
     /^PATCH \/auth\/me$/,
     /^(POST|PUT) \/notifications/,
     /^POST \/feedback$/,
+    // Read operations sent as POST (filters in the body) and one's own saved filters (Phase 5.1).
+    /^POST \/mining\/logs\/:id\/(analysis|conformance|export|presets)$/,
+    /^DELETE \/mining\/presets\/:id$/,
+    /^POST \/mining\/jobs\/:id\/cancel$/,
+    /^POST \/simulations\/:id\/ai\/(explain|suggest)$/,
   ];
   /** Reviewers comment and decide on review steps assigned to them (governance tests cover it). */
   const REVIEWER_ALLOWED = [/^POST \/comments\/:type\/:id$/, /^POST \/reviews\/:id\/decision$/];

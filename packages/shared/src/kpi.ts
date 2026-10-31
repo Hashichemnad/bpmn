@@ -15,7 +15,13 @@ export type KpiDirection = (typeof KPI_DIRECTIONS)[number];
 export const KPI_FREQUENCIES = ['MONTHLY', 'QUARTERLY', 'SEMI_ANNUAL', 'ANNUAL'] as const;
 export type KpiFrequency = (typeof KPI_FREQUENCIES)[number];
 
-export const KPI_DATA_SOURCES = ['MANUAL', 'EXCEL', 'SALESFORCE', 'CALCULATED'] as const;
+export const KPI_DATA_SOURCES = [
+  'MANUAL',
+  'EXCEL',
+  'SALESFORCE',
+  'CALCULATED',
+  'EVENT_LOG',
+] as const;
 export type KpiDataSource = (typeof KPI_DATA_SOURCES)[number];
 
 export const KPI_STATUSES = ['DRAFT', 'ACTIVE', 'RETIRED'] as const;
@@ -42,6 +48,15 @@ export const CALCULATED_METRICS = [
   'AUTOMATION_RATE',
 ] as const;
 export type CalculatedMetric = (typeof CALCULATED_METRICS)[number];
+
+/** KPIs calculated from an event log per period (process mining, Phase 5.1, D-136). */
+export const MINING_METRICS = [
+  'MINING_THROUGHPUT_HOURS',
+  'MINING_SLA_SHARE',
+  'MINING_REWORK_RATE',
+  'MINING_CASES',
+] as const;
+export type MiningMetric = (typeof MINING_METRICS)[number];
 
 export const KPI_IMPORT_KINDS = ['kpis', 'measurements', 'objectives'] as const;
 export type KpiImportKind = (typeof KPI_IMPORT_KINDS)[number];
@@ -268,9 +283,14 @@ const kpiFields = {
   departmentId: id.nullable().optional(),
   dataSource: z.enum(KPI_DATA_SOURCES).optional(),
   status: z.enum(KPI_STATUSES).optional(),
-  calculatedMetric: z.enum(CALCULATED_METRICS).nullable().optional(),
+  calculatedMetric: z
+    .enum([...CALCULATED_METRICS, ...MINING_METRICS])
+    .nullable()
+    .optional(),
   /** Process whose working model a calculated KPI reads. */
   calculatedProcessId: id.nullable().optional(),
+  /** Event log of a KPI calculated from process mining (data source EVENT_LOG). */
+  miningLogId: id.nullable().optional(),
   periodTargets: z.array(periodTargetSchema).max(120).optional(),
   objectiveIds: ids.optional(),
   capabilityIds: ids.optional(),
@@ -285,11 +305,24 @@ function calculated(
     dataSource?: KpiDataSource;
     calculatedMetric?: string | null;
     calculatedProcessId?: string | null;
+    miningLogId?: string | null;
   },
   ctx: z.RefinementCtx,
 ) {
-  if (v.dataSource === 'CALCULATED' && (!v.calculatedMetric || !v.calculatedProcessId))
+  if (
+    v.dataSource === 'CALCULATED' &&
+    (!v.calculatedMetric ||
+      !v.calculatedProcessId ||
+      !(CALCULATED_METRICS as readonly string[]).includes(v.calculatedMetric))
+  )
     ctx.addIssue({ code: 'custom', path: ['calculatedMetric'], message: 'CALCULATION_REQUIRED' });
+  if (
+    v.dataSource === 'EVENT_LOG' &&
+    (!v.calculatedMetric ||
+      !v.miningLogId ||
+      !(MINING_METRICS as readonly string[]).includes(v.calculatedMetric))
+  )
+    ctx.addIssue({ code: 'custom', path: ['calculatedMetric'], message: 'MINING_KPI_REQUIRED' });
 }
 
 export const createKpiSchema = z.object(kpiFields).superRefine((v, ctx) => {
@@ -411,8 +444,10 @@ export interface KpiDto extends KpiRef {
   owner: UserRef | null;
   department: DepartmentRef | null;
   dataSource: KpiDataSource;
-  calculatedMetric: CalculatedMetric | null;
+  calculatedMetric: CalculatedMetric | MiningMetric | null;
   calculatedProcess: Pick<ProcessSummaryDto, 'id' | 'code' | 'nameEn' | 'nameAr'> | null;
+  /** Event log of an EVENT_LOG KPI (null when the user may not see the log). */
+  miningLog: { id: string; code: string; nameEn: string; nameAr: string } | null;
   periodTargets: PeriodTargetInput[];
   objectives: ObjectiveRef[];
   capabilities: EaRef[];
