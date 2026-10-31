@@ -3,3 +3,6 @@ export * from './log-data';
 export * from './matching';
 export * from './schemas';
 export * from './tasks';
+export * from './filters';
+export * from './analysis';
+export * from './heuristics';

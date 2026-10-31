@@ -1,4 +1,7 @@
 import { Module } from '@nestjs/common';
+import { ProcessesModule } from '../processes/processes.module';
+import { ModelsModule } from '../models/models.module';
+import { MiningAnalysisService } from './analysis.service';
 import { MiningController } from './mining.controller';
 import { EventLogsService } from './event-logs.service';
 import { LogImportService } from './log-import.service';
@@ -9,10 +12,12 @@ import { SnapshotService } from './snapshot.service';
 
 /** Process mining and simulation (Phase 5.1, module M13 — D-128 – ). */
 @Module({
+  imports: [ProcessesModule, ModelsModule],
   controllers: [MiningController],
   providers: [
     EventLogsService,
     LogImportService,
+    MiningAnalysisService,
     MiningJobsService,
     MiningSettingsService,
     MiningScheduler,

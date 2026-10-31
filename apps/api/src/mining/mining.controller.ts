@@ -9,17 +9,27 @@ import {
   Post,
   Put,
   Query,
+  Res,
   UploadedFile,
   UseInterceptors,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { ApiTags } from '@nestjs/swagger';
 import { z } from 'zod';
+import type { Response } from 'express';
 import {
   CSV_DELIMITERS,
   MINING_UPLOAD_MAX_MB,
   PERMISSIONS,
   activityMappingSchema,
+  analysisExportSchema,
+  analysisRequestSchema,
+  discoverProcessSchema,
+  filterPresetSchema,
+  type AnalysisExportInput,
+  type AnalysisRequest,
+  type DiscoverProcessInput,
+  type FilterPresetInput,
   createEventLogSchema,
   eventLogListQuerySchema,
   logGrantsSchema,
@@ -52,6 +62,8 @@ import { EventLogsService } from './event-logs.service';
 import { LogImportService } from './log-import.service';
 import { MiningJobsService, toJobDto } from './jobs/mining-jobs.service';
 import { MiningSettingsService } from './mining-settings.service';
+import { MiningAnalysisService } from './analysis.service';
+import { download } from '../ea/ea.controller';
 
 const READ = PERMISSIONS.MINING_READ;
 const MANAGE = PERMISSIONS.MINING_MANAGE;
@@ -83,6 +95,7 @@ export class MiningController {
     private readonly jobs: MiningJobsService,
     private readonly settings: MiningSettingsService,
     private readonly prisma: PrismaService,
+    private readonly analysis: MiningAnalysisService,
   ) {}
 
   // ---------- Settings ----------
@@ -329,5 +342,67 @@ export class MiningController {
       department: r.department,
       attributes: (r.attributes ?? {}) as Record<string, string>,
     }));
+  }
+
+  // ---------- Analysis (step 2) ----------
+
+  /** Map, variants, statistics and bottlenecks of the filtered log (cached; a job when large). */
+  @Post('logs/:id/analysis')
+  @HttpCode(200)
+  @RequirePermissions(READ)
+  analyse(
+    @Param('id', UuidPipe()) id: string,
+    @Body(new ZodPipe(analysisRequestSchema.partial())) body: Partial<AnalysisRequest>,
+    @CurrentUser() user: AuthUser,
+  ) {
+    return this.analysis.analyse(id, body, user);
+  }
+
+  @Post('logs/:id/export')
+  @HttpCode(200)
+  @RequirePermissions(READ)
+  async export(
+    @Param('id', UuidPipe()) id: string,
+    @Body(new ZodPipe(analysisExportSchema)) body: AnalysisExportInput,
+    @CurrentUser() user: AuthUser,
+    @ReqMeta() meta: RequestMeta,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    return download(res, await this.analysis.export(id, body.kind, body.request, user, meta));
+  }
+
+  @Get('logs/:id/presets')
+  @RequirePermissions(READ)
+  presets(@Param('id', UuidPipe()) id: string, @CurrentUser() user: AuthUser) {
+    return this.analysis.presets(id, user);
+  }
+
+  @Post('logs/:id/presets')
+  @RequirePermissions(READ)
+  savePreset(
+    @Param('id', UuidPipe()) id: string,
+    @Body(new ZodPipe(filterPresetSchema)) body: FilterPresetInput,
+    @CurrentUser() user: AuthUser,
+  ) {
+    return this.analysis.savePreset(id, body, user);
+  }
+
+  @Delete('presets/:id')
+  @HttpCode(204)
+  @RequirePermissions(READ)
+  deletePreset(@Param('id', UuidPipe()) id: string, @CurrentUser() user: AuthUser) {
+    return this.analysis.deletePreset(id, user);
+  }
+
+  /** "Generate BPMN from log": heuristics miner → a new draft process for review. */
+  @Post('logs/:id/discover')
+  @RequirePermissions(MANAGE, PERMISSIONS.PROCESSES_CREATE)
+  discover(
+    @Param('id', UuidPipe()) id: string,
+    @Body(new ZodPipe(discoverProcessSchema)) body: DiscoverProcessInput,
+    @CurrentUser() user: AuthUser,
+    @ReqMeta() meta: RequestMeta,
+  ) {
+    return this.analysis.discover(id, body, user, meta);
   }
 }

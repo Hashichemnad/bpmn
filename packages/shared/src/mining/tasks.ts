@@ -1,3 +1,5 @@
+import { analyseLog, type AnalysisRequest } from './analysis';
+import { heuristicsMiner, netToStructure, type HeuristicsOptions } from './heuristics';
 import { decodeLogData, encodeLogData, sortRawLog, summariseLog, type RawLog } from './log-data';
 
 /**
@@ -12,6 +14,16 @@ const TASKS = {
   prepareLog: (input: { raw: RawLog }) => {
     const log = sortRawLog(input.raw);
     return { bytes: encodeLogData(log), summary: summariseLog(log) };
+  },
+  /** Map, variants, statistics, bottlenecks of the filtered log. */
+  analyse: (
+    input: { bytes: Uint8Array; request: Partial<AnalysisRequest> },
+    progress: ProgressFn,
+  ) => analyseLog(decodeLogData(input.bytes), input.request, (v) => progress(v, 'analyse')),
+  /** Heuristics miner and the BPMN structure of the net. */
+  discover: (input: { bytes: Uint8Array; options: Partial<HeuristicsOptions> }) => {
+    const net = heuristicsMiner(decodeLogData(input.bytes), input.options);
+    return { net, structure: netToStructure(net) };
   },
   /** Health check of the worker set-up. */
   ping: (input: { bytes?: Uint8Array }) => ({

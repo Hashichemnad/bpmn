@@ -1,5 +1,8 @@
 import { z } from 'zod';
-import { paginationQuerySchema, uuidSchema } from '../schemas';
+import { paginationQuerySchema, processCodeSchema, uuidSchema } from '../schemas';
+import { PROCESS_CATEGORIES } from '../constants';
+import { analysisRequestSchema } from './analysis';
+import { heuristicsOptionsSchema } from './heuristics';
 import type { DepartmentRef, UserRef } from '../types';
 import { DEFAULT_MINING_TIME_ZONE, TIMESTAMP_FORMATS, isValidTimeZone } from './timestamps';
 import type { ActivityMatchKind } from './matching';
@@ -317,4 +320,55 @@ export interface MiningEventDto {
   resource: string | null;
   department: string | null;
   attributes: Record<string, string>;
+}
+
+// ---------- Discovery and analysis (step 2) ----------
+
+/** "Generate BPMN from log": heuristics miner thresholds and the new draft process (D-134). */
+export const discoverProcessSchema = z
+  .object({
+    code: processCodeSchema,
+    category: z.enum(PROCESS_CATEGORIES).optional(),
+    parentId: uuidSchema.nullable().optional(),
+    nameEn: text(200).default(''),
+    nameAr: text(200).default(''),
+    options: heuristicsOptionsSchema.partial().default({}),
+    /** Lanes from the most frequent department (or resource) of each activity. */
+    lanes: z.boolean().default(true),
+  })
+  .refine((v) => !!v.parentId || !!v.category, {
+    path: ['category'],
+    message: 'CATEGORY_REQUIRED',
+  });
+export type DiscoverProcessInput = z.infer<typeof discoverProcessSchema>;
+
+export const MINING_EXPORT_KINDS = [
+  'variants',
+  'bottlenecks',
+  'activities',
+  'resources',
+  'handovers',
+] as const;
+export type MiningExportKind = (typeof MINING_EXPORT_KINDS)[number];
+
+export const analysisExportSchema = z.object({
+  kind: z.enum(MINING_EXPORT_KINDS),
+  request: analysisRequestSchema.partial().default({}),
+});
+export type AnalysisExportInput = z.infer<typeof analysisExportSchema>;
+
+/** Answer of an analysis request: the result, or the job still computing it. */
+export interface AnalysisResponse<T> {
+  status: 'DONE' | 'RUNNING';
+  result: T | null;
+  job: MiningJobDto | null;
+}
+
+export interface DiscoverResultDto {
+  processId: string;
+  code: string;
+  activities: number;
+  arcs: number;
+  gateways: number;
+  lanes: number;
 }
