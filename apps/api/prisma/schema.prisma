@@ -215,25 +215,29 @@ model User {
 
   roles             UserRole[]
   refreshTokens     RefreshToken[]
-  ownedProcesses    Process[]            @relation("ProcessOwner")
-  ownedSpaces       Space[]              @relation("SpaceOwner")
+  ownedProcesses    Process[]               @relation("ProcessOwner")
+  ownedSpaces       Space[]                 @relation("SpaceOwner")
   auditLogs         AuditLog[]
   pageDrafts        PageDraft[]
-  ownedPages        Page[]               @relation("PageOwner")
+  ownedPages        Page[]                  @relation("PageOwner")
   jobRoles          UserJobRole[]
   notifications     Notification[]
   aiUsage           AiUsage[]
   recoveryCodes     MfaRecoveryCode[]
-  ownedObjects      RepoObject[]         @relation("ObjectOwner")
+  ownedObjects      RepoObject[]            @relation("ObjectOwner")
   grcActivities     GrcActivity[]
-  assuranceEvents   AssuranceEvent[]     @relation("AssuranceEventAuthor")
-  appsOwned         Application[]        @relation("AppBusinessOwner")
-  appsIt            Application[]        @relation("AppItOwner")
-  interfacesOwned   AppInterface[]       @relation("InterfaceOwner")
-  dataObjectsOwned  DataObject[]         @relation("DataObjectOwner")
-  capabilitiesOwned Capability[]         @relation("CapabilityOwner")
-  objectivesOwned   StrategicObjective[] @relation("ObjectiveOwner")
-  ownedDiagrams     Diagram[]            @relation("DiagramOwner")
+  assuranceEvents   AssuranceEvent[]        @relation("AssuranceEventAuthor")
+  appsOwned         Application[]           @relation("AppBusinessOwner")
+  appsIt            Application[]           @relation("AppItOwner")
+  interfacesOwned   AppInterface[]          @relation("InterfaceOwner")
+  dataObjectsOwned  DataObject[]            @relation("DataObjectOwner")
+  capabilitiesOwned Capability[]            @relation("CapabilityOwner")
+  objectivesOwned   StrategicObjective[]    @relation("ObjectiveOwner")
+  ownedDiagrams     Diagram[]               @relation("DiagramOwner")
+  eventLogs         EventLog[]              @relation("EventLogOwner")
+  eventLogGrants    EventLogGrant[]         @relation("EventLogGrants")
+  miningTemplates   MiningMappingTemplate[] @relation("MiningTemplateOwner")
+  miningPresets     MiningFilterPreset[]    @relation("MiningPresetUser")
 
   @@unique([ssoIssuer, ssoSubject])
   @@index([departmentId])
@@ -331,6 +335,7 @@ model Department {
   applications Application[]
   kpis         Kpi[]
   diagrams     Diagram[]
+  eventLogs    EventLog[]
 
   @@index([parentId])
 }
@@ -373,6 +378,7 @@ model Process {
   capabilities   CapabilityProcess[]
   calculatedKpis Kpi[]               @relation("KpiCalculatedProcess")
   diagrams       Diagram[]
+  eventLogs      EventLog[]
 
   @@index([parentId, sortOrder])
   @@index([category])
@@ -2012,4 +2018,189 @@ model DiagramLink {
 
   @@unique([diagramId, elementId, repoObjectId, relation])
   @@index([repoObjectId])
+}
+
+// ---------- Process mining (Phase 5.1, M13 — D-128 – ) ----------
+
+enum EventLogSource {
+  FILE
+  PROCESSHUB
+}
+
+enum EventLogStatus {
+  DRAFT
+  IMPORTING
+  READY
+  FAILED
+  DELETING
+}
+
+enum MiningJobStatus {
+  QUEUED
+  RUNNING
+  DONE
+  FAILED
+  CANCELLED
+}
+
+/// An event log: uploaded file (CSV / Excel / XES) or built from ProcessHub data, with its import mapping.
+/// Visible to the owner, members of its department and granted users only (D-131). Deleted for good (events too).
+model EventLog {
+  id             String         @id @default(uuid()) @db.Uuid
+  code           String
+  nameEn         String         @default("")
+  nameAr         String         @default("")
+  descriptionEn  String         @default("")
+  descriptionAr  String         @default("")
+  source         EventLogSource @default(FILE)
+  status         EventLogStatus @default(DRAFT)
+  processId      String?        @db.Uuid
+  process        Process?       @relation(fields: [processId], references: [id], onDelete: SetNull)
+  ownerId        String?        @db.Uuid
+  owner          User?          @relation("EventLogOwner", fields: [ownerId], references: [id], onDelete: SetNull)
+  departmentId   String?        @db.Uuid
+  department     Department?    @relation(fields: [departmentId], references: [id], onDelete: SetNull)
+  /// Uploaded file in the S3-compatible storage (kept for re-imports with another mapping).
+  fileKey        String?
+  fileName       String?
+  fileFormat     String?
+  fileSize       Int?
+  mapping        Json?
+  timeZone       String         @default("Asia/Dubai")
+  pseudonymised  Boolean        @default(false)
+  /// Incremented by every import: the columnar snapshot and cached results belong to one version.
+  dataVersion    Int            @default(0)
+  snapshotKey    String?
+  periodStart    DateTime?
+  periodEnd      DateTime?
+  caseCount      Int            @default(0)
+  eventCount     Int            @default(0)
+  activityCount  Int            @default(0)
+  resourceCount  Int            @default(0)
+  hasStartTimes  Boolean        @default(false)
+  attributeNames String[]       @default([])
+  importReport   Json?
+  importedAt     DateTime?
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+  createdById    String?        @db.Uuid
+  updatedById    String?        @db.Uuid
+
+  grants     EventLogGrant[]
+  activities MiningActivity[]
+  jobs       MiningJob[]
+  caches     MiningResultCache[]
+  presets    MiningFilterPreset[]
+
+  @@index([processId])
+  @@index([ownerId])
+  @@index([departmentId])
+}
+
+model EventLogGrant {
+  logId       String   @db.Uuid
+  log         EventLog @relation(fields: [logId], references: [id], onDelete: Cascade)
+  userId      String   @db.Uuid
+  user        User     @relation("EventLogGrants", fields: [userId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+  createdById String?  @db.Uuid
+
+  @@id([logId, userId])
+  @@index([userId])
+}
+
+/// One event (activity instance). No foreign key to EventLog: deleting a log removes its events in batches (a job).
+model MiningEvent {
+  id         BigInt    @id @default(autoincrement())
+  logId      String    @db.Uuid
+  caseId     String
+  activity   String
+  startAt    DateTime?
+  endAt      DateTime
+  resource   String?
+  department String?
+  attributes Json?
+
+  @@index([logId, caseId, endAt])
+  @@index([logId, activity])
+}
+
+/// Distinct activity of a log with its counts and the BPMN step it is mapped to (D-130).
+model MiningActivity {
+  logId         String   @db.Uuid
+  log           EventLog @relation(fields: [logId], references: [id], onDelete: Cascade)
+  name          String
+  eventCount    Int      @default(0)
+  caseCount     Int      @default(0)
+  bpmnElementId String?
+  /// LABEL | SYNONYM | MANUAL
+  match         String?
+
+  @@id([logId, name])
+}
+
+/// Background work (import, analysis, discovery, conformance, KPI calculation, simulation) — D-128.
+model MiningJob {
+  id              String          @id @default(uuid()) @db.Uuid
+  kind            String
+  status          MiningJobStatus @default(QUEUED)
+  progress        Float           @default(0)
+  message         String          @default("")
+  logId           String?         @db.Uuid
+  log             EventLog?       @relation(fields: [logId], references: [id], onDelete: Cascade)
+  scenarioId      String?         @db.Uuid
+  params          Json?
+  result          Json?
+  error           String?
+  cancelRequested Boolean         @default(false)
+  createdById     String?         @db.Uuid
+  createdAt       DateTime        @default(now())
+  startedAt       DateTime?
+  finishedAt      DateTime?
+
+  @@index([status, createdAt])
+  @@index([logId])
+  @@index([scenarioId])
+}
+
+/// Cached analysis result per log data version and request hash.
+model MiningResultCache {
+  key         String   @id
+  logId       String   @db.Uuid
+  log         EventLog @relation(fields: [logId], references: [id], onDelete: Cascade)
+  dataVersion Int
+  kind        String
+  result      Json
+  createdAt   DateTime @default(now())
+  lastUsedAt  DateTime @default(now())
+
+  @@index([logId])
+}
+
+/// Reusable column mapping for imports.
+model MiningMappingTemplate {
+  id        String   @id @default(uuid()) @db.Uuid
+  name      String
+  format    String
+  mapping   Json
+  ownerId   String?  @db.Uuid
+  owner     User?    @relation("MiningTemplateOwner", fields: [ownerId], references: [id], onDelete: SetNull)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([ownerId])
+}
+
+/// Saved filter stack of one user (per log or for any log).
+model MiningFilterPreset {
+  id        String    @id @default(uuid()) @db.Uuid
+  userId    String    @db.Uuid
+  user      User      @relation("MiningPresetUser", fields: [userId], references: [id], onDelete: Cascade)
+  logId     String?   @db.Uuid
+  log       EventLog? @relation(fields: [logId], references: [id], onDelete: Cascade)
+  name      String
+  filters   Json
+  createdAt DateTime  @default(now())
+
+  @@index([userId, logId])
 }
