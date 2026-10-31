@@ -99,6 +99,12 @@ export const PERMISSIONS = {
   WORKFLOW_MONITOR: 'workflow.monitor',
   /** All processes: retry, cancel, reassign; workflow settings. */
   WORKFLOW_ADMIN: 'workflow.admin',
+  /** Import Center (M15): upload, preview, apply and undo import batches. */
+  IMPORT_MANAGE: 'import.manage',
+  /** Process Owners: import diagrams and documents for their own processes / editable spaces. */
+  IMPORT_OWN: 'import.own',
+  /** Full export package of the whole repository (Super Admin). */
+  EXPORT_FULL: 'export.full',
 } as const;
 export type Permission = (typeof PERMISSIONS)[keyof typeof PERMISSIONS];
 export const ALL_PERMISSIONS: Permission[] = Object.values(PERMISSIONS);
@@ -146,7 +152,9 @@ export const SYSTEM_ROLES: Record<
     nameEn: 'Admin',
     nameAr: 'مسؤول',
     // The Salesforce link stays with Super Admins and Performance Officers (D-118).
-    permissions: ALL_PERMISSIONS.filter((p) => p !== P.SETTINGS_MANAGE && p !== P.KPI_SYNC),
+    permissions: ALL_PERMISSIONS.filter(
+      (p) => p !== P.SETTINGS_MANAGE && p !== P.KPI_SYNC && p !== P.EXPORT_FULL,
+    ),
   },
   PROCESS_OWNER: {
     nameEn: 'Process Owner',
@@ -157,6 +165,7 @@ export const SYSTEM_ROLES: Record<
       P.PROCESSES_EDIT_OWN,
       P.MODELS_EDIT_OWN,
       P.DOCS_EDIT,
+      P.IMPORT_OWN,
       P.GOVERNANCE_DASHBOARD,
       P.DICTIONARY_PROPOSE,
       P.DICTIONARY_APPROVE,
@@ -425,8 +434,10 @@ export const AUDIT_ACTIONS = [
   'MFA_RECOVERY_CODES',
   /** A report or export was downloaded (handbook, RACI, object report). */
   'EXPORT',
-  /** Excel import of a GRC register. */
+  /** Excel import of a GRC register; an Import Center batch applied. */
   'IMPORT',
+  /** Import Center batch undone (M15). */
+  'UNDO',
   /** Risk rating or control effectiveness changed (assessment history). */
   'ASSESS',
   /** Workflow execution (Phase 5.2). */
@@ -492,10 +503,14 @@ export const AUDIT_ENTITY_TYPES = [
   'WorkflowCase',
   'WorkflowTask',
   'WorkflowFile',
+  'ImportBatch',
+  'RepositoryExport',
 ] as const;
 export type AuditEntityType = (typeof AUDIT_ENTITY_TYPES)[number];
 
 export const SETTING_KEYS = {
+  /** Import tools settings (welcome e-mail, AI on imported documents). */
+  IMPORTS: 'imports',
   ORG_NAME_EN: 'org.nameEn',
   ORG_NAME_AR: 'org.nameAr',
   DEFAULT_LOCALE: 'org.defaultLocale',

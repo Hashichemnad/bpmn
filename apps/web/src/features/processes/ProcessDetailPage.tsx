@@ -1,3 +1,4 @@
+import { ImportedTag } from '@/components/ImportedTag';
 import { useMemo, useState } from 'react';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { WorkflowConfigCard } from '@/features/workflow/WorkflowConfigCard';
@@ -318,6 +319,7 @@ export function ProcessDetailPage() {
               rejected={governance.data?.rejected}
             />
             {p.aiGenerated && <AiBadge />}
+            <ImportedTag origin={p.importOrigin} />
           </Space>
         }
         extra={

@@ -1,3 +1,4 @@
+import { importOrigin } from '../imports/import-origin';
 import { Injectable } from '@nestjs/common';
 import type { Prisma } from '@prisma/client';
 import {
@@ -92,6 +93,20 @@ export function assertValidContent(type: DiagramType, content: string) {
     );
 }
 
+/** Next generated code of a diagram type (e.g. "EPC-004"). */
+export async function nextDiagramCode(tx: Prisma.TransactionClient, type: DiagramType) {
+  const prefix = DIAGRAM_CODE_PREFIX[type];
+  const rows = await tx.diagram.findMany({
+    where: { code: { startsWith: `${prefix}-` } },
+    select: { code: true },
+  });
+  const max = rows.reduce((m, r) => {
+    const n = Number(r.code.slice(prefix.length + 1));
+    return Number.isInteger(n) && n > m ? n : m;
+  }, 0);
+  return `${prefix}-${String(max + 1).padStart(3, '0')}`;
+}
+
 @Injectable()
 export class DiagramsService {
   constructor(
@@ -177,6 +192,7 @@ export class DiagramsService {
             }
           : null,
       aiGenerated: d.aiGenerated,
+      importOrigin: await importOrigin(this.prisma, 'DIAGRAM', d.id, d.importBatchId),
       latestVersion: last._max.versionNumber ?? null,
       canEdit: canEditDiagram(user, d),
       canEditContent: canEditDiagramContent(user, d),
@@ -186,17 +202,8 @@ export class DiagramsService {
   }
 
   /** Next free code of a type: VC-001, VC-002 … (deleted diagrams keep their codes). */
-  private async nextCode(tx: Prisma.TransactionClient, type: DiagramType) {
-    const prefix = DIAGRAM_CODE_PREFIX[type];
-    const rows = await tx.diagram.findMany({
-      where: { code: { startsWith: `${prefix}-` } },
-      select: { code: true },
-    });
-    const max = rows.reduce((m, r) => {
-      const n = Number(r.code.slice(prefix.length + 1));
-      return Number.isInteger(n) && n > m ? n : m;
-    }, 0);
-    return `${prefix}-${String(max + 1).padStart(3, '0')}`;
+  private nextCode(tx: Prisma.TransactionClient, type: DiagramType) {
+    return nextDiagramCode(tx, type);
   }
 
   async create(input: CreateDiagramInput, actor: AuthUser, meta: RequestMeta) {

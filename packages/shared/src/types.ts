@@ -1,3 +1,4 @@
+import type { ImportOriginDto } from './imports';
 import type { DiagramType } from './diagrams';
 import type { GrcReviewTaskDto } from './grc';
 import type { DiagramTheme } from './diagram-theme';
@@ -86,6 +87,8 @@ export interface UserDto extends UserRef {
   lockedUntil: string | null;
   mfaEnabled: boolean;
   ssoLinked: boolean;
+  /** False for imported users who have not accepted their invitation yet (and SSO-only accounts). */
+  hasPassword: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -161,6 +164,8 @@ export interface ProcessDto extends ProcessSummaryDto {
   ancestors: Pick<ProcessSummaryDto, 'id' | 'code' | 'nameEn' | 'nameAr'>[];
   hasModel: boolean;
   /** The working model was produced by the AI assistant and not yet edited or approved by a person. */
+  /** Set when an Import Center batch created it (M15). */
+  importOrigin?: ImportOriginDto | null;
   aiGenerated: boolean;
   /** Whether the current user may edit this process / its model. */
   canEdit: boolean;
@@ -352,6 +357,7 @@ export interface PageDto extends PageSummaryDto {
   updatedBy: UserRef | null;
   createdAt: string;
   /** The saved content was produced by the AI assistant and not yet edited or approved by a person. */
+  importOrigin?: ImportOriginDto | null;
   aiGenerated: boolean;
   canEdit: boolean;
   canManage: boolean;

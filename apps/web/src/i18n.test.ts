@@ -37,6 +37,22 @@ import {
 } from '@processhub/shared';
 import { CONVENTION_RULES, THEME_KINDS } from '@processhub/shared';
 import {
+  IMPORT_ACTIONS,
+  IMPORT_BATCH_STATUSES,
+  IMPORT_ENTITIES,
+  IMPORT_GROUPS,
+  IMPORT_ITEM_FILTERS,
+  IMPORT_ITEM_OUTCOMES,
+  IMPORT_KINDS,
+  IMPORT_MATCH_BY,
+  IMPORT_OPTION_KEYS,
+  IMPORT_SUGGESTION_KINDS,
+  PAGE_TEMPLATE_KEYS,
+  MIGRATION_PROPOSAL_KINDS,
+  MIGRATION_PROPOSAL_STATUSES,
+  VISIO_SHAPE_TYPES,
+} from '@processhub/shared';
+import {
   APPROVAL_OUTCOMES,
   ASSIGNMENT_TYPES,
   CASE_EVENT_TYPES,
@@ -362,6 +378,21 @@ describe('translations', () => {
       ...['verify', 'setup', 'codes'].map((k) => `common:auth.mfa.title.${k}`),
       'errors:SSO_HOST_BLOCKED',
       'errors:SSO_INCOMPLETE',
+      // Import Center (M15)
+      ...IMPORT_KINDS.flatMap((k) => [`imports:kind.${k}`, `imports:kindHelp.${k}`]),
+      ...IMPORT_GROUPS.map((g) => `imports:group.${g}`),
+      ...IMPORT_BATCH_STATUSES.map((s) => `imports:status.${s}`),
+      ...IMPORT_ENTITIES.map((e) => `imports:entity.${e}`),
+      ...IMPORT_ITEM_FILTERS.map((f) => `imports:filter.${f}`),
+      ...IMPORT_ACTIONS.map((a) => `imports:action.${a}`),
+      ...IMPORT_ITEM_OUTCOMES.map((o) => `imports:outcome.${o}`),
+      ...IMPORT_MATCH_BY.map((m) => `imports:matchBy.${m}`),
+      ...IMPORT_SUGGESTION_KINDS.map((k) => `imports:suggestion.${k}`),
+      ...IMPORT_OPTION_KEYS.map((k) => `imports:option.${k}`),
+      ...PAGE_TEMPLATE_KEYS.map((k) => `imports:template.${k}`),
+      ...MIGRATION_PROPOSAL_KINDS.flatMap((k) => [`imports:ai.kind.${k}`, `imports:ai.run.${k}`]),
+      ...MIGRATION_PROPOSAL_STATUSES.map((k) => `imports:ai.status.${k}`),
+      ...VISIO_SHAPE_TYPES.map((k) => `imports:visioType.${k}`),
     ];
     expect(expected.filter((k) => !en.has(k))).toEqual([]);
   });

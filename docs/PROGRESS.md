@@ -2,7 +2,99 @@
 
 Read this together with `CLAUDE.md` at the start of every session.
 
-## Current state — 2026-10-31 (Phase 5 — Part 2: Workflow execution, branch `phase-5-2-workflow-execution`, done — awaiting review)
+## Current state — 2026-10-31 (Import tools / migration — module M15, branch `import-tools`, done — awaiting review)
+
+Everything up to Phase 5.2 (workflow execution) is merged into `main`. This branch builds module M15: moving DOF's
+existing processes, diagrams, SOPs and lists into ProcessHub before go-live — file based only (uploads), no live
+connectors (BACKLOG). The session works on `claude/laughing-franklin-koipwl` (the harness branch name) and pushes
+the same commits to `import-tools`.
+
+Technical approach (D-155 – D-163): every import is an `ImportBatch` (upload → parse job → preview with mapping and
+validation → dry run → apply job → result report → undo) on the existing mining job runner (kinds `IMPORT_PARSE`,
+`IMPORT_APPLY`); importers are plug-ins of one registry in `apps/api/src/imports/importers/`; `ImportItem` records
+every created / updated entity (undo, re-import matching by code / external id / file name, before/after); imported
+entities carry `importBatchId` (the "Imported" flag). Upload security in `apps/api/src/imports/safe-upload.ts`
+(content sniffing, size / entry / ratio limits, ZIP-slip, no DTD / entities, macro formats rejected, DOMPurify /
+SVG sanitising).
+
+Local setup: as in Phase 5.2 below (PostgreSQL 16, roles / databases, build the shared package first).
+
+Steps (tick as they are committed; a new session continues at the first unticked one):
+
+- [x] 0. CLAUDE.md phase table (5.2 merged, Import in progress), this plan, DECISIONS D-155 – D-158.
+- [x] 1. Import Center framework: schema (`ImportBatch`, `ImportFile`, `ImportItem`, `importBatchId` flags),
+      permission `import.manage` (+ `export.full` for step 7), shared `imports.ts`, API module `imports` (upload
+      security, batches, jobs, dry run, apply, undo, Excel result report, existing GRC / EA / KPI Excel imports as
+      batch kinds), web Import Center (list, new batch, batch page), EN / AR, API + security tests, e2e.
+      Done: migration `20261031150000_import_tools`; `safe-upload.ts` (+ `safe-upload.spec.ts`, 20 malicious
+      samples), `imports.service.ts` (life cycle, undo, report), `importer.ts` (plug-in contract),
+      `importers/module-excel.importer.ts` (GRC / EA / KPI registers); web `features/imports/` (Import Center,
+      new batch dialog with per-kind options, batch page: progress / cancel, mapping, validation report, dry
+      run, preview decisions and suggestions, apply, records, undo); namespace `imports` (EN / AR, generated);
+      API tests `test/imports.e2e-spec.ts` (5); Playwright `imports.spec.ts` (register import as a batch).
+- [x] 2. Process house, departments and users from Excel / CSV (templates, validation, invitations, 2FA rules).
+      Done (D-159): `importers/tabular.ts` (Excel / CSV reader, column mapping, templates),
+      `process-house.importer.ts`, `departments.importer.ts`, `users.importer.ts`; migration
+      `20261031160000_user_invitations` + `users/invitations.service.ts` / `invitations.controller.ts` (public
+      set-password page `/invitation/:token`, "Send invitation again" on the Users page, `UserDto.hasPassword`);
+      API tests `test/imports-structure.e2e-spec.ts` (6); Playwright: process house flow in `imports.spec.ts`.
+- [x] 3. Diagrams: BPMN (ZIP / files), Visio `.vsdx`, ARIS AML (EPC, value chains, objects), DMN.
+      Done (D-160): `importers/bpmn-tools.ts` (vendor strip / keep, labels by script, layout when DI is
+      missing), `process-target.ts` (match by code / earlier file / name, draft process creation, library
+      suggestions), `bpmn.importer.ts` (models saved through `ModelsService.createVersion`), `visio-tools.ts` +
+      `visio.importer.ts` (shape mapping table, swimlanes, unmapped report), `aris-tools.ts` +
+      `aris.importer.ts` (roles / systems into the library, EPC and value chain diagrams with links),
+      `dmn.importer.ts`; "Imported" flag (`importOrigin`) on process and diagram pages; Visio mapping card on
+      the batch page; samples `docs/samples/import/` (`generate-samples.mjs`); API tests
+      `test/imports-diagrams.e2e-spec.ts` (7); Playwright: BPMN ZIP and Visio flows in `imports.spec.ts`.
+- [x] 4. Documents into the wiki: Word, PDF, Confluence HTML export, Markdown folders; links to processes.
+      Done (D-161): `importers/documents.importer.ts` (WORD / PDF / CONFLUENCE / MARKDOWN, shared apply with
+      pre-assigned page ids, attachments, page links), `doc-tools.ts` (RTL blocks, Heading 1 split, template
+      gaps, process suggestions), `pdf-text.ts` (pdf.js in a worker with limits); "Imported" flag on wiki
+      pages; API tests `test/imports-documents.e2e-spec.ts` (7); Playwright: Word SOP flow.
+- [x] 5. AI-assisted migration: SOP → BPMN review queue, risks / controls extraction, bulk translation.
+      Done (D-162): migration `20261031170000_ai_proposals` (`AiProposal`), `migration-ai.service.ts` /
+      `.controller.ts` (`/migration-ai/run`, proposals, accept / reject), `migration-labels.ts`, AI feature
+      `EXTRACT_GRC`; web: "AI assistant for this batch" card on the batch page, review queue
+      `/admin/imports/ai` with side-by-side detail; API tests `test/imports-ai.e2e-spec.ts` (4, mocked provider).
+- [x] 6. Migration dashboard and review queue (My tasks, bulk actions).
+      Done: `migration.service.ts` / `migration.controller.ts` (`/migration/dashboard` + Excel export,
+      `/migration/items`, `/migration/bulk` — assign owner, apply theme, validate, submit for review through the
+      existing workflows —, `/migration/my-drafts`); web: Migration dashboard (`/admin/imports/dashboard`, by
+      department / branch / type, imported or all content, problem counts link into the queue), Review queue
+      (`/admin/imports/review`, filters, selection, bulk actions with a result list), My tasks tab "Imported
+      drafts"; API tests `test/imports-migration.e2e-spec.ts` (2); Playwright: undo + dashboard + queue flow.
+- [x] 7. Full export package + import into an empty installation (round-trip test).
+      Done (D-163): `repository-package.ts` (tables), `repository-export.service.ts` / `.controller.ts`
+      (`/repository-export`), `importers/package.importer.ts` (kind PACKAGE); "Full export (ZIP)" button for
+      Super Admins in the Import Center; API test `test/imports-package.e2e-spec.ts` (round trip + tampered
+      package); Playwright: full export download.
+- [x] 8. Samples `docs/samples/import/`, screenshots, `docs/MIGRATION.md`, README, final checks, PR.
+      Done: invented samples + `generate-samples.mjs` + README; screenshots EN / AR in
+      `docs/screenshots/import-tools/` (`screenshots-import-tools.spec.ts`, `SCREENSHOTS=1`); `docs/MIGRATION.md`
+      (how to prepare files, order structure → diagrams → documents → objects → review, go-live checklist);
+      README (feature table + tour); SECURITY (import uploads, export package, AI migration; route table);
+      BACKLOG; CLAUDE.md phase table and data model; PR
+      [Hashichemnad/bpmn#21](https://github.com/Hashichemnad/bpmn/pull/21).
+
+Local verification on 2026-10-31: API suites incl. `imports*.e2e-spec.ts` (8 files: framework, structure,
+diagrams, documents, AI, migration, package round trip) and `safe-upload.spec.ts`; web unit and i18n tests;
+Playwright `imports.spec.ts` (7 flows) and the screenshot spec against API + Vite dev server + an in-memory S3
+stand-in (no Docker daemon in this sandbox — CI runs the Docker images and the full Playwright suite).
+
+- [x] 9. Product owner answers (D-164): Process Owner imports (`import.own`: BPMN / Visio / documents for own
+      processes and editable spaces, own batches only; API tests `test/imports-owner.e2e-spec.ts`, 8); SSO
+      welcome e-mail instead of invitations once password sign-in is off (Setting `imports.ssoWelcomeEmail`);
+      separate Setting "Allow AI on imported documents" (off by default, confirmation per run,
+      `confirmExternal`); Visio option "Keep Visio positions" (`visioLayout`, automatic layout default); Import
+      settings card in the Import Center (Super Admin); SECURITY / DEPLOYMENT (disaster recovery = backup.sh /
+      restore.sh, export package = moving servers / lock-in) / MIGRATION / BACKLOG (ARIS org charts and function
+      allocation, antivirus to the final security review).
+
+Next: merge review of PR #21; then the final performance / polish session (Phase 6 remainder) and Phase 4.4
+integrations.
+
+## Previous state — 2026-10-31 (Phase 5 — Part 2: Workflow execution, branch `phase-5-2-workflow-execution`, merged into `main`)
 
 Everything up to Phase 5.1 (process mining and simulation) is merged into `main`. This branch builds module M14:
 run approved processes as task flows with forms, assignments, approvals, SLAs and monitoring. The session works on

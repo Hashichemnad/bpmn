@@ -4,10 +4,16 @@ import { DefaultLocale, Home, NotFound, RequireAuth, WorkspaceOnly } from '@/app
 import { RequirePermission } from '@/components/RequirePermission';
 import { AppLayout } from '@/layout/AppLayout';
 import { LoginPage } from '@/features/auth/LoginPage';
+import { InvitationPage } from '@/features/auth/InvitationPage';
 import { ProfilePage } from '@/features/profile/ProfilePage';
 import { UsersPage } from '@/features/admin/UsersPage';
 import { DepartmentsPage } from '@/features/admin/DepartmentsPage';
 import { AuditLogPage } from '@/features/admin/AuditLogPage';
+import { ImportCenterPage } from '@/features/imports/ImportCenterPage';
+import { ImportBatchPage } from '@/features/imports/ImportBatchPage';
+import { AiProposalPage, AiProposalsPage } from '@/features/imports/AiProposalsPage';
+import { MigrationDashboardPage } from '@/features/imports/MigrationDashboardPage';
+import { ReviewQueuePage } from '@/features/imports/ReviewQueuePage';
 import { SettingsPage } from '@/features/settings/SettingsPage';
 import { RepositoryLayout } from '@/features/processes/RepositoryLayout';
 import { ProcessListPage } from '@/features/processes/ProcessListPage';
@@ -100,6 +106,7 @@ export const routes: RouteObject[] = [
     element: <DefaultLocale />,
     children: [
       { path: '/login', element: <LoginPage /> },
+      { path: '/invitation/:token', element: <InvitationPage /> },
       {
         element: <RequireAuth />,
         children: [
@@ -684,6 +691,54 @@ export const routes: RouteObject[] = [
                     element: (
                       <RequirePermission all={[P.AUDIT_READ]}>
                         <AuditLogPage />
+                      </RequirePermission>
+                    ),
+                  },
+                  {
+                    path: 'admin/imports',
+                    element: (
+                      <RequirePermission any={[P.IMPORT_MANAGE, P.IMPORT_OWN]}>
+                        <ImportCenterPage />
+                      </RequirePermission>
+                    ),
+                  },
+                  {
+                    path: 'admin/imports/dashboard',
+                    element: (
+                      <RequirePermission any={[P.IMPORT_MANAGE, P.GOVERNANCE_DASHBOARD]}>
+                        <MigrationDashboardPage />
+                      </RequirePermission>
+                    ),
+                  },
+                  {
+                    path: 'admin/imports/review',
+                    element: (
+                      <RequirePermission any={[P.IMPORT_MANAGE, P.GOVERNANCE_DASHBOARD]}>
+                        <ReviewQueuePage />
+                      </RequirePermission>
+                    ),
+                  },
+                  {
+                    path: 'admin/imports/ai',
+                    element: (
+                      <RequirePermission all={[P.IMPORT_MANAGE]}>
+                        <AiProposalsPage />
+                      </RequirePermission>
+                    ),
+                  },
+                  {
+                    path: 'admin/imports/ai/:id',
+                    element: (
+                      <RequirePermission all={[P.IMPORT_MANAGE]}>
+                        <AiProposalPage />
+                      </RequirePermission>
+                    ),
+                  },
+                  {
+                    path: 'admin/imports/:id',
+                    element: (
+                      <RequirePermission any={[P.IMPORT_MANAGE, P.IMPORT_OWN]}>
+                        <ImportBatchPage />
                       </RequirePermission>
                     ),
                   },

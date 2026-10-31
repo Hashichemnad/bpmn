@@ -444,8 +444,9 @@ describe('Authorisation matrix (e2e)', () => {
   it('Viewers cannot read any workspace endpoint (only the portal and their own data)', async () => {
     const viewer = await loggedIn(ctx.app, 'viewer@processhub.local', DEMO_PASSWORD);
     // The RACI export also serves the portal: Viewers get published versions only (reports tests).
+    // Imported drafts in My tasks list only the caller's own items (empty for Viewers).
     const own =
-      /^\/(portal|auth|notifications|health|tasks|feedback)(\/|$)|^\/assurance\/tasks$|^\/settings\/(public|logo)$|^\/ai\/status$|^\/reports\/raci\/|^\/workflow\/(cases|catalogue|tasks|out-of-office|users|files|departments)(\/|$)/;
+      /^\/(portal|auth|notifications|health|tasks|feedback)(\/|$)|^\/assurance\/tasks$|^\/settings\/(public|logo)$|^\/ai\/status$|^\/reports\/raci\/|^\/workflow\/(cases|catalogue|tasks|out-of-office|users|files|departments)(\/|$)|^\/migration\/my-drafts$/;
     const leaked: string[] = [];
     for (const r of routes.filter((x) => x.method === 'GET' && !own.test(x.path))) {
       for (const url of urls(r.path)) {

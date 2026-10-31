@@ -89,7 +89,8 @@
     "PORTAL_QA": "Portal assistant",
     "TEST_CONNECTION": "Connection test",
     "CONTROL_GAPS": "Control-gap check",
-    "SIMULATION": "Simulation analysis"
+    "SIMULATION": "Simulation analysis",
+    "EXTRACT_GRC": "Risks and controls from documents (import)"
   },
   "settings": {
     "title": "AI assistant",

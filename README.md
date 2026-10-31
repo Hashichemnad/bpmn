@@ -32,7 +32,7 @@
 | **Process mining** | Event logs from CSV / Excel / XES (streaming import, column mapping with templates, timestamp and time-zone detection, validation report, pseudonymisation, access per owner / department / grant, retention) or from ProcessHub's own reviews; process map with frequency / performance views and activity / path sliders, variants with compare, stackable saved filters, statistics (throughput, trend, rework, resources, handovers), bottlenecks with the cases behind them, Excel exports; "Generate BPMN" with the heuristics miner; conformance by token replay (fitness, skipped / inserted / wrong-order steps) with a "colour by" overlay on the BPMN model, KPIs calculated from logs, measured vs planned step times; optional portal "Performance" section and handbook section | 5.1 |
 | **Simulation** | Discrete-event what-if simulation from the step attributes: distributions, lanes as resources with capacity, Sun–Thu working calendar with UAE holidays, branch probabilities (from mining), as-is and to-be scenarios on any process version, validation, side-by-side comparison with charts and Excel, bottleneck view on the model, AI explanation and proposals | 5.1 |
 | **Workflow execution** | Published processes run as requests: execution settings in the modeler (forms with an editor and bilingual preview, assignment rules, due times in working time, four-eyes, approval outcomes, S-FEEL conditions, timers, DMN business rules, notifications, Word documents, call activities, error paths), executable check, deployment of the published version (cases pinned to their version), service catalogue and start forms in the portal, inbox with claim / delegate / out-of-office, approve / reject / return, case page with highlighted diagram, timeline, files and comments, reminders and escalation, workflow monitor (retry, cancel, reassign) and dashboard with Excel, live event log for process mining. See [`docs/WORKFLOWS.md`](./docs/WORKFLOWS.md) | 5.2 |
-| **Workflow execution** | Running approved processes as task flows | 5.2 |
+| **Import tools / migration** | Import Center: every import is a batch — upload, background read with progress and cancel, preview with column / shape mapping and a validation report, dry run, apply, Excel result report, undo while drafts, safe re-import (matching by code, e-mail, external id, file name). Process house, departments and users (invitations, no passwords) from Excel / CSV; BPMN (ZIP, Signavio / Camunda / Bizagi / ARIS exports, Arabic label detection, auto-layout), Visio `.vsdx`, ARIS AML (EPC, value chains, roles, systems), DMN; Word, PDF, Confluence HTML exports and Markdown into the wiki with process links; the existing register imports as batches; AI proposals (SOP → BPMN, risks and controls, translation) in a review queue; migration dashboard and review queue with bulk actions; full export package and restore. Upload security: content sniffing, ZIP-slip / zip-bomb limits, no XXE, macros refused. See [`docs/MIGRATION.md`](./docs/MIGRATION.md) | Import |
 
 ## Quick start (Docker)
 
@@ -76,6 +76,19 @@ content in every lifecycle state, comments, notifications and portal feedback.
 
 Demo users are only created on a demo installation (`SEED_DEMO_DATA=true`, the default). **Emails** sent by
 the demo installation go to the bundled **Mailpit** at **http://localhost:8025** — nothing leaves the machine.
+
+### A short tour of the import tools (migration)
+
+- As the Super Admin: **Administration → Import Center**. Import, in this order, the invented samples from
+  [`docs/samples/import/`](./docs/samples/import/README.md): **Departments** `departments.xlsx`, **Process house**
+  `process-house.xlsx` (the preview shows the column mapping and the validation report — try a file with a missing
+  parent), **BPMN diagrams** `bpmn-diagrams.zip` (Arabic labels, a diagram laid out automatically, Camunda
+  extensions removed, lane → role suggestions), **Visio** `S.03 Leave request flowchart.vsdx` (shape mapping table
+  with an unmapped shape), **ARIS** `aris-procurement.xml`, **Word documents** (both SOPs, choose a space) and
+  **Confluence** `confluence-quality-manual.zip`. Every batch: *Apply* → result with links → *Undo batch*.
+- **Migration dashboard** (per department / process-house branch, problems, Excel), **Review queue** (bulk assign
+  owner, apply theme, validate, submit for review), **AI proposals** (with the AI assistant enabled), *Full export
+  (ZIP)*. Owners see their imported drafts in **My tasks**. Guide: [`docs/MIGRATION.md`](./docs/MIGRATION.md).
 
 ### A short tour of Phase 5.2 — workflow execution
 

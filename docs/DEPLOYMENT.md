@@ -604,6 +604,17 @@ A backup that has never been restored is not a backup.
 
 ## 8. Restore
 
+> **Disaster recovery = `scripts/backup.sh` / `scripts/restore.sh`** (database + files, with the keys from
+> `.env` in the password manager). This is the only supported way to bring an installation back after a
+> failure: it restores everything — audit log, reviews, publications, event logs, workflow cases, settings
+> and sealed secrets — exactly as it was.
+>
+> The **full export package** (Import Center → Full export, Super Admin, D-163) is something else: a
+> readable ZIP of the content (processes, pages, diagrams, library, GRC, KPIs, users without credentials)
+> for **moving to a new server or another product and avoiding lock-in**. It restores only into an
+> **empty** installation, leaves out the audit log, reviews, event logs, workflow cases and every secret,
+> and restored users have no password. Do not use it as a backup (D-164).
+
 `scripts/restore.sh` **replaces** the current database and files with a backup.
 
 ```bash

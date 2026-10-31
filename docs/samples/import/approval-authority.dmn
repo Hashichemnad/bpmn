@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/" xmlns:dmndi="https://www.omg.org/spec/DMN/20191111/DMNDI/" xmlns:dc="http://www.omg.org/spec/DMN/20180521/DC/" xmlns:di="http://www.omg.org/spec/DMN/20180521/DI/" xmlns:ph="http://processhub.io/schema/bpmn" id="Definitions_ApprovalAuthority" name="Approval authority" namespace="http://processhub.local/dmn">
+  <decision id="Decision_ApprovalAuthority" name="Approval authority by amount" ph:nameEn="Approval authority by amount" ph:nameAr="صلاحية الاعتماد حسب المبلغ">
+    <informationRequirement id="InformationRequirement_1">
+      <requiredInput href="#InputData_Request" />
+    </informationRequirement>
+    <decisionTable id="DecisionTable_ApprovalAuthority" hitPolicy="FIRST">
+      <input id="Input_Amount" label="Amount (AED)" ph:nameEn="Amount (AED)" ph:nameAr="المبلغ (درهم)">
+        <inputExpression id="InputExpression_Amount" typeRef="number">
+          <text>amount</text>
+        </inputExpression>
+      </input>
+      <input id="Input_Category" label="Purchase category" ph:nameEn="Purchase category" ph:nameAr="فئة الشراء">
+        <inputExpression id="InputExpression_Category" typeRef="string">
+          <text>category</text>
+        </inputExpression>
+      </input>
+      <output id="Output_Approver" label="Approver" name="approver" typeRef="string" ph:nameEn="Approver" ph:nameAr="جهة الاعتماد" />
+      <rule id="Rule_Small" ph:annotationEn="Small purchases: the line manager approves" ph:annotationAr="المشتريات الصغيرة: يعتمدها المدير المباشر">
+        <description>Small purchases: the line manager approves</description>
+        <inputEntry id="UnaryTests_Small_Amount">
+          <text>&lt; 10000</text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_Small_Category">
+          <text>-</text>
+        </inputEntry>
+        <outputEntry id="LiteralExpression_Small">
+          <text>"Department Manager"</text>
+        </outputEntry>
+      </rule>
+      <rule id="Rule_IT" ph:annotationEn="IT purchases need the IT director" ph:annotationAr="مشتريات تقنية المعلومات تتطلب مدير تقنية المعلومات">
+        <description>IT purchases need the IT director</description>
+        <inputEntry id="UnaryTests_IT_Amount">
+          <text>[10000..250000]</text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_IT_Category">
+          <text>"IT"</text>
+        </inputEntry>
+        <outputEntry id="LiteralExpression_IT">
+          <text>"IT Director"</text>
+        </outputEntry>
+      </rule>
+      <rule id="Rule_Medium" ph:annotationEn="Medium purchases: the finance director approves" ph:annotationAr="المشتريات المتوسطة: يعتمدها المدير المالي">
+        <description>Medium purchases: the finance director approves</description>
+        <inputEntry id="UnaryTests_Medium_Amount">
+          <text>[10000..250000]</text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_Medium_Category">
+          <text>-</text>
+        </inputEntry>
+        <outputEntry id="LiteralExpression_Medium">
+          <text>"Finance Director"</text>
+        </outputEntry>
+      </rule>
+      <rule id="Rule_Large" ph:annotationEn="Large purchases: the CEO approves" ph:annotationAr="المشتريات الكبيرة: يعتمدها الرئيس التنفيذي">
+        <description>Large purchases: the CEO approves</description>
+        <inputEntry id="UnaryTests_Large_Amount">
+          <text>&gt; 250000</text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_Large_Category">
+          <text>-</text>
+        </inputEntry>
+        <outputEntry id="LiteralExpression_Large">
+          <text>"Chief Executive Officer"</text>
+        </outputEntry>
+      </rule>
+    </decisionTable>
+  </decision>
+  <inputData id="InputData_Request" name="Purchase request" ph:nameEn="Purchase request" ph:nameAr="طلب الشراء" />
+  <dmndi:DMNDI>
+    <dmndi:DMNDiagram id="DMNDiagram_ApprovalAuthority">
+      <dmndi:DMNShape id="DMNShape_Decision" dmnElementRef="Decision_ApprovalAuthority">
+        <dc:Bounds height="80" width="200" x="200" y="80" />
+      </dmndi:DMNShape>
+      <dmndi:DMNShape id="DMNShape_InputData" dmnElementRef="InputData_Request">
+        <dc:Bounds height="45" width="160" x="220" y="260" />
+      </dmndi:DMNShape>
+      <dmndi:DMNEdge id="DMNEdge_InformationRequirement_1" dmnElementRef="InformationRequirement_1">
+        <di:waypoint x="300" y="260" />
+        <di:waypoint x="300" y="160" />
+      </dmndi:DMNEdge>
+    </dmndi:DMNDiagram>
+  </dmndi:DMNDI>
+</definitions>

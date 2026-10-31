@@ -228,6 +228,7 @@ model User {
   notifications     Notification[]
   aiUsage           AiUsage[]
   recoveryCodes     MfaRecoveryCode[]
+  invitations       UserInvitation[]
   ownedObjects      RepoObject[]            @relation("ObjectOwner")
   grcActivities     GrcActivity[]
   assuranceEvents   AssuranceEvent[]        @relation("AssuranceEventAuthor")
@@ -256,6 +257,22 @@ model MfaRecoveryCode {
   codeHash  String
   usedAt    DateTime?
   createdAt DateTime  @default(now())
+
+  @@index([userId])
+}
+
+/// Set-password invitation of a user created without a password (Import Center, M15): SHA-256 of a
+/// random 256-bit token, single use, expires after INVITATION_TTL_DAYS.
+model UserInvitation {
+  id          String    @id @default(uuid()) @db.Uuid
+  userId      String    @db.Uuid
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash   String    @unique
+  expiresAt   DateTime
+  usedAt      DateTime?
+  sentAt      DateTime?
+  createdAt   DateTime  @default(now())
+  createdById String?   @db.Uuid
 
   @@index([userId])
 }
@@ -369,6 +386,8 @@ model Process {
   nextReviewAt  DateTime?
   /// The working model was produced by the AI assistant and not yet edited or approved by a person.
   aiGenerated   Boolean         @default(false)
+  /// Created by an Import Center batch (the "Imported" flag, D-156).
+  importBatchId String?   @db.Uuid
   createdAt     DateTime        @default(now())
   updatedAt     DateTime        @updatedAt
   createdById   String?         @db.Uuid
@@ -391,6 +410,7 @@ model Process {
   @@index([parentId, sortOrder])
   @@index([category])
   @@index([code])
+  @@index([importBatchId])
 }
 
 /// Current working BPMN model of a process. Bilingual labels live inside the XML (ph:nameEn / ph:nameAr).
@@ -439,6 +459,8 @@ model RepoObject {
   owner         User?        @relation("ObjectOwner", fields: [ownerId], references: [id], onDelete: SetNull)
   approvedAt    DateTime?
   approvedById  String?      @db.Uuid
+  /// Created by an Import Center batch (the "Imported" flag, D-156).
+  importBatchId String?   @db.Uuid
   createdAt     DateTime     @default(now())
   updatedAt     DateTime     @updatedAt
   createdById   String?      @db.Uuid
@@ -465,6 +487,7 @@ model RepoObject {
   kpi            Kpi?
 
   @@index([type, status])
+  @@index([importBatchId])
 }
 
 /// Risk register entry; code, title, description and owner live on the RepoObject (type RISK).
@@ -710,6 +733,8 @@ model Page {
   nextReviewAt  DateTime?
   /// The saved content was produced by the AI assistant and not yet edited or approved by a person.
   aiGenerated   Boolean                  @default(false)
+  /// Created by an Import Center batch (the "Imported" flag, D-156).
+  importBatchId String?   @db.Uuid
   /// Maintained by a database trigger (see migration 20261021082019_phase2_wiki).
   searchVector  Unsupported("tsvector")?
   createdAt     DateTime                 @default(now())
@@ -728,6 +753,7 @@ model Page {
 
   @@index([spaceId, parentId, sortOrder])
   @@index([deleteBatchId])
+  @@index([importBatchId])
   @@index([searchVector], type: Gin)
 }
 
@@ -1983,6 +2009,8 @@ model Diagram {
   workflow           Workflow?     @relation(fields: [workflowId], references: [id], onDelete: SetNull)
   nextReviewAt       DateTime?
   aiGenerated        Boolean       @default(false)
+  /// Created by an Import Center batch (the "Imported" flag, D-156).
+  importBatchId String?   @db.Uuid
   /// Working content (autosaved draft); versions are explicit snapshots.
   content            String
   contentUpdatedAt   DateTime      @default(now())
@@ -1999,6 +2027,7 @@ model Diagram {
   @@index([type])
   @@index([processId])
   @@index([code])
+  @@index([importBatchId])
 }
 
 model DiagramVersion {
@@ -2505,4 +2534,119 @@ model WorkflowCaseCounter {
   last   Int    @default(0)
 
   @@id([prefix, year])
+}
+
+// ---------- Import tools (M15 — D-155 – ) ----------
+
+enum ImportBatchStatus {
+  UPLOADED
+  PARSING
+  READY
+  APPLYING
+  APPLIED
+  FAILED
+  CANCELLED
+  UNDONE
+}
+
+/// One import: uploaded files, options, preview (parse job) and the applied result.
+model ImportBatch {
+  id          String            @id @default(uuid()) @db.Uuid
+  number      Int               @unique @default(autoincrement())
+  kind        String
+  status      ImportBatchStatus @default(UPLOADED)
+  note        String            @default("")
+  options     Json              @default("{}")
+  /// Preview items (ImportPreviewItem[] + importer data), columns and batch-level issues of the last parse.
+  preview     Json?
+  summary     Json?
+  result      Json?
+  progress    Float             @default(0)
+  message     String            @default("")
+  jobId       String?           @db.Uuid
+  error       String?
+  createdById String?           @db.Uuid
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+  parsedAt    DateTime?
+  appliedAt   DateTime?
+  appliedById String?           @db.Uuid
+  undoneAt    DateTime?
+  undoneById  String?           @db.Uuid
+
+  files ImportFile[]
+  items ImportItem[]
+
+  @@index([kind, createdAt])
+  @@index([status])
+}
+
+/// An uploaded file of a batch, stored in S3 storage (never executed).
+model ImportFile {
+  id          String      @id @default(uuid()) @db.Uuid
+  batchId     String      @db.Uuid
+  batch       ImportBatch @relation(fields: [batchId], references: [id], onDelete: Cascade)
+  fileName    String
+  contentType String
+  size        Int
+  sha256      String
+  storageKey  String      @unique
+  createdAt   DateTime    @default(now())
+
+  @@index([batchId])
+}
+
+/// An entity written by an applied batch: undo, re-import matching and the result report.
+model ImportItem {
+  id          String      @id @default(uuid()) @db.Uuid
+  batchId     String      @db.Uuid
+  batch       ImportBatch @relation(fields: [batchId], references: [id], onDelete: Cascade)
+  ref         String
+  entityType  String
+  entityId    String?     @db.Uuid
+  /// CREATED | UPDATED | SKIPPED | FAILED | UNDONE
+  outcome     String
+  /// Code, e-mail, external id or file name used to match a re-import.
+  externalKey String      @default("")
+  key         String      @default("")
+  nameEn      String      @default("")
+  nameAr      String      @default("")
+  source      String      @default("")
+  error       String?
+  before      Json?
+  after       Json?
+  seq         Int         @default(0)
+  createdAt   DateTime    @default(now())
+
+  @@index([batchId, seq])
+  @@index([entityType, entityId])
+  @@index([entityType, externalKey])
+}
+
+/// An AI proposal of the migration (SOP → BPMN, risks / controls from a document, translations):
+/// reviewed and accepted by a person, never applied automatically (M15 step 5).
+model AiProposal {
+  id          String    @id @default(uuid()) @db.Uuid
+  /// SOP_TO_BPMN | EXTRACT_GRC | TRANSLATE
+  kind        String
+  /// PENDING | ACCEPTED | REJECTED | FAILED
+  status      String    @default("PENDING")
+  /// PAGE | PROCESS | DIAGRAM
+  sourceType  String
+  sourceId    String    @db.Uuid
+  batchId     String?   @db.Uuid
+  titleEn     String    @default("")
+  titleAr     String    @default("")
+  payload     Json?
+  error       String?
+  resultType  String?
+  resultId    String?   @db.Uuid
+  createdById String?   @db.Uuid
+  createdAt   DateTime  @default(now())
+  decidedById String?   @db.Uuid
+  decidedAt   DateTime?
+
+  @@index([status, kind])
+  @@index([sourceType, sourceId])
+  @@index([batchId])
 }

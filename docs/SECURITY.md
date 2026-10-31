@@ -137,6 +137,59 @@ login / lockout / settings change / AI call; logs contain no secrets (tested).
 **A10 SSRF** — see SEC-01. The AI provider address is not configurable in the UI (only `ANTHROPIC_BASE_URL`
 in the environment); the file storage and the database come from the environment.
 
+**Import uploads (Import tools / M15, D-157)** — every file of an Import Center batch goes through
+`apps/api/src/imports/safe-upload.ts` (unit tests with malicious samples in `safe-upload.spec.ts`, API tests in
+`test/imports*.e2e-spec.ts`):
+
+- **Type by content, not only the extension:** magic bytes (ZIP, PDF, OLE, images), XML root and UTF-8 / UTF-16
+  text are sniffed and must agree with the extension, which must be one the import kind accepts (an
+  executable renamed `.bpmn` or a ZIP renamed `.pdf` is refused with `FILE_TYPE_MISMATCH`). Old binary Office
+  and Visio files (`.doc`, `.xls`, `.vsd`) are refused with a message to save them as Office Open XML.
+- **Size and count limits:** 100 MB per file, 200 MB and 50 files per batch, 5,000 rows / preview items.
+- **ZIP archives** are checked from the central directory **before** anything is decompressed: at most 2,000
+  entries, 200 MB declared uncompressed in total, compression ratio ≤ 100:1 per entry larger than 1 MB (zip
+  bomb), encrypted entries refused, and any entry with an absolute path, a drive letter, a `..` segment, a NUL
+  byte or a symbolic-link mode refused (**ZIP-slip / path traversal** — entries are also never written to
+  disk). While decompressing, an entry that grows beyond its declared size or the archive budget is stopped
+  (lying headers).
+- **XML without DTDs:** `<!DOCTYPE` / `<!ENTITY` are refused before parsing (no **XXE**, no "billion laughs");
+  jsdom's XML parser never loads external resources.
+- **Macros are never accepted or run:** `.docm`, `.xlsm`, `.dotm`, `.pptm` … are refused, and so is any Office
+  package that contains `vbaProject.bin` / `vbaData.xml` or a macro-enabled content type (a renamed `.xlsm`).
+- **HTML and SVG:** imported HTML (Word, Confluence, Markdown) goes through the wiki's DOMPurify rules
+  (`sanitizeRichText`); SVG through the existing SVG sanitiser; images only as attachments with sniffed types.
+- **Storage:** uploads are stored in S3 storage under `imports/<batch>/<file>` with their SHA-256 (checked when
+  the job reads them again), served back only as `application/octet-stream` downloads with `nosniff`, and never
+  executed. Antivirus scanning (ClamAV) is part of the final security review (BACKLOG, D-164).
+- **Imported users have no password:** while password sign-in is allowed they get a set-password
+  **invitation** (random 256-bit token, only its SHA-256 stored, single use, 7 days, public endpoints
+  `/auth/invitations/*` with the login rate limit and the password policy). Once SSO is live and password
+  sign-in is off (D-164) no invitation is sent: users get a **welcome e-mail with the "Sign in with Microsoft"
+  link** (no token, nothing to set) or no e-mail at all (Import settings → "Welcome e-mail"); they sign in with
+  SSO (linked by e-mail). Password invitations remain only for accounts allowed to use passwords (break-glass
+  and exceptions, while password sign-in is on). An import never creates or changes Super Admins,
+  the break-glass account or the importing user's own account; roles that require 2FA are flagged and enrol
+  at the first sign-in; roles are only added, never removed.
+- **PDF** text is extracted by pdf.js in a separate worker thread (memory limit, 30 s timeout, `eval` off).
+- **Full export package** (`/repository-export`, `export.full` — Super Admin only) contains no password hashes,
+  2FA secrets, SSO links or integration / e-mail / AI secrets; a **restore** checks the SHA-256 of every data
+  file against the manifest and only runs into an empty installation; restored users have no password.
+- **AI on imported documents** (D-164) is a **separate setting, "Allow AI on imported documents", off by
+  default and independent of the general AI switch**: the text of imported documents leaves the UAE (external
+  AI provider), so it needs **DOF approval** before it is turned on (Super Admin, `settings.manage`, audited).
+  When it is on, each run asks the admin to confirm that the text is sent to the external provider
+  (`confirmExternal`, refused without it; the audit entry records the confirmation); the server checks the
+  setting again before every item. Role, daily and monthly limits of the AI settings apply; usage and audit
+  logged, prompts not stored; results are proposals that a person accepts.
+- **Access:** `import.manage` (Admins, Super Admins); module register kinds also need the module's own edit
+  permission; the full export package and restore are Super Admin only (`export.full`). **Process Owners**
+  (`import.own`, D-164) import only diagrams (BPMN, Visio) and documents (Word, PDF, Confluence, Markdown):
+  into processes they own (another owner's process is an error), new processes only under one of their own
+  processes and owned by them, pages only into spaces they can edit; they see, apply and undo only their own
+  batches (others' batches answer 404). Structure, users, library objects, GRC and KPI imports, AI migration
+  and the migration bulk actions stay with Admins. Every batch step is audited
+  (`CREATE`, `IMPORT`, `UNDO`, `EXPORT`, and each created / updated entity with the batch number).
+
 ## 4. Rate limits
 
 | Scope                                                                                 | Limit (default)                                     | Setting                                                |
@@ -207,6 +260,8 @@ zod / UUID pipe; file uploads are checked in the service (allow-list, content sn
 | GET    | `/audits/universe`                                | any of `audit.manage`, `grc.edit`, `audit.read`                | query                                | default    |
 | POST   | `/auth/change-password`                           | authenticated                                                  | body                                 | login      |
 | GET    | `/auth/csrf`                                      | **public**                                                     | —                                    | default    |
+| GET    | `/auth/invitations/:token`                        | **public**                                                     | param `token`                        | login      |
+| POST   | `/auth/invitations/accept`                        | **public**                                                     | body                                 | login      |
 | POST   | `/auth/login`                                     | **public**                                                     | body                                 | login      |
 | POST   | `/auth/login/mfa`                                 | **public**                                                     | body                                 | login      |
 | POST   | `/auth/login/mfa/setup`                           | **public**                                                     | —                                    | login      |
@@ -356,6 +411,25 @@ zod / UUID pipe; file uploads are checked in the service (allow-list, content sn
 | PUT    | `/grc/settings`                                   | `grc.admin`                                                    | body                                 | default    |
 | GET    | `/grc/template/:kind`                             | `grc.edit`                                                     | param `kind`, query                  | default    |
 | GET    | `/health`                                         | **public**                                                     | —                                    | skip       |
+| GET    | `/imports`                                        | any of `import.manage`, `import.own`                           | query                                | default    |
+| POST   | `/imports`                                        | any of `import.manage`, `import.own`                           | body                                 | default    |
+| DELETE | `/imports/:id`                                    | any of `import.manage`, `import.own`                           | param `id`                           | default    |
+| GET    | `/imports/:id`                                    | any of `import.manage`, `import.own`                           | param `id`                           | default    |
+| POST   | `/imports/:id/apply`                              | any of `import.manage`, `import.own`                           | param `id`                           | default    |
+| POST   | `/imports/:id/cancel`                             | any of `import.manage`, `import.own`                           | param `id`                           | default    |
+| GET    | `/imports/:id/files/:fileId`                      | any of `import.manage`, `import.own`                           | param `fileId`, param `id`           | default    |
+| GET    | `/imports/:id/items`                              | any of `import.manage`, `import.own`                           | param `id`, query                    | default    |
+| PUT    | `/imports/:id/items/:ref`                         | any of `import.manage`, `import.own`                           | body, param `id`, param `ref`        | default    |
+| PUT    | `/imports/:id/options`                            | any of `import.manage`, `import.own`                           | body, param `id`                     | default    |
+| GET    | `/imports/:id/records`                            | any of `import.manage`, `import.own`                           | param `id`, query                    | default    |
+| GET    | `/imports/:id/report`                             | any of `import.manage`, `import.own`                           | param `id`, query                    | default    |
+| PUT    | `/imports/:id/suggestions`                        | any of `import.manage`, `import.own`                           | body, param `id`                     | default    |
+| GET    | `/imports/:id/undo`                               | any of `import.manage`, `import.own`                           | param `id`                           | default    |
+| POST   | `/imports/:id/undo`                               | any of `import.manage`, `import.own`                           | param `id`                           | default    |
+| GET    | `/imports/kinds`                                  | any of `import.manage`, `import.own`                           | —                                    | default    |
+| GET    | `/imports/settings`                               | any of `import.manage`, `import.own`, `settings.manage`        | —                                    | default    |
+| PUT    | `/imports/settings`                               | `settings.manage`                                              | body                                 | default    |
+| GET    | `/imports/templates/:kind`                        | any of `import.manage`, `import.own`                           | param `kind`, query                  | default    |
 | GET    | `/integrations/git`                               | `settings.manage`                                              | —                                    | default    |
 | PUT    | `/integrations/git`                               | `settings.manage`                                              | body                                 | default    |
 | POST   | `/integrations/git/items/:id/retry`               | `settings.manage`                                              | param `id`                           | default    |
@@ -404,6 +478,16 @@ zod / UUID pipe; file uploads are checked in the service (allow-list, content sn
 | PUT    | `/kpis/settings`                                  | `kpi.edit`                                                     | body                                 | default    |
 | GET    | `/kpis/tasks`                                     | any of `kpi.edit`, `kpi.measure`                               | —                                    | default    |
 | GET    | `/kpis/template/:kind`                            | any of `kpi.edit`, `kpi.measure`                               | param `kind`, query                  | default    |
+| GET    | `/migration-ai/proposals`                         | `import.manage`                                                | query                                | default    |
+| GET    | `/migration-ai/proposals/:id`                     | `import.manage`                                                | param `id`                           | default    |
+| POST   | `/migration-ai/proposals/:id/accept`              | `import.manage`                                                | body, param `id`                     | default    |
+| POST   | `/migration-ai/proposals/:id/reject`              | `import.manage`                                                | param `id`                           | default    |
+| POST   | `/migration-ai/run`                               | `import.manage`                                                | body                                 | default    |
+| POST   | `/migration/bulk`                                 | `import.manage`                                                | body                                 | default    |
+| GET    | `/migration/dashboard`                            | any of `import.manage`, `governance.dashboard`                 | query                                | default    |
+| GET    | `/migration/dashboard/export`                     | any of `import.manage`, `governance.dashboard`                 | query                                | default    |
+| GET    | `/migration/items`                                | any of `import.manage`, `governance.dashboard`                 | query                                | default    |
+| GET    | `/migration/my-drafts`                            | authenticated                                                  | —                                    | default    |
 | GET    | `/mining/jobs/:id`                                | `mining.read`                                                  | param `id`, query                    | default    |
 | POST   | `/mining/jobs/:id/cancel`                         | `mining.read`                                                  | param `id`                           | default    |
 | POST   | `/mining/kpis/:kpiId/recalculate`                 | `kpi.edit`                                                     | param `kpiId`                        | default    |
@@ -507,6 +591,7 @@ zod / UUID pipe; file uploads are checked in the service (allow-list, content sn
 | POST   | `/reports/handbook/plan`                          | any of `processes.read`, `portal.read`                         | body                                 | default    |
 | GET    | `/reports/objects/:id`                            | `objects.read` + `processes.read`                              | param `id`, query                    | default    |
 | GET    | `/reports/raci/:processId`                        | any of `processes.read`, `portal.read`                         | param `processId`, query             | default    |
+| GET    | `/repository-export`                              | `export.full`                                                  | —                                    | default    |
 | GET    | `/reviews/:id`                                    | authenticated                                                  | param `id`                           | default    |
 | POST   | `/reviews/:id/decision`                           | authenticated                                                  | body, param `id`                     | default    |
 | GET    | `/roles`                                          | any of `roles.read`, `users.manage`                            | —                                    | default    |
@@ -586,6 +671,7 @@ zod / UUID pipe; file uploads are checked in the service (allow-list, content sn
 | POST   | `/users`                                          | `users.manage`                                                 | body                                 | default    |
 | GET    | `/users/:id`                                      | `users.read`                                                   | param `id`                           | default    |
 | PATCH  | `/users/:id`                                      | `users.manage`                                                 | body, param `id`                     | default    |
+| POST   | `/users/:id/invitation`                           | `users.manage`                                                 | param `id`                           | default    |
 | POST   | `/users/:id/mfa/reset`                            | `users.manage`                                                 | param `id`                           | default    |
 | POST   | `/users/:id/reset-password`                       | `users.manage`                                                 | body, param `id`                     | default    |
 | POST   | `/users/:id/unlock`                               | `users.manage`                                                 | param `id`                           | default    |
@@ -661,6 +747,9 @@ already the default; check them anyway if you changed the setup.
 - [ ] `ENABLE_SWAGGER=false`.
 - [ ] `OUTBOUND_ALLOWED_HOSTS` lists only the internal Git / SMTP servers that are really needed.
 - [ ] Review Settings → AI (enabled roles, limits, data notice) before enabling the assistant.
+- [ ] Import Center → Import settings: **"Allow AI on imported documents" off** (the default) unless DOF has
+      approved sending imported document text outside the UAE (D-164); "Welcome e-mail for imported users"
+      as agreed for the SSO roll-out.
 - [ ] Settings → Authentication: two-step verification required for **Super Admin and Admin** (the default —
       check it if the settings were saved before part 4); allowed domains limited to company domains; **Update
       roles at every sign-in off** (roles managed in ProcessHub); after the SSO roll-out password sign-in

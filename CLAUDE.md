@@ -46,12 +46,12 @@ with no per-user licensing. Target: 50–500 users on a single server.
 | Diagrams | More diagram types (ARIS / GBTEC / Signavio parity, DOF RFP modeling items): shared diagram framework (Diagram entity, versions, governance, portal, links), value chain, organisation chart, DMN decision tables, EPC (+ conversion to BPMN), SIPOC | ✅ Done (merged into `main`, D-120 – D-127) |
 | 4.4 | Integration & export: Oracle Fusion Risk Management overlay, Salesforce risk / other connectors, API keys, webhooks, Word/HTML/XPDL export | ⬜ (later phase, see BACKLOG) |
 | 5.1 | M13 Process mining and simulation: event log import (CSV / Excel / XES, ProcessHub reviews), discovery (process map, variants, filters, statistics, bottlenecks, heuristics miner → BPMN), conformance (token replay, overlay on BPMN, mining KPIs, step attribute suggestions), discrete-event simulation with scenarios | ✅ Done (merged into `main`, D-128 – D-143) |
-| 5.2 | M14 Workflow execution: run approved processes as task flows (forms, assignments, approvals, SLAs, monitoring, live event log) | ✅ Done on branch `phase-5-2-workflow-execution` (D-144 – D-154), awaiting review / merge into `main` |
+| 5.2 | M14 Workflow execution: run approved processes as task flows (forms, assignments, approvals, SLAs, monitoring, live event log) | ✅ Done (merged into `main`, D-144 – D-154) |
 | Design A | Modeler design upgrade — Part A: look and feel (colour theme as BPMN-in-Color, renderer, colour picker, fonts/RTL, apply theme) | ✅ Done (merged into `main`, D-067 – D-073) |
 | Design B1 | Modeler design — Part B1: full-screen workspace and modeling productivity (palette, ready-made steps, zoom/mini-map, align, auto-layout, lane roles, badges, portal diagram, print layout) | ✅ Done (merged into `main`, D-074 – D-081); Part B2 in BACKLOG |
 | Design B2 | Modeler design — Part B2: smarter modeling and reports (Playwright e2e in CI, Dictionary with label autocomplete, Quick Model, step attributes and "colour by", handbook / RACI / object reports, modeling conventions) | ✅ Done (merged into `main`, D-083 – D-088) |
 | Deps | zod 3 → 4 (high advisory GHSA-mrhx-c7xc-m3w5, D-082) | ✅ Done (merged into `main`) |
-| — | M15 Migration of existing documentation (after system is ready) | ⬜ |
+| Import | M15 Import tools / migration: Import Center (batches, preview, dry run, undo, re-import, upload security), process house / departments / users from Excel, BPMN / Visio / ARIS / DMN diagrams, Word / PDF / Confluence / Markdown into the wiki, AI-assisted migration, migration tracker and review queue, full export package and round-trip | ✅ Done on branch `import-tools` (D-155 – D-164), awaiting review / merge into `main` |
 | 6 | Hardening: SSO, performance, security review fixes, deployment guide | 🟡 Parts 1–4 merged into `main` (security review `docs/SECURITY.md`, production stack and backups `docs/DEPLOYMENT.md`, SSO with Entra ID / OIDC and TOTP 2FA, product owner decisions: 2FA for admins, break-glass, roles in ProcessHub, 24 h sessions, Node 22). Remaining: final performance / polish session — moved to the end of the roadmap |
 
 Update this table and `docs/PROGRESS.md` at the end of every session.
@@ -266,6 +266,21 @@ Phase 5.2 additions (DECISIONS D-144 – D-153):
   terminate events; permissions `workflow.design|start|monitor|admin`; notification `WORKFLOW`; Setting `workflow`
 - Shared `packages/shared/src/workflow/` (S-FEEL, server DMN, forms, model reader, executable check, pure engine,
   business calendar, templates); API module `workflow`; admin guide `docs/WORKFLOWS.md`
+
+Import tools additions (M15, DECISIONS D-155 – D-164):
+
+- `ImportBatch` (number IMP-0001, kind, status, options, preview / summary / result JSON, job), `ImportFile`
+  (S3, SHA-256), `ImportItem` (entity written by a batch: outcome, external key, before / after — undo, re-import
+  matching, result report); `importBatchId` on `Process`, `Page`, `Diagram`, `RepoObject` (the "Imported" flag)
+- `UserInvitation` (set-password link of users imported without a password), `AiProposal` (AI migration review
+  queue); permissions `import.manage`, `export.full` (Super Admin); audit actions `IMPORT`, `UNDO`; AI feature
+  `EXTRACT_GRC`; job kinds `IMPORT_PARSE`, `IMPORT_APPLY`, `IMPORT_AI` on the mining job runner
+- API module `imports` (importers per kind in `importers/`, upload security `safe-upload.ts`, migration
+  dashboard, AI migration, full export / restore); shared `packages/shared/src/imports.ts`; guide
+  `docs/MIGRATION.md`
+- Product owner answers (D-164): permission `import.own` (Process Owner: diagrams / documents for own processes
+  and editable spaces, own batches only); Setting `imports` (`ssoWelcomeEmail`, `allowAiOnImportedDocuments`
+  off by default — DOF approval, `confirmExternal` per run); option `visioLayout` (`AUTO` | `KEEP`)
 
 ## 10. Definition of Done (every phase)
 

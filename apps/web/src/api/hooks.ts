@@ -176,6 +176,13 @@ export const useResetPassword = () =>
       api<void>(`/users/${id}/reset-password`, { method: 'POST', body: { newPassword } }),
   });
 
+/** New set-password invitation for an imported user without a password (M15). */
+export const useInviteUser = () =>
+  useMutation({
+    mutationFn: (id: string) =>
+      api<{ sent: boolean }>(`/users/${id}/invitation`, { method: 'POST' }),
+  });
+
 export function useUnlockUser() {
   const qc = useQueryClient();
   return useMutation({

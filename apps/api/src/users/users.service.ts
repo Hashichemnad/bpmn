@@ -44,6 +44,7 @@ function toDto(u: UserRow): UserDto {
     lockedUntil: u.lockedUntil && u.lockedUntil > new Date() ? u.lockedUntil.toISOString() : null,
     mfaEnabled: !!u.totpEnabledAt,
     ssoLinked: !!u.ssoSubject,
+    hasPassword: u.passwordHash !== '',
     createdAt: u.createdAt.toISOString(),
     updatedAt: u.updatedAt.toISOString(),
   };

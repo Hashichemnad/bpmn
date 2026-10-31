@@ -43,7 +43,11 @@
     "resetMfa": "Reset 2FA",
     "resetMfaTitle": "Reset two-step verification for {{name}}?",
     "resetMfaText": "Use this when the user lost their phone. Their authenticator and recovery codes are removed and they are signed out everywhere. If their role requires 2FA, they set it up again at the next sign-in.",
-    "mfaReset": "Two-step verification reset"
+    "mfaReset": "Two-step verification reset",
+    "invite": "Send invitation again",
+    "invited": "Invitation sent.",
+    "inviteFailed": "The invitation e-mail could not be sent.",
+    "noPassword": "Invited"
   },
   "departments": {
     "title": "Departments",
@@ -115,7 +119,8 @@
       "DELEGATE": "Delegate",
       "REASSIGN": "Reassign",
       "CANCEL": "Cancel",
-      "RETRY": "Retry"
+      "RETRY": "Retry",
+      "UNDO": "Import undone"
     },
     "entities": {
       "User": "User",
@@ -167,7 +172,9 @@
       "WorkflowDefinition": "Workflow deployment",
       "WorkflowCase": "Request (case)",
       "WorkflowTask": "Workflow task",
-      "WorkflowFile": "Request file"
+      "WorkflowFile": "Request file",
+      "ImportBatch": "Import batch",
+      "RepositoryExport": "Repository export"
     }
   },
   "settings": {

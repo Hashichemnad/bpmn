@@ -12,7 +12,7 @@ const base = {
     ],
   },
   transformIgnorePatterns: [
-    '/node_modules/(?!\\.pnpm/|openid-client/|oauth4webapi/|jose/|decode-uri-component/)',
+    '/node_modules/(?!\\.pnpm/|openid-client/|oauth4webapi/|jose/|decode-uri-component/|marked/)',
   ],
   testEnvironment: 'node',
   moduleNameMapper: { '^@processhub/shared$': '<rootDir>/../../packages/shared/src/index.ts' },

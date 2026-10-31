@@ -2144,3 +2144,194 @@ summary (BACKLOG).
 4. **Demo approval users** (`section@`, `pmo@`, `finance@`, `dgo@`, `hr@` with the Reviewer role) are created only
    by the workflow demo seed, which runs only with `SEED_DEMO_DATA=true`; the seed test asserts that an install
    without demo data has none of them, no executable processes and no requests.
+
+## D-155 — Import batches on the existing job runner (Import tools / M15, 2026-10-31)
+
+Every import is an `ImportBatch` (number `IMP-0001`, kind, status, options, mapping, preview, summary, result):
+upload (files stored in S3 storage as `ImportFile`, never executed) → **parse** job → preview with the detected
+column mapping and a validation report (errors block, warnings allowed) → dry-run summary (create / update / skip)
+→ **apply** job → result report (Excel) → optional **undo**. The jobs reuse the in-process mining job runner
+(`MiningJobsService`, kinds `IMPORT_PARSE` / `IMPORT_APPLY`): progress, cancel and "interrupted by a restart" come
+for free, and only one queue exists. Importers are plug-ins (`parse(ctx)` → preview items, `apply(item)` →
+entities) in one registry; the batch service owns status, matching, decisions, undo and reporting. The preview is
+stored on the batch (JSON, capped at 5,000 items); each item is applied in its own transaction, so a cancelled or
+failed apply leaves a consistent, undoable partial result.
+
+## D-156 — Imported flag, re-import matching and undo (2026-10-31)
+
+- `ImportItem` (batch, entity type, entity id, action CREATED / UPDATED / SKIPPED / FAILED, external key, source
+  file, before / after summary) is the batch link of every entity. Processes, pages, diagrams and library objects
+  also carry `importBatchId` (the visible "Imported" flag, also used by the migration dashboard).
+- Re-import matches in this order: **code** (process / diagram code, object code), **e-mail** (users),
+  **external id** (BPMN process id, Visio / ARIS / Confluence page id — stored as the item's external key) and
+  **file name** (documents and diagrams of an earlier batch). A match updates (only when the target is still a
+  Draft; published / in-review content is skipped with a warning) instead of duplicating.
+- Everything imported is a **Draft**, with an owner from the file or the batch's default owner.
+- **Undo** removes what the batch created, in reverse order, as soft deletes (audited `DELETE` with the batch),
+  and only while every created item is still a Draft and has no content created outside the batch (e.g. a child
+  process added by hand): otherwise undo lists the blockers. Users created by a batch are deactivated and soft
+  deleted; updates are not reverted — the batch page shows their before / after.
+- The existing Excel imports (risks, controls, requirements, applications, interfaces, data objects,
+  capabilities, KPIs, objectives, measurements) are batch kinds that call the module's own `import(dryRun)`
+  unchanged: the dry run is the preview, apply runs the real import; their result counts are recorded but they
+  have no per-entity undo (those modules have their own approval / history).
+
+## D-157 — Upload security of imports (2026-10-31)
+
+One module (`apps/api/src/imports/safe-upload.ts`) for all importers: type by **content** (magic bytes / XML root
+/ UTF-8 text) and extension together; per-file and per-batch size limits; ZIP archives read with JSZip only after
+checking the central directory: entry count ≤ 2,000, total uncompressed ≤ 200 MB, per-entry ratio ≤ 100:1, no
+absolute paths, `..` segments, drive letters or symlinks (ZIP-slip — entries are never written to disk anyway);
+XML parsed only after rejecting `<!DOCTYPE` / `<!ENTITY` (no XXE / billion laughs) with the DOM parser of jsdom
+(no external resources); macro-enabled Office formats (`.docm`, `.xlsm`, `.dotm`, `vbaProject.bin` inside a
+package) are rejected; HTML goes through the wiki's DOMPurify rules, SVG through the existing SVG sanitiser;
+files are stored in S3 storage and never executed. Antivirus scanning stays a go-live decision (BACKLOG).
+
+## D-158 — Parsing libraries (2026-10-31)
+
+`mammoth` (Word → semantic HTML, images as attachments through its image handler), `unpdf` (pdf.js text
+extraction, `isEvalSupported: false`), `marked` (Markdown → HTML), `jszip` (moves from dev to runtime
+dependencies) and jsdom's XML DOM parser (BPMN, DMN, Visio pages, ARIS AML). All HTML results are sanitised with
+the wiki's `sanitizeRichText`, so the TipTap editor receives only its own tags.
+
+## D-159 — Structure imports and user invitations (Import tools step 2, 2026-10-31)
+
+- **Process house:** matched by process code (case-insensitive). Parents may be in the file or in ProcessHub;
+  the level is derived from the tree (a different level in the file is a warning), the category is inherited
+  from the parent when empty. Existing processes are updated only while they are Drafts and are **not moved**
+  (moving / re-categorising stays a tree operation with its cascade rules — a warning says so). Unknown owners
+  are errors unless the batch has a default owner (then a warning); unknown departments are errors.
+- **Departments:** matched by department code; hierarchy from the parent code (cycles detected); the head by
+  e-mail (unknown → warning, not set).
+- **Users:** matched by e-mail; **no passwords are imported**. New users get `passwordHash = ''` and a
+  **set-password invitation** (`UserInvitation`: SHA-256 of a random 256-bit token, single use, 7 days, sent by
+  the configured e-mail; Users page → "Send invitation again"). When password sign-in is off the users sign in
+  with SSO (accounts are linked by e-mail on the first SSO sign-in) and no e-mail is sent. Rules: Super Admins
+  are never created by an import (error), the break-glass account, existing Super Admins and the importing
+  user are left unchanged (warning), roles that require two-factor authentication are flagged (enrolment at
+  the first sign-in), roles and job roles are **added, never removed**. Undo deactivates and soft-deletes the
+  users of a batch — but not once one of them has signed in.
+
+## D-160 — Diagram imports: BPMN, Visio, ARIS AML, DMN (Import tools step 3, 2026-10-31)
+
+- **BPMN 2.0** (files or a ZIP): parsed safely, vendor extensions **stripped by default** (any element or
+  attribute outside BPMN / DI / DC / XSD / XSI / colour / ProcessHub namespaces — Camunda, Signavio, Bizagi …;
+  "keep" is a batch option), labels without `ph:nameEn/ph:nameAr` are put into the Arabic or English slot **by
+  script** (≥ 30 % Arabic letters). When fewer than 80 % of the flow nodes have a shape (missing DI) or the
+  option says "always", the diagram is rebuilt with the shared layered layout (`readBpmn` → `structureToBpmn`,
+  the AI builder's path): data objects, annotations and message flows are not kept then (warning with the
+  count). Each document is attached to a process by **code in the file name** (e.g. `C.01.02 ….bpmn`), an
+  earlier import of the same file name, or an exact process name — else a new **draft** process is created
+  under the chosen parent (code from the file name when free, otherwise the next child code). The model is
+  saved through `ModelsService.createVersion` (working model + version "Imported from … (IMP-…)"), so lane
+  roles (`ph:roleId`) and label references (`ph:labelRef`) become object links exactly as in the modeler.
+  Lanes are matched to library **roles** and labels to approved dictionary **terms**: exact matches are
+  pre-accepted suggestions, partial matches are offered unaccepted.
+- **Visio .vsdx:** read with JSZip + the safe XML parser (masters, pages, shapes incl. groups, `Connect`
+  elements). A **shape mapping table** (master name → BPMN type, defaults for the basic flowchart,
+  cross-functional flowchart and BPMN stencils; `options.shapeMapping` overrides per batch) turns each page
+  into a process structure; shapes belong to the swimlane that contains their centre; terminators become
+  start or end events by their connections; connector texts become flow labels. Positions are **not** taken
+  from Visio: the shared auto-layout draws the diagram (consistent, readable; Visio coordinates rarely match
+  BPMN shapes). Unmapped masters are counted and listed. `.vsd` is refused with "save as .vsdx".
+- **ARIS AML:** object definitions of role types (`OT_PERS_TYPE`, `OT_POS`, `OT_ORG_UNIT` …) and application
+  systems (`OT_APPL_SYS_TYPE` …) become library **roles / IT systems** (matched by an earlier import's GUID or
+  the exact name — then reused, not duplicated); **EPC models** (`MT_EEPC*`, `MT_EPC*`) become EPC diagrams
+  (events, functions, AND / OR / XOR rules, process interfaces, org units, systems, documents; ARIS
+  positions scaled by 0.4) with diagram links from resource shapes to the library objects; the existing EPC
+  → BPMN conversion is used on the diagram page. **Value-added chain diagrams** become value chains. Names
+  come from `AT_NAME` per LocaleId (Arabic LCIDs → Arabic). Other model types are listed as skipped (BACKLOG:
+  organisation charts, function allocation diagrams).
+- **DMN:** through the diagram editor's server checks (`assertSafeDmnXml`), one DMN diagram per file.
+
+## D-161 — Documents into the wiki (Import tools step 4, 2026-10-31)
+
+- **Word (.docx):** `mammoth` converts the document to semantic HTML (headings incl. the Title style,
+  lists, tables, links, images); the first heading becomes the page title; blocks with Arabic text get
+  `dir="rtl"`; the page language (English or Arabic content slot) follows the text's script. Option: one
+  page per document or **split by Heading 1** (a parent page with the introduction and one child page per
+  section). A chosen page template (SOP / policy / guide) adds the template's sections the document lacks as
+  empty headings to fill in (warning lists them). Images become page **attachments** (types sniffed by the
+  existing attachment rules); everything goes through `sanitizeRichText`.
+- **PDF:** text per page via pdf.js (`unpdf`) in a **separate worker thread** with a memory limit and a 30 s
+  timeout (`isEvalSupported: false`); the original PDF is always attached and linked at the top; PDFs with
+  (almost) no text are flagged "needs manual work" (OCR in BACKLOG).
+- **Confluence space export (HTML ZIP)** and **Markdown folders** (`marked`): the hierarchy comes from the
+  breadcrumbs (Confluence) or folders with `README.md` / `index.md` (Markdown); links to other pages of the
+  export are rewritten to ProcessHub page links (page ids are assigned before the pages are written, so links
+  resolve in one pass); files of the archive become attachments; links to missing pages / files are removed
+  and **reported** per page.
+- **Links to processes:** process codes in the file name or title are pre-accepted link suggestions; codes in
+  the text and process names in the title are offered; accepted suggestions become `PageLink`s.
+- Re-import matches pages by file name / Confluence page id / Markdown path of an earlier import (drafts are
+  updated with a new version). Salesforce documents saved as Word / PDF use the same path — no connector.
+
+## D-162 — AI-assisted migration: proposals only (Import tools step 5, 2026-10-31)
+
+The assistant works on the items an applied batch created (or chosen items), as a **background job** (job
+runner kind `IMPORT_AI`, one AI request per item, max 50 per run). Every request goes through the AI
+gateway: the user's role must be allowed, the per-user daily and the organisation's monthly limits apply
+(checked before the run and before each item — when a limit is reached the remaining items are recorded as
+failed with the reason), and usage / audit are logged as for every AI call (prompts are not stored). The
+results are **`AiProposal`s** in a review queue (Import Center → AI proposals), shown side by side with the
+source document:
+
+- **SOP → BPMN** (feature `DOC_TO_PROCESS`, the existing document → process prompt and structure → BPMN
+  builder): accepting creates a new draft process (or fills a linked draft process without a diagram) with
+  the model saved as a version marked **AI output** (`aiGenerated`), plus the page ↔ process link.
+- **Risks and controls** (new feature `EXTRACT_GRC`: quotes, likelihood / impact estimates, control → risk
+  links): accepting creates the selected items as GRC **drafts** through `GrcService` (needs `grc.propose`),
+  linked to the source page, for the Risk & Compliance Officer.
+- **Translation** (feature `TRANSLATE`): the empty language side of names, descriptions, BPMN labels and page
+  title / content; accepting writes it and marks the item as AI output for a human check.
+  Nothing is published or submitted automatically; reject leaves the item unchanged. Tests mock the provider.
+
+## D-163 — Full export package and restore (Import tools step 7, 2026-10-31)
+
+- **Export** (`GET /repository-export`, permission `export.full` — Super Admin only; Admins keep everything
+  else): one ZIP built in the request (sizes of a 50–500 user installation are tens of MB) with
+  `data/<Model>.json` for 42 content tables in foreign-key order (departments, users without any credential
+  or 2FA data, approval workflows, library objects with GRC / EA / KPI details and relations, processes with
+  models and versions, links, spaces, pages with versions and attachments, diagrams with versions and links,
+  publications, content settings — never e-mail, SSO, AI or integration secrets), `UserRole` by role key,
+  attachment bytes, readable copies (BPMN per process and version, DMN / diagram JSON, pages as HTML and
+  Markdown per language with attachments), Excel (process house — re-importable —, library objects, GRC
+  registers, applications, KPIs) and `manifest.json` (counts, SHA-256 per file). Audited (`EXPORT`,
+  `RepositoryExport`).
+- **Restore** is the Import Center kind "ProcessHub export package" (Super Admin): every data / attachment
+  file is checked against the manifest (`PACKAGE_CHECKSUM`), the target must have **no** processes, pages,
+  diagrams or library objects (`TARGET_NOT_EMPTY`, so a restore never merges into live content), rows keep
+  their ids (all links stay valid), users and approval workflows that already exist (by e-mail / name) are
+  mapped instead of duplicated, imported users have no password (invitation / SSO), references to tables that
+  are not exported (event logs, reviews) are cleared, attachments go back to storage. A restore has no undo
+  (it is a whole installation). The round trip (export → empty database → restore → identical content) is an
+  API test in CI (`test/imports-package.e2e-spec.ts`).
+
+## D-164 — Product owner answers on the import tools (2026-10-31)
+
+- **Who can import:** Process Owners get `import.own`: diagrams (BPMN, Visio) and documents (Word, PDF,
+  Confluence, Markdown) for processes they own and wiki spaces they can edit, so departments migrate their
+  own content in parallel. A file matching another owner's process is an error (`NOT_OWN_PROCESS`); new
+  processes need one of the owner's processes as parent (`OWN_PARENT_REQUIRED`) and are owned by the
+  importer (the batch's default owner is forced); spaces need edit rights (403). Owners list, open, apply and
+  undo only their own batches (others' answer 404). Structure, users, library objects, GRC, KPI, ARIS / DMN,
+  AI migration and migration bulk actions stay with `import.manage` (Admins); full export / restore with
+  `export.full` (Super Admins). API tests: `test/imports-owner.e2e-spec.ts`.
+- **Invitations:** 7 days stays. Once SSO is live and password sign-in is off, no set-password invitation is
+  sent: a welcome e-mail with the "Sign in with Microsoft" link (the SSO button label) — or no e-mail when
+  Setting `imports.ssoWelcomeEmail` is off (default on). Password invitations only while password sign-in is
+  allowed (break-glass and exceptions).
+- **AI on imported documents:** needs DOF approval (the text leaves the UAE). Separate Setting
+  `imports.allowAiOnImportedDocuments`, **off by default**, independent of the general AI switch, changed by
+  `settings.manage` (audited). When on, every run must carry `confirmExternal: true` (confirmation dialog in
+  the batch page); the server re-checks the setting before each item (`AI_IMPORTS_DISABLED`). Noted in
+  SECURITY.md (§3 and the go-live checklist) and MIGRATION.md.
+- **Visio layout:** option `visioLayout` = `AUTO` (default) | `KEEP` — a small effort: shapes keep their Visio
+  positions (96 px per inch, events / gateways centred at BPMN sizes), lanes become the swimlane bands,
+  flows orthogonal connectors. Vertical swimlanes fall back to the automatic layout with a warning (BACKLOG).
+- **ARIS organisation charts and function allocation diagrams:** not needed now (DOF does not use ARIS) —
+  BACKLOG.
+- **Restore** only into an empty installation is enough. DEPLOYMENT.md §8 states that disaster recovery uses
+  `scripts/backup.sh` / `restore.sh` (database + files + keys) and the export package is for moving servers
+  and avoiding lock-in.
+- **Antivirus** scanning goes to the final security review (BACKLOG).
