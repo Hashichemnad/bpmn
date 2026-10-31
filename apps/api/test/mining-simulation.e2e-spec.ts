@@ -248,4 +248,42 @@ describe('Mining — simulation (e2e)', () => {
     ])
       expect(xml).toContain(text);
   });
+
+  it('uses the central public holiday list maintained by admins (D-143)', async () => {
+    const list = (await analyst.get('/simulations/holidays').expect(200)).body;
+    expect(list.find((h: { nameEn: string }) => h.nameEn === 'Eid al-Fitr')).toMatchObject({ expected: true });
+    // Performance Officers read it; Super Admins and Admins maintain it.
+    await analyst.put('/simulations/holidays').send({ holidays: list }).expect(403);
+    await createUser(ctx.prisma, 'admin@test.local', ['ADMIN']);
+    const admin = await loggedIn(ctx.app, 'admin@test.local');
+    await admin
+      .put('/simulations/holidays')
+      .send({ holidays: [{ date: '2026-01-01' }, { date: '2026-01-01' }] })
+      .expect(400);
+    const sim = (await analyst.get('/simulations').expect(200)).body[0];
+    let dto = (await analyst.get(`/simulations/${sim.id}`).expect(200)).body;
+    // Second scenario: its own list (not affected by the central list).
+    const own = dto.scenarios[1];
+    await analyst
+      .patch(`/simulations/${sim.id}/scenarios/${own.id}`)
+      .send({ params: { ...own.params, calendar: { ...own.params.calendar, useCentralHolidays: false, holidays: [] } } })
+      .expect(200);
+    for (const j of (await analyst.post(`/simulations/${sim.id}/run`).send({}).expect(201)).body)
+      await waitJob(analyst, j.id);
+    dto = (await analyst.get(`/simulations/${sim.id}`).expect(200)).body;
+    expect(dto.scenarios.map((x: { stale: boolean }) => x.stale)).toEqual([false, false]);
+    // Confirming a date / adding a holiday changes the central list: scenarios using it become stale.
+    const saved = (
+      await admin
+        .put('/simulations/holidays')
+        .send({ holidays: [...list, { date: '2026-11-30', nameEn: 'Extra day', nameAr: 'يوم إضافي', expected: false }] })
+        .expect(200)
+    ).body;
+    expect(saved.some((h: { date: string }) => h.date === '2026-11-30')).toBe(true);
+    dto = (await analyst.get(`/simulations/${sim.id}`).expect(200)).body;
+    expect(dto.scenarios[0].params.calendar.useCentralHolidays).toBe(true);
+    expect(dto.scenarios.map((x: { stale: boolean }) => x.stale)).toEqual([true, false]);
+    const audit = await ctx.prisma.auditLog.findFirst({ where: { entityId: 'mining.holidays' } });
+    expect(audit?.summary).toMatchObject({ added: ['2026-11-30'] });
+  });
 });

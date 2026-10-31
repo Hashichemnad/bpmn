@@ -54,7 +54,12 @@ export const scenarioParamsSchema = z.object({
       week: z.enum(WORK_WEEKS).default('SUN_THU'),
       start: hhmm.default('07:30'),
       end: hhmm.default('15:30'),
-      /** Public holidays (YYYY-MM-DD), editable; default: UAE list of the simulated year. */
+      /**
+       * Use the central holiday list (Process mining → Settings → Public holidays, D-143); false = the
+       * scenario's own `holidays` below.
+       */
+      useCentralHolidays: z.boolean().default(true),
+      /** Public holidays (YYYY-MM-DD) of the scenario; replaced by the central list when it is used. */
       holidays: z
         .array(z.string().regex(/^\d{4}-\d{2}-\d{2}$/))
         .max(400)
@@ -62,7 +67,14 @@ export const scenarioParamsSchema = z.object({
       /** 24 / 7 (queueing tests, automated processes). */
       alwaysOpen: z.boolean().default(false),
     })
-    .default({ week: 'SUN_THU', start: '07:30', end: '15:30', holidays: [], alwaysOpen: false }),
+    .default({
+      week: 'SUN_THU',
+      start: '07:30',
+      end: '15:30',
+      useCentralHolidays: true,
+      holidays: [],
+      alwaysOpen: false,
+    }),
   /** First simulated day. */
   startDate: z
     .string()
@@ -99,39 +111,74 @@ export const scenarioParamsSchema = z.object({
 export type ScenarioParams = z.infer<typeof scenarioParamsSchema>;
 export type ScenarioParamsInput = z.input<typeof scenarioParamsSchema>;
 
-/** UAE federal public holidays (fixed dates and announced Islamic dates, editable per scenario). */
-export const UAE_HOLIDAYS: Record<number, string[]> = {
-  2026: [
-    '2026-01-01',
-    '2026-03-19',
-    '2026-03-20',
-    '2026-03-21',
-    '2026-05-26',
-    '2026-05-27',
-    '2026-05-28',
-    '2026-05-29',
-    '2026-06-16',
-    '2026-08-25',
-    '2026-12-01',
-    '2026-12-02',
-    '2026-12-03',
-  ],
-  2027: [
-    '2027-01-01',
-    '2027-03-09',
-    '2027-03-10',
-    '2027-03-11',
-    '2027-05-15',
-    '2027-05-16',
-    '2027-05-17',
-    '2027-05-18',
-    '2027-06-06',
-    '2027-08-14',
-    '2027-12-01',
-    '2027-12-02',
-    '2027-12-03',
-  ],
-};
+/** One public holiday of the central list (D-143). */
+export const holidayEntrySchema = z.object({
+  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  nameEn: z.string().trim().max(200).default(''),
+  nameAr: z.string().trim().max(200).default(''),
+  /** Islamic holidays depend on the moon sighting: "expected" until the official announcement. */
+  expected: z.boolean().default(false),
+});
+export type HolidayEntry = z.infer<typeof holidayEntrySchema>;
+export const holidayListSchema = z.object({
+  holidays: z
+    .array(holidayEntrySchema)
+    .max(400)
+    .refine((l) => new Set(l.map((h) => h.date)).size === l.length, { message: 'DUPLICATE_DATE' }),
+});
+export type HolidayListInput = z.input<typeof holidayListSchema>;
+
+const h = (date: string, nameEn: string, nameAr: string, expected = false): HolidayEntry => ({
+  date,
+  nameEn,
+  nameAr,
+  expected,
+});
+/**
+ * UAE federal public holidays 2026–2027, the default of the central list (admins maintain it each
+ * year). Islamic holidays are marked expected until confirmed by the moon sighting.
+ */
+export const DEFAULT_UAE_HOLIDAYS: HolidayEntry[] = [
+  h('2026-01-01', "New Year's Day", 'رأس السنة الميلادية'),
+  h('2026-03-19', 'Eid al-Fitr', 'عيد الفطر', true),
+  h('2026-03-20', 'Eid al-Fitr', 'عيد الفطر', true),
+  h('2026-03-21', 'Eid al-Fitr', 'عيد الفطر', true),
+  h('2026-05-26', 'Arafat Day', 'يوم عرفة', true),
+  h('2026-05-27', 'Eid al-Adha', 'عيد الأضحى', true),
+  h('2026-05-28', 'Eid al-Adha', 'عيد الأضحى', true),
+  h('2026-05-29', 'Eid al-Adha', 'عيد الأضحى', true),
+  h('2026-06-16', 'Islamic New Year', 'رأس السنة الهجرية', true),
+  h('2026-08-25', "Prophet Muhammad's Birthday", 'المولد النبوي', true),
+  h('2026-12-01', 'Commemoration Day', 'يوم الشهيد'),
+  h('2026-12-02', 'National Day', 'اليوم الوطني'),
+  h('2026-12-03', 'National Day', 'اليوم الوطني'),
+  h('2027-01-01', "New Year's Day", 'رأس السنة الميلادية'),
+  h('2027-03-09', 'Eid al-Fitr', 'عيد الفطر', true),
+  h('2027-03-10', 'Eid al-Fitr', 'عيد الفطر', true),
+  h('2027-03-11', 'Eid al-Fitr', 'عيد الفطر', true),
+  h('2027-05-15', 'Arafat Day', 'يوم عرفة', true),
+  h('2027-05-16', 'Eid al-Adha', 'عيد الأضحى', true),
+  h('2027-05-17', 'Eid al-Adha', 'عيد الأضحى', true),
+  h('2027-05-18', 'Eid al-Adha', 'عيد الأضحى', true),
+  h('2027-06-06', 'Islamic New Year', 'رأس السنة الهجرية', true),
+  h('2027-08-14', "Prophet Muhammad's Birthday", 'المولد النبوي', true),
+  h('2027-12-01', 'Commemoration Day', 'يوم الشهيد'),
+  h('2027-12-02', 'National Day', 'اليوم الوطني'),
+  h('2027-12-03', 'National Day', 'اليوم الوطني'),
+];
+
+/** The holidays a run uses: the central list unless the scenario overrides it. */
+export function resolveHolidays<T extends ScenarioParamsInput>(
+  params: T,
+  central: HolidayEntry[],
+): T {
+  const p = scenarioParamsSchema.parse(params);
+  if (!p.calendar.useCentralHolidays) return p as unknown as T;
+  return {
+    ...p,
+    calendar: { ...p.calendar, holidays: [...new Set(central.map((x) => x.date))].sort() },
+  } as unknown as T;
+}
 
 /** JSON with sorted object keys: a stable hash input (PostgreSQL JSONB reorders keys). */
 export function stableJson(v: unknown): string {

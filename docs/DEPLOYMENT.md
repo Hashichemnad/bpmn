@@ -307,7 +307,13 @@ Caddy handles HTTPS. Choose one option with `CADDY_TLS` in `.env`, then run `sud
     lists. Once your enterprise value chain is approved and **published** (Repository → New → Value chain,
     then the normal review), choose it as the start page and save. Staff then land on it and drill down to the
     processes. Only demo installations set it automatically (VC-001).
-11. Go through the go-live checklist in [`docs/SECURITY.md`](./SECURITY.md) §7.
+11. **Process mining** (decided for go-live, D-143): **Process mining → Event logs → Settings** — set the
+    **retention** of event logs from DOF's records-retention policy (suggested starting point: **24 months**; the
+    product ships with retention off). Leave **"Performance" in the portal off** until real event logs exist, then
+    switch it on. **Process mining → Simulations → Public holidays**: check the year's UAE public holidays, and
+    confirm each Islamic holiday (untick _expected_) once it is announced after the moon sighting; repeat every
+    year (an admin task).
+12. Go through the go-live checklist in [`docs/SECURITY.md`](./SECURITY.md) §7.
 
 ### 6.1 Single sign-on with Microsoft Entra ID (Azure AD)
 

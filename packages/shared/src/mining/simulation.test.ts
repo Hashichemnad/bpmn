@@ -7,6 +7,9 @@ import {
   scenarioParamsSchema,
   simulate,
   validateScenario,
+  DEFAULT_UAE_HOLIDAYS,
+  holidayListSchema,
+  resolveHolidays,
 } from '../index';
 
 const PH = 'xmlns:ph="http://processhub.io/schema/bpmn"';
@@ -166,5 +169,28 @@ describe('simulation — model semantics', () => {
         .map((i) => i.code)
         .sort(),
     ).toEqual(['LANE_WITHOUT_CAPACITY', 'MISSING_DURATION']);
+  });
+});
+
+describe('central holiday list (D-143)', () => {
+  it('marks the Islamic holidays as expected and rejects duplicate dates', () => {
+    const eid = DEFAULT_UAE_HOLIDAYS.filter((h) => h.nameEn === 'Eid al-Fitr');
+    expect(eid.length).toBeGreaterThan(0);
+    expect(eid.every((h) => h.expected)).toBe(true);
+    expect(DEFAULT_UAE_HOLIDAYS.find((h) => h.date === '2026-12-02')).toMatchObject({ nameEn: 'National Day', expected: false });
+    expect(
+      holidayListSchema.safeParse({ holidays: [{ date: '2026-01-01' }, { date: '2026-01-01' }] }).success,
+    ).toBe(false);
+  });
+
+  it('every scenario uses the central list unless it overrides it', () => {
+    const central = [{ date: '2026-03-02', nameEn: 'Test', nameAr: '', expected: true }];
+    const byDefault = resolveHolidays({ calendar: { holidays: ['2026-01-05'] } }, central);
+    expect(byDefault.calendar!.holidays).toEqual(['2026-03-02']);
+    const own = resolveHolidays({ calendar: { useCentralHolidays: false, holidays: ['2026-01-05'] } }, central);
+    expect(own.calendar!.holidays).toEqual(['2026-01-05']);
+    // The working calendar skips the central holiday (2026-03-02, a Monday).
+    const cal = new WorkCalendar(scenarioParamsSchema.parse({ ...byDefault, startDate: '2026-03-01' }));
+    expect(cal.isWorkDay(1)).toBe(false);
   });
 });

@@ -23,14 +23,14 @@ import { useTranslation } from 'react-i18next';
 import dayjs from 'dayjs';
 import {
   DISTRIBUTION_TYPES,
-  UAE_HOLIDAYS,
   WORK_WEEKS,
   type Distribution,
   type ScenarioDto,
   type ScenarioParams,
   type SimulationDto,
 } from '@processhub/shared';
-import { useSaveScenario } from '@/api/simulation';
+import { useHolidays, useSaveScenario } from '@/api/simulation';
+import { HolidaysModal } from './HolidaysModal';
 import { useLocale } from '@/app/LocaleProvider';
 import { useErrorMessage } from '@/components/i18n-helpers';
 import { pickLabel } from '@/features/modeler/labels';
@@ -56,6 +56,9 @@ export function ScenarioDrawer({
   const [name, setName] = useState({ nameEn: scenario.nameEn, nameAr: scenario.nameAr });
   const [version, setVersion] = useState<number | null>(scenario.processVersion);
   const [kind, setKind] = useState(scenario.kind);
+  const central = useHolidays();
+  const centralDates = [...new Set((central.data ?? []).map((x) => x.date))].sort();
+  const [showCentral, setShowCentral] = useState(false);
   useEffect(() => setP(scenario.params), [scenario.params]);
   const label = (x: { nameEn: string; nameAr: string; id?: string }) =>
     pickLabel(x, locale) || x.id || '';
@@ -231,47 +234,65 @@ export function ScenarioDrawer({
           </Form.Item>
         </Col>
         <Col span={24}>
-          <Form.Item
-            label={t('mining:sim.holidays')}
-            extra={
-              <Button
-                size="small"
-                type="link"
-                style={{ paddingInline: 0 }}
-                onClick={() => {
-                  const y = Number(p.startDate.slice(0, 4));
-                  set({
-                    calendar: {
-                      ...p.calendar,
-                      holidays: [
-                        ...new Set([
-                          ...p.calendar.holidays,
-                          ...(UAE_HOLIDAYS[y] ?? []),
-                          ...(UAE_HOLIDAYS[y + 1] ?? []),
-                        ]),
-                      ].sort(),
-                    },
-                  });
-                }}
-              >
-                {t('mining:sim.addUae')}
-              </Button>
-            }
-          >
-            <Select
-              mode="tags"
-              value={p.calendar.holidays}
-              onChange={(v: string[]) =>
-                set({
-                  calendar: {
-                    ...p.calendar,
-                    holidays: v.filter((d) => /^\d{4}-\d{2}-\d{2}$/.test(d)).sort(),
-                  },
-                })
-              }
-              tokenSeparators={[',', ' ']}
-              placeholder="YYYY-MM-DD"
-            />
+          <Form.Item label={t('mining:sim.holidays')}>
+            <Flex vertical gap={8}>
+              <Flex gap={8} align="center" wrap="wrap">
+                <Switch
+                  checked={p.calendar.useCentralHolidays}
+                  data-testid="sim-use-central-holidays"
+                  onChange={(v) =>
+                    set({
+                      calendar: {
+                        ...p.calendar,
+                        useCentralHolidays: v,
+                        // Switching to an own list starts from the central one.
+                        holidays: v ? p.calendar.holidays : centralDates,
+                      },
+                    })
+                  }
+                />
+                <Typography.Text>{t('mining:sim.useCentral')}</Typography.Text>
+                <Button size="small" type="link" onClick={() => setShowCentral(true)}>
+                  {t('mining:holidays.button')}
+                </Button>
+              </Flex>
+              {p.calendar.useCentralHolidays ? (
+                <Typography.Text type="secondary" data-testid="sim-central-info">
+                  {t('mining:sim.centralInfo', {
+                    count: central.data?.length ?? 0,
+                    expected: central.data?.filter((x) => x.expected).length ?? 0,
+                  })}
+                </Typography.Text>
+              ) : (
+                <>
+                  <Flex gap={8} align="center">
+                    <Typography.Text type="secondary">{t('mining:sim.ownList')}</Typography.Text>
+                    <Button
+                      size="small"
+                      type="link"
+                      onClick={() => set({ calendar: { ...p.calendar, holidays: centralDates } })}
+                    >
+                      {t('mining:sim.copyCentral')}
+                    </Button>
+                  </Flex>
+                  <Select
+                    mode="tags"
+                    value={p.calendar.holidays}
+                    data-testid="sim-own-holidays"
+                    onChange={(v: string[]) =>
+                      set({
+                        calendar: {
+                          ...p.calendar,
+                          holidays: v.filter((d) => /^\d{4}-\d{2}-\d{2}$/.test(d)).sort(),
+                        },
+                      })
+                    }
+                    tokenSeparators={[',', ' ']}
+                    placeholder="YYYY-MM-DD"
+                  />
+                </>
+              )}
+            </Flex>
           </Form.Item>
         </Col>
       </Row>
@@ -490,6 +511,7 @@ export function ScenarioDrawer({
           },
         ]}
       />
+      {showCentral && <HolidaysModal readOnly onClose={() => setShowCentral(false)} />}
     </Drawer>
   );
 }

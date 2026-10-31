@@ -1,7 +1,8 @@
 import type { Prisma, PrismaClient } from '@prisma/client';
 import {
   DEFAULT_DIAGRAM_THEME,
-  UAE_HOLIDAYS,
+  DEFAULT_UAE_HOLIDAYS,
+  resolveHolidays,
   autoMatchActivities,
   buildLogData,
   miningKpiSeries,
@@ -277,7 +278,7 @@ export async function seedMiningDemo(prisma: PrismaClient, adminId: string | nul
     startDate: '2026-10-04',
     days: 90,
     warmupDays: 10,
-    calendar: { holidays: [...(UAE_HOLIDAYS[2026] ?? []), ...(UAE_HOLIDAYS[2027] ?? [])] },
+    calendar: { useCentralHolidays: true },
     resources: {
       Lane_AP: { capacity: 6, costPerHour: 60 },
       Lane_FM: { capacity: 1, costPerHour: 150 },
@@ -337,7 +338,9 @@ export async function seedMiningDemo(prisma: PrismaClient, adminId: string | nul
   const hash = (s: string) => crypto.createHash('sha256').update(s).digest('hex').slice(0, 12);
   for (const [i, sc] of scenarios.entries()) {
     const params = scenarioParamsSchema.parse(sc.params);
-    const result = simulate(graph, params);
+    // The central holiday list (D-143) applies; its default is the UAE list.
+    const resolved = resolveHolidays(params, DEFAULT_UAE_HOLIDAYS);
+    const result = simulate(graph, resolved);
     await prisma.simulationScenario.create({
       data: {
         simulationId: sim.id,
@@ -347,7 +350,7 @@ export async function seedMiningDemo(prisma: PrismaClient, adminId: string | nul
         sortOrder: i,
         params: params as unknown as Prisma.InputJsonValue,
         result: result as unknown as Prisma.InputJsonValue,
-        resultModel: `working:${hash(xml)}|${hash(stableJson(params))}`,
+        resultModel: `working:${hash(xml)}|${hash(stableJson(resolved))}`,
         ranAt: new Date(),
       },
     });

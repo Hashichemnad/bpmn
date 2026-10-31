@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type {
   AiScenarioProposal,
   CreateSimulationInput,
+  HolidayEntry,
   MiningJobDto,
   ScenarioInput,
   SimulationDto,
@@ -121,4 +122,22 @@ export async function exportSimulation(id: string) {
   a.download = file.fileName;
   a.click();
   setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+// ---------- Central public holiday list (D-143) ----------
+
+export const useHolidays = (enabled = true) =>
+  useQuery({
+    queryKey: ['simulations', 'holidays'],
+    queryFn: () => api<HolidayEntry[]>('/simulations/holidays'),
+    enabled,
+  });
+
+export function useSaveHolidays() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (holidays: HolidayEntry[]) =>
+      api<HolidayEntry[]>('/simulations/holidays', { method: 'PUT', body: { holidays } }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: simKeys.all }),
+  });
 }

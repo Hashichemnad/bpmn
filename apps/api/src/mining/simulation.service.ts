@@ -5,7 +5,11 @@ import { z } from 'zod';
 import { Prisma } from '@prisma/client';
 import {
   PERMISSIONS,
-  UAE_HOLIDAYS,
+  DEFAULT_UAE_HOLIDAYS,
+  SETTING_KEYS,
+  holidayListSchema,
+  resolveHolidays,
+  type HolidayEntry,
   isStepNode,
   modelArrivalsPerMonth,
   parseBpmnGraph,
@@ -169,6 +173,7 @@ export class SimulationService implements OnModuleInit {
       },
       orderBy: { createdAt: 'desc' },
     });
+    const central = await this.holidays();
     const scenarios: ScenarioDto[] = [];
     for (const sc of s.scenarios) {
       const params = scenarioParamsSchema.parse(sc.params ?? {});
@@ -176,7 +181,8 @@ export class SimulationService implements OnModuleInit {
         ? await this.modelXml(s.processId, sc.processVersion).catch(() => null)
         : working;
       const g = model ? (model === working ? graph : parseBpmnGraph(model.xml)) : graph;
-      const paramsHash = hash(stableJson(params));
+      const resolved = resolveHolidays(params, central);
+      const paramsHash = hash(stableJson(resolved));
       scenarios.push({
         id: sc.id,
         nameEn: sc.nameEn,
@@ -189,7 +195,7 @@ export class SimulationService implements OnModuleInit {
         resultModel: sc.resultModel?.split('|')[0].split(':')[0] ?? null,
         ranAt: sc.ranAt?.toISOString() ?? null,
         issues: model
-          ? validateScenario(g, params)
+          ? validateScenario(g, resolved)
           : [{ code: 'NO_START', severity: 'error', elementId: null }],
         stale: !!sc.result && (!model || sc.resultModel !== `${model.label}|${paramsHash}`),
       });
@@ -319,7 +325,8 @@ export class SimulationService implements OnModuleInit {
         fromModel > 0
           ? { unit: 'model', rate: 0 }
           : { unit: 'month', rate: d.arrivalsPerMonth ?? 100 },
-      calendar: { holidays: [...(UAE_HOLIDAYS[year] ?? []), ...(UAE_HOLIDAYS[year + 1] ?? [])] },
+      // Holidays: the central list (D-143), unless a scenario switches to its own.
+      calendar: { useCentralHolidays: true },
       startDate: start,
       resources: Object.fromEntries(
         graph.lanes.map((l) => [l.id, { capacity: 1, costPerHour: 0 }]),
@@ -445,6 +452,51 @@ export class SimulationService implements OnModuleInit {
     return this.detail(id, actor);
   }
 
+  // ---------- Central public holiday list (D-143) ----------
+
+  /** The central list (Setting `mining.holidays`); the UAE default until an admin saves one. */
+  async holidays(): Promise<HolidayEntry[]> {
+    const row = await this.prisma.setting.findUnique({
+      where: { key: SETTING_KEYS.MINING_HOLIDAYS },
+    });
+    const parsed = holidayListSchema.safeParse(row?.value ?? null);
+    return parsed.success ? parsed.data.holidays : DEFAULT_UAE_HOLIDAYS;
+  }
+
+  async setHolidays(list: HolidayEntry[], actor: AuthUser, meta: RequestMeta) {
+    const before = await this.holidays();
+    const holidays = [...list].sort((a, b) => a.date.localeCompare(b.date));
+    await this.prisma.$transaction(async (tx) => {
+      await tx.setting.upsert({
+        where: { key: SETTING_KEYS.MINING_HOLIDAYS },
+        create: { key: SETTING_KEYS.MINING_HOLIDAYS, value: { holidays }, updatedById: actor.id },
+        update: { value: { holidays }, updatedById: actor.id },
+      });
+      await this.audit.log(
+        {
+          action: 'UPDATE',
+          entityType: 'Setting',
+          entityId: SETTING_KEYS.MINING_HOLIDAYS,
+          userId: actor.id,
+          summary: {
+            added: holidays
+              .filter((x) => !before.some((b) => b.date === x.date))
+              .map((x) => x.date),
+            removed: before
+              .filter((b) => !holidays.some((x) => x.date === b.date))
+              .map((b) => b.date),
+            confirmed: holidays
+              .filter((x) => !x.expected && before.some((b) => b.date === x.date && b.expected))
+              .map((x) => x.date),
+          },
+          meta,
+        },
+        tx,
+      );
+    });
+    return this.holidays();
+  }
+
   // ---------- Runs ----------
 
   async start(id: string, scenarioIds: string[] | undefined, actor: AuthUser, meta: RequestMeta) {
@@ -484,7 +536,10 @@ export class SimulationService implements OnModuleInit {
       where: { id: ctx.job.scenarioId! },
       include: { simulation: true },
     });
-    const params = scenarioParamsSchema.parse(sc.params ?? {});
+    const params = resolveHolidays(
+      scenarioParamsSchema.parse(sc.params ?? {}),
+      await this.holidays(),
+    );
     const model = await this.modelXml(sc.simulation.processId, sc.processVersion);
     const result = await ctx.worker<SimulationResult>(
       'simulate',

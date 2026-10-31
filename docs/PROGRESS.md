@@ -114,13 +114,17 @@ statistics / bottlenecks; conformance → overlay; simulation → comparison →
 format, type-check clean; `pnpm build` succeeds; `pnpm audit --audit-level high --prod` clean (9 moderate, as
 before). **Not verified here:** Docker image builds and the full Playwright suite in Docker (CI runs both).
 
+Product owner answers (D-143), implemented afterwards: event log access stays narrow (owner / department / grants
+/ Super Admins); retention off by default, set at go-live (suggested 24 months, DEPLOYMENT §6 step 11, SECURITY §7);
+portal "Performance" off until real logs exist; **central public holiday list** (Setting `mining.holidays`,
+`GET|PUT /simulations/holidays`, editor in Simulations → *Public holidays* and Settings, Islamic holidays
+"expected (moon sighting)" until confirmed) used by every scenario unless it switches to its own list
+(`calendar.useCentralHolidays`); a change marks results that used it as stale. Tests: shared +2, API +1.
+
 ### Next (continue here)
 
 1. Review and merge the pull request `phase-5-1-mining-simulation` → `main`.
-2. Product owner decisions (see the PR): who may see all event logs (today owner / department / grants, Super Admins
-   all — Admins not, D-131); default retention period; whether the portal "Performance" section is wanted; the UAE
-   holiday list for 2026 / 2027 (Islamic dates are announced late — editable per scenario).
-3. Then Phase 5.2 (workflow execution), Phase 4.4 (integrations, incl. log connectors), M15 migration; final
+2. Then Phase 5.2 (workflow execution), Phase 4.4 (integrations, incl. log connectors), M15 migration; final
    performance / polish session last.
 
 ## Previous state — 2026-10-31 (More diagram types, branch `diagram-types`, done — awaiting review)

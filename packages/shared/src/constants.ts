@@ -487,6 +487,8 @@ export const SETTING_KEYS = {
   SALESFORCE: 'integrations.salesforce',
   /** Process mining (Phase 5.1): retention, job concurrency, portal performance tab, time zone. */
   MINING: 'mining',
+  /** Central public holiday list used by simulation scenarios (D-143). */
+  MINING_HOLIDAYS: 'mining.holidays',
 } as const;
 
 /** Logo upload limits. */

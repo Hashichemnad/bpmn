@@ -543,6 +543,8 @@ zod / UUID pipe; file uploads are checked in the service (allow-list, content sn
 | DELETE | `/simulations/:id/scenarios/:scenarioId`          | `mining.manage`                                           | param `id`, param `scenarioId`       | default    |
 | PATCH  | `/simulations/:id/scenarios/:scenarioId`          | `mining.manage`                                           | body, param `id`, param `scenarioId` | default    |
 | GET    | `/simulations/defaults`                           | `mining.read`                                             | query                                | default    |
+| GET    | `/simulations/holidays`                           | any of `mining.read`, `settings.manage`                   | —                                    | default    |
+| PUT    | `/simulations/holidays`                           | any of `settings.manage`, `departments.manage`            | body                                 | default    |
 | GET    | `/spaces`                                         | `docs.read`                                               | —                                    | default    |
 | POST   | `/spaces`                                         | `docs.manage`                                             | body                                 | default    |
 | DELETE | `/spaces/:id`                                     | `docs.manage`                                             | param `id`                           | default    |
@@ -639,6 +641,10 @@ already the default; check them anyway if you changed the setup.
 - [ ] Daily backups with an off-site copy, and one restore tested (`docs/DEPLOYMENT.md` §7–8).
 - [ ] Settings → Risk & Compliance → Approval of changes **on** for risks and controls with the workflow
       "GRC change approval", and at least two Risk & Compliance Officers (DEPLOYMENT.md §6 step 9, D-106).
+- [ ] Process mining (D-143): event log retention set from the records-retention policy (suggested 24 months;
+      off by default); portal "Performance" section off until real logs exist; access to event logs only by
+      owner / department / explicit grant (Admins do not see all logs); the central public holiday list checked
+      for the year.
 - [ ] Settings → Knowledge Portal → Start page: empty until the real enterprise value chain is approved and
       published, then set to it (DEPLOYMENT.md §6 step 10, D-127). A production install without demo data starts
       with it off.

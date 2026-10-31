@@ -7,6 +7,7 @@ import {
   Param,
   Patch,
   Post,
+  Put,
   Query,
   Res,
 } from '@nestjs/common';
@@ -16,6 +17,7 @@ import { z } from 'zod';
 import {
   PERMISSIONS,
   createSimulationSchema,
+  holidayListSchema,
   runSimulationSchema,
   scenarioInputSchema,
   updateSimulationSchema,
@@ -25,7 +27,12 @@ import {
   type ScenarioInput,
   type UpdateSimulationInput,
 } from '@processhub/shared';
-import { CurrentUser, ReqMeta, RequirePermissions } from '../common/decorators';
+import {
+  CurrentUser,
+  ReqMeta,
+  RequireAnyPermission,
+  RequirePermissions,
+} from '../common/decorators';
 import type { AuthUser, RequestMeta } from '../common/auth-user';
 import { UuidPipe, ZodPipe } from '../common/zod.pipe';
 import { download } from '../ea/ea.controller';
@@ -55,6 +62,24 @@ export class SimulationController {
     @CurrentUser() user: AuthUser,
   ) {
     return this.sims.defaults(q.processId, user, q.logId);
+  }
+
+  /** Central public holiday list used by every scenario unless it overrides it (D-143). */
+  @Get('holidays')
+  @RequireAnyPermission(READ, PERMISSIONS.SETTINGS_MANAGE)
+  holidays() {
+    return this.sims.holidays();
+  }
+
+  /** Maintained by admins each year (Super Admin, Admin). */
+  @Put('holidays')
+  @RequireAnyPermission(PERMISSIONS.SETTINGS_MANAGE, PERMISSIONS.DEPARTMENTS_MANAGE)
+  setHolidays(
+    @Body(new ZodPipe(holidayListSchema)) body: z.output<typeof holidayListSchema>,
+    @CurrentUser() user: AuthUser,
+    @ReqMeta() meta: RequestMeta,
+  ) {
+    return this.sims.setHolidays(body.holidays, user, meta);
   }
 
   @Post()

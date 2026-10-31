@@ -1939,3 +1939,22 @@ SIMULATION_INVALID` with the issues); missing durations (0 used) and no end even
   mining summary of the most recent log the user may see (period, cases, throughput, variants, rework, slowest
   transition, conformance) and the scenarios of its latest simulation (throughput, P90, cost per case, highest
   utilisation).
+
+## D-143 — Product owner answers on process mining and simulation (Phase 5.1, 2026-10-31)
+
+- **Who sees event logs — confirmed narrow (D-131):** the owner, members of the log's department, users granted
+  access and Super Admins. Admins do **not** see all logs (they do not need to see who did what and when); anyone
+  else gets access only by an explicit grant on the log.
+- **Retention — off by default in the product** (Setting `mining.retentionMonths` = none). At go-live DOF sets the
+  period from its records-retention policy; **24 months** is the suggested starting point (DEPLOYMENT.md §6,
+  SECURITY.md §7 checklist).
+- **Portal "Performance" section — stays off** (D-142); switched on after go-live once real event logs exist.
+- **Public holidays — one central list plus per-scenario override.** A central list (Setting `mining.holidays`:
+  date, English / Arabic name, _expected_) is maintained by admins each year — Process mining → Simulations →
+  _Public holidays_, and Settings (Super Admin) — through `GET|PUT /simulations/holidays` (read: `mining.read`;
+  change: Super Admin or Admin, i.e. `settings.manage` or `departments.manage`; audited with added / removed /
+  confirmed dates). Its default is the UAE federal list 2026–2027 with the **Islamic holidays marked "expected
+  (moon sighting)"** until an admin confirms them. Every scenario uses the central list by default
+  (`calendar.useCentralHolidays`, default on; resolved when a scenario is validated and run); a scenario can switch
+  to its own list (starting from a copy of the central one). Results record the holidays they ran with: a change
+  of the central list marks the results of the scenarios that use it as "changed since the run".

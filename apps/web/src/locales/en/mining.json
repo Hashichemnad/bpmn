@@ -415,7 +415,6 @@
     "hours": "Working hours",
     "alwaysOpen": "24 / 7",
     "holidays": "Public holidays",
-    "addUae": "Add the UAE public holidays",
     "distribution": "Duration",
     "distributions": {
       "fixed": "Fixed",
@@ -491,7 +490,11 @@
       "p90": "P90 throughput (hours)",
       "cost": "Cost per case",
       "utilisation": "Resource utilisation (%)"
-    }
+    },
+    "useCentral": "Use the central holiday list",
+    "centralInfo": "{{count}} holidays from the central list ({{expected}} expected)",
+    "ownList": "Own holiday list of this scenario",
+    "copyCentral": "Copy the central list"
   },
   "portal": {
     "title": "Performance",
@@ -511,5 +514,19 @@
   },
   "handbook": {
     "includePerformance": "Performance analysis (process mining summary and last simulation)"
+  },
+  "holidays": {
+    "title": "Public holidays",
+    "button": "Public holidays",
+    "help": "The central holiday list used by every simulation scenario (a scenario can use its own list instead). Admins maintain it each year. Islamic holidays depend on the moon sighting: keep them \"expected\" until the official announcement.",
+    "date": "Date",
+    "status": "Status",
+    "expected": "Expected (moon sighting)",
+    "confirmed": "Confirmed",
+    "add": "Add holiday",
+    "saved": "Holiday list saved",
+    "duplicate": "A date appears twice.",
+    "card": "Public holidays (simulation)",
+    "cardHint": "Central list of public holidays used by the simulation's working calendar."
   }
 }

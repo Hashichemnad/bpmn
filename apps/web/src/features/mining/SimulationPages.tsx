@@ -22,6 +22,7 @@ import {
 } from 'antd';
 import {
   BulbOutlined,
+  CalendarOutlined,
   CaretRightOutlined,
   CopyOutlined,
   DeleteOutlined,
@@ -77,6 +78,9 @@ import { useAi } from '@/features/ai/useAi';
 import { JobProgress } from './mining-helpers';
 import { useMiningAccess, usePercent } from './mining-utils';
 import { ScenarioDrawer } from './ScenarioDrawer';
+import { HolidaysModal } from './HolidaysModal';
+import { useAuth } from '@/auth/AuthProvider';
+import { PERMISSIONS } from '@processhub/shared';
 
 const COLOURS = ['#2563EB', '#16A34A', '#D97706', '#7C3AED', '#DC2626', '#0891B2'];
 
@@ -88,24 +92,37 @@ export function SimulationsPage() {
   const access = useMiningAccess();
   const list = useSimulations();
   const [creating, setCreating] = useState(false);
+  const [holidays, setHolidays] = useState(false);
+  const { can } = useAuth();
+  const canHolidays = can(PERMISSIONS.SETTINGS_MANAGE) || can(PERMISSIONS.DEPARTMENTS_MANAGE);
   return (
     <>
       <PageHeader
         title={t('mining:sim.title')}
         subtitle={t('mining:sim.subtitle')}
         extra={
-          access.canManage && (
+          <>
             <Button
-              type="primary"
-              icon={<PlusOutlined />}
-              onClick={() => setCreating(true)}
-              data-testid="new-simulation"
+              icon={<CalendarOutlined />}
+              onClick={() => setHolidays(true)}
+              data-testid="sim-holidays"
             >
-              {t('mining:sim.new')}
+              {t('mining:holidays.button')}
             </Button>
-          )
+            {access.canManage && (
+              <Button
+                type="primary"
+                icon={<PlusOutlined />}
+                onClick={() => setCreating(true)}
+                data-testid="new-simulation"
+              >
+                {t('mining:sim.new')}
+              </Button>
+            )}
+          </>
         }
       />
+      {holidays && <HolidaysModal readOnly={!canHolidays} onClose={() => setHolidays(false)} />}
       <Card>
         {list.isError ? (
           <ErrorState error={list.error} />
