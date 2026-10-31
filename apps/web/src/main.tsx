@@ -9,7 +9,7 @@ import '@fontsource/ibm-plex-sans-arabic/400.css';
 import '@fontsource/ibm-plex-sans-arabic/500.css';
 import '@fontsource/ibm-plex-sans-arabic/600.css';
 import '@fontsource/ibm-plex-sans-arabic/700.css';
-import { i18nReady } from './i18n';
+import { i18nReady, loadAllLanguages } from './i18n';
 import './styles.css';
 import { AppProviders, createQueryClient } from './app/AppProviders';
 import { createRouter } from './App';
@@ -28,4 +28,6 @@ void i18nReady.finally(() => {
       </AppProviders>
     </StrictMode>,
   );
+  // The other language follows in the background (bilingual labels, printing in either language).
+  setTimeout(() => void loadAllLanguages(), 1500);
 });

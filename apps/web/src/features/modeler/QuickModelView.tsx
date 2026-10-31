@@ -38,6 +38,7 @@ import {
   type QuickRow,
   type TypeLabels,
 } from './quick-model';
+import { withAllLanguages } from '@/components/withAllLanguages';
 
 interface Props {
   /** The table is kept while the diagram is shown; it re-reads the diagram when shown unedited. */
@@ -56,7 +57,7 @@ const ARABIC = /[؀-ۿ]/;
  * step. "Generate diagram" writes it into the diagram (lanes from roles, auto-layout); pasting
  * rows copied from Excel fills the table.
  */
-export function QuickModelView({ visible, readRows, canEdit, onGenerate }: Props) {
+function QuickModelViewInner({ visible, readRows, canEdit, onGenerate }: Props) {
   const { t, i18n } = useTranslation();
   const loc = useLocalized();
   const { modal, message } = App.useApp();
@@ -604,3 +605,6 @@ function PasteModal({
     </Modal>
   );
 }
+
+/** Needs the texts of both languages (bilingual labels / printing in either language). */
+export const QuickModelView = withAllLanguages(QuickModelViewInner);

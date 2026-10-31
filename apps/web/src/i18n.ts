@@ -1,4 +1,5 @@
 import i18n, { type BackendModule, type ReadCallback } from 'i18next';
+import { useEffect, useState } from 'react';
 import { initReactI18next } from 'react-i18next';
 import { DEFAULT_LOCALE, LOCALES, type Locale } from '@processhub/shared';
 
@@ -81,3 +82,31 @@ export const i18nReady = i18n
   });
 
 export default i18n;
+
+const allLoaded = () =>
+  LOCALES.every((lng) => NAMESPACES.every((ns) => i18n.hasResourceBundle(lng, ns)));
+let allLanguages: Promise<void> | null = null;
+
+/**
+ * Loads every language (the active one is loaded at start-up; the other one follows in the
+ * background after the first screen, see main.tsx). Bilingual features — labels created in both
+ * languages, printing in the other language — wait for it with `useAllLanguages`.
+ */
+export function loadAllLanguages(): Promise<void> {
+  if (allLoaded()) return Promise.resolve();
+  return (allLanguages ??= i18n.loadLanguages([...LOCALES]).then(() => undefined));
+}
+
+/** True once both languages' texts are available (loads them on first use). */
+export function useAllLanguages(): boolean {
+  const [ready, setReady] = useState(allLoaded);
+  useEffect(() => {
+    if (ready) return;
+    let live = true;
+    void loadAllLanguages().then(() => live && setReady(true));
+    return () => {
+      live = false;
+    };
+  }, [ready]);
+  return ready;
+}

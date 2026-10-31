@@ -2384,7 +2384,10 @@ page once when a chunk of an older deployment is missing), Ant Design / charts /
 split by the bundler along those chunks (only React is a fixed vendor chunk; fixed groups had pulled shared
 helpers into the entry), `@processhub/shared` is marked side-effect free, and only the active language's
 translations are loaded (one chunk per namespace, no fallback language: `scripts/check-i18n.mjs` keeps both
-languages complete). Initial JavaScript: 1,583 KB → 238 KB gzip (`apps/web/scripts/bundle-report.mjs`). The
+languages complete). The other language follows in the background after the first screen; components
+that write bilingual content or print in the other language (palette ready-made steps, Quick Model, form
+editor, print views) wait for it (`withAllLanguages`) — found by the Arabic modeler e2e test, where a
+ready-made step got a raw key as its label. Initial JavaScript: 1,583 KB → 238 KB gzip (`apps/web/scripts/bundle-report.mjs`). The
 build precompresses text assets (Brotli q11 + gzip -9, `precompress.mjs`); nginx serves the `.br` file when the
 browser accepts Brotli (the official nginx image has no Brotli encoder, so dynamic Brotli is not used), else
 `gzip_static`; hashed assets are cached for a year (`immutable`), `index.html` revalidates. Caddy adds

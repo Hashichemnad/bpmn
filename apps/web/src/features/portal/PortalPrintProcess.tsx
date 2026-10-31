@@ -30,6 +30,7 @@ import {
   svgViewBox,
   type Paper,
 } from './print-layout';
+import { withAllLanguages } from '@/components/withAllLanguages';
 
 /** Legend swatch in the shape of the element kind. */
 function Swatch({ kind, colour }: { kind: string; colour: ThemeColour }) {
@@ -102,7 +103,7 @@ function useDiagramSnapshot(xml: string | null | undefined, lang: Locale) {
  * Print layout of a published process (diagram + step details) in the reader's language.
  * The browser's print dialog saves it as PDF (D-024).
  */
-export function PortalPrintProcess() {
+function PortalPrintProcessInner() {
   const { processId } = useParams<{ processId: string }>();
   const [params] = useSearchParams();
   const lang: Locale = params.get('lang') === 'ar' ? 'ar' : 'en';
@@ -276,3 +277,6 @@ export function PortalPrintProcess() {
     </div>
   );
 }
+
+/** Needs the texts of both languages (bilingual labels / printing in either language). */
+export const PortalPrintProcess = withAllLanguages(PortalPrintProcessInner);
