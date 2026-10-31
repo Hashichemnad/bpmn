@@ -2,7 +2,49 @@
 
 Read this together with `CLAUDE.md` at the start of every session.
 
-## Current state — 2026-10-31 (More diagram types, branch `diagram-types`, done — awaiting review)
+## Current state — 2026-10-31 (Phase 5 — Part 1: Process mining and simulation, branch `phase-5-1-mining-simulation`, in progress)
+
+Everything up to the diagram types is merged into `main`. This branch builds module M13 (process mining) and
+simulation — Signavio Process Intelligence / ARIS Process Mining parity, DOF RFP analysis items. Workflow execution
+(M14) is Phase 5.2; connectors that pull logs from other systems stay in BACKLOG (integrations). The session works
+on `claude/lucid-dirac-tw2e44` (the harness branch) and pushes the same commits to `phase-5-1-mining-simulation`.
+
+Technical approach (D-128): everything in TypeScript — algorithms in `packages/shared/src/mining/` with unit tests
+against small published logs, no Python service; heavy work (import, analysis of large logs, simulation runs) runs as
+**mining jobs** (`MiningJob`: queued / running / done / failed / cancelled, progress, cancel) off the request thread —
+CPU work in worker threads that load the shared package, I/O (streaming parse, batched inserts) in async chunks —,
+with a result cache per log data version and filter set.
+
+Local setup: PostgreSQL 16 (`service postgresql start`; role `processhub` / `devpassword`, databases `processhub`,
+`processhub_test`); API suites `npx jest --runInBand test/<file> --selectProjects e2e`.
+
+Steps (tick as they are committed; a new session continues at the first unticked one):
+
+- [x] 0. CLAUDE.md phase table (diagram types merged; Phase 5 split into 5.1 / 5.2), this plan, D-128 approach.
+- [ ] 1. Event logs — import and data (D-129 – ): `EventLog` / `MiningEvent` / `MiningActivity` / `EventLogGrant` /
+      `MiningJob` / `MiningMappingTemplate`, permissions `mining.read` / `mining.manage`, upload (CSV / XLSX / XES,
+      type + size checks, file storage), preview, column mapping (case, activity, start / end, resource, department,
+      extra attributes), timestamp format detection + time zone (default Asia/Dubai), validation report, import job
+      (streaming, batched inserts, columnar snapshot), mapping templates, "Create log from ProcessHub" (governance
+      reviews), activity ↔ BPMN step mapping (EN / AR labels + dictionary synonyms, then manual), pseudonymisation,
+      access (owner / department / grants), hard delete (audited), retention setting. Web: Mining menu, logs list,
+      import wizard, log page (overview, activities mapping, access). Tests + Playwright.
+- [ ] 2. Discovery and analysis: shared DFG, variants, statistics, filters, bottlenecks, handovers, heuristics miner;
+      analysis jobs in worker threads + cache; process map (frequency / performance, activity + path sliders, start /
+      end), variants (compare, open on map), stackable filters saved per user, statistics dashboard, bottlenecks with
+      Excel export, "Generate BPMN from log" (new draft process with lanes). Tests + Playwright.
+- [ ] 3. Conformance: BPMN → Petri net, token-based replay (fitness), deviations (skipped / inserted / wrong order),
+      overlay on the BPMN diagram ("Colour by → mining: duration / frequency / deviations"), mining-based KPIs
+      (data source "event log"), measured vs planned step attributes with accepted suggestions → new version.
+      Tests + Playwright.
+- [ ] 4. Simulation: shared discrete-event engine (distributions, seeded RNG, calendars, resources, gateways),
+      scenarios (as-is / to-be), validation, runs as jobs, comparison (charts + Excel), bottleneck colour-by, AI
+      explain / suggest (proposals only). Tests (incl. M/M/1) + Playwright.
+- [ ] 5. Portal "Performance" tab (setting, off by default), handbook "Performance analysis", demo seed (~5,000 cases,
+      simulation with as-is + two to-be), `docs/samples/` CSV + XES, permission matrix, 1M-event performance script
+      with measured timings, screenshots EN / AR (`docs/screenshots/phase-5-1/`), docs, audit, PR.
+
+## Previous state — 2026-10-31 (More diagram types, branch `diagram-types`, done — awaiting review)
 
 Everything up to Phase 4.3 (GRC, EA, KPIs) is merged into `main`. The Salesforce KPI sync stays in the code but is not
 used (DOF manages KPIs and risks inside ProcessHub). External integrations (API keys, webhooks, Salesforce risk /

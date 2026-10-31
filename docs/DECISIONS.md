@@ -1684,3 +1684,33 @@ Supersedes the "act as the Super Admin" rule of D-116.
   `SEED_DEMO_DATA=false`. It is switched on at go-live once the real enterprise value chain is approved and
   published (DEPLOYMENT.md §6 step 10, SECURITY.md §7 checklist). Asserted in `seed.e2e-spec.ts` (a seed without
   demo data creates no diagrams and no start page).
+
+## D-128 — Process mining and simulation in TypeScript, heavy work as jobs (Phase 5.1, 2026-10-31)
+
+- **No Python service.** The algorithms Phase 5.1 needs are standard, well documented and small enough to implement
+  and test in TypeScript: directly-follows graph with frequency / performance, variants, statistics, the
+  **heuristics miner** (Weijters & van der Aalst: dependency measure with dependency / positive-observation /
+  relative-to-best thresholds, length-one / length-two loops, AND / XOR splits from the AND measure), **token-based
+  replay** fitness (Rozinat & van der Aalst: `½(1 − m/c) + ½(1 − r/p)`) on a Petri net translated from the BPMN
+  model, and a **discrete-event simulation** engine. They live in `packages/shared/src/mining/` (pure functions, no
+  I/O) with unit tests against small logs whose results are published or computed by hand. pm4py (GPL-3.0) would
+  force a separate service, a second runtime in the Docker stack and a licence review for the self-hosted product;
+  none of the required features needs it. Alignment-based conformance, inductive miner and object-centric mining
+  are not in scope (BACKLOG) — if they are wanted later, a sidecar can be reconsidered then.
+- **Jobs off the request thread.** A `MiningJob` row (kind, status `QUEUED` / `RUNNING` / `DONE` / `FAILED` /
+  `CANCELLED`, progress 0–1, message, result, error, `cancelRequested`, requested by) is created for every import,
+  validation, analysis of a large log, BPMN discovery, KPI calculation and simulation run. The in-process
+  `MiningJobRunner` executes them one or two at a time (Setting), never inside the HTTP request: I/O-bound steps
+  (streaming CSV / XLSX / XES parsing, batched `createMany` inserts of 5,000 events) are async and yield between
+  chunks; CPU-bound steps (analysis, discovery, conformance, simulation) run in a **worker thread** that loads the
+  compiled shared package (`new Worker(…, { eval: true })`, so it works the same under ts-node, Jest and the built
+  image). Progress is written at most twice a second; a cancel request is checked between chunks / iterations; jobs
+  still `RUNNING` at start-up are marked `FAILED` ("interrupted by a restart"). Small requests wait up to a few
+  seconds for their job and get the result directly; otherwise the client polls `GET /mining/jobs/:id`.
+- **Storage.** Events are rows of `MiningEvent` (log, case id, activity, start / end time, resource, department,
+  extra attributes as JSON) with an index on `(logId, caseId, endAt)` — the source of truth and the base for case
+  drill-down. For analysis each import also writes a **columnar snapshot** of the log (dictionary-encoded strings,
+  typed arrays, sorted by case and time, gzip) to the existing S3-compatible file storage, keyed by the log's
+  `dataVersion`; a worker decodes 1 M events in well under a second. Analysis results are cached in
+  `MiningResultCache` keyed by log, data version and a hash of the request (filters, options) and dropped when the
+  data version changes or the log is deleted.
