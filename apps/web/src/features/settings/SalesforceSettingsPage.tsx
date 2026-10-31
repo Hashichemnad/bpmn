@@ -243,9 +243,7 @@ export function SalesforceSettingsPage() {
           </li>
         ))}
       </ul>
-    ) : (
-      '—'
-    );
+    ) : null;
   const p: SalesforcePreviewDto | undefined = preview.data;
 
   return (

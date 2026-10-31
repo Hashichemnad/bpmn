@@ -85,13 +85,14 @@ System roles (extensible, permission-based underneath):
 | Role | Can do |
 |---|---|
 | Super Admin | Everything, incl. system settings and integrations |
-| Admin | Users, departments, roles, content structure |
-| Process Owner | Own processes: edit, submit for review, approve where assigned |
+| Admin | Users, departments, roles, content structure; KPI catalogue and objectives |
+| Process Owner | Own processes: edit, submit for review, approve where assigned; enter the values of the KPIs they own |
 | Modeler / Editor | Create and edit drafts |
 | Reviewer | Review and comment, approve where assigned |
 | Auditor | Read-only workspace: drafts, history, reviews, audit log, Risk & Compliance — no edit, comment, approve or publish |
 | Risk & Compliance Officer | Risks, controls, requirements: create, assess, link to steps, import, settings; control tests, issues, questionnaires; rest of the workspace read-only |
 | Internal Audit | Audit universe, plan, engagements, work programmes, findings; tests and reviews controls; questionnaires; rest read-only |
+| Enterprise Architect | Application catalogue, interfaces, data objects, capability map: create, change, delete, import; rest of the workspace read-only |
 | Viewer | Knowledge Portal only (published content, read-only); answers questionnaires sent to them and their own issue actions |
 
 Permissions are checked **on the server** for every request (NestJS guards). The UI hides what the user cannot do, but never relies on that for security.
@@ -206,6 +207,20 @@ Phase 4.2 additions (DECISIONS D-098 – D-103):
 - Generic `AssuranceFile` (evidence) and `AssuranceEvent` (history and comments); permissions `controls.test`,
   `controls.review`, `issues.manage`, `audit.manage`, `surveys.manage`, `surveys.respond`; notifications
   `GRC_CHANGE`, `CONTROL_TEST`, `ISSUE`, `AUDIT`, `SURVEY`; shared `packages/shared/src/assurance.ts`
+
+Phase 4.3 additions (DECISIONS D-107 – D-116):
+
+- `Application` 1:1 with `RepoObject` type `SYSTEM` (type, vendor, version, business / IT owner, department, hosting +
+  country, lifecycle + dates, criticality, data classification, licence notes, URL); `AppInterface` (+
+  `InterfaceDataObject`), `DataObject` (system of record) + `DataObjectUsage` (CRUD), `Capability` (levels 1–3) +
+  `CapabilityProcess` / `CapabilityApplication`; permissions `ea.read`, `ea.edit`, `ea.admin`; role
+  `ENTERPRISE_ARCHITECT`; shared `packages/shared/src/ea.ts`
+- `Kpi` 1:1 with `RepoObject` type `KPI` (formula, unit, direction, frequency, target, green / red thresholds,
+  baseline, data source, calculated metric, Salesforce id / URL / locked fields), `KpiPeriodTarget`,
+  `KpiMeasurement`, `StrategicObjective`, `KpiObjective`, `KpiCapability`, `KpiRisk` (key risk indicator); step /
+  process links via `ObjectLink` relation `MEASURES`; permissions `kpi.read`, `kpi.edit`, `kpi.measure`;
+  notification `KPI`; Settings `kpi` (portal, reminders) and `integrations.salesforce` (sealed secrets, mapping,
+  schedule); `SalesforceSyncRun`; shared `packages/shared/src/kpi.ts`, `salesforce.ts`
 
 ## 10. Definition of Done (every phase)
 

@@ -1,3 +1,4 @@
+import { KpiService } from '../src/kpi/kpi.service';
 import { main as runSeed } from '../prisma/seed';
 import { createApp, resetDb, type TestContext } from './helpers';
 
@@ -83,6 +84,22 @@ describe('Seed (e2e)', () => {
     });
     expect(uncovered.residualLikelihood! * uncovered.residualImpact!).toBeGreaterThanOrEqual(16);
     expect(uncovered.controls.every((c) => c.control.effectiveness === 'NOT_ASSESSED')).toBe(true);
+    // Phase 4.3: 12 applications (the 5 library IT systems + 7), interfaces, data objects, a
+    // three-level capability map; 2 objectives, 8 KPIs with 12 months (some red / amber), a KRI.
+    expect(await ctx.prisma.application.count()).toBe(12);
+    expect(await ctx.prisma.appInterface.count()).toBe(10);
+    expect(await ctx.prisma.dataObject.count()).toBe(7);
+    expect(await ctx.prisma.capability.count({ where: { level: 3 } })).toBeGreaterThan(0);
+    expect(await ctx.prisma.capabilityProcess.count()).toBeGreaterThanOrEqual(10);
+    expect(await ctx.prisma.strategicObjective.count()).toBe(2);
+    expect(await ctx.prisma.kpi.count()).toBe(8);
+    expect(
+      await ctx.prisma.kpiMeasurement.count({ where: { kpi: { object: { code: 'KPI-01' } } } }),
+    ).toBe(12);
+    expect(await ctx.prisma.kpiRisk.count()).toBe(1);
+    const card = await ctx.app.get(KpiService).scorecard({ locale: 'en' });
+    expect(card.summary.RED).toBeGreaterThan(0);
+    expect(card.summary.AMBER).toBeGreaterThan(0);
     // Two demo workflows + the base "GRC change approval" workflow (D-106).
     expect(await ctx.prisma.workflow.count()).toBe(3);
     // AI assistant: suggestion chips for the demo, disabled until a key is entered.

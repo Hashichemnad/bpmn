@@ -152,6 +152,9 @@ export async function createSampleProcess(
 export async function loginAdmin(page: Page, locale: 'en' | 'ar' = 'en') {
   await page.context().clearCookies();
   await page.goto('/login');
+  // The sign-in texts below are English: start the login page in English (stored language).
+  await page.evaluate(() => localStorage.setItem('ph.locale', 'en'));
+  await page.reload();
   await page.locator('input[autocomplete=username]').fill(ADMIN.email);
   await page.locator('input[type=password]').fill(ADMIN.password);
   await page.locator('button[type=submit]').click();

@@ -63,6 +63,20 @@ describe('Authorisation matrix (e2e)', () => {
     'SurveyCampaign',
     'SurveyResponse',
     'SurveyProposal',
+    // Phase 4.3: architecture, KPIs, Salesforce sync.
+    'Application',
+    'AppInterface',
+    'DataObject',
+    'DataObjectUsage',
+    'Capability',
+    'CapabilityProcess',
+    'CapabilityApplication',
+    'Kpi',
+    'KpiMeasurement',
+    'KpiPeriodTarget',
+    'StrategicObjective',
+    'KpiObjective',
+    'SalesforceSyncRun',
   ];
 
   async function fingerprint(): Promise<Record<string, string>> {
@@ -171,6 +185,14 @@ describe('Authorisation matrix (e2e)', () => {
       engagement: await anyId(p.auditEngagement.findFirst()),
       campaign: await anyId(p.surveyCampaign.findFirst()),
       grcChange: '00000000-0000-4000-8000-000000000000',
+      // Phase 4.3 records from the demo seed.
+      application: (await p.application.findFirst())?.objectId ?? '',
+      appInterface: await anyId(p.appInterface.findFirst()),
+      dataObject: await anyId(p.dataObject.findFirst()),
+      capability: await anyId(p.capability.findFirst({ where: { parentId: null } })),
+      kpi: (await p.kpi.findFirst())?.objectId ?? '',
+      measurement: await anyId(p.kpiMeasurement.findFirst()),
+      objective: await anyId(p.strategicObjective.findFirst()),
     });
   });
 
@@ -201,6 +223,12 @@ describe('Authorisation matrix (e2e)', () => {
       processes: ids.process,
       changes: ids.grcChange,
     };
+    const ea: Record<string, string> = {
+      applications: ids.application,
+      interfaces: ids.appInterface,
+      'data-objects': ids.dataObject,
+      capabilities: ids.capability,
+    };
     const byPrefix: Record<string, string> = {
       processes: ids.process,
       pages: ids.page,
@@ -228,7 +256,21 @@ describe('Authorisation matrix (e2e)', () => {
       .replace(':commentId', ids.comment)
       .replace(':versionId', first === 'pages' ? ids.pageVersion : ids.processVersion)
       .replace(':linkId', first === 'pages' ? ids.pageLink : ids.processLink)
-      .replace(':id', (first === 'grc' ? grc[second] : byPrefix[first]) || ids.process);
+      .replace(':measurementId', ids.measurement)
+      .replace(':processId', ids.process)
+      .replace(':kind', first === 'ea' ? 'applications' : 'kpis')
+      .replace(
+        ':id',
+        (first === 'grc'
+          ? grc[second]
+          : first === 'ea'
+            ? ea[second]
+            : first === 'kpis'
+              ? second === 'objectives'
+                ? ids.objective
+                : ids.kpi
+              : byPrefix[first]) || ids.process,
+      );
   }
 
   /** Valid bodies for routes whose finer checks happen in the service (so those checks run). */
@@ -312,6 +354,25 @@ describe('Authorisation matrix (e2e)', () => {
         if (res.status < 400) succeeded.push(`${r.method} ${r.path} → ${res.status}`);
       }
     }
+    expect(succeeded).toEqual([]);
+    expect(await fingerprint()).toEqual(before);
+  });
+
+  it('Modelers (architecture and KPI readers) cannot change architecture, KPI or Salesforce records (Phase 4.3)', async () => {
+    const modeler = await loggedIn(ctx.app, 'modeler@processhub.local', DEMO_PASSWORD);
+    const scope = /^(POST|PUT|PATCH|DELETE) \/(ea|kpis|integrations\/salesforce)(\/|$)/;
+    const before = await fingerprint();
+    const succeeded: string[] = [];
+    const tried: string[] = [];
+    for (const r of mutating().filter((x) => scope.test(`${x.method} ${x.path}`))) {
+      for (const url of urls(r.path)) {
+        tried.push(url);
+        const call = modeler[r.method.toLowerCase() as 'post' | 'put' | 'patch' | 'delete'](url);
+        const res = await call.send({ nameEn: 'Hacked', period: '2025-01', value: 1 });
+        if (res.status < 400) succeeded.push(`${r.method} ${r.path} → ${res.status}`);
+      }
+    }
+    expect(tried.length).toBeGreaterThanOrEqual(25);
     expect(succeeded).toEqual([]);
     expect(await fingerprint()).toEqual(before);
   });
