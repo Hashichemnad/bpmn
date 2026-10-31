@@ -1505,3 +1505,38 @@ Supersedes the "act as the Super Admin" rule of D-116.
 - The schedule does not depend on that admin: it keeps running when they leave or are deactivated.
 - Portal KPIs (D-113, agreed): only KPIs on steps of the published diagram, each value with its period and
   last-updated date.
+
+## D-120 — Diagram entity: one framework for the non-BPMN notations (Diagram types, 2026-10-31)
+
+- New table **`Diagram`**: `type` (`VALUE_CHAIN` | `ORG_CHART` | `DMN` | `EPC` | `SIPOC`), generated `code`
+  (`VC-001`, `ORG-001`, `DMN-001`, `EPC-001`, `SIPOC-001`), bilingual name / description, owner, department, optional
+  parent **process / process-house node** (`processId`), `status` (the process lifecycle), `workflowId`,
+  `nextReviewAt`, `aiGenerated`, the usual audit columns and soft delete. The working **content** is a column on the
+  diagram (`content` text): **DMN 1.3 XML** for decision tables, **versioned JSON** for the other notations
+  (`{ "schema": 1, … }`). The JSON schemas live in `packages/shared/src/diagrams.ts` (zod) and the server validates
+  every save with them (size limit, ids, references are UUIDs, no markup in labels); DMN XML goes through the same
+  unsafe-XML checks as BPMN plus a DMN-specific sanitiser.
+- **`DiagramVersion`** (number, content, change note, label, restored from) mirrors `ProcessVersion` /
+  `PageVersion` — one version table per content kind is the existing pattern; the versions API, compare and restore
+  behave exactly like the process ones.
+- **`DiagramLink`** (diagram, element id, library object, relation) mirrors `ObjectLink` for diagram elements. A
+  separate table keeps the existing `ObjectLink.processId` non-null (dozens of queries, GRC coverage, KPIs and
+  reports rely on it); "where used" of a library object unions both tables. Published diagram links reuse
+  `PublishedLink` (it is keyed by publication, not by process).
+- **Governance is reused, not copied**: `ContentType` gains `DIAGRAM`, so reviews, workflows, publications, comments
+  on elements (`Comment.bpmnElementId` holds the diagram element id), feedback, notifications, the governance
+  dashboard, "My tasks" and the portal search work for diagrams through the existing services (`/governance/diagrams/:id`,
+  `/comments/diagrams/:id`). Diagrams use the process workflow defaults (item → category default → global).
+- **Permissions are the process ones**: read `processes.read`; create `processes.create`; metadata
+  `processes.edit` / `processes.edit_own` (owner); content and links `models.edit` / `models.edit_own` (owner);
+  delete `processes.delete`. The portal shows published diagrams to `portal.read` like processes.
+- References from content (value-chain element → process / diagram, org-chart person → user, position → role,
+  DMN ↔ BPMN business rule task `ph:decisionRef`) are ids inside the content; "where used" looks them up by
+  content search (fine for the target size, D-001), so no extra reference tables.
+- **Editors**: value chain, organisation chart and EPC are diagram-js editors built from one shared kit
+  (`apps/web/src/features/diagrams/kit/`: generic shape / connection model, bilingual label editing as a command,
+  palette, context pad, rules, renderer with theme colours, snapping, align / distribute, zoom / mini-map, undo,
+  keyboard, export SVG / PNG / PDF via the print page). DMN uses dmn-js (bpmn.io, same licence as bpmn-js). SIPOC is
+  a table-style diagram (an editable grid rendered as SVG for export), not a diagram-js canvas.
+- The process repository tree shows diagrams under their parent process (or under "Diagrams" when they have none)
+  with a type icon; the "New" menu offers each type. Git sync of diagrams is not part of this phase (BACKLOG).

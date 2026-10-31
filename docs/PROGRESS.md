@@ -2,7 +2,37 @@
 
 Read this together with `CLAUDE.md` at the start of every session.
 
-## Current state — 2026-10-31 (Phase 4 — Part 3: EA, KPIs and the Salesforce KPI link, branch `phase-4-3-ea-kpi`, done — awaiting review)
+## Current state — 2026-10-31 (More diagram types, branch `diagram-types`, in progress)
+
+Everything up to Phase 4.3 (GRC, EA, KPIs) is merged into `main`. The Salesforce KPI sync stays in the code but is not
+used (DOF manages KPIs and risks inside ProcessHub). External integrations (API keys, webhooks, Salesforce risk /
+Oracle connectors, XPDL) stay in BACKLOG (Phase 4.4). This branch adds more diagram types (ARIS / GBTEC / Signavio
+parity, DOF RFP modeling items) on one shared diagram framework (D-120). The session works on
+`claude/tender-mccarthy-pqtk1j` (the harness branch) and pushes the same commits to `diagram-types`.
+
+Local setup: PostgreSQL 16 (`service postgresql start`; role `processhub` / `devpassword`, databases `processhub`,
+`processhub_test`); API suites `npx jest --runInBand test/<file> --selectProjects e2e`.
+
+Steps (tick as they are committed; a new session continues at the first unticked one):
+
+- [x] 0. CLAUDE.md phase table (4.3 merged, row "Diagrams"), this plan, D-120 design.
+- [ ] 1. Shared diagram framework: `Diagram` / `DiagramVersion` / `DiagramLink`, `ContentType` `DIAGRAM` through
+      governance, comments, feedback, notifications, portal and search; API `/diagrams` (CRUD, content, versions,
+      links, where used); shared content schemas (zod); web: shared diagram-js modeler kit (workspace, palette,
+      context pad, snapping, align, zoom / mini-map, undo, shortcuts, bilingual labels, theme, export SVG / PNG /
+      PDF), diagram page (details, versions, governance, comments), repository tree with type icons and "New" menu.
+- [ ] 2. Value chain (chevrons, blocks, frames, arrows; drill-down; badges; colour by; generate from process house).
+- [ ] 3. Organisation chart (units, positions, persons, reporting lines, staff functions; generate from data with
+      merge + preview; position → processes / RACI; handbook section).
+- [ ] 4. DMN decision tables (dmn-js DRD + decision table, `ph:decisionRef` on business rule tasks, test decision,
+      import / export).
+- [ ] 5. EPC (notation, syntax rules, EPC → BPMN conversion with mapping report).
+- [ ] 6. SIPOC (table diagram, generate from process, handbook section).
+- [ ] 7. Reports, portal (browse by type, value chain start page, drill-down), handbook sections, demo seed,
+      permission / e2e tests, screenshots (`docs/screenshots/diagram-types/`), sample handbook (`docs/samples/`),
+      docs, pull request.
+
+## Previous state — 2026-10-31 (Phase 4 — Part 3: EA, KPIs and the Salesforce KPI link, branch `phase-4-3-ea-kpi`, merged into `main`)
 
 Everything up to Phase 4.2 (GRC core and assurance) is merged into `main`. This branch builds module M11 (enterprise
 architecture: application catalogue, interfaces, data objects, capability map, traceability) and M12 (KPIs,

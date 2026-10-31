@@ -42,8 +42,9 @@ with no per-user licensing. Target: 50–500 users on a single server.
 | AI | M16 AI Assistant (after Phase 3) | ✅ Done (merged into `main`) |
 | 4.1 | M10 GRC core: risks, controls, requirements linked to process steps; heat maps, coverage dashboard, RCM export, reminders, AI control-gap check | ✅ Done (merged into `main`, D-089 – D-097) |
 | 4.2 | M10 assurance: approval of GRC changes, control testing, issues and actions, audits, questionnaires, assurance dashboard | ✅ Done (merged into `main`, D-098 – D-106) |
-| 4.3 | M11 EA (application catalogue, interfaces, data objects, capability map, traceability); M12 KPIs, dashboards + Salesforce KPI link | 🟡 Done on branch `phase-4-3-ea-kpi` (D-107 – D-119), awaiting review |
-| 4.4 | Integration & export: Oracle Fusion Risk Management overlay, other connectors, API keys, webhooks, Word/HTML/XPDL export | ⬜ |
+| 4.3 | M11 EA (application catalogue, interfaces, data objects, capability map, traceability); M12 KPIs, dashboards + Salesforce KPI link | ✅ Done (merged into `main`, D-107 – D-119); the Salesforce KPI sync stays in the code but is not used (KPIs and risks are managed in ProcessHub) |
+| Diagrams | More diagram types (ARIS / GBTEC / Signavio parity, DOF RFP modeling items): shared diagram framework (Diagram entity, versions, governance, portal, links), value chain, organisation chart, DMN decision tables, EPC (+ conversion to BPMN), SIPOC | 🟡 In progress on branch `diagram-types` (D-120 –) |
+| 4.4 | Integration & export: Oracle Fusion Risk Management overlay, Salesforce risk / other connectors, API keys, webhooks, Word/HTML/XPDL export | ⬜ (later phase, see BACKLOG) |
 | 5 | M13 Mining, M14 Execution, simulation | ⬜ |
 | Design A | Modeler design upgrade — Part A: look and feel (colour theme as BPMN-in-Color, renderer, colour picker, fonts/RTL, apply theme) | ✅ Done (merged into `main`, D-067 – D-073) |
 | Design B1 | Modeler design — Part B1: full-screen workspace and modeling productivity (palette, ready-made steps, zoom/mini-map, align, auto-layout, lane roles, badges, portal diagram, print layout) | ✅ Done (merged into `main`, D-074 – D-081); Part B2 in BACKLOG |
