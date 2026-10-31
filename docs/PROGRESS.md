@@ -66,7 +66,11 @@ Steps (tick as they are committed; a new session continues at the first unticked
       branch labels and object links, mapping report in the dialog. Kit: imported connections without waypoints are
       laid out and cropped at the outlines (also in viewers). Tests: shared +3 (`epc.test.ts`), API +1, Playwright
       `diagrams-epc.spec.ts` (warnings → version → convert → BPMN model → publish → portal in Arabic).
-- [ ] 6. SIPOC (table diagram, generate from process, handbook section).
+- [x] 6. SIPOC (D-125): editable five-column table in the shared workspace (bilingual items, add / reorder /
+      delete, undo / redo, step-count warning), SVG / PNG export (`sipoc-svg.ts`, RTL in Arabic), shared
+      `generateSipoc` (main path, step attributes, lanes and pools) in the New dialog and as a workspace tool.
+      Tests: shared +2 (`sipoc.test.ts`), Playwright `diagrams-sipoc.spec.ts` (generate from PMS-01 → add a customer →
+      version → publish → portal). Handbook section: step 7.
 - [ ] 7. Reports, portal (browse by type, value chain start page, drill-down), handbook sections, demo seed,
       permission / e2e tests, screenshots (`docs/screenshots/diagram-types/`), sample handbook (`docs/samples/`),
       docs, pull request.

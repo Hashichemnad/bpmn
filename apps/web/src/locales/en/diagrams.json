@@ -190,7 +190,18 @@
       "steps": "P",
       "outputs": "O",
       "customers": "C"
-    }
+    },
+    "generateTitle": "Generate from the process?",
+    "generateReplace": "The columns are replaced with the steps of the main path, the inputs and outputs of the steps, and the suppliers and customers from the lanes and pools. You can undo or restore a version.",
+    "generateHint": "Fill the SIPOC from the BPMN model of the linked process",
+    "noModel": "The process has no model yet.",
+    "hint": "One item per line; the process column holds 5–7 high-level steps. Edit both languages; the first field is the active language.",
+    "stepsCount": "The process has {{count}} steps; a SIPOC usually shows {{min}}–{{max}} high-level steps.",
+    "up": "Move up",
+    "down": "Move down",
+    "add": "Add",
+    "generateFrom": "Generate from a process (optional):",
+    "chooseProcess": "Choose a process…"
   },
   "portal": {
     "nav": "Diagrams",

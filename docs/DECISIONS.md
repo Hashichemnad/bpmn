@@ -1638,3 +1638,18 @@ Supersedes the "act as the Super Admin" rule of D-116.
   builder's `structureToBpmn` (shared layered layout, theme colours) and creates a **new draft process** owned by the
   EPC's owner; the EPC is unchanged; the **mapping report** (every EPC element and what it became) is shown and the
   conversion is audited (`EXPORT` on the diagram). This is the path for ARIS users moving to BPMN.
+
+## D-125 — SIPOC: table diagram generated from a process (Diagram types, 2026-10-31)
+
+- A SIPOC is a **table-style diagram**, not a diagram-js canvas: five columns (Suppliers, Inputs, Process, Outputs,
+  Customers) of bilingual items, edited in the shared workspace (add, reorder, delete, both languages per item — the
+  active language first —, undo / redo, autosave, versions, compare with added / changed / removed items, comments
+  and object links per item). Export SVG / PNG renders the columns as an image (Arabic: right to left); PDF via the
+  print page. The process column should hold 5–7 high-level steps (a warning, not a rule).
+- **Generate from process** (shared `generateSipoc`, in "New → SIPOC" and as a workspace tool for the linked
+  process): process steps from the **main path** (longest start → end path, at most 7 steps, evenly sampled),
+  inputs / outputs from the B2 step attributes of all steps (`ph:inputsEn/Ar`, `ph:outputsEn/Ar`, split on new
+  lines, `;`, `؛`, `,` and `،`), suppliers from the lane of the start event and the pools sending messages into the
+  process, customers from the lane of the end event and the pools receiving messages. The source process is stored
+  in the content (`processId`); everything stays editable.
+- SIPOC is an optional section of the process handbook (step 7).

@@ -25,3 +25,4 @@ export * from './diagrams';
 export * from './value-chain';
 export * from './org-chart';
 export * from './epc';
+export * from './sipoc';
