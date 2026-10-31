@@ -64,7 +64,8 @@
     "steps": "Steps",
     "step": "Step",
     "process": "Process",
-    "wholeProcess": "Whole process"
+    "wholeProcess": "Whole process",
+    "miningLog": "Event log"
   },
   "direction": {
     "HIGHER_IS_BETTER": "Higher is better",
@@ -80,7 +81,8 @@
     "MANUAL": "Manual entry",
     "EXCEL": "Excel import",
     "SALESFORCE": "Salesforce",
-    "CALCULATED": "Calculated from the process"
+    "CALCULATED": "Calculated from the process",
+    "EVENT_LOG": "Calculated from an event log"
   },
   "status": {
     "DRAFT": "Draft",
@@ -98,7 +100,11 @@
     "WAITING_MINUTES": "Waiting time of the main path (minutes)",
     "COST_PER_EXECUTION": "Cost per execution of the main path",
     "HANDOVERS": "Handovers between lanes",
-    "AUTOMATION_RATE": "Automation rate (system steps, %)"
+    "AUTOMATION_RATE": "Automation rate (system steps, %)",
+    "MINING_THROUGHPUT_HOURS": "Mean throughput time (hours)",
+    "MINING_SLA_SHARE": "Step executions within SLA (%)",
+    "MINING_REWORK_RATE": "Cases with rework (%)",
+    "MINING_CASES": "Cases completed"
   },
   "detail": {
     "definition": "Definition",

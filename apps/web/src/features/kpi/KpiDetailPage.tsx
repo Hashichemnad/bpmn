@@ -32,6 +32,7 @@ import {
   useRecalculate,
   useUploadEvidence,
 } from '@/api/kpi';
+import { useRecalculateMiningKpi } from '@/api/mining';
 import { PageHeader } from '@/components/PageHeader';
 import { ErrorState, LoadingState } from '@/components/states';
 import { useErrorMessage, useFormatDate, useLocalized } from '@/components/i18n-helpers';
@@ -58,6 +59,7 @@ export function KpiDetailPage() {
   const removeValue = useDeleteMeasurement(id ?? '');
   const upload = useUploadEvidence(id ?? '');
   const recalculate = useRecalculate(id ?? '');
+  const recalcMining = useRecalculateMiningKpi();
   const [editing, setEditing] = useState(false);
   const [measuring, setMeasuring] = useState<string | null>(null);
 
@@ -96,14 +98,18 @@ export function KpiDetailPage() {
                 {t('kpi:detail.enterValue')}
               </Button>
             )}
-            {access.canEdit && k.dataSource === 'CALCULATED' && (
+            {access.canEdit && (k.dataSource === 'CALCULATED' || k.dataSource === 'EVENT_LOG') && (
               <Button
                 icon={<ReloadOutlined />}
-                loading={recalculate.isPending}
+                loading={recalculate.isPending || recalcMining.isPending}
                 onClick={() =>
-                  recalculate.mutate(undefined, {
-                    onError: (err) => message.error(errorMessage(err)),
-                  })
+                  k.dataSource === 'EVENT_LOG'
+                    ? recalcMining.mutate(k.id, {
+                        onError: (err) => message.error(errorMessage(err)),
+                      })
+                    : recalculate.mutate(undefined, {
+                        onError: (err) => message.error(errorMessage(err)),
+                      })
                 }
               >
                 {t('kpi:detail.recalculate')}

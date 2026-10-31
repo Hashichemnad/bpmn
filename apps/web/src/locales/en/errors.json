@@ -217,5 +217,8 @@
   "INVALID_TIME_ZONE": "Unknown time zone.",
   "ANALYSIS_RUNNING": "The analysis is still running — try again in a moment.",
   "DISCOVERY_FAILED": "The process model could not be generated.",
-  "EMPTY_LOG": "No cases are left after the filters."
+  "EMPTY_LOG": "No cases are left after the filters.",
+  "LOG_NOT_FOUND": "The event log does not exist.",
+  "MINING_KPI_REQUIRED": "Choose an event log and a mining measure.",
+  "PROCESS_WITHOUT_MODEL": "The process has no BPMN model yet."
 }

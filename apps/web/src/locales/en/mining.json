@@ -19,7 +19,8 @@
     "min": "{{n}} min",
     "h": "{{n}} h",
     "d": "{{n}} d",
-    "dh": "{{d}} d {{h}} h"
+    "dh": "{{d}} d {{h}} h",
+    "minutes": "{{n}} min"
   },
   "job": {
     "kind": {
@@ -173,7 +174,8 @@
     "map": "Process map",
     "variants": "Variants",
     "statistics": "Statistics",
-    "bottlenecks": "Bottlenecks"
+    "bottlenecks": "Bottlenecks",
+    "conformance": "Conformance"
   },
   "log": {
     "edit": "Edit",
@@ -337,5 +339,39 @@
     "dependency": "Dependency threshold",
     "dependencyHint": "Higher = only strong relations (simpler model); every activity keeps its strongest input and output.",
     "lanes": "Lanes from departments / resources"
+  },
+  "conformance": {
+    "noProcess": "Link the log to a process (Edit) to compare it with the model.",
+    "noMapping": "No activity is mapped to a step yet (tab \"Activities and steps\").",
+    "showOnModel": "Show on the model",
+    "fitness": "Fitness (token replay)",
+    "conforming": "Conforming cases",
+    "deviationTypes": "Kinds of deviation",
+    "unobserved": "Steps of the model never seen in the log (treated as silent): {{steps}}",
+    "deviations": "Deviations",
+    "kind": "Kind",
+    "kinds": {
+      "SKIPPED": "Skipped step",
+      "INSERTED": "Inserted activity",
+      "WRONG_ORDER": "Wrong order"
+    },
+    "what": "What happened",
+    "wrongOrder": "\"{{step}}\" happened before \"{{other}}\"",
+    "repeated": "\"{{step}}\" repeated (not in the model)",
+    "inserted": "\"{{activity}}\" is not in the model",
+    "skipped": "\"{{step}}\" was skipped",
+    "share": "Share"
+  },
+  "suggestions": {
+    "title": "Planned vs measured step times",
+    "help": "Medians measured in the log compared with the step attributes of the model. Select the steps to update: a new version of the process is saved with your change note.",
+    "observations": "Observations",
+    "duration": "Duration (planned → measured)",
+    "waiting": "Waiting (planned → measured)",
+    "apply": "Update {{count}} steps",
+    "defaultNote": "Step times updated from event log {{code}}",
+    "confirm": "Update the model",
+    "confirmText": "The selected steps get the measured values and the process gets a new version with this note:",
+    "applied": "New version saved"
   }
 }

@@ -51,10 +51,20 @@ Steps (tick as they are committed; a new session continues at the first unticked
       "Generate BPMN" dialog. Tests: shared +9 (`mining/discovery.test.ts`: L1 DFG, projection, durations, rework,
       filters, heuristics on L1, AND / XOR, loops), API 4 (`mining-analysis.e2e-spec.ts`), Playwright `mining.spec.ts`
       extended (map, performance, attribute filter, variants on map + compare, statistics, bottlenecks).
-- [ ] 3. Conformance: BPMN → Petri net, token-based replay (fitness), deviations (skipped / inserted / wrong order),
-      overlay on the BPMN diagram ("Colour by → mining: duration / frequency / deviations"), mining-based KPIs
-      (data source "event log"), measured vs planned step attributes with accepted suggestions → new version.
-      Tests + Playwright.
+- [x] 3. Conformance (D-135 – D-137): shared `mining/conformance.ts` (`bpmnToPetriNet`, `replayTrace`,
+      `checkConformance`: fitness, conforming cases, skipped / inserted / wrong-order deviations with example cases,
+      per-step stats, flow counts, unobserved steps), `mining/kpis.ts` (`miningKpiSeries`), worker tasks
+      `conformance` / `miningKpis`; KPI data source `EVENT_LOG` + `Kpi.miningLogId` + `MINING_METRICS` (migration
+      `20261031*_mining_kpis`). API `ConformanceService` (`POST /mining/logs/:id/conformance` cached per model hash +
+      mapping, `GET /mining/processes/:id/logs`, `GET|POST /mining/logs/:id/step-suggestions[/apply]` → new process
+      version via `setPhAttributes`), `MiningKpiService` (job after import / daily / `POST /mining/kpis/:id/recalculate`).
+      Web: Conformance tab (fitness gauge, conforming share, deviations with example cases, unobserved steps, planned
+      vs measured step times with apply + change note, "Show on the model"), modeler "Colour by → Mining: cases per
+      step / measured time / deviations" (+ simulation modes prepared) with step / flow badges and flow widths
+      (`applyMetricOverlays`, `useMetricValues`, `?colourBy=&log=`), KPI form "Calculated from an event log" and
+      Recalculate. Tests: shared +4 (`mining/conformance.test.ts` incl. the textbook replay example), API 4
+      (`mining-conformance.e2e-spec.ts`: replay, suggestions → version, mining KPIs, XML attributes), Playwright
+      `mining.spec.ts` "conformance: deviations and the overlay on the BPMN model".
 - [ ] 4. Simulation: shared discrete-event engine (distributions, seeded RNG, calendars, resources, gateways),
       scenarios (as-is / to-be), validation, runs as jobs, comparison (charts + Excel), bottleneck colour-by, AI
       explain / suggest (proposals only). Tests (incl. M/M/1) + Playwright.

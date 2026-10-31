@@ -1811,3 +1811,49 @@ Supersedes the "act as the Super Admin" rule of D-116.
   activity. Labels go to `nameEn` or `nameAr` by script. The result is a **new draft process** owned by the
   requester (needs `mining.manage`, `processes.create` and model rights), never published automatically; audited as
   `EXPORT` on the log.
+
+## D-135 — Conformance: token-based replay on the BPMN model (Phase 5.1, 2026-10-31)
+
+- **Model → workflow net** (shared `bpmnToPetriNet`): one place per sequence flow plus source and sink; top-level
+  flow nodes only (a sub-process is one step); tasks / events / call activities are transitions (several incoming
+  flows = exclusive join, several outgoing = parallel split, BPMN semantics); exclusive and event-based gateways
+  are a silent transition per incoming × outgoing pair, parallel gateways one silent transition, inclusive gateways
+  a silent transition per subset (up to 4 branches; more = exclusive). Steps and events that **no activity of the
+  log is mapped to are silent** (and listed as "not seen in the log") — so a log that records only some steps can
+  still be checked.
+- **Replay** (Rozinat & van der Aalst 2008): per variant (cases with the same sequence share the result); before a
+  step that is not enabled the shortest sequence of silent transitions that enables it is fired (bounded search,
+  400 markings / 12 steps); otherwise the missing tokens are created and counted. Fitness = ½(1 − m/c) + ½(1 − r/p),
+  log level from the summed counts, plus the mean case fitness. Unit tests reproduce the textbook example
+  (⟨a,d,c,e,h⟩ on the sequential net: p = c = 6, m = r = 1, fitness 5/6).
+- **Deviations**: *inserted* — an activity not mapped to the model, or a mapped step repeated where the model does
+  not allow it (not replayed, so rework does not distort the token counts); *wrong order* — a missing token whose
+  producing step occurs later in the case; *skipped* — the producing step never occurs (also steps not reached
+  before the case ended). Each deviation has its frequency (cases) and up to 5 example cases. A case **conforms**
+  when it has no missing / remaining tokens and no deviation.
+- **Per step / flow values** for the overlay: cases and events per step, processing and waiting time (median /
+  mean), cases with a deviation; cases per sequence flow (tokens produced). Cached like the analysis, keyed also by
+  a hash of the working model and the activity mapping (a model change never shows stale values).
+- **Overlay**: three new "Colour by" views (D-086 mechanism, view only): *Mining: cases per step*, *measured time*,
+  *deviations* — bands by thirds of the maximum, a badge per step (cases / time / deviations) and per flow (cases),
+  flows drawn in violet with a width by frequency. Available in the modeler and the read-only view when the user
+  can see a log linked to the process; the log is the most recent one or `?log=`; the legend names it.
+
+## D-136 — KPIs calculated from event logs (Phase 5.1, 2026-10-31)
+
+- New KPI data source **EVENT_LOG** (`Kpi.miningLogId`, migration `mining_kpis`) with the measures *mean throughput
+  time (hours)*, *step executions within SLA (%)* — each mapped step execution (waiting since the previous event +
+  processing) against the step's `ph:slaMinutes` —, *cases with rework (%)* and *cases completed*. A case counts in
+  the KPI period in which it was **completed**; only completed periods are written.
+- A `KPI` mining job writes one measurement per period (source `EVENT_LOG`, comment "LOG-xxx: n cases"), audited as
+  `SYNC`; status comes from the KPI thresholds like any measurement. It runs after every import of the log, daily
+  (02:00 UTC tick of the mining scheduler) and on "Recalculate" on the KPI page (`POST /mining/kpis/:id/recalculate`,
+  `kpi.edit`).
+
+## D-137 — Planned vs measured step times (Phase 5.1, 2026-10-31)
+
+- From the conformance result: per step the median processing and waiting time measured in the log against the B2
+  attributes `ph:durationMinutes` / `ph:waitingMinutes`. A change is suggested when the difference is more than
+  20 % (or nothing is planned) and the step has at least 5 observations. The user selects steps; the accepted values
+  are written into the working model (server-side attribute update) and saved as a **new process version** with a
+  change note (model edit rights and the governance lock apply as for any version).

@@ -481,7 +481,12 @@
       "riskRating": "تقييم الخطر المتبقي",
       "riskControl": "مخاطر بلا ضوابط",
       "appLifecycle": "دورة حياة التطبيقات",
-      "kpiStatus": "حالة مؤشرات الأداء"
+      "kpiStatus": "حالة مؤشرات الأداء",
+      "miningFrequency": "التنقيب: الحالات لكل خطوة",
+      "miningDuration": "التنقيب: الوقت المقاس",
+      "miningDeviations": "التنقيب: الانحرافات",
+      "simUtilisation": "المحاكاة: نسبة الاستخدام",
+      "simWaiting": "المحاكاة: وقت الانتظار"
     },
     "categories": {
       "none": "غير محدد",
@@ -520,6 +525,34 @@
         "AMBER": "تحت المراقبة",
         "RED": "خارج المستهدف",
         "noValue": "مؤشر بلا قيمة"
+      },
+      "metric": {
+        "none": "لا توجد بيانات"
+      },
+      "miningFrequency": {
+        "low": "حالات قليلة",
+        "medium": "بعض الحالات",
+        "high": "معظم الحالات"
+      },
+      "miningDuration": {
+        "low": "سريع",
+        "medium": "متوسط",
+        "high": "بطيء"
+      },
+      "miningDeviations": {
+        "low": "بدون انحرافات",
+        "medium": "تنحرف أقل من 10 % من الحالات",
+        "high": "تنحرف 10 % أو أكثر"
+      },
+      "simUtilisation": {
+        "low": "استخدام منخفض",
+        "medium": "استخدام متوسط",
+        "high": "استخدام مرتفع (اختناق)"
+      },
+      "simWaiting": {
+        "low": "انتظار قصير",
+        "medium": "انتظار متوسط",
+        "high": "انتظار طويل (اختناق)"
       }
     },
     "missingRole_zero": "لا توجد خطوات بلا دور",
@@ -533,7 +566,8 @@
     "missingDescription_two": "خطوتان بلا وصف",
     "missingDescription_few": "{{count}} خطوات بلا وصف",
     "missingDescription_many": "{{count}} خطوة بلا وصف",
-    "missingDescription_other": "{{count}} خطوة بلا وصف"
+    "missingDescription_other": "{{count}} خطوة بلا وصف",
+    "loading": "جارٍ تحميل القيم…"
   },
   "conventions": {
     "title": "قواعد النمذجة",

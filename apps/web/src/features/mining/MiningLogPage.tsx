@@ -4,6 +4,7 @@ import { LogPage } from './LogPage';
 import { AnalysisStateProvider } from './analysis-state';
 import { BottlenecksTab, MapTab, StatsTab, VariantsTab } from './AnalysisTabs';
 import { logPath } from './mining-utils';
+import { ConformanceTab } from './ConformanceTab';
 
 /** Event log page with the analysis tabs (map, variants, statistics, bottlenecks). */
 export function MiningLogPage() {
@@ -34,6 +35,11 @@ export function MiningLogPage() {
             key: 'bottlenecks',
             label: t('mining:tabs.bottlenecks'),
             render: (log) => <BottlenecksTab log={log} />,
+          },
+          {
+            key: 'conformance',
+            label: t('mining:tabs.conformance'),
+            render: (log) => <ConformanceTab log={log} />,
           },
         ]}
       />

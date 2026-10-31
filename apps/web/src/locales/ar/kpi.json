@@ -64,7 +64,8 @@
     "steps": "الخطوات",
     "step": "الخطوة",
     "process": "العملية",
-    "wholeProcess": "العملية كاملة"
+    "wholeProcess": "العملية كاملة",
+    "miningLog": "سجل الأحداث"
   },
   "direction": {
     "HIGHER_IS_BETTER": "الأعلى أفضل",
@@ -80,7 +81,8 @@
     "MANUAL": "إدخال يدوي",
     "EXCEL": "استيراد من Excel",
     "SALESFORCE": "Salesforce",
-    "CALCULATED": "محسوب من العملية"
+    "CALCULATED": "محسوب من العملية",
+    "EVENT_LOG": "محسوب من سجل أحداث"
   },
   "status": {
     "DRAFT": "مسودة",
@@ -98,7 +100,11 @@
     "WAITING_MINUTES": "وقت الانتظار في المسار الرئيسي (دقائق)",
     "COST_PER_EXECUTION": "تكلفة التنفيذ للمسار الرئيسي",
     "HANDOVERS": "عمليات التسليم بين المسارات",
-    "AUTOMATION_RATE": "نسبة الأتمتة (خطوات النظام، %)"
+    "AUTOMATION_RATE": "نسبة الأتمتة (خطوات النظام، %)",
+    "MINING_THROUGHPUT_HOURS": "متوسط مدة الإنجاز (ساعات)",
+    "MINING_SLA_SHARE": "تنفيذات الخطوات ضمن مستوى الخدمة (%)",
+    "MINING_REWORK_RATE": "الحالات بإعادة عمل (%)",
+    "MINING_CASES": "الحالات المكتملة"
   },
   "detail": {
     "definition": "التعريف",

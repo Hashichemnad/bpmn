@@ -133,3 +133,67 @@ test('import an event log: mapping, validation, import', async ({ page }) => {
   await login(page, DEMO.viewer);
   expect((await apiCall(page, 'GET', `/mining/logs/${id}`)).status).toBe(403);
 });
+
+const purchaseBpmn = () => `<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" xmlns:ph="http://processhub.io/schema/bpmn" id="Defs_1" targetNamespace="http://bpmn.io/schema/bpmn">
+  <bpmn:process id="Process_1" isExecutable="false">
+    <bpmn:startEvent id="Start" />
+    <bpmn:task id="Create" name="Create request" ph:nameEn="Create request" ph:durationMinutes="10" />
+    <bpmn:task id="Check" name="Check budget" ph:nameEn="Check budget" ph:durationMinutes="60" />
+    <bpmn:task id="Approve" name="Approve request" ph:nameEn="Approve request" ph:durationMinutes="20" />
+    <bpmn:endEvent id="End" />
+    <bpmn:sequenceFlow id="F1" sourceRef="Start" targetRef="Create" />
+    <bpmn:sequenceFlow id="F2" sourceRef="Create" targetRef="Check" />
+    <bpmn:sequenceFlow id="F3" sourceRef="Check" targetRef="Approve" />
+    <bpmn:sequenceFlow id="F4" sourceRef="Approve" targetRef="End" />
+  </bpmn:process>
+  <bpmndi:BPMNDiagram id="Diagram_1"><bpmndi:BPMNPlane id="Plane_1" bpmnElement="Process_1">
+    <bpmndi:BPMNShape id="Start_di" bpmnElement="Start"><dc:Bounds x="100" y="100" width="36" height="36" /></bpmndi:BPMNShape>
+    <bpmndi:BPMNShape id="Create_di" bpmnElement="Create"><dc:Bounds x="190" y="78" width="100" height="80" /></bpmndi:BPMNShape>
+    <bpmndi:BPMNShape id="Check_di" bpmnElement="Check"><dc:Bounds x="340" y="78" width="100" height="80" /></bpmndi:BPMNShape>
+    <bpmndi:BPMNShape id="Approve_di" bpmnElement="Approve"><dc:Bounds x="490" y="78" width="100" height="80" /></bpmndi:BPMNShape>
+    <bpmndi:BPMNShape id="End_di" bpmnElement="End"><dc:Bounds x="640" y="100" width="36" height="36" /></bpmndi:BPMNShape>
+    <bpmndi:BPMNEdge id="F1_di" bpmnElement="F1"><di:waypoint x="136" y="118" /><di:waypoint x="190" y="118" /></bpmndi:BPMNEdge>
+    <bpmndi:BPMNEdge id="F2_di" bpmnElement="F2"><di:waypoint x="290" y="118" /><di:waypoint x="340" y="118" /></bpmndi:BPMNEdge>
+    <bpmndi:BPMNEdge id="F3_di" bpmnElement="F3"><di:waypoint x="440" y="118" /><di:waypoint x="490" y="118" /></bpmndi:BPMNEdge>
+    <bpmndi:BPMNEdge id="F4_di" bpmnElement="F4"><di:waypoint x="590" y="118" /><di:waypoint x="640" y="118" /></bpmndi:BPMNEdge>
+  </bpmndi:BPMNPlane></bpmndi:BPMNDiagram>
+</bpmn:definitions>`;
+
+test('conformance: deviations and the overlay on the BPMN model', async ({ page }) => {
+  // A modeler creates the process with its model.
+  await login(page, DEMO.modeler);
+  const code = `E2E.M${Date.now() % 1_000_000}`;
+  const proc = await apiCall<{ id: string }>(page, 'POST', '/processes', {
+    code,
+    nameEn: 'E2E purchase request',
+    category: 'SUPPORT',
+  });
+  expect(proc.status).toBe(201);
+  expect(
+    (await apiCall(page, 'PUT', `/processes/${proc.data.id}/model`, { bpmnXml: purchaseBpmn() }))
+      .status,
+  ).toBe(200);
+
+  await login(page, DEMO.performance);
+  const id = await importCsv(
+    page,
+    `E2E conformance ${Date.now()}`,
+    purchaseCsv(`K${Date.now() % 100000}`),
+  );
+  expect(
+    (await apiCall(page, 'PATCH', `/mining/logs/${id}`, { processId: proc.data.id })).status,
+  ).toBe(200);
+  await page.goto(`/mining/logs/${id}/conformance`);
+  // Rework of "Check budget" (2 of 6 cases) is the only deviation.
+  await expect(page.getByTestId('conformance-summary')).toContainText('66.7%(4 / 6)');
+  await expect(page.getByTestId('deviations')).toContainText('"Check budget" repeated');
+  await expect(page.getByTestId('step-suggestions')).toContainText('Create request');
+
+  // Overlay on the read-only model: deviations view with the log as source.
+  await page.getByTestId('show-on-model').click();
+  await expect(page.getByTestId('colour-by-note')).toContainText('LOG-');
+  await expect(page.locator('.ph-colour-legend')).toContainText('Mining: deviations');
+  await expect(page.locator('.ph-metric-badge').first()).toBeVisible();
+  await expect(page.locator('.ph-metric-flow').first()).toContainText('6');
+});

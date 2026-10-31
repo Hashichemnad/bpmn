@@ -1,4 +1,9 @@
 import type {
+  ApplySuggestionsInput,
+  ConformanceResult,
+  MiningFilter,
+  ProcessLogDto,
+  StepSuggestionDto,
   AnalysisRequest,
   AnalysisResponse,
   DiscoverProcessInput,
@@ -319,4 +324,77 @@ export async function exportAnalysis(
   a.download = file.fileName;
   a.click();
   setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+// ---------- Conformance (step 3) ----------
+
+export const useProcessLogs = (processId: string | undefined, enabled = true) =>
+  useQuery({
+    queryKey: ['mining', 'process-logs', processId ?? ''],
+    queryFn: () => api<ProcessLogDto[]>(`/mining/processes/${processId}/logs`),
+    enabled: !!processId && enabled,
+  });
+
+/** Conformance of a log (cached on the server; long-polls the job when it runs). */
+export function useConformance(logId: string | undefined, filters: MiningFilter[] = []) {
+  const [job, setJob] = useState<MiningJobDto | null>(null);
+  const query = useQuery({
+    queryKey: ['mining', 'analysis', logId ?? '', 'conformance', filters],
+    queryFn: async ({ signal }) => {
+      for (;;) {
+        const res = await api<AnalysisResponse<ConformanceResult>>(
+          `/mining/logs/${logId}/conformance`,
+          {
+            method: 'POST',
+            body: { filters },
+            signal,
+          },
+        );
+        if (res.status === 'DONE' && res.result) {
+          setJob(null);
+          return res.result;
+        }
+        let j = res.job!;
+        setJob(j);
+        while (j.status === 'QUEUED' || j.status === 'RUNNING') {
+          j = await api<MiningJobDto>(`/mining/jobs/${j.id}`, { query: { wait: 5 }, signal });
+          setJob(j);
+        }
+        if (j.status !== 'DONE') throw new Error(j.error ?? j.status);
+      }
+    },
+    enabled: !!logId,
+    staleTime: 5 * 60_000,
+    retry: false,
+  });
+  return { ...query, job };
+}
+
+export const useStepSuggestions = (logId: string, enabled = true) =>
+  useQuery({
+    queryKey: ['mining', 'analysis', logId, 'suggestions'],
+    queryFn: () => api<StepSuggestionDto[]>(`/mining/logs/${logId}/step-suggestions`),
+    enabled,
+    retry: false,
+  });
+
+export function useApplySuggestions(logId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (body: ApplySuggestionsInput) =>
+      api<{ processId: string }>(`/mining/logs/${logId}/step-suggestions/apply`, {
+        method: 'POST',
+        body,
+      }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['mining', 'analysis', logId] }),
+  });
+}
+
+export function useRecalculateMiningKpi() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (kpiId: string) =>
+      api<MiningJobDto>(`/mining/kpis/${kpiId}/recalculate`, { method: 'POST' }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['kpis'] }),
+  });
 }
