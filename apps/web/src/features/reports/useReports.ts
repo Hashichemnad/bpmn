@@ -19,6 +19,8 @@ export interface HandbookOptions {
   includeSipoc?: boolean;
   includeDecisions?: boolean;
   includeOrgChart?: boolean;
+  /** Process mining summary and the last simulation (Phase 5.1; users with `mining.read`). */
+  includePerformance?: boolean;
   source?: ReportSource;
   locale: Locale;
 }
@@ -84,6 +86,7 @@ export function useReports() {
             includeSipoc: !!o.includeSipoc,
             includeDecisions: !!o.includeDecisions,
             includeOrgChart: !!o.includeOrgChart,
+            includePerformance: !!o.includePerformance,
             source: plan.source,
             locale: o.locale,
             images,

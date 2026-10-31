@@ -544,3 +544,18 @@ export interface AiScenarioProposal {
   capacities: Record<string, number>;
   durations: Record<string, number>;
 }
+
+// ---------- Portal performance tab (step 5) ----------
+
+/** Aggregated performance of a published process for the Knowledge Portal (no case-level data). */
+export interface PortalPerformanceDto {
+  periodStart: string | null;
+  periodEnd: string | null;
+  cases: number;
+  throughput: { mean: number; median: number; p90: number } | null;
+  /** Mean throughput time (ms) and completed cases per week or month. */
+  trend: { period: string; completed: number; meanMs: number | null }[];
+  granularity: 'week' | 'month';
+  /** Share of conforming cases and fitness; null when the log's activities are not mapped. */
+  conformance: { conformingShare: number; fitness: number } | null;
+}

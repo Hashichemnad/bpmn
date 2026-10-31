@@ -23,6 +23,7 @@ import { PortalMeta } from './PortalMeta';
 import { extractBpmnLabels } from '@processhub/shared';
 import { StepDetails } from './StepDetails';
 import { PortalKpis } from '@/features/kpi/PortalKpis';
+import { PortalPerformance } from '@/features/mining/PortalPerformance';
 import { portalItemLink } from './portal-links';
 import { ReportDialog, type ReportKind } from '@/features/reports/ReportDialog';
 
@@ -201,6 +202,9 @@ export function PortalProcessPage() {
           <PortalKpis kpis={p.kpis} stepName={stepName} />
         </div>
       )}
+      <div style={{ marginBlockStart: 16 }}>
+        <PortalPerformance processId={p.id} />
+      </div>
       {report && (
         <ReportDialog
           kind={report}

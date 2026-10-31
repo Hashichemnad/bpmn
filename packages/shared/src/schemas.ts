@@ -853,6 +853,8 @@ export const handbookSchema = handbookPlanSchema.extend({
   includeSipoc: z.boolean().default(false),
   includeDecisions: z.boolean().default(false),
   includeOrgChart: z.boolean().default(false),
+  /** Process mining summary and the last simulation comparison (Phase 5.1). */
+  includePerformance: z.boolean().default(false),
   /** Diagram images rendered in the browser (PNG as base64), one per process. */
   images: z
     .array(

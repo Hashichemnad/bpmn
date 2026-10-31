@@ -1,4 +1,5 @@
-import { Module } from '@nestjs/common';
+import { MiningModule } from '../mining/mining.module';
+import { Module, forwardRef } from '@nestjs/common';
 import { GovernanceModule } from '../governance/governance.module';
 import { DocsModule } from '../docs/docs.module';
 import { ObjectsModule } from '../objects/objects.module';
@@ -9,7 +10,7 @@ import { ReportsController } from './reports.controller';
 import { ReportsService } from './reports.service';
 
 @Module({
-  imports: [GovernanceModule, DocsModule, ObjectsModule, GrcModule],
+  imports: [GovernanceModule, DocsModule, ObjectsModule, GrcModule, forwardRef(() => MiningModule)],
   controllers: [ReportsController],
   providers: [ReportsService, ReportDataService, DiagramReportService],
   exports: [ReportDataService, ReportsService],

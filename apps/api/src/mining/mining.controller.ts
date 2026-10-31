@@ -70,6 +70,7 @@ import { MiningAnalysisService } from './analysis.service';
 import { download } from '../ea/ea.controller';
 import { ConformanceService } from './conformance.service';
 import { MiningKpiService } from './mining-kpi.service';
+import { MiningPortalService } from './mining-portal.service';
 
 const READ = PERMISSIONS.MINING_READ;
 const MANAGE = PERMISSIONS.MINING_MANAGE;
@@ -104,6 +105,7 @@ export class MiningController {
     private readonly analysis: MiningAnalysisService,
     private readonly conformanceService: ConformanceService,
     private readonly kpis: MiningKpiService,
+    private readonly portal: MiningPortalService,
   ) {}
 
   // ---------- Settings ----------
@@ -458,5 +460,12 @@ export class MiningController {
   @RequirePermissions(PERMISSIONS.KPI_EDIT)
   async recalculateKpi(@Param('kpiId', UuidPipe()) kpiId: string, @CurrentUser() user: AuthUser) {
     return toJobDto(await this.kpis.recalculate(kpiId, user));
+  }
+
+  /** Knowledge Portal: aggregated performance of a published process (setting, off by default). */
+  @Get('portal/processes/:processId/performance')
+  @RequirePermissions(PERMISSIONS.PORTAL_READ)
+  portalPerformance(@Param('processId', UuidPipe()) processId: string) {
+    return this.portal.performance(processId);
   }
 }

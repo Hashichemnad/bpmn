@@ -94,10 +94,11 @@ export class MiningAnalysisService implements OnModuleInit {
   async analyse(
     logId: string,
     input: Partial<AnalysisRequest>,
-    user: AuthUser,
+    /** null = system access for aggregated, case-free views (portal performance tab, D-142). */
+    user: AuthUser | null,
     waitMs = 8000,
   ): Promise<AnalysisResponse<LogAnalysis>> {
-    const log = await this.logs.ready(logId, user);
+    const log = user ? await this.logs.ready(logId, user) : await this.logs.readyAny(logId);
     const request = analysisRequestSchema.parse(input);
     const key = this.cacheKey(log, 'analysis', request);
     const hit = await this.cached<LogAnalysis>(key);
@@ -108,7 +109,7 @@ export class MiningAnalysisService implements OnModuleInit {
         kind: 'ANALYSE',
         logId,
         params: { request, key },
-        userId: user.id,
+        userId: user?.id ?? null,
       });
       jobId = job.id;
       this.inflight.set(key, jobId);

@@ -63,10 +63,12 @@ export class ConformanceService implements OnModuleInit {
   async conformance(
     logId: string,
     input: Partial<ConformanceRequest>,
-    user: AuthUser,
+    /** null = system access (portal performance tab, aggregated values only). */
+    user: AuthUser | null,
     waitMs = 8000,
   ): Promise<AnalysisResponse<ConformanceResult>> {
-    await this.logs.ready(logId, user);
+    if (user) await this.logs.ready(logId, user);
+    else await this.logs.readyAny(logId);
     const request = conformanceRequestSchema.parse(input);
     const { log, model, mapping } = await this.inputs(logId);
     const modelHash = createHash('sha256').update(model.bpmnXml).digest('hex').slice(0, 16);
@@ -79,7 +81,7 @@ export class ConformanceService implements OnModuleInit {
         kind: 'CONFORMANCE',
         logId,
         params: { request, key },
-        userId: user.id,
+        userId: user?.id ?? null,
       });
       jobId = job.id;
       this.inflight.set(key, jobId);

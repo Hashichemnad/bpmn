@@ -492,5 +492,24 @@
       "cost": "Cost per case",
       "utilisation": "Resource utilisation (%)"
     }
+  },
+  "portal": {
+    "title": "Performance",
+    "basis": "Measured on {{cases}} cases from {{from}} to {{to}} (event log).",
+    "conformance": "Cases following the model",
+    "completed": "Cases completed"
+  },
+  "settings": {
+    "button": "Settings",
+    "title": "Process mining settings",
+    "retention": "Delete event logs after (months)",
+    "retentionHint": "Logs whose last event is older are deleted for good (empty = keep).",
+    "portal": "\"Performance\" on published processes in the portal",
+    "portalHint": "Throughput time trend and conformance only — no cases, people or logs.",
+    "concurrency": "Jobs at the same time",
+    "timeZone": "Default time zone"
+  },
+  "handbook": {
+    "includePerformance": "Performance analysis (process mining summary and last simulation)"
   }
 }

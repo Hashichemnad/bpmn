@@ -80,6 +80,13 @@ export class EventLogsService {
     return log;
   }
 
+  /** A ready log without a user check (system views of aggregated values only). */
+  async readyAny(id: string): Promise<EventLog> {
+    const log = await this.prisma.eventLog.findFirst({ where: { id, status: 'READY' } });
+    if (!log) throw notFound('Event log');
+    return log;
+  }
+
   async manageable(id: string, user: AuthUser): Promise<EventLog> {
     const log = await this.visible(id, user);
     if (!this.canManage(log, user)) throw forbidden('You may not change this event log');

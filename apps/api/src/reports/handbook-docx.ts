@@ -66,6 +66,8 @@ export interface HandbookInput {
   sipoc?: Map<string, HandbookSipoc[]>;
   decisions?: Map<string, HandbookDecision[]>;
   orgChart?: Map<string, HandbookOrgRow[]>;
+  /** Performance analysis (Phase 5.1): label / value rows per process; absent = not requested. */
+  performance?: Map<string, [string, string][]>;
 }
 
 /** One application used by a process in the handbook (texts already localised). */
@@ -407,6 +409,22 @@ export async function buildHandbook(input: HandbookInput): Promise<Buffer> {
               ),
             ])
           : para([run(t.noSystems, { color: MUTED })]),
+      );
+    }
+    if (input.performance) {
+      const rows = input.performance.get(p.id) ?? [];
+      children.push(
+        para([run(t.performanceTitle, { bold: true })], { heading: HeadingLevel.HEADING_2 }),
+      );
+      children.push(
+        rows.length
+          ? table(
+              rows.map(
+                ([k, v]) =>
+                  new TableRow({ children: [cell(k, { header: true, width: 40 }), cell(v)] }),
+              ),
+            )
+          : para([run(t.noPerformance, { color: MUTED })]),
       );
     }
     if (input.sipoc) {

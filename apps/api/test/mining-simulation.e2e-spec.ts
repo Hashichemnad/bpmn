@@ -7,6 +7,7 @@ import {
   type Client,
   type TestContext,
 } from './helpers';
+import JSZip from 'jszip';
 import { analysisCsv, importLog } from './mining-fixtures';
 
 const MODEL = `<?xml version="1.0" encoding="UTF-8"?>
@@ -197,5 +198,54 @@ describe('Mining — simulation (e2e)', () => {
     expect((await analyst.get(`/simulations/${sim.id}`).expect(200)).body.scenarios).toHaveLength(
       2,
     );
+  });
+
+  it('shows aggregated performance in the portal (setting, published only) and in the handbook', async () => {
+    const url = `/mining/portal/processes/${processId}/performance`;
+    await viewer.get(url).expect(404); // setting off by default
+    await ctx.prisma.setting.create({
+      data: { key: 'mining', value: { portalPerformance: true } },
+    });
+    await viewer.get(url).expect(404); // not published
+    await ctx.prisma.publication.create({
+      data: { entityType: 'PROCESS', entityId: processId, versionNumber: 1, titleEn: 'Requests' },
+    });
+    const perf = (await viewer.get(url).expect(200)).body;
+    expect(perf).toMatchObject({ cases: 20, granularity: 'week' });
+    expect(perf.throughput.mean).toBeGreaterThan(0);
+    expect(perf.trend.length).toBeGreaterThan(0);
+    expect(perf.conformance.conformingShare).toBeCloseTo(0.75);
+    // Aggregated values only: no case ids, resources or the log.
+    expect(JSON.stringify(perf)).not.toMatch(/C1\b|ann|bob|LOG-/);
+
+    const res = await analyst
+      .post('/reports/handbook')
+      .send({
+        processId,
+        includeChildren: false,
+        locale: 'en',
+        includePerformance: true,
+        images: [],
+      })
+      .buffer(true)
+      .parse((r, cb) => {
+        const chunks: Buffer[] = [];
+        r.on('data', (c: Buffer) => chunks.push(c));
+        r.on('end', () => cb(null, Buffer.concat(chunks)));
+      })
+      .expect(200);
+    const xml = await (
+      await JSZip.loadAsync(res.body as Buffer)
+    )
+      .file('word/document.xml')!
+      .async('string');
+    for (const text of [
+      'Performance analysis',
+      'LOG-001',
+      'Cases with rework',
+      'SIM-001',
+      'highest utilisation',
+    ])
+      expect(xml).toContain(text);
   });
 });

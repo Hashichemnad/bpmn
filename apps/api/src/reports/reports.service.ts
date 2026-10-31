@@ -1,5 +1,6 @@
+import { MiningReportService } from '../mining/mining-report.service';
 import { GrcSettingsService } from '../grc/grc-settings.service';
-import { Injectable } from '@nestjs/common';
+import { Injectable, Inject, forwardRef } from '@nestjs/common';
 import type { Readable } from 'node:stream';
 import {
   PERMISSIONS,
@@ -71,6 +72,8 @@ export class ReportsService {
     private readonly data: ReportDataService,
     private readonly grcSettings: GrcSettingsService,
     private readonly diagramReports: DiagramReportService,
+    @Inject(forwardRef(() => MiningReportService))
+    private readonly miningReports: MiningReportService,
   ) {}
 
   /**
@@ -248,6 +251,13 @@ export class ReportsService {
       orgChart: input.includeOrgChart
         ? await this.diagramReports.orgExcerpt(processes, locale, source)
         : undefined,
+      performance: input.includePerformance
+        ? await this.miningReports.performance(
+            processes.map((p) => p.id),
+            user,
+            locale,
+          )
+        : undefined,
     });
     await this.logExport('handbook', root.id, user, meta, {
       source,
@@ -259,6 +269,7 @@ export class ReportsService {
       ...(input.includeSipoc ? { includeSipoc: true } : {}),
       ...(input.includeDecisions ? { includeDecisions: true } : {}),
       ...(input.includeOrgChart ? { includeOrgChart: true } : {}),
+      ...(input.includePerformance ? { includePerformance: true } : {}),
       processes: processes.map((p) => p.code),
     });
     return {

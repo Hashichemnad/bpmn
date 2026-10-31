@@ -9,17 +9,26 @@ import {
   Flex,
   Form,
   Input,
+  InputNumber,
   Modal,
+  Select,
+  Switch,
   Radio,
   Space,
   Table,
   Typography,
 } from 'antd';
-import { CloudUploadOutlined, DatabaseOutlined } from '@ant-design/icons';
+import { CloudUploadOutlined, DatabaseOutlined, SettingOutlined } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
 import type { Dayjs } from 'dayjs';
 import type { EventLogDto } from '@processhub/shared';
-import { useCreateProcessHubLog, useEventLogs, type MiningQuery } from '@/api/mining';
+import {
+  useCreateProcessHubLog,
+  useEventLogs,
+  useMiningSettings,
+  useSaveMiningSettings,
+  type MiningQuery,
+} from '@/api/mining';
 import { PageHeader } from '@/components/PageHeader';
 import { EmptyState, ErrorState } from '@/components/states';
 import {
@@ -42,6 +51,7 @@ export function LogsPage() {
   const access = useMiningAccess();
   const [params, setParams] = useSearchParams();
   const [internal, setInternal] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
   const query: MiningQuery = {
     q: params.get('q'),
     page: Number(params.get('page') ?? 1),
@@ -57,6 +67,11 @@ export function LogsPage() {
         extra={
           access.canManage && (
             <>
+              {access.canSettings && (
+                <Button icon={<SettingOutlined />} onClick={() => setSettingsOpen(true)}>
+                  {t('mining:settings.button')}
+                </Button>
+              )}
               <Button icon={<DatabaseOutlined />} onClick={() => setInternal(true)}>
                 {t('mining:logs.fromProcessHub')}
               </Button>
@@ -155,6 +170,7 @@ export function LogsPage() {
         )}
       </Card>
       {internal && <ProcessHubLogModal onClose={() => setInternal(false)} />}
+      {settingsOpen && <MiningSettingsModal onClose={() => setSettingsOpen(false)} />}
     </>
   );
 }
@@ -240,6 +256,62 @@ function ProcessHubLogModal({ onClose }: { onClose: () => void }) {
               { value: 'en', label: 'English' },
               { value: 'ar', label: 'العربية' },
             ]}
+          />
+        </Form.Item>
+      </Form>
+    </Modal>
+  );
+}
+
+/** Setting `mining` (Super Admin): retention, portal performance tab, job concurrency, time zone. */
+function MiningSettingsModal({ onClose }: { onClose: () => void }) {
+  const { t } = useTranslation();
+  const { message } = App.useApp();
+  const errorMessage = useErrorMessage();
+  const settings = useMiningSettings();
+  const save = useSaveMiningSettings();
+  const [form] = Form.useForm();
+  if (!settings.data) return null;
+  return (
+    <Modal
+      open
+      title={t('mining:settings.title')}
+      confirmLoading={save.isPending}
+      onCancel={onClose}
+      onOk={() =>
+        void form.validateFields().then((v) =>
+          save
+            .mutateAsync({ ...settings.data!, ...v, retentionMonths: v.retentionMonths ?? null })
+            .then(onClose)
+            .catch((e: unknown) => void message.error(errorMessage(e))),
+        )
+      }
+    >
+      <Form form={form} layout="vertical" initialValues={settings.data}>
+        <Form.Item
+          name="retentionMonths"
+          label={t('mining:settings.retention')}
+          extra={t('mining:settings.retentionHint')}
+        >
+          <InputNumber min={1} max={240} />
+        </Form.Item>
+        <Form.Item
+          name="portalPerformance"
+          label={t('mining:settings.portal')}
+          extra={t('mining:settings.portalHint')}
+          valuePropName="checked"
+        >
+          <Switch />
+        </Form.Item>
+        <Form.Item name="concurrency" label={t('mining:settings.concurrency')}>
+          <InputNumber min={1} max={4} />
+        </Form.Item>
+        <Form.Item name="defaultTimeZone" label={t('mining:settings.timeZone')}>
+          <Select
+            showSearch
+            options={['Asia/Dubai', 'Asia/Riyadh', 'Asia/Qatar', 'Europe/London', 'UTC'].map(
+              (z) => ({ value: z, label: z }),
+            )}
           />
         </Form.Item>
       </Form>

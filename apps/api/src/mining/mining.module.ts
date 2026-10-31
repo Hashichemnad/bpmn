@@ -3,6 +3,8 @@ import { ProcessesModule } from '../processes/processes.module';
 import { ModelsModule } from '../models/models.module';
 import { AiModule } from '../ai/ai.module';
 import { SimulationService } from './simulation.service';
+import { MiningPortalService } from './mining-portal.service';
+import { MiningReportService } from './mining-report.service';
 import { SimulationController } from './simulation.controller';
 import { MiningAnalysisService } from './analysis.service';
 import { ConformanceService } from './conformance.service';
@@ -26,12 +28,17 @@ import { SnapshotService } from './snapshot.service';
     ConformanceService,
     MiningKpiService,
     SimulationService,
+    MiningPortalService,
+    MiningReportService,
     MiningJobsService,
     MiningSettingsService,
     MiningScheduler,
     SnapshotService,
   ],
   exports: [
+    MiningReportService,
+    MiningAnalysisService,
+    ConformanceService,
     EventLogsService,
     MiningJobsService,
     MiningSettingsService,
