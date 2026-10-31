@@ -31,6 +31,7 @@
 | **More diagram types** | One framework for **value chains** (chevrons / blocks / frames, drill-down to processes and value chains, status / KPI / risk badges, "colour by", generation from the process house), **organisation charts** (units, positions, persons, reporting and staff lines; generated from departments, roles and people with merge-by-id regeneration and preview; a position shows the steps it performs with RACI), **DMN decision tables** (dmn-js, bilingual names, hit policies, typed inputs / outputs, FEEL "Test decision", validation, import / export, linked to BPMN business rule tasks), **EPC** (ARIS notation, syntax rules as warnings, conversion to a draft BPMN process with mapping report) and **SIPOC** (generated from a process); versions with visual compare, review workflow, comments on elements, object links, where used, Knowledge Portal (browse by type, value chain start page), handbook sections, export SVG / PNG / PDF | Diagrams |
 | **Process mining** | Event logs from CSV / Excel / XES (streaming import, column mapping with templates, timestamp and time-zone detection, validation report, pseudonymisation, access per owner / department / grant, retention) or from ProcessHub's own reviews; process map with frequency / performance views and activity / path sliders, variants with compare, stackable saved filters, statistics (throughput, trend, rework, resources, handovers), bottlenecks with the cases behind them, Excel exports; "Generate BPMN" with the heuristics miner; conformance by token replay (fitness, skipped / inserted / wrong-order steps) with a "colour by" overlay on the BPMN model, KPIs calculated from logs, measured vs planned step times; optional portal "Performance" section and handbook section | 5.1 |
 | **Simulation** | Discrete-event what-if simulation from the step attributes: distributions, lanes as resources with capacity, Sun–Thu working calendar with UAE holidays, branch probabilities (from mining), as-is and to-be scenarios on any process version, validation, side-by-side comparison with charts and Excel, bottleneck view on the model, AI explanation and proposals | 5.1 |
+| **Workflow execution** | Published processes run as requests: execution settings in the modeler (forms with an editor and bilingual preview, assignment rules, due times in working time, four-eyes, approval outcomes, S-FEEL conditions, timers, DMN business rules, notifications, Word documents, call activities, error paths), executable check, deployment of the published version (cases pinned to their version), service catalogue and start forms in the portal, inbox with claim / delegate / out-of-office, approve / reject / return, case page with highlighted diagram, timeline, files and comments, reminders and escalation, workflow monitor (retry, cancel, reassign) and dashboard with Excel, live event log for process mining. See [`docs/WORKFLOWS.md`](./docs/WORKFLOWS.md) | 5.2 |
 | **Workflow execution** | Running approved processes as task flows | 5.2 |
 
 ## Quick start (Docker)
@@ -75,6 +76,19 @@ content in every lifecycle state, comments, notifications and portal feedback.
 
 Demo users are only created on a demo installation (`SEED_DEMO_DATA=true`, the default). **Emails** sent by
 the demo installation go to the bundled **Mailpit** at **http://localhost:8025** — nothing leaves the machine.
+
+### A short tour of Phase 5.2 — workflow execution
+
+- As `viewer@processhub.local`: **Portal → Services** lists **PMS-01 Program / Initiative Request & Approval** and
+  **HR-01 Leave request**. Start a program request with an estimated budget of AED 150,000; the request page shows
+  its number (`PMS-2026-…`), the diagram with the current step and the timeline. **My requests** lists the seven
+  demo requests (one completed with its generated approval letter, one returned for correction, one rejected …).
+- As `section@processhub.local` (password `SEED_DEMO_PASSWORD`): **My tasks → Workflow tasks** → open the request →
+  *Approve*, *Reject* or *Return for correction* (comment required). Then `owner@` (department manager), `finance@`
+  (budget approval, added by the DMN decision for AED 100,000 or more), `pmo@` (group task: *Claim*) and `dgo@`.
+- As `owner@processhub.local`: the PMS-01 page → tab **Execution** (settings, deployments, live event log), the
+  modeler's **Execution** tab (select a step: assignment, due time, form editor with preview), **Requests →
+  Workflow monitor** and **Workflow dashboard**. Admin guide: [`docs/WORKFLOWS.md`](./docs/WORKFLOWS.md).
 
 ### A short tour of Phase 5.1 — process mining and simulation
 

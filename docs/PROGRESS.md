@@ -2,7 +2,92 @@
 
 Read this together with `CLAUDE.md` at the start of every session.
 
-## Current state — 2026-10-31 (Phase 5 — Part 1: Process mining and simulation, branch `phase-5-1-mining-simulation`, done — awaiting review)
+## Current state — 2026-10-31 (Phase 5 — Part 2: Workflow execution, branch `phase-5-2-workflow-execution`, done — awaiting review)
+
+Everything up to Phase 5.1 (process mining and simulation) is merged into `main`. This branch builds module M14:
+run approved processes as task flows with forms, assignments, approvals, SLAs and monitoring. The session works on
+`claude/bold-carson-w7ahi4` (the harness branch name) and pushes the same commits to
+`phase-5-2-workflow-execution`.
+
+Technical approach (D-144 – D-150): own TypeScript engine (pure `step(model, state, vars, command)`) in
+`packages/shared/src/workflow/` with an S-FEEL evaluator and a server-side DMN evaluator; schema-driven Ant Design
+forms (no form-js); execution settings in the BPMN XML (`ph:exec` JSON + standard conditions / timers) and
+operational settings in `WorkflowProcessConfig`; deployments pin the published version; cases, tasks, jobs (timers)
+and the timeline in PostgreSQL with optimistic locking; business calendar = central holidays + central working week.
+
+Local setup: PostgreSQL 16 (`service postgresql start`; create role `processhub` / `devpassword` and databases
+`processhub`, `processhub_test` if missing); API suites `npx jest --runInBand test/<file> --selectProjects e2e`
+(build the shared package first: `cd packages/shared && npx tsc -p tsconfig.build.json`).
+
+Steps (tick as they are committed; a new session continues at the first unticked one):
+
+- [x] 0. CLAUDE.md phase table (5.1 merged, 5.2 in progress), this plan, DECISIONS D-144 – D-150.
+- [x] Backend for steps 1–5 (one commit; the web UI follows step by step): shared `packages/shared/src/workflow/`
+      (`feel.ts` S-FEEL, `dmn.ts` server DMN, `forms.ts`, `model.ts` reader + `ph:exec` schemas, `check.ts`
+      executable check, `engine.ts` pure engine, `calendar.ts`, `templates.ts`, `api.ts` DTOs; 26 unit tests in
+      `workflow.test.ts`); migration `*_workflow_execution` (WorkflowProcessConfig, WorkflowDefinition,
+      WorkflowCase, WorkflowTask (+Candidate), WorkflowJob, WorkflowEvent, WorkflowFile, WorkflowCaseComment,
+      WorkflowCaseCounter, User out-of-office, EventLogSource WORKFLOW); permissions
+      `workflow.design|start|monitor|admin` (role bundles in D-149); notification type `WORKFLOW` (EN / AR e-mail
+      templates); API module `apps/api/src/workflow/` (config / check / deploy, runner with optimistic locking,
+      assignment, cases, tasks, jobs + timers + reminders / escalation + retention, monitor / dashboard / Excel, live
+      event log, Word documents); `WORKFLOW_POLL_SECONDS`; demo model builders `prisma/workflow-bpmn.ts`,
+      `prisma/workflow-demo.ts`; API tests `test/workflow.e2e-spec.ts` (20) + authorization matrix / route security
+      updated, SECURITY.md route table regenerated.
+- [x] 1. Executable processes (web): `features/workflow/` — `ExecutionPanel` (modeler tab "Execution", visible
+      when the process is executable: start / task forms, assignment rules, due time, four-eyes, escalation,
+      approval outcome and condition / default on flows with S-FEEL syntax check and data chips, timers, boundary
+      interruption, error codes, notification and document templates, set data), `FormEditor` (field list,
+      drawer, bilingual preview with `LocaleOverride`), `WorkflowForm` / `FormValues` (renderer, read-only view),
+      `ExecIssueList` (executable check in the Validation panel, client side; server check on deploy),
+      `WorkflowConfigCard` (process page tab "Execution": executable, prefix, start rights, withdraw, monitors,
+      retention, live event log, deploy, deployments); `ph:exec` in the moddle descriptor; `api/workflow.ts`;
+      namespace `workflow` (EN / AR, generated from the scratch translation tables), errors, audit labels,
+      `WORKFLOW` notification texts. Playwright: covered by `workflow.spec.ts` (written with step 3, see below).
+- [x] 2. Assignment, tasks and inbox (web): "My tasks" → **Workflow tasks** (assigned / group, due filter, search,
+      due colouring, claim) in the workspace and the portal, task page (form, approve / reject / return with a
+      mandatory comment, complete, save draft, claim / give back, delegate, admin reassign, four-eyes notice,
+      diagram), out of office in the profile, Settings → Workflow execution (working week, hours, zone,
+      reminder, escalation). Assignment, calendar, reminders and escalation are in the backend commit.
+- [x] 3. Starting and following cases (web): portal **Services** (catalogue) and start form, request page (diagram
+      with current / completed steps, current steps, data per step read-only, files incl. the generated letter,
+      timeline, comments with @mentions, withdraw / cancel / retry), **My requests** (portal and workspace),
+      Viewers redirected to portal equivalents, navigation in both layouts.
+- [x] 4. Monitoring (web): **Workflow monitor** (per process counts, stuck requests with retry / cancel, overdue
+      tasks with reassign, all requests), **Workflow dashboard** (tiles, trend chart, steps SLA, workload by user /
+      role / department, most overdue, Excel); live event log linked from the process page.
+- [x] 5. Security and data: permissions `workflow.*` on every route (route-security table regenerated,
+      authorization matrix watches the workflow tables and allows only own-data reads for Viewers), case
+      visibility tests (initiator, assignees, owner, monitors, Auditors read-only), retention (D-152), template
+      text-only rendering, audit of deploy / start / complete / claim / delegate / reassign / withdraw / cancel /
+      retry / export.
+- [x] 6. Demo data and docs: `prisma/seed-workflow.ts` (PMS-01 + DMN-002 + HR-01, five demo users, 7 requests
+      through the real services, back-dated), `prisma/perf-workflow.ts` (D-153), screenshots EN / AR in
+      `docs/screenshots/phase-5-2/` (`screenshots-phase-5-2.spec.ts`, `SCREENSHOTS=1`), `docs/WORKFLOWS.md`, README
+      (feature table + tour), CLAUDE.md, DECISIONS D-144 – D-153, BACKLOG, DEPLOYMENT step 12, SECURITY checklist.
+
+Measured (D-153, 10,000 open requests, 500 users): start 44 ms, completion 60 ms, inbox 18 ms, monitor 29 ms,
+dashboard 633 ms, job poll 9 ms.
+
+Verification on 2026-10-31: shared 220, web 91, API 428 tests pass (62 suites, incl. `workflow.e2e-spec.ts` 20);
+Playwright `workflow.spec.ts` (4) and the screenshot spec pass locally against API + Vite dev server + a local S3
+stand-in (s3rver) — no Docker daemon in this sandbox; lint, format, type-check clean; `pnpm audit --audit-level high
+--prod` clean (9 moderate, as before). **Not verified here:** Docker image builds and the full Playwright suite in
+Docker (CI runs both).
+
+Product owner answers (D-154), implemented afterwards: deploy only by the process's own Process Owner and workflow
+admins (Modelers set up, cannot deploy or switch a deployed process off / change its start rights); escalation
+fallbacks to the process owner (unclaimed group task, assignee without a manager or who is the department head);
+reminder and escalation delays per process (migration `20261031140000_workflow_delays`); seed test asserts no
+workflow demo users without `SEED_DEMO_DATA=true`; Portal → My tasks keeps its tab order and opens
+`?tab=workflow` (fixed the questionnaire e2e test). API `workflow.e2e-spec.ts` 21 tests.
+
+### Next (continue here)
+
+1. Review and merge the pull request `phase-5-2-workflow-execution` → `main` (CI: lint/test, e2e, Docker).
+2. Then Phase 4.4 (integrations, incl. REST service tasks), M15 migration; final performance / polish session.
+
+## Previous state — 2026-10-31 (Phase 5 — Part 1: Process mining and simulation, branch `phase-5-1-mining-simulation`, done — awaiting review)
 
 Everything up to the diagram types is merged into `main`. This branch builds module M13 (process mining) and
 simulation — Signavio Process Intelligence / ARIS Process Mining parity, DOF RFP analysis items. Workflow execution

@@ -66,6 +66,8 @@ const envSchema = z.object({
   MINING_UPLOAD_MAX_MB: z.coerce.number().int().min(1).max(2048).default(200),
   /** Run CPU-heavy mining work (analysis, discovery, simulation) in worker threads (D-128). */
   MINING_WORKERS: bool(true),
+  /** Workflow execution (Phase 5.2): how often due timers and jobs are checked, in seconds; 0 = off. */
+  WORKFLOW_POLL_SECONDS: z.coerce.number().int().min(0).max(3600).default(15),
   /** Timeout for one SMTP delivery, in milliseconds. */
   SMTP_TIMEOUT_MS: z.coerce.number().int().min(1000).default(15000),
   /** Timeout for one call to the AI provider, in milliseconds (generation can take a while). */

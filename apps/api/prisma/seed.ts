@@ -23,6 +23,7 @@ import { ensureGrcChangeWorkflow, seedAssuranceDemo } from './seed-assurance';
 import { seedDiagramsDemo } from './seed-diagrams';
 import { seedEaKpiDemo } from './seed-ea-kpi';
 import { seedMiningDemo } from './seed-mining';
+import { seedWorkflowDemo } from './seed-workflow';
 
 const prisma = new PrismaClient();
 
@@ -436,6 +437,13 @@ export async function main() {
     await seedEaKpiDemo(prisma, adminId);
     await seedDiagramsDemo(prisma, adminId);
     await seedMiningDemo(prisma, adminId);
+    // Workflow execution (Phase 5.2): demo cases run through the real services (an app context).
+    await seedWorkflowDemo(prisma, adminId, async () => {
+      await import('reflect-metadata');
+      const { NestFactory } = await import('@nestjs/core');
+      const { AppModule } = await import('../src/app.module');
+      return NestFactory.createApplicationContext(AppModule, { logger: ['error', 'warn'] });
+    });
   }
   // After the demo data: the governance demo only seeds into an installation without workflows.
   await ensureGrcChangeWorkflow(prisma, adminId);

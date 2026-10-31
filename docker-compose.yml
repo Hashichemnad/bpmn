@@ -99,6 +99,7 @@ services:
       SCHEDULER_INTERVAL_MINUTES: ${SCHEDULER_INTERVAL_MINUTES:-60}
       MINING_UPLOAD_MAX_MB: ${MINING_UPLOAD_MAX_MB:-200}
       MINING_WORKERS: ${MINING_WORKERS:-true}
+      WORKFLOW_POLL_SECONDS: ${WORKFLOW_POLL_SECONDS:-15}
     volumes:
       - api-data:/app/data
     depends_on:

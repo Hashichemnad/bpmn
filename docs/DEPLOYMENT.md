@@ -313,7 +313,12 @@ Caddy handles HTTPS. Choose one option with `CADDY_TLS` in `.env`, then run `sud
     switch it on. **Process mining → Simulations → Public holidays**: check the year's UAE public holidays, and
     confirm each Islamic holiday (untick _expected_) once it is announced after the moon sighting; repeat every
     year (an admin task).
-12. Go through the go-live checklist in [`docs/SECURITY.md`](./SECURITY.md) §7.
+12. **Workflow execution** (D-150, D-152): **Settings → Workflow execution** — check the working week, hours and
+    time zone (due times and SLAs use them with the central public holiday list) and the escalation target. For
+    each executable process set the **form data retention** (process page → Execution) from the records-retention
+    policy; the product keeps form data until a period is set. `WORKFLOW_POLL_SECONDS` (default 15) controls how
+    often timers, reminders and generated documents are processed.
+13. Go through the go-live checklist in [`docs/SECURITY.md`](./SECURITY.md) §7.
 
 ### 6.1 Single sign-on with Microsoft Entra ID (Azure AD)
 

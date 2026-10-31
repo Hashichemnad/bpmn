@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { AiButton } from '@/features/ai/AiParts';
 import { PortalAssistantProvider } from '@/features/ai/PortalAssistant';
+import { useWfTaskCounts } from '@/api/workflow';
 import { usePortalAssistant } from '@/features/ai/portal-assistant-context';
 import {
   Avatar,
@@ -16,6 +17,8 @@ import {
   type MenuProps,
 } from 'antd';
 import {
+  FileAddOutlined,
+  InboxOutlined,
   AppstoreOutlined,
   HomeOutlined,
   LogoutOutlined,
@@ -67,7 +70,10 @@ export function PortalLayout() {
     loc({ nameEn: settings.data?.orgNameEn, nameAr: settings.data?.orgNameAr }) || 'ProcessHub';
   const portalName = loc(home.data) || t('portal:name');
 
-  const taskCount = assuranceTaskCount(assuranceTasks.data);
+  const wfCounts = useWfTaskCounts(!!user);
+  const taskCount =
+    assuranceTaskCount(assuranceTasks.data) +
+    (wfCounts.data ? wfCounts.data.mine + wfCounts.data.group : 0);
   const nav: MenuProps['items'] = [
     {
       key: '/portal',
@@ -93,6 +99,20 @@ export function PortalLayout() {
       key: '/portal/my',
       icon: <StarOutlined />,
       label: <Link to="/portal/my">{t('portal:nav.my')}</Link>,
+    },
+    ...(can(PERMISSIONS.WORKFLOW_START)
+      ? [
+          {
+            key: '/portal/services',
+            icon: <FileAddOutlined />,
+            label: <Link to="/portal/services">{t('workflow:nav.services')}</Link>,
+          },
+        ]
+      : []),
+    {
+      key: '/portal/requests',
+      icon: <InboxOutlined />,
+      label: <Link to="/portal/requests">{t('workflow:nav.requests')}</Link>,
     },
     ...(taskCount
       ? [
@@ -120,9 +140,15 @@ export function PortalLayout() {
             ? '/portal/docs'
             : p.startsWith('/portal/my')
               ? '/portal/my'
-              : p.startsWith('/portal/tasks') || p.startsWith('/portal/issues')
+              : p.startsWith('/portal/tasks') ||
+                  p.startsWith('/portal/issues') ||
+                  p.startsWith('/portal/workflow/tasks')
                 ? '/portal/tasks'
-                : '';
+                : p.startsWith('/portal/services')
+                  ? '/portal/services'
+                  : p.startsWith('/portal/requests') || p.startsWith('/portal/workflow/cases')
+                    ? '/portal/requests'
+                    : '';
 
   const workspace = canAny(PERMISSIONS.PROCESSES_READ, PERMISSIONS.DOCS_READ);
   const userMenu: MenuProps['items'] = [

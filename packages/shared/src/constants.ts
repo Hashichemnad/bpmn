@@ -91,6 +91,14 @@ export const PERMISSIONS = {
   MINING_READ: 'mining.read',
   /** Import event logs, map activities, manage access, run discovery and simulations. */
   MINING_MANAGE: 'mining.manage',
+  /** Workflow execution (Phase 5.2): make own / editable processes executable, execution settings, deploy. */
+  WORKFLOW_DESIGN: 'workflow.design',
+  /** Start cases of executable processes (plus each process's start rights). */
+  WORKFLOW_START: 'workflow.start',
+  /** Monitor and dashboard for the processes of one's department or where one is named monitor. */
+  WORKFLOW_MONITOR: 'workflow.monitor',
+  /** All processes: retry, cancel, reassign; workflow settings. */
+  WORKFLOW_ADMIN: 'workflow.admin',
 } as const;
 export type Permission = (typeof PERMISSIONS)[keyof typeof PERMISSIONS];
 export const ALL_PERMISSIONS: Permission[] = Object.values(PERMISSIONS);
@@ -161,6 +169,9 @@ export const SYSTEM_ROLES: Record<
       P.KPI_MEASURE,
       P.MINING_READ,
       P.MINING_MANAGE,
+      P.WORKFLOW_DESIGN,
+      P.WORKFLOW_START,
+      P.WORKFLOW_MONITOR,
     ],
   },
   MODELER: {
@@ -181,6 +192,8 @@ export const SYSTEM_ROLES: Record<
       P.EA_READ,
       P.KPI_READ,
       P.MINING_READ,
+      P.WORKFLOW_DESIGN,
+      P.WORKFLOW_START,
     ],
   },
   REVIEWER: {
@@ -193,6 +206,7 @@ export const SYSTEM_ROLES: Record<
       P.SURVEYS_RESPOND,
       P.EA_READ,
       P.KPI_READ,
+      P.WORKFLOW_START,
     ],
   },
   AUDITOR: {
@@ -215,6 +229,7 @@ export const SYSTEM_ROLES: Record<
       P.EA_READ,
       P.KPI_READ,
       P.MINING_READ,
+      P.WORKFLOW_MONITOR,
     ],
   },
   RISK_OFFICER: {
@@ -237,6 +252,7 @@ export const SYSTEM_ROLES: Record<
       P.EA_READ,
       P.KPI_READ,
       P.MINING_READ,
+      P.WORKFLOW_START,
     ],
   },
   INTERNAL_AUDIT: {
@@ -257,6 +273,7 @@ export const SYSTEM_ROLES: Record<
       P.KPI_READ,
       P.MINING_READ,
       P.MINING_MANAGE,
+      P.WORKFLOW_START,
     ],
   },
   ENTERPRISE_ARCHITECT: {
@@ -274,6 +291,7 @@ export const SYSTEM_ROLES: Record<
       P.EA_ADMIN,
       P.KPI_READ,
       P.MINING_READ,
+      P.WORKFLOW_START,
     ],
   },
   PERFORMANCE_OFFICER: {
@@ -294,13 +312,14 @@ export const SYSTEM_ROLES: Record<
       P.KPI_SYNC,
       P.MINING_READ,
       P.MINING_MANAGE,
+      P.WORKFLOW_START,
     ],
   },
   VIEWER: {
     nameEn: 'Viewer',
     nameAr: 'مشاهد',
     // Knowledge Portal only: published content, read-only (D-028); answers questionnaires sent to them.
-    permissions: [P.PORTAL_READ, P.SURVEYS_RESPOND],
+    permissions: [P.PORTAL_READ, P.SURVEYS_RESPOND, P.WORKFLOW_START],
   },
 };
 
@@ -410,6 +429,15 @@ export const AUDIT_ACTIONS = [
   'IMPORT',
   /** Risk rating or control effectiveness changed (assessment history). */
   'ASSESS',
+  /** Workflow execution (Phase 5.2). */
+  'DEPLOY',
+  'START',
+  'COMPLETE',
+  'CLAIM',
+  'DELEGATE',
+  'REASSIGN',
+  'CANCEL',
+  'RETRY',
 ] as const;
 export type AuditAction = (typeof AUDIT_ACTIONS)[number];
 
@@ -459,6 +487,11 @@ export const AUDIT_ENTITY_TYPES = [
   'DiagramLink',
   'EventLog',
   'SimulationScenario',
+  'WorkflowProcessConfig',
+  'WorkflowDefinition',
+  'WorkflowCase',
+  'WorkflowTask',
+  'WorkflowFile',
 ] as const;
 export type AuditEntityType = (typeof AUDIT_ENTITY_TYPES)[number];
 
@@ -489,6 +522,8 @@ export const SETTING_KEYS = {
   MINING: 'mining',
   /** Central public holiday list used by simulation scenarios (D-143). */
   MINING_HOLIDAYS: 'mining.holidays',
+  /** Workflow execution (Phase 5.2): working week, reminders, escalation. */
+  WORKFLOW: 'workflow',
 } as const;
 
 /** Logo upload limits. */
@@ -702,6 +737,11 @@ export const NOTIFICATION_TYPES = [
   'SURVEY',
   /** KPI value due / overdue for the owner; Salesforce sync failed for Super Admins (params.kind). */
   'KPI',
+  /**
+   * Workflow execution (Phase 5.2): task assigned / reminder / overdue / escalated / delegated,
+   * case completed / returned / rejected / withdrawn / cancelled, template notification (params.kind).
+   */
+  'WORKFLOW',
 ] as const;
 export type NotificationType = (typeof NOTIFICATION_TYPES)[number];
 

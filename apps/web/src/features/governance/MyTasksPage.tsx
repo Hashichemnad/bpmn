@@ -20,6 +20,7 @@ import { ItemTitle } from './ItemTitle';
 import { FeedbackManageModal } from './FeedbackManageModal';
 import { useAssuranceTaskTabs } from '@/features/assurance/AssuranceTaskTabs';
 import { useKpiTaskTabs } from '@/features/kpi/KpiTaskTabs';
+import { useWorkflowTaskTabs } from '@/features/workflow/WorkflowTaskTabs';
 
 type TabKey =
   'reviews' | 'toPublish' | 'returned' | 'dueReviews' | 'grcReviews' | 'mentions' | 'feedback';
@@ -36,6 +37,7 @@ export function MyTasksPage() {
   const [feedback, setFeedback] = useState<FeedbackDto | null>(null);
   const assurance = useAssuranceTaskTabs();
   const kpiTasks = useKpiTaskTabs();
+  const workflowTasks = useWorkflowTaskTabs();
   const name = (u: { nameEn: string; nameAr: string; email: string } | null) =>
     u ? loc(u) || u.email : '—';
 
@@ -192,6 +194,7 @@ export function MyTasksPage() {
           activeKey={tab}
           onChange={(k) => setParams({ tab: k })}
           items={[
+            ...workflowTasks.items,
             {
               key: 'reviews',
               label: label('reviews'),

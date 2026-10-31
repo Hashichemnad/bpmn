@@ -20,6 +20,14 @@ describe('Authorisation matrix (e2e)', () => {
 
   /** Tables whose content must not change when a read-only user calls a mutating route. */
   const WATCHED = [
+    // Phase 5.2: workflow execution.
+    'WorkflowProcessConfig',
+    'WorkflowDefinition',
+    'WorkflowCase',
+    'WorkflowTask',
+    'WorkflowJob',
+    'WorkflowFile',
+    'WorkflowCaseComment',
     'Process',
     'ProcessModel',
     'ProcessVersion',
@@ -353,6 +361,9 @@ describe('Authorisation matrix (e2e)', () => {
     /^DELETE \/mining\/presets\/:id$/,
     /^POST \/mining\/jobs\/:id\/cancel$/,
     /^POST \/simulations\/:id\/ai\/(explain|suggest)$/,
+    // Phase 5.2: the executable check is read-only; out of office is one's own profile.
+    /^POST \/workflow\/processes\/:id\/check$/,
+    /^PUT \/workflow\/out-of-office$/,
   ];
   /** Reviewers comment and decide on review steps assigned to them (governance tests cover it). */
   const REVIEWER_ALLOWED = [/^POST \/comments\/:type\/:id$/, /^POST \/reviews\/:id\/decision$/];
@@ -434,7 +445,7 @@ describe('Authorisation matrix (e2e)', () => {
     const viewer = await loggedIn(ctx.app, 'viewer@processhub.local', DEMO_PASSWORD);
     // The RACI export also serves the portal: Viewers get published versions only (reports tests).
     const own =
-      /^\/(portal|auth|notifications|health|tasks|feedback)(\/|$)|^\/assurance\/tasks$|^\/settings\/(public|logo)$|^\/ai\/status$|^\/reports\/raci\//;
+      /^\/(portal|auth|notifications|health|tasks|feedback)(\/|$)|^\/assurance\/tasks$|^\/settings\/(public|logo)$|^\/ai\/status$|^\/reports\/raci\/|^\/workflow\/(cases|catalogue|tasks|out-of-office|users|files|departments)(\/|$)/;
     const leaked: string[] = [];
     for (const r of routes.filter((x) => x.method === 'GET' && !own.test(x.path))) {
       for (const url of urls(r.path)) {

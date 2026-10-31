@@ -72,6 +72,7 @@ const TEMPLATES: Record<Locale, Record<NotificationType, Template>> = {
     AUDIT: BY_KIND,
     SURVEY: BY_KIND,
     KPI: BY_KIND,
+    WORKFLOW: BY_KIND,
   },
   ar: {
     REVIEW_REQUESTED: {
@@ -128,6 +129,7 @@ const TEMPLATES: Record<Locale, Record<NotificationType, Template>> = {
     AUDIT: BY_KIND,
     SURVEY: BY_KIND,
     KPI: BY_KIND,
+    WORKFLOW: BY_KIND,
   },
 };
 
@@ -248,6 +250,62 @@ export const KIND_TEMPLATES: Record<Locale, Record<string, { subject: string; bo
     'SURVEY:reminder': {
       subject: 'Reminder — questionnaire: {title}',
       body: 'The questionnaire “{title}” closes on {due}. Please answer it if you have not done so yet.',
+    },
+    'WORKFLOW:assigned': {
+      subject: 'New task: {step} — {title}',
+      body: 'You have a new task “{step}” in request {title}. Due: {due}. Open it from My tasks.',
+    },
+    'WORKFLOW:group': {
+      subject: 'Task to claim: {step} — {title}',
+      body: 'The task “{step}” in request {title} is waiting for someone in your group. Claim it from My tasks.',
+    },
+    'WORKFLOW:reminder': {
+      subject: 'Reminder — task due soon: {step} — {title}',
+      body: 'The task “{step}” in request {title} is due on {due}.',
+    },
+    'WORKFLOW:overdue': {
+      subject: 'Overdue task: {step} — {title}',
+      body: 'The task “{step}” in request {title} was due on {due} and is still open.',
+    },
+    'WORKFLOW:escalated': {
+      subject: 'Escalation — overdue task: {step} — {title}',
+      body: 'The task “{step}” in request {title} assigned to {actor} was due on {due} and is still open.',
+    },
+    'WORKFLOW:delegated': {
+      subject: 'Task delegated to you: {step} — {title}',
+      body: '{actor} delegated the task “{step}” in request {title} to you. {comment}',
+    },
+    'WORKFLOW:reassigned': {
+      subject: 'Task assigned to you: {step} — {title}',
+      body: '{actor} assigned the task “{step}” in request {title} to you. {comment}',
+    },
+    'WORKFLOW:returned': {
+      subject: 'Returned for correction: {title}',
+      body: '{actor} returned request {title} for correction at step “{step}”: {comment}',
+    },
+    'WORKFLOW:completed': {
+      subject: 'Request completed: {title}',
+      body: 'Your request {title} has been completed.',
+    },
+    'WORKFLOW:rejected': {
+      subject: 'Request rejected: {title}',
+      body: 'Your request {title} was rejected at step “{step}”: {comment}',
+    },
+    'WORKFLOW:withdrawn': {
+      subject: 'Request withdrawn: {title}',
+      body: '{actor} withdrew request {title}. Your open task “{step}” was cancelled.',
+    },
+    'WORKFLOW:cancelled': {
+      subject: 'Request cancelled: {title}',
+      body: '{actor} cancelled request {title}: {comment}',
+    },
+    'WORKFLOW:incident': {
+      subject: 'Request stuck: {title}',
+      body: 'Request {title} is stuck at step “{step}”: {comment}. A workflow administrator can retry it in the workflow monitor.',
+    },
+    'WORKFLOW:message': {
+      subject: '{msgSubject}',
+      body: '{msgBody}',
     },
     'KPI:due': {
       subject: 'KPI value due: {title}',
@@ -375,6 +433,62 @@ export const KIND_TEMPLATES: Record<Locale, Record<string, { subject: string; bo
       subject: 'تذكير — استبيان: {title}',
       body: 'يُغلق الاستبيان «{title}» في {due}. يرجى الإجابة عليه إن لم تفعل بعد.',
     },
+    'WORKFLOW:assigned': {
+      subject: 'مهمة جديدة: {step} — {title}',
+      body: 'لديك مهمة جديدة «{step}» في الطلب {title}. تاريخ الاستحقاق: {due}. افتحها من «مهامي».',
+    },
+    'WORKFLOW:group': {
+      subject: 'مهمة بانتظار الاستلام: {step} — {title}',
+      body: 'المهمة «{step}» في الطلب {title} بانتظار أحد أعضاء مجموعتك. استلمها من «مهامي».',
+    },
+    'WORKFLOW:reminder': {
+      subject: 'تذكير — مهمة تستحق قريباً: {step} — {title}',
+      body: 'تستحق المهمة «{step}» في الطلب {title} بتاريخ {due}.',
+    },
+    'WORKFLOW:overdue': {
+      subject: 'مهمة متأخرة: {step} — {title}',
+      body: 'كانت المهمة «{step}» في الطلب {title} مستحقة بتاريخ {due} وما زالت مفتوحة.',
+    },
+    'WORKFLOW:escalated': {
+      subject: 'تصعيد — مهمة متأخرة: {step} — {title}',
+      body: 'المهمة «{step}» في الطلب {title} المسندة إلى {actor} كانت مستحقة بتاريخ {due} وما زالت مفتوحة.',
+    },
+    'WORKFLOW:delegated': {
+      subject: 'مهمة مفوّضة إليك: {step} — {title}',
+      body: 'فوّض {actor} إليك المهمة «{step}» في الطلب {title}. {comment}',
+    },
+    'WORKFLOW:reassigned': {
+      subject: 'مهمة مسندة إليك: {step} — {title}',
+      body: 'أسند {actor} إليك المهمة «{step}» في الطلب {title}. {comment}',
+    },
+    'WORKFLOW:returned': {
+      subject: 'أعيد للتصحيح: {title}',
+      body: 'أعاد {actor} الطلب {title} للتصحيح في الخطوة «{step}»: {comment}',
+    },
+    'WORKFLOW:completed': {
+      subject: 'اكتمل الطلب: {title}',
+      body: 'اكتمل طلبك {title}.',
+    },
+    'WORKFLOW:rejected': {
+      subject: 'رُفض الطلب: {title}',
+      body: 'رُفض طلبك {title} في الخطوة «{step}»: {comment}',
+    },
+    'WORKFLOW:withdrawn': {
+      subject: 'سُحب الطلب: {title}',
+      body: 'سحب {actor} الطلب {title}. أُلغيت مهمتك المفتوحة «{step}».',
+    },
+    'WORKFLOW:cancelled': {
+      subject: 'أُلغي الطلب: {title}',
+      body: 'ألغى {actor} الطلب {title}: {comment}',
+    },
+    'WORKFLOW:incident': {
+      subject: 'الطلب متوقف: {title}',
+      body: 'توقف الطلب {title} عند الخطوة «{step}»: {comment}. يمكن لمسؤول سير العمل إعادة المحاولة من شاشة مراقبة سير العمل.',
+    },
+    'WORKFLOW:message': {
+      subject: '{msgSubject}',
+      body: '{msgBody}',
+    },
     'KPI:due': {
       subject: 'موعد إدخال قيمة المؤشر: {title}',
       body: 'حان موعد إدخال القيمة الفعلية لـ «{title}» عن الفترة {comment}. يرجى إدخالها في بروسس هب (مهامي).',
@@ -479,6 +593,8 @@ export function templateValues(
     status: labels[String(params.status ?? '')] ?? String(params.status ?? ''),
     kind: labels[String(params.kind ?? '')] ?? String(params.kind ?? ''),
     reply: String(params.reply ?? ''),
+    msgSubject: pick(params, 'msgSubject', locale),
+    msgBody: pick(params, 'msgBody', locale),
     period: String(params.period ?? ''),
     conclusion:
       CONCLUSIONS[locale][String(params.conclusion ?? '')] ?? String(params.conclusion ?? ''),

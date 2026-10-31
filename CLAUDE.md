@@ -45,8 +45,8 @@ with no per-user licensing. Target: 50–500 users on a single server.
 | 4.3 | M11 EA (application catalogue, interfaces, data objects, capability map, traceability); M12 KPIs, dashboards + Salesforce KPI link | ✅ Done (merged into `main`, D-107 – D-119); the Salesforce KPI sync stays in the code but is not used (KPIs and risks are managed in ProcessHub) |
 | Diagrams | More diagram types (ARIS / GBTEC / Signavio parity, DOF RFP modeling items): shared diagram framework (Diagram entity, versions, governance, portal, links), value chain, organisation chart, DMN decision tables, EPC (+ conversion to BPMN), SIPOC | ✅ Done (merged into `main`, D-120 – D-127) |
 | 4.4 | Integration & export: Oracle Fusion Risk Management overlay, Salesforce risk / other connectors, API keys, webhooks, Word/HTML/XPDL export | ⬜ (later phase, see BACKLOG) |
-| 5.1 | M13 Process mining and simulation: event log import (CSV / Excel / XES, ProcessHub reviews), discovery (process map, variants, filters, statistics, bottlenecks, heuristics miner → BPMN), conformance (token replay, overlay on BPMN, mining KPIs, step attribute suggestions), discrete-event simulation with scenarios | ✅ Done on branch `phase-5-1-mining-simulation` (D-128 – D-142), awaiting review / merge into `main` |
-| 5.2 | M14 Workflow execution: run approved processes as task flows (forms, assignments, approvals) | ⬜ |
+| 5.1 | M13 Process mining and simulation: event log import (CSV / Excel / XES, ProcessHub reviews), discovery (process map, variants, filters, statistics, bottlenecks, heuristics miner → BPMN), conformance (token replay, overlay on BPMN, mining KPIs, step attribute suggestions), discrete-event simulation with scenarios | ✅ Done (merged into `main`, D-128 – D-143) |
+| 5.2 | M14 Workflow execution: run approved processes as task flows (forms, assignments, approvals, SLAs, monitoring, live event log) | ✅ Done on branch `phase-5-2-workflow-execution` (D-144 – D-154), awaiting review / merge into `main` |
 | Design A | Modeler design upgrade — Part A: look and feel (colour theme as BPMN-in-Color, renderer, colour picker, fonts/RTL, apply theme) | ✅ Done (merged into `main`, D-067 – D-073) |
 | Design B1 | Modeler design — Part B1: full-screen workspace and modeling productivity (palette, ready-made steps, zoom/mini-map, align, auto-layout, lane roles, badges, portal diagram, print layout) | ✅ Done (merged into `main`, D-074 – D-081); Part B2 in BACKLOG |
 | Design B2 | Modeler design — Part B2: smarter modeling and reports (Playwright e2e in CI, Dictionary with label autocomplete, Quick Model, step attributes and "colour by", handbook / RACI / object reports, modeling conventions) | ✅ Done (merged into `main`, D-083 – D-088) |
@@ -253,6 +253,19 @@ Phase 5.1 additions (DECISIONS D-128 – D-142):
 - `Simulation` (SIM-001 …) + `SimulationScenario` (AS_IS / TO_BE, params JSON, process version, result + model it ran on)
 - Shared `packages/shared/src/mining/` (timestamps, columnar log, filters, analysis, heuristics miner, conformance,
   simulation, worker task registry); API module `mining` (jobs in worker threads); AI feature `SIMULATION`
+
+Phase 5.2 additions (DECISIONS D-144 – D-153):
+
+- `WorkflowProcessConfig` (per process: enabled, case prefix, start rights, withdraw, monitors, retention, live
+  event log, active deployment), `WorkflowDefinition` (deployed published version: XML, parsed model, DMN
+  decisions), `WorkflowCase` (number, status, variables, token state, optimistic `version`, parent case),
+  `WorkflowTask` (+ `WorkflowTaskCandidate`), `WorkflowJob` (timers, documents, call activities, reminders,
+  escalation), `WorkflowEvent` (timeline), `WorkflowFile`, `WorkflowCaseComment`, `WorkflowCaseCounter`;
+  `User.outOfOfficeFrom/To/substituteId`; `EventLogSource.WORKFLOW`
+- BPMN XML: `ph:exec` (JSON execution settings per element) + standard conditions, default flows, timers, error /
+  terminate events; permissions `workflow.design|start|monitor|admin`; notification `WORKFLOW`; Setting `workflow`
+- Shared `packages/shared/src/workflow/` (S-FEEL, server DMN, forms, model reader, executable check, pure engine,
+  business calendar, templates); API module `workflow`; admin guide `docs/WORKFLOWS.md`
 
 ## 10. Definition of Done (every phase)
 

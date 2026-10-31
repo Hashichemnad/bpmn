@@ -350,7 +350,22 @@
       "GRC_CHANGE_batch": "{{actor}} imported changes of risks and controls that need your approval",
       "KPI": "KPI: {{title}}",
       "KPI_due": "KPI value due for {{comment}}: {{title}}",
-      "KPI_syncFailed": "Salesforce KPI sync failed: {{comment}}"
+      "KPI_syncFailed": "Salesforce KPI sync failed: {{comment}}",
+      "WORKFLOW": "Request: {{title}}",
+      "WORKFLOW_assigned": "New task “{{step}}”: {{title}}",
+      "WORKFLOW_group": "Task to claim “{{step}}”: {{title}}",
+      "WORKFLOW_reminder": "Due {{due}}: “{{step}}” — {{title}}",
+      "WORKFLOW_overdue": "Overdue since {{due}}: “{{step}}” — {{title}}",
+      "WORKFLOW_escalated": "Escalation — “{{step}}” of {{actor}} is overdue: {{title}}",
+      "WORKFLOW_delegated": "{{actor}} delegated “{{step}}” to you: {{title}}",
+      "WORKFLOW_reassigned": "{{actor}} assigned “{{step}}” to you: {{title}}",
+      "WORKFLOW_returned": "Returned for correction by {{actor}}: {{title}}",
+      "WORKFLOW_completed": "Request completed: {{title}}",
+      "WORKFLOW_rejected": "Request rejected at “{{step}}”: {{title}}",
+      "WORKFLOW_withdrawn": "{{actor}} withdrew the request {{title}}",
+      "WORKFLOW_cancelled": "{{actor}} cancelled the request {{title}}",
+      "WORKFLOW_incident": "Request stuck at “{{step}}”: {{title}}",
+      "WORKFLOW_message": "{{msgSubject}}"
     }
   },
   "prefs": {
@@ -377,7 +392,8 @@
       "ISSUE": "Issues and actions (assigned, due, escalations)",
       "AUDIT": "Audit engagements and findings",
       "SURVEY": "Questionnaires to answer",
-      "KPI": "KPI values due and Salesforce sync failures"
+      "KPI": "KPI values due and Salesforce sync failures",
+      "WORKFLOW": "Workflow tasks and requests (assigned, due, escalations, outcomes)"
     }
   },
   "feedback": {

@@ -207,6 +207,10 @@ model User {
   totpPendingSealed String?
   totpEnabledAt     DateTime?
   totpLastStep      Int?
+  /// Out of office (Phase 5.2): workflow tasks go to the substitute between these dates (inclusive).
+  outOfOfficeFrom   DateTime?   @db.Date
+  outOfOfficeTo     DateTime?   @db.Date
+  substituteId      String?     @db.Uuid
   createdAt         DateTime    @default(now())
   updatedAt         DateTime    @updatedAt
   createdById       String?     @db.Uuid
@@ -376,10 +380,13 @@ model Process {
   links          ObjectLink[]
   pageLinks      PageLink[]
   capabilities   CapabilityProcess[]
-  calculatedKpis Kpi[]               @relation("KpiCalculatedProcess")
+  calculatedKpis Kpi[]                  @relation("KpiCalculatedProcess")
   diagrams       Diagram[]
   eventLogs      EventLog[]
   simulations    Simulation[]
+  workflowConfig WorkflowProcessConfig?
+  workflowDefs   WorkflowDefinition[]
+  workflowCases  WorkflowCase[]
 
   @@index([parentId, sortOrder])
   @@index([category])
@@ -2030,6 +2037,8 @@ model DiagramLink {
 enum EventLogSource {
   FILE
   PROCESSHUB
+  /// Live event log of an executable process (Phase 5.2, D-151).
+  WORKFLOW
 }
 
 enum EventLogStatus {
@@ -2259,4 +2268,241 @@ model SimulationScenario {
   updatedAt      DateTime               @updatedAt
 
   @@index([simulationId])
+}
+
+// ---------- Workflow execution (Phase 5.2, M14, D-144 – D-152) ----------
+
+enum WorkflowCaseStatus {
+  RUNNING
+  COMPLETED
+  CANCELLED
+  WITHDRAWN
+}
+
+enum WorkflowTaskStatus {
+  OPEN
+  COMPLETED
+  CANCELLED
+}
+
+enum WorkflowJobStatus {
+  PENDING
+  RUNNING
+  DONE
+  FAILED
+  CANCELLED
+}
+
+/// Operational execution settings of a process (not versioned, D-147).
+model WorkflowProcessConfig {
+  processId              String   @id @db.Uuid
+  process                Process  @relation(fields: [processId], references: [id], onDelete: Cascade)
+  enabled                Boolean  @default(false)
+  casePrefix             String
+  /// ALL | RESTRICTED (startRoles / startDepartmentIds)
+  startMode              String   @default("ALL")
+  startRoles             String[] @default([])
+  startDepartmentIds     String[] @default([]) @db.Uuid
+  allowWithdraw          Boolean  @default(true)
+  monitorUserIds         String[] @default([]) @db.Uuid
+  /// Days after closing a case before its form data and files are removed (null = keep).
+  retentionDays          Int?
+  eventLog               Boolean  @default(true)
+  pseudonymiseLog        Boolean  @default(false)
+  /// Reminder / escalation delays in working minutes (null = Setting `workflow`), D-154.
+  reminderMinutesBefore  Int?
+  escalationDelayMinutes Int?
+  eventLogId             String?  @db.Uuid
+  activeDefinitionId     String?  @db.Uuid
+  createdAt              DateTime @default(now())
+  updatedAt              DateTime @updatedAt
+  createdById            String?  @db.Uuid
+  updatedById            String?  @db.Uuid
+}
+
+/// A deployment: the published process version, its parsed model and the DMN decisions it uses.
+model WorkflowDefinition {
+  id            String         @id @default(uuid()) @db.Uuid
+  processId     String         @db.Uuid
+  process       Process        @relation(fields: [processId], references: [id], onDelete: Cascade)
+  versionNumber Int
+  versionLabel  String?
+  bpmnXml       String
+  /// Parsed WorkflowModel (shared/workflow/model.ts).
+  model         Json
+  /// "diagramId:decisionId" → DMN XML of the linked decision diagram at deployment.
+  decisions     Json           @default("{}")
+  deployedAt    DateTime       @default(now())
+  deployedById  String?        @db.Uuid
+  cases         WorkflowCase[]
+
+  @@unique([processId, versionNumber])
+}
+
+model WorkflowCase {
+  id            String             @id @default(uuid()) @db.Uuid
+  /// PMS-2026-00012
+  number        String             @unique
+  definitionId  String             @db.Uuid
+  definition    WorkflowDefinition @relation(fields: [definitionId], references: [id], onDelete: Restrict)
+  processId     String             @db.Uuid
+  process       Process            @relation(fields: [processId], references: [id], onDelete: Restrict)
+  status        WorkflowCaseStatus @default(RUNNING)
+  /// NORMAL | TERMINATE | ERROR (completed cases)
+  outcome       String?
+  errorCode     String?
+  titleEn       String             @default("")
+  titleAr       String             @default("")
+  initiatorId   String?            @db.Uuid
+  /// Initiator's department when the case started (routing, visibility, dashboards).
+  departmentId  String?            @db.Uuid
+  variables     Json               @default("{}")
+  /// Engine token state (shared/workflow/engine.ts CaseState).
+  state         Json
+  /// Optimistic lock: every engine step increments it.
+  version       Int                @default(0)
+  /// A token has an incident (failed step) waiting for a retry.
+  stuck         Boolean            @default(false)
+  parentCaseId  String?            @db.Uuid
+  parentTokenId String?
+  startedAt     DateTime           @default(now())
+  completedAt   DateTime?
+  closedReason  String?
+  closedById    String?            @db.Uuid
+  dataPurgedAt  DateTime?
+  updatedAt     DateTime           @updatedAt
+
+  tasks    WorkflowTask[]
+  events   WorkflowEvent[]
+  files    WorkflowFile[]
+  comments WorkflowCaseComment[]
+
+  @@index([processId, status])
+  @@index([initiatorId, startedAt])
+  @@index([status, stuck])
+  @@index([parentCaseId])
+  @@index([departmentId])
+}
+
+model WorkflowTask {
+  id             String                  @id @default(uuid()) @db.Uuid
+  caseId         String                  @db.Uuid
+  case           WorkflowCase            @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  tokenId        String
+  elementId      String
+  nameEn         String                  @default("")
+  nameAr         String                  @default("")
+  approval       Boolean                 @default(false)
+  status         WorkflowTaskStatus      @default(OPEN)
+  /// Null for a group task that nobody has claimed yet.
+  assigneeId     String?                 @db.Uuid
+  /// Delegated / substitute task: the user it was originally meant for.
+  onBehalfOfId   String?                 @db.Uuid
+  dueAt          DateTime?
+  /// Saved but not submitted form data.
+  draft          Json?
+  data           Json?
+  decision       String?
+  comment        String?
+  completedAt    DateTime?
+  completedById  String?                 @db.Uuid
+  version        Int                     @default(0)
+  reminderSentAt DateTime?
+  escalatedAt    DateTime?
+  createdAt      DateTime                @default(now())
+  updatedAt      DateTime                @updatedAt
+  candidates     WorkflowTaskCandidate[]
+
+  @@index([assigneeId, status])
+  @@index([caseId])
+  @@index([status, dueAt])
+}
+
+model WorkflowTaskCandidate {
+  taskId String       @db.Uuid
+  task   WorkflowTask @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  userId String       @db.Uuid
+
+  @@id([taskId, userId])
+  @@index([userId])
+}
+
+/// Timers and asynchronous steps (D-148): claimed with a conditional update, idempotent, restart-safe.
+model WorkflowJob {
+  id           String            @id @default(uuid()) @db.Uuid
+  /// TIMER | START_TIMER | DOCUMENT | CALL | REMINDER
+  kind         String
+  caseId       String?           @db.Uuid
+  definitionId String?           @db.Uuid
+  tokenId      String?
+  elementId    String?
+  dueAt        DateTime
+  status       WorkflowJobStatus @default(PENDING)
+  attempts     Int               @default(0)
+  lockedUntil  DateTime?
+  error        String?
+  data         Json?
+  createdAt    DateTime          @default(now())
+  updatedAt    DateTime          @updatedAt
+
+  @@index([status, dueAt])
+  @@index([caseId, tokenId])
+  @@index([definitionId])
+}
+
+/// Case timeline (who, when, what) — also the source of the live event log.
+model WorkflowEvent {
+  id        String       @id @default(uuid()) @db.Uuid
+  caseId    String       @db.Uuid
+  case      WorkflowCase @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  type      String
+  elementId String?
+  tokenId   String?
+  userId    String?      @db.Uuid
+  data      Json         @default("{}")
+  at        DateTime     @default(now())
+
+  @@index([caseId, at])
+  @@index([type, at])
+}
+
+/// Attachments and generated documents (S3-compatible storage). caseId null = uploaded for a start form.
+model WorkflowFile {
+  id          String        @id @default(uuid()) @db.Uuid
+  caseId      String?       @db.Uuid
+  case        WorkflowCase? @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  taskId      String?       @db.Uuid
+  /// UPLOAD | GENERATED
+  kind        String        @default("UPLOAD")
+  name        String
+  mimeType    String
+  size        Int
+  storageKey  String
+  createdById String?       @db.Uuid
+  createdAt   DateTime      @default(now())
+
+  @@index([caseId])
+  @@index([createdById, caseId])
+}
+
+model WorkflowCaseComment {
+  id          String       @id @default(uuid()) @db.Uuid
+  caseId      String       @db.Uuid
+  case        WorkflowCase @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  /// Plain text; mentions as @[Name](userId).
+  body        String
+  mentionIds  String[]     @db.Uuid
+  createdById String?      @db.Uuid
+  createdAt   DateTime     @default(now())
+
+  @@index([caseId, createdAt])
+}
+
+/// Case number sequence per prefix and year.
+model WorkflowCaseCounter {
+  prefix String
+  year   Int
+  last   Int    @default(0)
+
+  @@id([prefix, year])
 }

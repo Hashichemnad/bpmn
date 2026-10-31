@@ -54,6 +54,8 @@ const PORTAL_EQUIVALENTS: [RegExp, string][] = [
   [/^\/grc\/issues\/([^/]+)$/, '/portal/issues/$1'],
   [/^\/grc\/findings\/([^/]+)$/, '/portal/findings/$1'],
   [/^\/surveys\/([^/]+)$/, '/portal/surveys/$1'],
+  [/^\/workflow\/(tasks|cases)\/([^/]+)$/, '/portal/workflow/$1/$2'],
+  [/^\/workflow\/requests$/, '/portal/requests'],
 ];
 
 export function WorkspaceOnly() {

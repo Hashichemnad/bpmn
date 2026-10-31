@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
+import { WorkflowConfigCard } from '@/features/workflow/WorkflowConfigCard';
 import {
   App,
   Button,
@@ -49,7 +50,7 @@ import { GovernancePanel } from '@/features/governance/GovernancePanel';
 import { CommentsPanel } from '@/features/comments/CommentsPanel';
 import { RequestFeedbackModal } from '@/features/assurance/CampaignFormModal';
 
-type Tab = 'overview' | 'subprocesses' | 'objects' | 'docs' | 'comments' | 'model';
+type Tab = 'overview' | 'subprocesses' | 'objects' | 'docs' | 'comments' | 'model' | 'execution';
 
 export function ProcessDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -390,6 +391,17 @@ export function ProcessDetailPage() {
               </Card>
             ),
           },
+          ...(can(PERMISSIONS.WORKFLOW_DESIGN) ||
+          can(PERMISSIONS.WORKFLOW_ADMIN) ||
+          can(PERMISSIONS.WORKFLOW_MONITOR)
+            ? [
+                {
+                  key: 'execution',
+                  label: t('workflow:config.tab'),
+                  children: tab === 'execution' && <WorkflowConfigCard processId={p.id} />,
+                },
+              ]
+            : []),
           {
             key: 'model',
             label: t('processes:tabs.model'),

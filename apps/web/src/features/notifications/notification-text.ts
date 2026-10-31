@@ -4,7 +4,15 @@ import type { NotificationDto } from '@processhub/shared';
 import { useFormatDate, useLocalized } from '@/components/i18n-helpers';
 
 /** Phase 4.2 types: the text depends on `params.kind`. */
-const ASSURANCE_TYPES: string[] = ['GRC_CHANGE', 'CONTROL_TEST', 'ISSUE', 'AUDIT', 'SURVEY', 'KPI'];
+const ASSURANCE_TYPES: string[] = [
+  'GRC_CHANGE',
+  'CONTROL_TEST',
+  'ISSUE',
+  'AUDIT',
+  'SURVEY',
+  'KPI',
+  'WORKFLOW',
+];
 
 /** Translated text of a notification from its type and stored parameters. */
 export function useNotificationText() {
@@ -30,6 +38,9 @@ export function useNotificationText() {
             ? t(`governance:feedback.kind.${p.kind}`)
             : '',
         reply: p.reply ?? '',
+        // Workflow template notifications (Phase 5.2): subject and text rendered on the server.
+        msgSubject: loc({ nameEn: p.msgSubjectEn, nameAr: p.msgSubjectAr }),
+        msgBody: loc({ nameEn: p.msgBodyEn, nameAr: p.msgBodyAr }),
       };
       const key =
         n.type === 'REVIEW_OVERDUE'
@@ -41,7 +52,7 @@ export function useNotificationText() {
               : n.type;
       return {
         title: t(`governance:notifications.title.${key}`, values),
-        detail: values.comment || values.reply || '',
+        detail: values.comment || values.reply || values.msgBody || '',
       };
     },
     [t, loc, formatDate],

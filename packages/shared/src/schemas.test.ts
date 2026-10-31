@@ -90,9 +90,11 @@ describe('system roles', () => {
       .map(([k]) => k);
     expect(holders).toEqual(['SUPER_ADMIN']);
   });
-  it('viewer is read-only (answering questionnaires sent to them is its only write, D-102)', () => {
+  it('viewer is read-only apart from answering questionnaires (D-102) and starting requests (D-149)', () => {
     expect(
-      SYSTEM_ROLES.VIEWER.permissions.every((p) => p.endsWith('.read') || p === 'surveys.respond'),
+      SYSTEM_ROLES.VIEWER.permissions.every(
+        (p) => p.endsWith('.read') || p === 'surveys.respond' || p === 'workflow.start',
+      ),
     ).toBe(true);
   });
 });

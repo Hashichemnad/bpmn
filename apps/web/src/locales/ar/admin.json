@@ -107,7 +107,15 @@
       "MFA_RECOVERY_CODES": "رموز استرداد جديدة",
       "EXPORT": "تنزيل تقرير",
       "IMPORT": "استيراد",
-      "ASSESS": "تقييم"
+      "ASSESS": "تقييم",
+      "DEPLOY": "نشر للتنفيذ",
+      "START": "بدء",
+      "COMPLETE": "إنجاز",
+      "CLAIM": "استلام",
+      "DELEGATE": "تفويض",
+      "REASSIGN": "إعادة إسناد",
+      "CANCEL": "إلغاء",
+      "RETRY": "إعادة المحاولة"
     },
     "entities": {
       "User": "مستخدم",
@@ -154,7 +162,12 @@
       "DiagramVersion": "إصدار مخطط",
       "DiagramLink": "رابط مخطط",
       "EventLog": "سجل أحداث",
-      "SimulationScenario": "سيناريو محاكاة"
+      "SimulationScenario": "سيناريو محاكاة",
+      "WorkflowProcessConfig": "إعدادات التنفيذ",
+      "WorkflowDefinition": "نشر سير العمل",
+      "WorkflowCase": "طلب (حالة)",
+      "WorkflowTask": "مهمة سير عمل",
+      "WorkflowFile": "ملف طلب"
     }
   },
   "settings": {

@@ -37,6 +37,16 @@ import {
 } from '@processhub/shared';
 import { CONVENTION_RULES, THEME_KINDS } from '@processhub/shared';
 import {
+  APPROVAL_OUTCOMES,
+  ASSIGNMENT_TYPES,
+  CASE_EVENT_TYPES,
+  CASE_STATUSES,
+  ESCALATION_TARGETS,
+  EXEC_ISSUE_CODES,
+  FORM_FIELD_TYPES,
+  SERVICE_KINDS,
+} from '@processhub/shared';
+import {
   CONTROL_EFFECTIVENESS,
   CONTROL_GAP_KINDS,
   CONTROL_FREQUENCIES,
@@ -123,6 +133,32 @@ describe('translations', () => {
 
   it('dynamic keys built from shared constants exist', () => {
     const expected = [
+      // Phase 5.2: workflow execution.
+      ...CASE_EVENT_TYPES.map((e) => `workflow:events.${e}`),
+      ...CASE_STATUSES.map((e) => `workflow:caseStatus.${e}`),
+      ...FORM_FIELD_TYPES.map((e) => `workflow:fieldTypes.${e}`),
+      ...EXEC_ISSUE_CODES.map((e) => `workflow:check.codes.${e}`),
+      ...ASSIGNMENT_TYPES.map((e) => `workflow:assignment.${e}`),
+      ...ASSIGNMENT_TYPES.map((e) => `workflow:assignmentHint.${e}`),
+      ...APPROVAL_OUTCOMES.map((e) => `workflow:decision.${e}`),
+      ...ESCALATION_TARGETS.map((e) => `workflow:escalation.${e}`),
+      ...SERVICE_KINDS.map((e) => `workflow:serviceKind.${e}`),
+      ...[
+        'assigned',
+        'group',
+        'reminder',
+        'overdue',
+        'escalated',
+        'delegated',
+        'reassigned',
+        'returned',
+        'completed',
+        'rejected',
+        'withdrawn',
+        'cancelled',
+        'incident',
+        'message',
+      ].map((k) => `governance:notifications.title.WORKFLOW_${k}`),
       ...SYSTEM_ROLE_KEYS.map((r) => `admin:roles.${r}`),
       ...AUDIT_ACTIONS.map((a) => `admin:audit.actions.${a}`),
       ...AUDIT_ENTITY_TYPES.map((e) => `admin:audit.entities.${e}`),

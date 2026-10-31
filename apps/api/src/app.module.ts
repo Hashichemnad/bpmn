@@ -33,6 +33,7 @@ import { EaModule } from './ea/ea.module';
 import { KpiModule } from './kpi/kpi.module';
 import { SalesforceModule } from './salesforce/salesforce.module';
 import { MiningModule } from './mining/mining.module';
+import { WorkflowModule } from './workflow/workflow.module';
 import { HealthController } from './health/health.controller';
 import { CsrfGuard, JwtAuthGuard, PermissionsGuard } from './common/guards';
 import { AllExceptionsFilter } from './common/http-exception.filter';
@@ -72,6 +73,7 @@ import { AllExceptionsFilter } from './common/http-exception.filter';
     KpiModule,
     SalesforceModule,
     MiningModule,
+    WorkflowModule,
     DocsModule,
     SearchModule,
     IntegrationsModule,

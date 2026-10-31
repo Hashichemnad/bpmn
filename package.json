@@ -16,7 +16,7 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "typecheck": "pnpm --filter @processhub/shared build && pnpm -r typecheck",
-    "test": "pnpm --filter @processhub/shared build && pnpm -r test",
+    "test": "pnpm --filter @processhub/shared build && pnpm -r --workspace-concurrency=1 test",
     "db:migrate": "pnpm --filter @processhub/api prisma:migrate",
     "db:seed": "pnpm --filter @processhub/api seed",
     "e2e": "pnpm --filter @processhub/e2e e2e"
