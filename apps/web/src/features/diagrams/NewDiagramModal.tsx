@@ -1,6 +1,7 @@
 import { useState, type ComponentType } from 'react';
 import type { DiagramType } from '@processhub/shared';
 import { DiagramFormModal } from './DiagramFormModal';
+import { ValueChainGenerator } from './notations/ValueChain';
 
 /** Generation options a notation offers when a diagram is created (value chain, org chart, SIPOC). */
 export interface GeneratorProps {
@@ -8,7 +9,9 @@ export interface GeneratorProps {
   onContent: (content: string | null, changeNote?: string) => void;
 }
 
-const GENERATORS: Partial<Record<DiagramType, ComponentType<GeneratorProps>>> = {};
+const GENERATORS: Partial<Record<DiagramType, ComponentType<GeneratorProps>>> = {
+  VALUE_CHAIN: ValueChainGenerator,
+};
 
 export function NewDiagramModal({
   type,

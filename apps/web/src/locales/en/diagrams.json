@@ -147,5 +147,28 @@
     "all": "All",
     "none": "No published diagrams yet.",
     "drillHint": "Click a highlighted element to open the process or diagram behind it."
+  },
+  "valueChain": {
+    "generate": "Generate",
+    "generateHint": "Build the value chain from the Management / Core / Support processes of the process house",
+    "generateTitle": "Generate from the process house?",
+    "generateReplace": "The diagram is replaced by frames for Management, Core and Support with their level-1 processes, each linked to its process. You can undo by restoring a version.",
+    "generateFromHouse": "Generate the first version from the process house (level-1 processes)",
+    "includeLevel2": "Include level-2 processes",
+    "row": "Row",
+    "linkedProcess": "Linked process",
+    "linkedDiagram": "Linked value chain",
+    "linkedHint": "Clicking the element drills down to it (in the portal: when it is published).",
+    "openLinked": "Open linked process / diagram"
+  },
+  "colourBy": {
+    "title": "Colour by",
+    "none": "Own colours",
+    "status": "Process status",
+    "kpi": "KPI status",
+    "risk": "Residual risk",
+    "department": "Owner department",
+    "noData": "No data",
+    "legend": "Legend"
   }
 }

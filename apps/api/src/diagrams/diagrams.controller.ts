@@ -41,8 +41,17 @@ import {
 import type { AuthUser, RequestMeta } from '../common/auth-user';
 import { UuidPipe, ZodPipe } from '../common/zod.pipe';
 import { DiagramsService } from './diagrams.service';
+import { DiagramFactsService } from './diagram-facts.service';
 
 const EDIT = [PERMISSIONS.MODELS_EDIT, PERMISSIONS.MODELS_EDIT_OWN] as const;
+
+const factsSchema = z.object({
+  ids: z
+    .string()
+    .max(12000)
+    .transform((v) => v.split(',').filter(Boolean))
+    .pipe(z.array(uuidSchema).max(300)),
+});
 
 const whereUsedSchema = z.object({
   processId: uuidSchema.optional(),
@@ -54,7 +63,10 @@ const whereUsedSchema = z.object({
 @ApiTags('diagrams')
 @Controller('diagrams')
 export class DiagramsController {
-  constructor(private readonly diagrams: DiagramsService) {}
+  constructor(
+    private readonly diagrams: DiagramsService,
+    private readonly facts: DiagramFactsService,
+  ) {}
 
   @Get()
   @RequirePermissions(PERMISSIONS.PROCESSES_READ)
@@ -66,6 +78,16 @@ export class DiagramsController {
   @RequirePermissions(PERMISSIONS.PROCESSES_READ)
   all() {
     return this.diagrams.all();
+  }
+
+  /** Status, department, KPI and risk facts of processes linked from a value chain (D-121). */
+  @Get('process-facts')
+  @RequirePermissions(PERMISSIONS.PROCESSES_READ)
+  processFacts(
+    @Query(new ZodPipe(factsSchema)) q: z.infer<typeof factsSchema>,
+    @CurrentUser() user: AuthUser,
+  ) {
+    return this.facts.processFacts(q.ids, user);
   }
 
   @Get('where-used')

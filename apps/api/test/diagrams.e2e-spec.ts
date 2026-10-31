@@ -262,6 +262,15 @@ describe('Diagrams (e2e)', () => {
     await viewer.get(`/portal/diagrams/${vc.id}`).expect(404);
   });
 
+  it('reports status, department, KPI and risk facts of linked processes', async () => {
+    const facts = (await modeler.get(`/diagrams/process-facts?ids=${processId}`).expect(200)).body;
+    expect(facts).toMatchObject([
+      { id: processId, code: 'C.01', status: 'DRAFT', kpi: null, risk: null },
+    ]);
+    await viewer.get(`/diagrams/process-facts?ids=${processId}`).expect(403);
+    await modeler.get('/diagrams/process-facts?ids=not-a-uuid').expect(400);
+  });
+
   it('applies owner-only rights for Process Owners', async () => {
     const owner = await createUser(ctx.prisma, 'owner@test.local', ['PROCESS_OWNER']);
     const ownerClient = await loggedIn(ctx.app, 'owner@test.local');

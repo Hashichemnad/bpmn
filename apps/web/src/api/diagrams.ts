@@ -11,6 +11,7 @@ import type {
   DiagramUsageDto,
   DiagramVersionDto,
   PortalDiagramDto,
+  ProcessFactDto,
   PortalItemDto,
   SaveDiagramContentInput,
   UpdateDiagramInput,
@@ -189,4 +190,16 @@ export const usePortalDiagram = (id: string | undefined) =>
     queryKey: diagramKeys.portalOne(id ?? ''),
     queryFn: () => api<PortalDiagramDto>(`/portal/diagrams/${id}`),
     enabled: !!id,
+  });
+
+/** Status / KPI / risk facts of processes linked from a value chain (D-121). */
+export const useProcessFacts = (ids: string[], enabled = true) =>
+  useQuery({
+    queryKey: ['diagrams', 'process-facts', [...ids].sort().join(',')],
+    queryFn: () =>
+      api<ProcessFactDto[]>('/diagrams/process-facts', {
+        query: { ids: [...ids].sort().join(',') },
+      }),
+    enabled: enabled && ids.length > 0,
+    staleTime: 30_000,
   });

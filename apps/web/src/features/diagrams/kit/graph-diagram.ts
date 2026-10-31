@@ -231,11 +231,21 @@ export function graphSvg(instance: GraphInstance): string {
   );
 }
 
-/** Redraws every element (language or theme changed). */
+/**
+ * Redraws every element (language, theme or "Colour by" changed). Graphics are updated directly:
+ * an `elements.changed` event would cancel a create / move in progress (diagram-js).
+ */
 export function redrawAll(instance: GraphInstance): void {
-  const registry = instance.get<{ getAll(): { type: string }[] }>('elementRegistry');
-  const elements = registry.getAll().filter((e) => e.type === SHAPE_TYPE || e.type === EDGE_TYPE);
-  instance.get<{ fire(e: string, p: unknown): void }>('eventBus').fire('elements.changed', {
-    elements,
-  });
+  const registry = instance.get<{
+    getAll(): (GraphShape | GraphConnection)[];
+    getGraphics(el: unknown): SVGElement | undefined;
+  }>('elementRegistry');
+  const graphics = instance.get<{ update(type: string, el: unknown, gfx: SVGElement): void }>(
+    'graphicsFactory',
+  );
+  for (const el of registry.getAll()) {
+    if (el.type !== SHAPE_TYPE && el.type !== EDGE_TYPE) continue;
+    const gfx = registry.getGraphics(el);
+    if (gfx) graphics.update(isConnection(el) ? 'connection' : 'shape', el, gfx);
+  }
 }

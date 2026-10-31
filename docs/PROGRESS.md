@@ -33,7 +33,15 @@ Steps (tick as they are committed; a new session continues at the first unticked
       `/portal/print/diagrams/:id`, portal `/portal/diagrams` (+ `:id` with drill-down), repository tree with type
       icons and a "Diagrams" group, "New" menu (process + each type). dmn-js 17.12.3, feelin 8.2.0 added (used in
       step 4). Tests: shared +3, web +3, API 3 (`diagrams.e2e-spec.ts`).
-- [ ] 2. Value chain (chevrons, blocks, frames, arrows; drill-down; badges; colour by; generate from process house).
+- [x] 2. Value chain (D-121): notation (chevrons, blocks with row, group frames, arrows, theme colours), element
+      link to a process or another value chain (properties panel, ↗ open button), process facts API
+      `GET /diagrams/process-facts` (status, department, KPI worst status with `kpi.read`, highest residual risk with
+      `grc.read`), badges, "Colour by" (status / KPI / residual risk / department, view only, legend), "Generate from
+      process house" (shared `generateValueChain`, New dialog + workspace tool), portal drill-down to published
+      processes / value chains. Fix: view refreshes no longer fire `elements.changed` (it cancelled create drags);
+      initial import runs once per editor instance. Tests: shared +2 (`value-chain.test.ts`), web +2 (colour by),
+      API +1 (process facts), Playwright `diagrams-value-chain.spec.ts` (create from house → edit → version → submit →
+      approve ×2 → publish → portal drill-down → Arabic).
 - [ ] 3. Organisation chart (units, positions, persons, reporting lines, staff functions; generate from data with
       merge + preview; position → processes / RACI; handbook section).
 - [ ] 4. DMN decision tables (dmn-js DRD + decision table, `ph:decisionRef` on business rule tasks, test decision,

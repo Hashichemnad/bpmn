@@ -1540,3 +1540,27 @@ Supersedes the "act as the Super Admin" rule of D-116.
   a table-style diagram (an editable grid rendered as SVG for export), not a diagram-js canvas.
 - The process repository tree shows diagrams under their parent process (or under "Diagrams" when they have none)
   with a type icon; the "New" menu offers each type. Git sync of diagrams is not part of this phase (BACKLOG).
+
+## D-121 — Value chain: drill-down, process facts, colour by, generation (Diagram types, 2026-10-31)
+
+- Notation: **chevrons** (primary activities), **blocks** (management / support, with a row `category`), **group
+  frames** (other shapes can be dropped inside; frames are never nested) and **arrows**. Colours follow
+  `branding.diagramTheme` (chevrons = human task colours, management blocks = approval colours, support blocks = system
+  colours, frames = lane colours) unless an element has its own colour.
+- Each element can link to **one process (process-house node) or one other value chain** (`processId` / `diagramId`
+  in the content). Workspace: a ↗ button on linked elements opens the target. Portal: linked elements whose target is
+  **published** are highlighted and clicking drills down (value chain → value chain → BPMN process page); links to
+  unpublished items are not shown as drill targets (the portal never reveals unpublished content).
+- **Process facts** (`GET /diagrams/process-facts?ids=…`, `processes.read`): status, owner department, worst KPI status
+  (only with `kpi.read`) and the highest residual risk on the process's steps (only with `grc.read`). Badges on linked
+  elements show them; **Colour by** (process status, KPI status, residual risk band colours from Settings → Risk &
+  Compliance, owner department) recolours linked elements in the view only (never stored) with a legend. Badges and
+  Colour by are workspace features; the portal shows the diagram with its own colours (KPI / risk visibility in the
+  portal stays governed by the existing portal settings).
+- **Generate from the process house** (shared `generateValueChain`, in "New → Value chain" and as a workspace tool
+  that replaces the content after confirmation): one frame per category (Management above, Core in the middle,
+  Support below), level-1 processes as chevrons (Core) or blocks, optionally their level-2 sub-processes stacked
+  below; element ids derive from the process ids, every element is linked to its process. The created diagram gets
+  version 1 "Generated from the process house".
+- diagram-js cancels a create / move on any `elements.changed` that it did not cause, so view refreshes (language,
+  theme, Colour by) redraw graphics directly instead of firing that event.

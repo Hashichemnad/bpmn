@@ -318,6 +318,7 @@ export function DiagramWorkspace({
                   size="small"
                   type="primary"
                   icon={<SaveOutlined />}
+                  aria-label={t('modeler:saveVersion')}
                   onClick={() => setVersionOpen(true)}
                 >
                   <span className="ph-ws-label">{t('modeler:saveVersion')}</span>
@@ -380,7 +381,12 @@ export function DiagramWorkspace({
             },
             { active: showPanel },
           )}
-          <Button size="small" icon={<CloseOutlined />} onClick={onClose}>
+          <Button
+            size="small"
+            icon={<CloseOutlined />}
+            onClick={onClose}
+            aria-label={t('modeler:workspace.close')}
+          >
             <span className="ph-ws-label">{t('modeler:workspace.close')}</span>
           </Button>
         </div>

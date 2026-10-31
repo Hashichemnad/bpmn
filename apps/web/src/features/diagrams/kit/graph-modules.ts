@@ -27,6 +27,8 @@ export interface GraphState {
   readOnly: boolean;
   /** Connection kind chosen in the context pad for the connect tool in progress. */
   connectKind?: string;
+  /** "Colour by" view colours per element id (shown only, never stored). */
+  viewColours?: Map<string, { fill: string; stroke: string }>;
 }
 
 export const SHAPE_TYPE = 'ph:node';
@@ -176,6 +178,8 @@ class GraphRenderer extends BaseRenderer {
 
   private colours(node: DiagramNode) {
     const def = nodeDef(this.state.notation, node.kind);
+    const view = this.state.viewColours?.get(node.id);
+    if (view) return { ...view, def };
     const base = blockColour(node, this.state.theme) ?? kindColours(def.colour, this.state.theme);
     return { fill: node.fill ?? base.fill, stroke: node.stroke ?? base.stroke, def };
   }

@@ -56,8 +56,10 @@ interface Props {
   tools?: (instance: GraphInstance | null, reload: (content: GraphContent) => void) => ReactNode;
   /** Extra side panel tabs (validation …), after Properties. */
   panels?: (instance: GraphInstance | null, changeTick: number) => WorkspacePanel[];
-  /** Overlays (badges, drill-down): called after each import; returns a cleanup. */
-  decorate?: (instance: GraphInstance) => void | (() => void);
+  /** Floating content on the canvas (colour-by legend …). */
+  overlay?: ReactNode;
+  /** Reports the diagram instance and every change (notation overlays, colour by). */
+  onState?: (instance: GraphInstance | null, changeTick: number, loaded: boolean) => void;
 }
 
 /**
@@ -72,7 +74,8 @@ export function GraphEditor({
   renderProperties,
   tools,
   panels,
-  decorate,
+  overlay,
+  onState,
 }: Props) {
   const { t } = useTranslation();
   const { locale } = useLocale();
@@ -96,8 +99,6 @@ export function GraphEditor({
   const [importError, setImportError] = useState<string | null>(null);
   /** Import in progress: its command stack reset is not a user change. */
   const importingRef = useRef(false);
-  const decorateRef = useRef(decorate);
-  decorateRef.current = decorate;
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -144,8 +145,12 @@ export function GraphEditor({
     }
   }, []);
 
+  // Import once per instance (a refetch of the content must not replace the canvas being edited);
+  // `onRestored` resets it.
+  const importedRef = useRef<GraphInstance | null>(null);
   useEffect(() => {
-    if (!instance || !content.data || loaded) return;
+    if (!instance || !content.data || loaded || importedRef.current === instance) return;
+    importedRef.current = instance;
     const parsed = parseDiagramContent(type, content.data.content);
     if (!parsed.ok) {
       setImportError(t('diagrams:invalidContent'));
@@ -155,9 +160,8 @@ export function GraphEditor({
   }, [instance, content.data, loaded, type, load, t]);
 
   useEffect(() => {
-    if (!instance || !loaded) return;
-    return decorateRef.current?.(instance) ?? undefined;
-  }, [instance, loaded, rev, locale]);
+    onState?.(instance, rev, loaded);
+  }, [onState, instance, rev, loaded]);
 
   useEffect(() => {
     stateRef.current.locale = locale;
@@ -252,8 +256,10 @@ export function GraphEditor({
       onFocusElement={focusElement}
       importError={importError}
       onRestored={() => {
-        setLoaded(false);
-        void content.refetch();
+        void content.refetch().then(() => {
+          importedRef.current = null;
+          setLoaded(false);
+        });
       }}
       onClose={onClose}
       palette={
@@ -308,6 +314,7 @@ export function GraphEditor({
             data-notation={type}
             aria-label={t(`diagrams:type.${type}`)}
           />
+          {overlay}
           {canEdit && instance && (
             <LayoutToolbar
               instance={instance}

@@ -2814,3 +2814,76 @@ li.ph-diff-removed {
     break-before: page;
   }
 }
+
+/* Value chain: drill-down button, process badges, colour-by legend (D-121). */
+.ph-vc-drill {
+  inline-size: 20px;
+  block-size: 20px;
+  border-radius: 50%;
+  border: 1px solid #1d4ed8;
+  background: #fff;
+  color: #1d4ed8;
+  font-size: 12px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0;
+}
+.ph-vc-drill:hover {
+  background: #1d4ed8;
+  color: #fff;
+}
+.ph-vc-badges {
+  display: flex;
+  gap: 3px;
+  white-space: nowrap;
+}
+.ph-vc-badge {
+  font-size: 10px;
+  line-height: 16px;
+  padding: 0 5px;
+  border-radius: 8px;
+  color: #fff;
+  background: #64748b;
+}
+.ph-vc-badge.is-published {
+  background: #15803d;
+}
+.ph-vc-badge.is-in_review {
+  background: #1d4ed8;
+}
+.ph-vc-badge.is-approved {
+  background: #0e7490;
+}
+.ph-vc-badge.is-archived {
+  background: #374151;
+}
+.ph-vc-badge.is-risk {
+  background: #b42318;
+}
+.ph-vc-legend {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  font-size: 12px;
+  align-items: center;
+}
+.ph-vc-legend i {
+  display: inline-block;
+  inline-size: 14px;
+  block-size: 10px;
+  border: 1.5px solid;
+  border-radius: 3px;
+  margin-inline-end: 4px;
+  vertical-align: middle;
+}
+.ph-ws-canvas-wrap .ph-vc-legend {
+  position: absolute;
+  inset-block-end: 16px;
+  inset-inline-start: 16px;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 8px 12px;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.08);
+  max-inline-size: 60%;
+}
