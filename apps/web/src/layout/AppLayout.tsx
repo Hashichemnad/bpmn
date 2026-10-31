@@ -49,6 +49,10 @@ import {
   LineChartOutlined,
   AimOutlined,
   CloudSyncOutlined,
+  FileAddOutlined,
+  InboxOutlined,
+  MonitorOutlined,
+  FieldTimeOutlined,
 } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
 import { PERMISSIONS, type Locale } from '@processhub/shared';
@@ -64,6 +68,7 @@ import { NotificationBell } from '@/features/notifications/NotificationBell';
 import { assuranceTaskCount, useAssuranceTasks } from '@/api/assurance';
 import { useMyTasks } from '@/api/governance';
 import { useKpiTasks } from '@/api/kpi';
+import { useWfTaskCounts } from '@/api/workflow';
 
 const { Header, Sider, Content } = Layout;
 
@@ -106,6 +111,7 @@ export function AppLayout() {
   const tasks = useMyTasks();
   const assurance = useAssuranceTasks(!!user);
   const kpiTasks = useKpiTasks(!!user && canAny(PERMISSIONS.KPI_MEASURE, PERMISSIONS.KPI_EDIT));
+  const wfCounts = useWfTaskCounts(!!user);
   const taskCount = tasks.data
     ? tasks.data.reviews.length +
       tasks.data.toPublish.length +
@@ -114,7 +120,8 @@ export function AppLayout() {
       tasks.data.grcReviews.length +
       tasks.data.feedback.length +
       assuranceTaskCount(assurance.data) +
-      (kpiTasks.data?.length ?? 0)
+      (kpiTasks.data?.length ?? 0) +
+      (wfCounts.data ? wfCounts.data.mine + wfCounts.data.group : 0)
     : 0;
 
   const items = useMemo<MenuProps['items']>(() => {
@@ -269,6 +276,41 @@ export function AppLayout() {
         ],
       });
     }
+    // Workflow execution (Phase 5.2): requests and, for monitors, the monitor and dashboard.
+    list.push({
+      type: 'group',
+      label: t('workflow:nav.group'),
+      children: [
+        ...(can(PERMISSIONS.WORKFLOW_START)
+          ? [
+              {
+                key: '/portal/services',
+                icon: <FileAddOutlined />,
+                label: <Link to="/portal/services">{t('workflow:nav.services')}</Link>,
+              },
+            ]
+          : []),
+        {
+          key: '/workflow/requests',
+          icon: <InboxOutlined />,
+          label: <Link to="/workflow/requests">{t('workflow:nav.requests')}</Link>,
+        },
+        ...(canAny(PERMISSIONS.WORKFLOW_MONITOR, PERMISSIONS.WORKFLOW_ADMIN)
+          ? [
+              {
+                key: '/workflow/monitor',
+                icon: <MonitorOutlined />,
+                label: <Link to="/workflow/monitor">{t('workflow:nav.monitor')}</Link>,
+              },
+              {
+                key: '/workflow/dashboard',
+                icon: <DashboardOutlined />,
+                label: <Link to="/workflow/dashboard">{t('workflow:nav.dashboard')}</Link>,
+              },
+            ]
+          : []),
+      ],
+    });
     if (can(PERMISSIONS.MINING_READ)) {
       list.push({
         type: 'group',
@@ -397,6 +439,13 @@ export function AppLayout() {
         label: <Link to="/settings/workflows">{t('nav.workflows')}</Link>,
       });
     }
+    if (can(PERMISSIONS.WORKFLOW_ADMIN)) {
+      admin.push({
+        key: '/settings/workflow-execution',
+        icon: <FieldTimeOutlined />,
+        label: <Link to="/settings/workflow-execution">{t('workflow:nav.settings')}</Link>,
+      });
+    }
     if (can(PERMISSIONS.CONVENTIONS_MANAGE)) {
       admin.push({
         key: '/settings/conventions',
@@ -442,6 +491,8 @@ export function AppLayout() {
     if (p.startsWith('/search')) return ['/search'];
     if (p.startsWith('/library/objects')) return [];
     if (p.startsWith('/reviews')) return ['/tasks'];
+    if (p.startsWith('/workflow/tasks')) return ['/tasks'];
+    if (p.startsWith('/workflow/cases')) return ['/workflow/requests'];
     const match = [
       '/tasks',
       '/governance',
@@ -460,6 +511,10 @@ export function AppLayout() {
       '/grc/surveys',
       '/mining/logs',
       '/mining/simulations',
+      '/workflow/requests',
+      '/workflow/monitor',
+      '/workflow/dashboard',
+      '/settings/workflow-execution',
       '/admin/users',
       '/admin/departments',
       '/admin/audit',

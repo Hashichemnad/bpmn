@@ -2982,3 +2982,40 @@ li.ph-diff-removed {
   border: 1px solid #eef0f3;
   border-radius: 8px;
 }
+
+/* ---------- Workflow execution (Phase 5.2): case diagram highlight ---------- */
+.ph-case-diagram .ph-embed-canvas {
+  block-size: 380px;
+}
+.ph-wf-active .djs-visual > :is(.ph-body, :first-child:not(.ph-shadow)) {
+  stroke: #1d4ed8 !important;
+  stroke-width: 4px !important;
+}
+.ph-wf-active .djs-outline {
+  visibility: visible;
+  stroke: #1d4ed8;
+  stroke-width: 2px;
+  stroke-dasharray: 4 3;
+}
+.ph-wf-done .djs-visual > :is(.ph-body, :first-child:not(.ph-shadow)) {
+  stroke: #15803d !important;
+  stroke-width: 3px !important;
+}
+.ph-wf-legend-active {
+  border-color: #1d4ed8;
+  color: #1d4ed8;
+}
+.ph-wf-legend-done {
+  border-color: #15803d;
+  color: #15803d;
+}
+.ph-wf-due-overdue {
+  color: #b91c1c;
+  font-weight: 600;
+}
+.ph-wf-due-soon {
+  color: #b45309;
+}
+.ph-wf-timeline .ant-timeline-item-content {
+  margin-inline-start: 24px;
+}

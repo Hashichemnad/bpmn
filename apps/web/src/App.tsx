@@ -80,6 +80,12 @@ import { LogsPage } from '@/features/mining/LogsPage';
 import { MiningLogPage } from '@/features/mining/MiningLogPage';
 import { ImportMappingPage, UploadLogPage } from '@/features/mining/ImportWizard';
 import { SimulationPage, SimulationsPage } from '@/features/mining/SimulationPages';
+import { TaskPage } from '@/features/workflow/TaskPage';
+import { CasePage } from '@/features/workflow/CasePage';
+import { MyRequestsPage } from '@/features/workflow/MyRequestsPage';
+import { ServiceCataloguePage, StartRequestPage } from '@/features/workflow/CataloguePages';
+import { WorkflowDashboardPage, WorkflowMonitorPage } from '@/features/workflow/MonitorPages';
+import { WorkflowSettingsPage } from '@/features/workflow/WorkflowSettingsPage';
 import { SalesforceSettingsPage } from '@/features/settings/SalesforceSettingsPage';
 import { DiagramDetailPage } from '@/features/diagrams/DiagramDetailPage';
 import { DiagramWorkspacePage } from '@/features/diagrams/DiagramWorkspacePage';
@@ -158,6 +164,25 @@ export const routes: RouteObject[] = [
               { path: 'feedback', element: <MyFeedbackPage /> },
               { path: 'notifications', element: <NotificationsPage /> },
               { path: 'tasks', element: <PortalTasksPage /> },
+              {
+                path: 'services',
+                element: (
+                  <RequirePermission all={[P.WORKFLOW_START]}>
+                    <ServiceCataloguePage />
+                  </RequirePermission>
+                ),
+              },
+              {
+                path: 'services/:processId',
+                element: (
+                  <RequirePermission all={[P.WORKFLOW_START]}>
+                    <StartRequestPage />
+                  </RequirePermission>
+                ),
+              },
+              { path: 'requests', element: <MyRequestsPage portal /> },
+              { path: 'workflow/cases/:id', element: <CasePage portal /> },
+              { path: 'workflow/tasks/:id', element: <TaskPage portal /> },
               { path: 'issues/:id', element: <IssuePage portal /> },
               { path: 'findings/:id', element: <FindingPage portal /> },
               { path: 'surveys/:id', element: <SurveyResponsePage portal /> },
@@ -199,6 +224,33 @@ export const routes: RouteObject[] = [
                     ),
                   },
                   { path: 'tasks', element: <MyTasksPage /> },
+                  { path: 'workflow/tasks/:id', element: <TaskPage /> },
+                  { path: 'workflow/cases/:id', element: <CasePage /> },
+                  { path: 'workflow/requests', element: <MyRequestsPage /> },
+                  {
+                    path: 'workflow/monitor',
+                    element: (
+                      <RequirePermission any={[P.WORKFLOW_MONITOR, P.WORKFLOW_ADMIN]}>
+                        <WorkflowMonitorPage />
+                      </RequirePermission>
+                    ),
+                  },
+                  {
+                    path: 'workflow/dashboard',
+                    element: (
+                      <RequirePermission any={[P.WORKFLOW_MONITOR, P.WORKFLOW_ADMIN]}>
+                        <WorkflowDashboardPage />
+                      </RequirePermission>
+                    ),
+                  },
+                  {
+                    path: 'settings/workflow-execution',
+                    element: (
+                      <RequirePermission all={[P.WORKFLOW_ADMIN]}>
+                        <WorkflowSettingsPage />
+                      </RequirePermission>
+                    ),
+                  },
                   { path: 'notifications', element: <NotificationsPage /> },
                   {
                     path: 'governance',

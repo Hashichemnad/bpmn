@@ -24,6 +24,54 @@
     "ROLE": "Users with this job role; several users → a group task they claim.",
     "USER": "Always this user (or their out-of-office substitute)."
   },
+  "case": {
+    "cancel": "Cancel request",
+    "cancelDone": "Request cancelled",
+    "cancelHint": "Workflow administrators can cancel a request; the requester is informed. Please give a reason.",
+    "children": "Called requests",
+    "commentPlaceholder": "Write a comment — type @ to mention someone",
+    "comments": "Comments",
+    "currentSteps": "Current steps",
+    "data": "Request data per step",
+    "ended": "Ended",
+    "files": "Attachments and documents",
+    "generated": "Generated",
+    "legendActive": "Current step",
+    "legendDone": "Completed step",
+    "noComments": "No comments yet",
+    "noFiles": "No files",
+    "parent": "Part of",
+    "progress": "Progress",
+    "purged": "The form data of this closed request was removed after the retention period.",
+    "reason": "Reason",
+    "request": "Request",
+    "retry": "Retry failed step",
+    "retryDone": "Retried",
+    "send": "Send",
+    "started": "Started",
+    "stuck": "The request is stuck",
+    "summary": "Summary",
+    "timeline": "Timeline",
+    "version": "Process version {{version}}",
+    "withdraw": "Withdraw",
+    "withdrawDone": "Request withdrawn",
+    "withdrawHint": "The request stops and open tasks are cancelled. Please give a reason."
+  },
+  "caseStatus": {
+    "CANCELLED": "Cancelled",
+    "COMPLETED": "Completed",
+    "RUNNING": "Running",
+    "WITHDRAWN": "Withdrawn"
+  },
+  "catalogue": {
+    "empty": "No services you can start yet.",
+    "myOpen": "{{count}} of my requests running",
+    "noDescription": "No description.",
+    "search": "Search services",
+    "start": "Start request",
+    "subtitle": "Start a request: the process routes it to the right people and you follow every step.",
+    "title": "Services"
+  },
   "check": {
     "blocking": "{{count}} problem(s) block the deployment.",
     "codes": {
@@ -132,6 +180,37 @@
     "title": "Execution settings",
     "version": "Version"
   },
+  "dashboard": {
+    "by": {
+      "DEPARTMENT": "Departments",
+      "ROLE": "Roles",
+      "USER": "Users"
+    },
+    "completedCol": "Completed",
+    "excel": "Excel",
+    "hours": "{{n}} h",
+    "meanHours": "Mean working hours",
+    "month": "Months",
+    "note": "Times are in working hours of the business calendar (working week and public holidays). Only processes you may monitor are counted.",
+    "onTime": "On time",
+    "open": "Open",
+    "steps": "Steps: SLA and time",
+    "subtitle": "Requests started and completed, throughput time, SLA compliance per step and workload",
+    "tiles": {
+      "completed": "Completed",
+      "p90": "Throughput P90",
+      "running": "Running now",
+      "sla": "SLA compliance",
+      "started": "Started",
+      "throughput": "Mean throughput"
+    },
+    "title": "Workflow dashboard",
+    "topOverdue": "Most overdue tasks",
+    "trend": "Requests per period",
+    "week": "Weeks",
+    "who": "Name",
+    "workload": "Workload"
+  },
   "decision": {
     "APPROVE": "Approve",
     "REJECT": "Reject",
@@ -159,6 +238,31 @@
     "MANAGER": "The assignee's manager",
     "NONE": "Nobody",
     "OWNER": "The process owner"
+  },
+  "events": {
+    "CANCELLED": "{{who}} cancelled the request",
+    "CHILD_STARTED": "Called process started ({{step}})",
+    "COMMENT": "{{who}} commented",
+    "COMPLETED": "Request completed",
+    "DECISION": "Decision {{step}}",
+    "DOCUMENT_GENERATED": "Document generated ({{step}})",
+    "FILE_ADDED": "{{who}} added a file",
+    "INCIDENT": "Problem at {{step}}",
+    "NOTIFICATION_SENT": "Notification sent ({{step}})",
+    "RETRIED": "{{who}} retried {{step}}",
+    "STARTED": "Request submitted by {{who}}",
+    "STEP_CANCELLED": "{{step}} cancelled",
+    "STEP_COMPLETED": "{{step}} completed",
+    "STEP_STARTED": "{{step}} started",
+    "TASK_CLAIMED": "{{who}} claimed {{step}}",
+    "TASK_COMPLETED": "{{who}} completed {{step}} {{decision}}",
+    "TASK_CREATED": "{{step}} assigned",
+    "TASK_DELEGATED": "{{who}} delegated {{step}}",
+    "TASK_ESCALATED": "{{step}} is overdue — escalated",
+    "TASK_REASSIGNED": "{{who}} reassigned {{step}}",
+    "TASK_UNCLAIMED": "{{who}} gave {{step}} back to the group",
+    "TIMER_FIRED": "Timer {{step}} fired",
+    "WITHDRAWN": "{{who}} withdrew the request"
   },
   "exec": {
     "addAssignment": "Add value",
@@ -259,6 +363,37 @@
     "type": "Type",
     "up": "Move up"
   },
+  "formError": {
+    "MAX": "Too large",
+    "MAX_LENGTH": "Too long",
+    "MIN": "Too small",
+    "OPTION": "Choose one of the options",
+    "REQUIRED": "Required",
+    "TYPE": "Invalid value",
+    "UNKNOWN_FIELD": "Unknown field"
+  },
+  "monitor": {
+    "allProcesses": "All processes",
+    "cancelled": "Cancelled / withdrawn",
+    "cases": "All requests",
+    "noOverdue": "No overdue tasks",
+    "noProcesses": "No executable processes to monitor",
+    "noStuck": "No stuck requests",
+    "overdueTasks": "Overdue tasks",
+    "problem": "Problem",
+    "showCases": "Show requests",
+    "stuck": "Stuck requests",
+    "subtitle": "Running, completed and cancelled requests, overdue tasks and stuck requests of the processes you monitor",
+    "title": "Workflow monitor"
+  },
+  "nav": {
+    "dashboard": "Workflow dashboard",
+    "group": "Requests",
+    "monitor": "Workflow monitor",
+    "requests": "My requests",
+    "services": "Services",
+    "settings": "Workflow execution"
+  },
   "notify": {
     "addRecipient": "Add recipient",
     "bodyAr": "Message (Arabic)",
@@ -268,9 +403,112 @@
     "subjectAr": "Subject (Arabic)",
     "subjectEn": "Subject (English)"
   },
+  "ooo": {
+    "active": "You are out of office: new tasks go to {{name}} until {{to}}.",
+    "clear": "Clear",
+    "hint": "New workflow tasks assigned to you during this period go to your substitute.",
+    "period": "Period",
+    "saved": "Out of office saved",
+    "substitute": "Substitute",
+    "substituteRequired": "Choose a substitute",
+    "title": "Out of office"
+  },
+  "outcome": {
+    "ERROR": "Ended with an error",
+    "NORMAL": "Completed",
+    "TERMINATE": "Ended early"
+  },
+  "requests": {
+    "current": "Current step",
+    "empty": "No requests",
+    "involved": "I work on",
+    "mine": "Started by me",
+    "new": "New request",
+    "number": "Number",
+    "search": "Search number or title",
+    "started": "Started",
+    "status": "Status",
+    "stuck": "Stuck",
+    "title": "My requests"
+  },
   "serviceKind": {
     "GENERATE_DOCUMENT": "Generate Word document",
     "SET_DATA": "Set data"
+  },
+  "settings": {
+    "escalation": "Escalate overdue tasks to (default)",
+    "holidaysHint": "Public holidays come from the central list (Process mining → Simulations → Public holidays).",
+    "hours": "Working hours",
+    "reminder": "Reminder before due",
+    "reminderHint": "0 = no reminder.",
+    "repeat": "Repeat the escalation every",
+    "repeatHint": "0 = escalate once.",
+    "saved": "Workflow settings saved",
+    "subtitle": "Working week for due times and SLAs, reminders and escalation",
+    "timeZone": "Time zone",
+    "title": "Workflow execution",
+    "week": "Working week",
+    "weeks": {
+      "ALL": "Every day (24 / 7)",
+      "MON_FRI": "Monday – Friday",
+      "SUN_THU": "Sunday – Thursday"
+    },
+    "workingHours": "working hours"
+  },
+  "start": {
+    "hint": "After you submit, the request gets a number ({{prefix}}-…) and appears under “My requests”.",
+    "howItWorks": "How the request is handled",
+    "noForm": "No information is needed to start this request.",
+    "started": "Request {{number}} submitted",
+    "submit": "Submit request",
+    "title": "New request: {{name}}"
+  },
+  "task": {
+    "assignee": "Assigned to",
+    "blocked": {
+      "FOUR_EYES": "Four-eyes rule: you started this request or worked on an earlier step, so someone else must do this step."
+    },
+    "claimHint": "This task belongs to your group. Claim it to work on it.",
+    "closed": "This task is closed.",
+    "comment": "Comment",
+    "commentHint": "Required when you reject or return the request.",
+    "commentRequired": "Please explain why (required for reject and return).",
+    "complete": "Complete",
+    "delegate": "Delegate",
+    "delegateDone": "Task delegated",
+    "delegateHint": "The person takes over this task; you stay in the history.",
+    "done": "Done — the request moved on",
+    "noForm": "No form at this step.",
+    "onBehalfOf": "On behalf of",
+    "openRequest": "Open the request",
+    "person": "Person",
+    "reassign": "Reassign",
+    "reassignDone": "Task reassigned",
+    "reassignHint": "Workflow administrators can give the task to another person.",
+    "saveDraft": "Save without submitting",
+    "saved": "Saved",
+    "unclaim": "Give back to the group",
+    "whereInProcess": "Where the request is"
+  },
+  "tasks": {
+    "approval": "Approval",
+    "claim": "Claim",
+    "due": "Due",
+    "dueFilter": "Due",
+    "dueSoon": "Due within a day",
+    "empty": "No open workflow tasks",
+    "group": "My groups (to claim)",
+    "groupTag": "Group ({{count}})",
+    "mine": "Assigned to me",
+    "onBehalfOf": "for {{name}}",
+    "open": "Open",
+    "overdue": "Overdue",
+    "process": "Process",
+    "request": "Request",
+    "requester": "Requester",
+    "search": "Search step, number or title",
+    "step": "Step",
+    "tab": "Workflow tasks"
   },
   "timer": {
     "timeCycle": "Repeating",

@@ -23,6 +23,7 @@ import { PasswordPolicyHint } from '@/features/admin/PasswordPolicyHint';
 import { passwordRules } from '@/features/admin/password';
 import { NotificationPrefsCard } from '@/features/notifications/NotificationPrefsCard';
 import { TwoFactorCard } from './TwoFactorCard';
+import { OutOfOfficeCard } from '@/features/workflow/OutOfOfficeCard';
 
 export function ProfilePage() {
   const { t } = useTranslation();
@@ -148,6 +149,9 @@ export function ProfilePage() {
           <div style={{ marginTop: 24 }}>
             <TwoFactorCard />
           </div>
+        </Col>
+        <Col xs={24} lg={12}>
+          <OutOfOfficeCard />
         </Col>
         <Col xs={24}>
           <NotificationPrefsCard />
