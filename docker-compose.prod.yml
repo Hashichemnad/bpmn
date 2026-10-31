@@ -69,6 +69,7 @@ services:
     build:
       context: .
       dockerfile: apps/api/Dockerfile
+      target: runtime
     image: ${PROCESSHUB_IMAGE_PREFIX:-processhub}-api:${PROCESSHUB_VERSION:-latest}
     restart: unless-stopped
     env_file: .env

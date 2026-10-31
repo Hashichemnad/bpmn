@@ -129,7 +129,7 @@ jobs:
       - name: Stack logs
         if: failure()
         run: docker compose logs --no-color --tail 300 migrate api web
-      - uses: actions/upload-artifact@v5
+      - uses: actions/upload-artifact@v6
         if: failure()
         with:
           name: playwright-results

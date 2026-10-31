@@ -48,21 +48,24 @@ RUN PRISMA_VERSION="$(node -p "require('/app/apps/api/node_modules/prisma/packag
   && mkdir -p /prisma-cli && cd /prisma-cli && echo '{"private":true}' > package.json \
   && npm install --no-audit --no-fund --omit=dev "prisma@${PRISMA_VERSION}"
 
-# ---- Runtime: the API server (no build tools, no dev dependencies, no Prisma CLI) ----
-FROM node:22-alpine AS runtime
+# ---- App: compiled code + production dependencies (shared by the two images below) ----
+FROM node:22-alpine AS app
 ENV NODE_ENV=production
 WORKDIR /app
 COPY --from=build --chown=root:root /out /app
 RUN mkdir -p /app/data && chown node:node /app/data && chmod +x docker-entrypoint.sh
 USER node
-EXPOSE 3000
-HEALTHCHECK --interval=10s --timeout=5s --start-period=40s --retries=5 \
-  CMD node -e "fetch('http://127.0.0.1:3000/api/v1/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
 ENTRYPOINT ["./docker-entrypoint.sh"]
 
 # ---- Migrate: `prisma migrate deploy` and the seed, then exits (docker-compose service) ----
-FROM runtime AS migrate
+FROM app AS migrate
 COPY --from=build --chown=root:root /prisma-cli /opt/prisma-cli
 ENV PRISMA_CLI=/opt/prisma-cli/node_modules/.bin/prisma
-HEALTHCHECK NONE
 CMD ["migrate"]
+
+# ---- Runtime: the API server (no build tools, no dev dependencies, no Prisma CLI) ----
+# Last stage, so a plain `docker build` (no --target) produces the API image.
+FROM app AS runtime
+EXPOSE 3000
+HEALTHCHECK --interval=10s --timeout=5s --start-period=40s --retries=5 \
+  CMD node -e "fetch('http://127.0.0.1:3000/api/v1/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"

@@ -54,6 +54,7 @@ services:
     build:
       context: .
       dockerfile: apps/api/Dockerfile
+      target: runtime
     restart: unless-stopped
     # Lets the API reach test doubles on the host (e2e mock Salesforce); only used when the host
     # is listed in OUTBOUND_ALLOWED_HOSTS.
