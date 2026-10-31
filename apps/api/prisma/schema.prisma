@@ -228,6 +228,7 @@ model User {
   notifications     Notification[]
   aiUsage           AiUsage[]
   recoveryCodes     MfaRecoveryCode[]
+  invitations       UserInvitation[]
   ownedObjects      RepoObject[]            @relation("ObjectOwner")
   grcActivities     GrcActivity[]
   assuranceEvents   AssuranceEvent[]        @relation("AssuranceEventAuthor")
@@ -256,6 +257,22 @@ model MfaRecoveryCode {
   codeHash  String
   usedAt    DateTime?
   createdAt DateTime  @default(now())
+
+  @@index([userId])
+}
+
+/// Set-password invitation of a user created without a password (Import Center, M15): SHA-256 of a
+/// random 256-bit token, single use, expires after INVITATION_TTL_DAYS.
+model UserInvitation {
+  id          String    @id @default(uuid()) @db.Uuid
+  userId      String    @db.Uuid
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash   String    @unique
+  expiresAt   DateTime
+  usedAt      DateTime?
+  sentAt      DateTime?
+  createdAt   DateTime  @default(now())
+  createdById String?   @db.Uuid
 
   @@index([userId])
 }

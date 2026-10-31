@@ -36,12 +36,14 @@ describe('Route security declarations', () => {
       .sort();
     expect(publicRoutes).toEqual([
       'GET /auth/csrf',
+      'GET /auth/invitations/:token',
       'GET /auth/options',
       'GET /auth/sso/callback',
       'GET /auth/sso/start',
       'GET /health',
       'GET /settings/logo',
       'GET /settings/public',
+      'POST /auth/invitations/accept',
       'POST /auth/login',
       'POST /auth/login/mfa',
       'POST /auth/login/mfa/setup',
@@ -80,9 +82,11 @@ describe('Route security declarations', () => {
       .map((r) => `${r.method} ${r.path}`)
       .sort();
     expect(strict).toEqual([
+      'GET /auth/invitations/:token',
       'GET /auth/sso/callback',
       'GET /auth/sso/start',
       'POST /auth/change-password',
+      'POST /auth/invitations/accept',
       'POST /auth/login',
       'POST /auth/login/mfa',
       'POST /auth/login/mfa/setup',

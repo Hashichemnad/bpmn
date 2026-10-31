@@ -289,5 +289,9 @@
   "ZIP_ENTRY_MISSING": "{{file}}: a file is missing in the archive ({{path}}).",
   "FILE_CHANGED": "{{file}}: the stored file has changed.",
   "TOO_MANY_ITEMS": "The import has too many items (maximum {{max}}). Split it into smaller batches.",
-  "MODULE_ROW": "Row {{row}}, {{column}}: {{code}}"
+  "MODULE_ROW": "Row {{row}}, {{column}}: {{code}}",
+  "INVITATION_INVALID": "This invitation link is no longer valid.",
+  "USER_HAS_PASSWORD": "The user already has a password.",
+  "CSV_INVALID": "{{file}}: the CSV file cannot be read.",
+  "COLUMN_MISSING": "The column \"{{column}}\" was not found: map it in the column mapping."
 }

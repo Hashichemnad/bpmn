@@ -2193,3 +2193,21 @@ files are stored in S3 storage and never executed. Antivirus scanning stays a go
 extraction, `isEvalSupported: false`), `marked` (Markdown → HTML), `jszip` (moves from dev to runtime
 dependencies) and jsdom's XML DOM parser (BPMN, DMN, Visio pages, ARIS AML). All HTML results are sanitised with
 the wiki's `sanitizeRichText`, so the TipTap editor receives only its own tags.
+
+## D-159 — Structure imports and user invitations (Import tools step 2, 2026-10-31)
+
+- **Process house:** matched by process code (case-insensitive). Parents may be in the file or in ProcessHub;
+  the level is derived from the tree (a different level in the file is a warning), the category is inherited
+  from the parent when empty. Existing processes are updated only while they are Drafts and are **not moved**
+  (moving / re-categorising stays a tree operation with its cascade rules — a warning says so). Unknown owners
+  are errors unless the batch has a default owner (then a warning); unknown departments are errors.
+- **Departments:** matched by department code; hierarchy from the parent code (cycles detected); the head by
+  e-mail (unknown → warning, not set).
+- **Users:** matched by e-mail; **no passwords are imported**. New users get `passwordHash = ''` and a
+  **set-password invitation** (`UserInvitation`: SHA-256 of a random 256-bit token, single use, 7 days, sent by
+  the configured e-mail; Users page → "Send invitation again"). When password sign-in is off the users sign in
+  with SSO (accounts are linked by e-mail on the first SSO sign-in) and no e-mail is sent. Rules: Super Admins
+  are never created by an import (error), the break-glass account, existing Super Admins and the importing
+  user are left unchanged (warning), roles that require two-factor authentication are flagged (enrolment at
+  the first sign-in), roles and job roles are **added, never removed**. Undo deactivates and soft-deletes the
+  users of a batch — but not once one of them has signed in.

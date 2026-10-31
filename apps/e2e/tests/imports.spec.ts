@@ -76,3 +76,38 @@ test('Import Center: an existing register import runs as a batch with dry run an
   await page.goto('/admin/imports');
   await expect(page.getByTestId('import-batches')).toContainText('Risks (Excel)');
 });
+
+test('Process house from Excel: preview with validation, apply, process tree built as drafts', async ({
+  page,
+}) => {
+  await loginAdmin(page);
+  const root = `E2E${stamp}`;
+  const data = await workbook(
+    ['Process code', 'Name (English)', 'Name (Arabic)', 'Category', 'Parent code'],
+    [
+      [root, `Imported house ${stamp}`, `بيت مستورد ${stamp}`, 'Core', ''],
+      [`${root}.01`, `Imported child ${stamp}`, `عملية فرعية ${stamp}`, '', root],
+      [`${root}.02`, `Orphan ${stamp}`, '', '', 'NOPE.99'],
+    ],
+  );
+  await startImport(page, 'PROCESS_HOUSE', [
+    {
+      name: 'process-house.xlsx',
+      mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      buffer: data,
+    },
+  ]);
+  await expect(page.getByTestId('import-mapping')).toBeVisible();
+  // The orphan row blocks apply until it is excluded.
+  await expect(page.getByTestId('import-apply')).toBeDisabled();
+  const orphan = page.getByTestId('import-items').locator('tr', { hasText: `${root}.02` });
+  await expect(orphan).toContainText('does not exist');
+  await orphan.getByRole('switch').click();
+  await expect(page.getByTestId('import-apply')).toBeEnabled();
+  await applyImport(page);
+  await page
+    .getByTestId('import-records')
+    .getByRole('link', { name: /Imported child/ })
+    .click();
+  await expect(page.getByRole('heading', { level: 3 })).toContainText(`Imported child ${stamp}`);
+});

@@ -161,6 +161,11 @@ in the environment); the file storage and the database come from the environment
 - **Storage:** uploads are stored in S3 storage under `imports/<batch>/<file>` with their SHA-256 (checked when
   the job reads them again), served back only as `application/octet-stream` downloads with `nosniff`, and never
   executed. Antivirus scanning is a go-live decision (BACKLOG).
+- **Imported users have no password:** they get a set-password **invitation** (random 256-bit token, only its
+  SHA-256 stored, single use, 7 days, public endpoints `/auth/invitations/*` with the login rate limit and the
+  password policy) or sign in with SSO (linked by e-mail). An import never creates or changes Super Admins,
+  the break-glass account or the importing user's own account; roles that require 2FA are flagged and enrol
+  at the first sign-in; roles are only added, never removed.
 - **Access:** `import.manage` (Admins, Super Admins); module register kinds also need the module's own edit
   permission; the full export package is Super Admin only (`export.full`). Every batch step is audited
   (`CREATE`, `IMPORT`, `UNDO`, `EXPORT`, and each created / updated entity with the batch number).
@@ -235,6 +240,8 @@ zod / UUID pipe; file uploads are checked in the service (allow-list, content sn
 | GET    | `/audits/universe`                                | any of `audit.manage`, `grc.edit`, `audit.read`                | query                                | default    |
 | POST   | `/auth/change-password`                           | authenticated                                                  | body                                 | login      |
 | GET    | `/auth/csrf`                                      | **public**                                                     | —                                    | default    |
+| GET    | `/auth/invitations/:token`                        | **public**                                                     | param `token`                        | login      |
+| POST   | `/auth/invitations/accept`                        | **public**                                                     | body                                 | login      |
 | POST   | `/auth/login`                                     | **public**                                                     | body                                 | login      |
 | POST   | `/auth/login/mfa`                                 | **public**                                                     | body                                 | login      |
 | POST   | `/auth/login/mfa/setup`                           | **public**                                                     | —                                    | login      |
@@ -631,6 +638,7 @@ zod / UUID pipe; file uploads are checked in the service (allow-list, content sn
 | POST   | `/users`                                          | `users.manage`                                                 | body                                 | default    |
 | GET    | `/users/:id`                                      | `users.read`                                                   | param `id`                           | default    |
 | PATCH  | `/users/:id`                                      | `users.manage`                                                 | body, param `id`                     | default    |
+| POST   | `/users/:id/invitation`                           | `users.manage`                                                 | param `id`                           | default    |
 | POST   | `/users/:id/mfa/reset`                            | `users.manage`                                                 | param `id`                           | default    |
 | POST   | `/users/:id/reset-password`                       | `users.manage`                                                 | body, param `id`                     | default    |
 | POST   | `/users/:id/unlock`                               | `users.manage`                                                 | param `id`                           | default    |

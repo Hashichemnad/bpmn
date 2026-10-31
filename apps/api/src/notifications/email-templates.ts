@@ -659,3 +659,18 @@ export function renderTestEmail(locale: Locale) {
     text: l.testBody,
   };
 }
+
+/** Set-password invitation of a user created by an import (M15). */
+export function renderInvitationEmail(
+  locale: Locale,
+  name: string,
+  url: string,
+  days: number,
+): { subject: string; html: string; text: string } {
+  const ar = locale === 'ar';
+  const subject = ar ? 'دعوة إلى بروسس هب' : 'Your ProcessHub invitation';
+  const body = ar
+    ? `مرحباً ${name}،\nأُنشئ لك حساب في بروسس هب. افتح الرابط لتعيين كلمة المرور. الرابط صالح لمدة ${days} أيام ويُستخدم مرة واحدة.`
+    : `Hello ${name},\nan account was created for you in ProcessHub. Open the link to set your password. The link is valid for ${days} days and can be used once.`;
+  return { subject, html: layout(locale, subject, body, url), text: `${body}\n\n${url}` };
+}

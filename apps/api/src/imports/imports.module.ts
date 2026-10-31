@@ -7,12 +7,16 @@ import { ImportsController } from './imports.controller';
 import { ImportsService } from './imports.service';
 import { IMPORTER, type Importer } from './importer';
 import { ModuleExcelImporter } from './importers/module-excel.importer';
+import { ProcessHouseImporter } from './importers/process-house.importer';
+import { DepartmentsImporter } from './importers/departments.importer';
+import { UsersImporter } from './importers/users.importer';
+import { UsersModule } from '../users/users.module';
 
-const IMPORTERS = [ModuleExcelImporter];
+const IMPORTERS = [ModuleExcelImporter, ProcessHouseImporter, DepartmentsImporter, UsersImporter];
 
 /** Import tools / migration (module M15, D-155 – ). */
 @Module({
-  imports: [MiningModule, GrcModule, EaModule, KpiModule],
+  imports: [MiningModule, GrcModule, EaModule, KpiModule, UsersModule],
   controllers: [ImportsController],
   providers: [
     ...IMPORTERS,

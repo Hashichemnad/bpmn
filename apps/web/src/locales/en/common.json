@@ -163,5 +163,16 @@
   },
   "close": "Close",
   "confirm": "Confirm",
-  "noResults": "No results"
+  "noResults": "No results",
+  "invitation": {
+    "title": "Welcome, {{name}}",
+    "text": "Set a password for {{email}} to sign in to ProcessHub.",
+    "password": "New password",
+    "confirm": "Repeat the password",
+    "mismatch": "The passwords do not match.",
+    "submit": "Set password",
+    "done": "Your password is set. You can now sign in.",
+    "invalid": "This invitation link is no longer valid. Ask an administrator for a new one.",
+    "toLogin": "Go to sign-in"
+  }
 }

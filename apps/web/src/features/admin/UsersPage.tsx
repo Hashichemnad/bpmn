@@ -27,6 +27,7 @@ import {
   SafetyCertificateOutlined,
   StopOutlined,
   UnlockOutlined,
+  MailOutlined,
 } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
 import {
@@ -35,7 +36,14 @@ import {
   type UserDto,
   type UserStatus,
 } from '@processhub/shared';
-import { useObjects, useResetPassword, useSaveUser, useUnlockUser, useUsers } from '@/api/hooks';
+import {
+  useInviteUser,
+  useObjects,
+  useResetPassword,
+  useSaveUser,
+  useUnlockUser,
+  useUsers,
+} from '@/api/hooks';
 import { useAuth } from '@/auth/AuthProvider';
 import { useResetUserMfa } from '@/api/auth';
 import { PageHeader } from '@/components/PageHeader';
@@ -73,6 +81,7 @@ export function UsersPage() {
   const saveUser = useSaveUser();
   const unlock = useUnlockUser();
   const resetPassword = useResetPassword();
+  const invite = useInviteUser();
   const resetMfa = useResetUserMfa();
   const departmentTree = useDepartmentTreeData();
   const [editing, setEditing] = useState<UserDto | 'new' | null>(null);
@@ -174,8 +183,11 @@ export function UsersPage() {
           <Typography.Text type="secondary" dir="ltr" style={{ fontSize: 12 }}>
             {u.email}
           </Typography.Text>
-          {(u.mfaEnabled || u.ssoLinked) && (
+          {(u.mfaEnabled || u.ssoLinked || !u.hasPassword) && (
             <Space size={4}>
+              {!u.hasPassword && !u.ssoLinked && (
+                <Tag color="gold">{t('admin:users.noPassword')}</Tag>
+              )}
               {u.ssoLinked && <Tag color="blue">{t('admin:users.sso')}</Tag>}
               {u.mfaEnabled && <Tag color="green">{t('admin:users.mfa')}</Tag>}
             </Space>
@@ -238,6 +250,23 @@ export function UsersPage() {
                   setResetting(u);
                 },
               },
+              ...(!u.hasPassword && !u.ssoLinked
+                ? [
+                    {
+                      key: 'invite',
+                      icon: <MailOutlined />,
+                      label: t('admin:users.invite'),
+                      onClick: () =>
+                        void invite.mutateAsync(u.id).then(
+                          (r) =>
+                            r.sent
+                              ? message.success(t('admin:users.invited'))
+                              : message.warning(t('admin:users.inviteFailed')),
+                          (e) => message.error(errorMessage(e)),
+                        ),
+                    },
+                  ]
+                : []),
               ...(u.mfaEnabled
                 ? [
                     {

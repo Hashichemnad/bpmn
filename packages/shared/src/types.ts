@@ -86,6 +86,8 @@ export interface UserDto extends UserRef {
   lockedUntil: string | null;
   mfaEnabled: boolean;
   ssoLinked: boolean;
+  /** False for imported users who have not accepted their invitation yet (and SSO-only accounts). */
+  hasPassword: boolean;
   createdAt: string;
   updatedAt: string;
 }

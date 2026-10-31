@@ -289,5 +289,9 @@
   "ZIP_ENTRY_MISSING": "{{file}}: ملف مفقود في الأرشيف ({{path}}).",
   "FILE_CHANGED": "{{file}}: تغيّر الملف المخزن.",
   "TOO_MANY_ITEMS": "يحتوي الاستيراد على عناصر كثيرة جداً (الحد الأقصى {{max}}). قسّمه إلى دفعات أصغر.",
-  "MODULE_ROW": "الصف {{row}}، {{column}}: {{code}}"
+  "MODULE_ROW": "الصف {{row}}، {{column}}: {{code}}",
+  "INVITATION_INVALID": "رابط الدعوة هذا لم يعد صالحاً.",
+  "USER_HAS_PASSWORD": "لدى المستخدم كلمة مرور بالفعل.",
+  "CSV_INVALID": "{{file}}: تعذرت قراءة ملف CSV.",
+  "COLUMN_MISSING": "لم يُعثر على العمود \"{{column}}\": اربطه في ربط الأعمدة."
 }

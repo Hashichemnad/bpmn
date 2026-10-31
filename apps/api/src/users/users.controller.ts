@@ -23,6 +23,7 @@ import type { AuthUser, RequestMeta } from '../common/auth-user';
 import { UuidPipe, ZodPipe } from '../common/zod.pipe';
 import { UsersService } from './users.service';
 import { MfaService } from '../auth/mfa.service';
+import { InvitationsService } from './invitations.service';
 
 @ApiTags('users')
 @Controller('users')
@@ -30,7 +31,20 @@ export class UsersController {
   constructor(
     private readonly users: UsersService,
     private readonly mfa: MfaService,
+    private readonly invitations: InvitationsService,
   ) {}
+
+  /** New set-password invitation for a user without a password (imported users, M15). */
+  @Post(':id/invitation')
+  @HttpCode(200)
+  @RequirePermissions(PERMISSIONS.USERS_MANAGE)
+  invite(
+    @Param('id', UuidPipe()) id: string,
+    @CurrentUser() user: AuthUser,
+    @ReqMeta() meta: RequestMeta,
+  ) {
+    return this.invitations.resend(id, user, meta);
+  }
 
   @Get()
   @RequirePermissions(PERMISSIONS.USERS_READ)

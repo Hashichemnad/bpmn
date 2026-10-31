@@ -32,7 +32,12 @@ Steps (tick as they are committed; a new session continues at the first unticked
       new batch dialog with per-kind options, batch page: progress / cancel, mapping, validation report, dry
       run, preview decisions and suggestions, apply, records, undo); namespace `imports` (EN / AR, generated);
       API tests `test/imports.e2e-spec.ts` (5); Playwright `imports.spec.ts` (register import as a batch).
-- [ ] 2. Process house, departments and users from Excel / CSV (templates, validation, invitations, 2FA rules).
+- [x] 2. Process house, departments and users from Excel / CSV (templates, validation, invitations, 2FA rules).
+      Done (D-159): `importers/tabular.ts` (Excel / CSV reader, column mapping, templates),
+      `process-house.importer.ts`, `departments.importer.ts`, `users.importer.ts`; migration
+      `20261031160000_user_invitations` + `users/invitations.service.ts` / `invitations.controller.ts` (public
+      set-password page `/invitation/:token`, "Send invitation again" on the Users page, `UserDto.hasPassword`);
+      API tests `test/imports-structure.e2e-spec.ts` (6); Playwright: process house flow in `imports.spec.ts`.
 - [ ] 3. Diagrams: BPMN (ZIP / files), Visio `.vsdx`, ARIS AML (EPC, value chains, objects), DMN.
 - [ ] 4. Documents into the wiki: Word, PDF, Confluence HTML export, Markdown folders; links to processes.
 - [ ] 5. AI-assisted migration: SOP → BPMN review queue, risks / controls extraction, bulk translation.

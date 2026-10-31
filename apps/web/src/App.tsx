@@ -4,6 +4,7 @@ import { DefaultLocale, Home, NotFound, RequireAuth, WorkspaceOnly } from '@/app
 import { RequirePermission } from '@/components/RequirePermission';
 import { AppLayout } from '@/layout/AppLayout';
 import { LoginPage } from '@/features/auth/LoginPage';
+import { InvitationPage } from '@/features/auth/InvitationPage';
 import { ProfilePage } from '@/features/profile/ProfilePage';
 import { UsersPage } from '@/features/admin/UsersPage';
 import { DepartmentsPage } from '@/features/admin/DepartmentsPage';
@@ -102,6 +103,7 @@ export const routes: RouteObject[] = [
     element: <DefaultLocale />,
     children: [
       { path: '/login', element: <LoginPage /> },
+      { path: '/invitation/:token', element: <InvitationPage /> },
       {
         element: <RequireAuth />,
         children: [

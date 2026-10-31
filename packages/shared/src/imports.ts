@@ -645,3 +645,21 @@ export const importKindsByGroup = (): Record<ImportGroup, ImportKind[]> => {
   for (const k of IMPORT_KINDS) out[IMPORT_KIND_INFO[k].group].push(k);
   return out;
 };
+
+// ---------- User invitations (users imported without a password) ----------
+
+export const INVITATION_TTL_DAYS = 7;
+
+export const acceptInvitationSchema = z.object({
+  token: z.string().regex(/^[A-Za-z0-9_-]{32,64}$/),
+  password: z.string().min(1).max(256),
+});
+export type AcceptInvitationInput = z.infer<typeof acceptInvitationSchema>;
+
+export interface InvitationInfoDto {
+  email: string;
+  nameEn: string;
+  nameAr: string;
+  locale: 'en' | 'ar';
+  expiresAt: string;
+}

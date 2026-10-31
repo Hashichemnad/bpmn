@@ -289,6 +289,7 @@ const TABLES = [
   'ImportItem',
   'ImportFile',
   'ImportBatch',
+  'UserInvitation',
   'WorkflowJob',
   'WorkflowCaseCounter',
   'WorkflowCaseComment',
