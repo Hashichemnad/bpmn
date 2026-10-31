@@ -138,7 +138,7 @@ export function GraphEditor({
   const load = useCallback(async (inst: GraphInstance, c: GraphContent) => {
     try {
       await importGraph(inst, c);
-      inst.get<{ clear(): void }>('commandStack').clear();
+      inst.get<{ clear(): void } | null>('commandStack', false)?.clear();
       setHistory({ canUndo: false, canRedo: false });
       setImportError(null);
       setLoaded(true);

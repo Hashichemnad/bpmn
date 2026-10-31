@@ -272,7 +272,9 @@ class GraphRenderer extends BaseRenderer {
         ...(fallback ? { fontStyle: 'italic', fillOpacity: 0.65 } : {}),
       },
     });
-    if (ARABIC.test(text)) t.setAttribute('direction', 'rtl');
+    // TextUtil places each line from its left x; for RTL text anchor the line's end (its left
+    // side) there, otherwise the browser draws it leftwards from x and it overflows the shape.
+    if (ARABIC.test(text)) svgAttr(t, { direction: 'rtl', 'text-anchor': 'end' });
     if (inset) svgAttr(t, { transform: `translate(${inset}, 0)` });
     t.classList.add('ph-graph-label');
     svgAppend(parent, t);

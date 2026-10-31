@@ -2,7 +2,7 @@
 
 Read this together with `CLAUDE.md` at the start of every session.
 
-## Current state — 2026-10-31 (More diagram types, branch `diagram-types`, in progress)
+## Current state — 2026-10-31 (More diagram types, branch `diagram-types`, done — awaiting review)
 
 Everything up to Phase 4.3 (GRC, EA, KPIs) is merged into `main`. The Salesforce KPI sync stays in the code but is not
 used (DOF manages KPIs and risks inside ProcessHub). External integrations (API keys, webhooks, Salesforce risk /
@@ -71,7 +71,7 @@ Steps (tick as they are committed; a new session continues at the first unticked
       `generateSipoc` (main path, step attributes, lanes and pools) in the New dialog and as a workspace tool.
       Tests: shared +2 (`sipoc.test.ts`), Playwright `diagrams-sipoc.spec.ts` (generate from PMS-01 → add a customer →
       version → publish → portal). Handbook section: step 7.
-- [ ] 7. Reports, portal, demo data, tests, docs:
+- [x] 7. Reports, portal, demo data, tests, docs:
   - [x] 7a. Handbook sections (D-126): options "Place in the value chain", "SIPOC", "Linked decision tables (DMN)",
         "Organisation chart excerpt" (`handbookSchema` flags, `DiagramReportService` in the reports module — working
         or published diagram content —, docx sections EN / AR, shared `readDmnTables`); portal start page
@@ -83,9 +83,31 @@ Steps (tick as they are committed; a new session continues at the first unticked
         sample, published) linked to the business rule task of the new demo process S.01.02 Purchase approval,
         EPC-001 purchase request with its conversion S.01.03, SIPOC-001 of S.01.01; demo roles R-02 – R-06 get a
         department. Asserted in `seed.e2e-spec.ts`.
-  - [ ] 7c. Permission tests (authorization matrix / route sweep for `/diagrams`), full test run.
-  - [ ] 7d. Screenshots EN / AR (`docs/screenshots/diagram-types/`), sample handbook (`docs/samples/`).
-  - [ ] 7e. Docs (README, CLAUDE.md, BACKLOG, DECISIONS, SECURITY route table), audit, build, pull request.
+  - [x] 7c. Permission tests: the authorization matrix watches `Diagram` / `DiagramVersion` / `DiagramLink` and sweeps
+        every `/diagrams` write route (incl. `convert-to-bpmn`) and the governance routes with `:type = diagrams` as a
+        Viewer / Auditor; `docs/SECURITY.md` route table regenerated. Full test run (below).
+  - [x] 7d. Screenshots EN / AR of every type in the editor and the portal (`docs/screenshots/diagram-types/`, spec
+        `screenshots-diagram-types.spec.ts`, `SCREENSHOTS=1`); sample handbook of S.01 Procure to Pay with the new
+        sections (`docs/samples/S-01-handbook-diagrams-en|ar.docx`). Fixed on the way: the read-only workspace
+        (`?view=1`) failed with "No provider for commandStack"; Arabic labels on graph shapes were drawn leftwards
+        from the line start (now `text-anchor: end` with `direction: rtl`).
+  - [x] 7e. Docs (README tour, CLAUDE.md phase table + data model, BACKLOG diagram follow-ups, DECISIONS D-120 –
+        D-126, SECURITY route table), audit, build, pull request.
+
+Verification on 2026-10-31: shared 163, web 91, API 387 tests pass (57 suites; the API `test` scripts now run
+Jest with `--max-old-space-size=4096` — the in-band run reached Node's default 2 GB heap after ~55 suites);
+Playwright diagram specs (value chain 5, org chart 3, DMN 3, EPC 3, SIPOC 2) and `reports.spec.ts` pass locally;
+lint, format and type-check clean; `pnpm build` succeeds; `pnpm audit --audit-level high --prod` clean (9 moderate,
+unchanged). **Not verified here:** Docker image builds and the full Playwright suite in Docker (no Docker daemon in
+this sandbox; CI runs both).
+
+### Next (continue here)
+
+1. Review and merge the pull request `diagram-types` → `main`.
+2. Product owner confirmations (defaults chosen, see the pull request): diagrams use the process permissions (no
+   separate diagram roles, D-120); EPC and DMN checks are warnings, never blocking (D-123, D-124); whether the
+   enterprise value chain becomes the portal start page in production (Setting `portal.startDiagramId`, D-126).
+3. Then Phase 4.4 (Integration & export — BACKLOG), M15 migration, Phase 5; final performance / polish session last.
 
 ## Previous state — 2026-10-31 (Phase 4 — Part 3: EA, KPIs and the Salesforce KPI link, branch `phase-4-3-ea-kpi`, merged into `main`)
 

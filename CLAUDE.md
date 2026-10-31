@@ -43,7 +43,7 @@ with no per-user licensing. Target: 50–500 users on a single server.
 | 4.1 | M10 GRC core: risks, controls, requirements linked to process steps; heat maps, coverage dashboard, RCM export, reminders, AI control-gap check | ✅ Done (merged into `main`, D-089 – D-097) |
 | 4.2 | M10 assurance: approval of GRC changes, control testing, issues and actions, audits, questionnaires, assurance dashboard | ✅ Done (merged into `main`, D-098 – D-106) |
 | 4.3 | M11 EA (application catalogue, interfaces, data objects, capability map, traceability); M12 KPIs, dashboards + Salesforce KPI link | ✅ Done (merged into `main`, D-107 – D-119); the Salesforce KPI sync stays in the code but is not used (KPIs and risks are managed in ProcessHub) |
-| Diagrams | More diagram types (ARIS / GBTEC / Signavio parity, DOF RFP modeling items): shared diagram framework (Diagram entity, versions, governance, portal, links), value chain, organisation chart, DMN decision tables, EPC (+ conversion to BPMN), SIPOC | 🟡 In progress on branch `diagram-types` (D-120 –) |
+| Diagrams | More diagram types (ARIS / GBTEC / Signavio parity, DOF RFP modeling items): shared diagram framework (Diagram entity, versions, governance, portal, links), value chain, organisation chart, DMN decision tables, EPC (+ conversion to BPMN), SIPOC | ✅ Done on branch `diagram-types` (D-120 – D-126), awaiting review / merge into `main` |
 | 4.4 | Integration & export: Oracle Fusion Risk Management overlay, Salesforce risk / other connectors, API keys, webhooks, Word/HTML/XPDL export | ⬜ (later phase, see BACKLOG) |
 | 5 | M13 Mining, M14 Execution, simulation | ⬜ |
 | Design A | Modeler design upgrade — Part A: look and feel (colour theme as BPMN-in-Color, renderer, colour picker, fonts/RTL, apply theme) | ✅ Done (merged into `main`, D-067 – D-073) |
@@ -228,6 +228,18 @@ Phase 4.3 additions (DECISIONS D-107 – D-119):
   actions in the comment, picklist value → existing objective links, no process mapping; role
   `PERFORMANCE_OFFICER` with permission `kpi.sync`; scheduled syncs by the system actor "Salesforce sync" with
   `SalesforceSyncRun.configuredById`
+
+Diagram types additions (DECISIONS D-120 – D-126):
+
+- `Diagram` (type `VALUE_CHAIN` | `ORG_CHART` | `DMN` | `EPC` | `SIPOC`, generated code, bilingual name /
+  description, owner, department, optional parent `processId`, status + workflow + next review like processes,
+  `content`: DMN 1.3 XML or versioned JSON validated by `packages/shared/src/diagrams.ts`), `DiagramVersion`,
+  `DiagramLink` (element ↔ library object); `ContentType` `DIAGRAM` (reviews, publications, comments, feedback,
+  notifications); permissions as processes; Setting `portal.startDiagramId`; Role attribute `departmentId`
+- BPMN XML: `ph:decisionRef` / `ph:decisionId` on business rule tasks; DMN XML: `ph:nameEn/Ar`,
+  `ph:annotationEn/Ar`
+- Shared `diagrams.ts`, `value-chain.ts`, `org-chart.ts`, `epc.ts`, `sipoc.ts`; web kit
+  `apps/web/src/features/diagrams/kit/` (diagram-js), dmn-js 17, feelin 8
 
 ## 10. Definition of Done (every phase)
 

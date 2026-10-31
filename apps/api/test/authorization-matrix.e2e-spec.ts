@@ -11,7 +11,11 @@ describe('Authorisation matrix (e2e)', () => {
   let ctx: TestContext;
   let routes: RouteInfo[];
   const ids: Record<string, string> = {};
-  const lifecycle: { processes: string[]; pages: string[] } = { processes: [], pages: [] };
+  const lifecycle: { processes: string[]; pages: string[]; diagrams: string[] } = {
+    processes: [],
+    pages: [],
+    diagrams: [],
+  };
   const DEMO_PASSWORD = 'Demo-Password1';
 
   /** Tables whose content must not change when a read-only user calls a mutating route. */
@@ -77,6 +81,10 @@ describe('Authorisation matrix (e2e)', () => {
     'StrategicObjective',
     'KpiObjective',
     'SalesforceSyncRun',
+    // Diagram types (D-120).
+    'Diagram',
+    'DiagramVersion',
+    'DiagramLink',
   ];
 
   async function fingerprint(): Promise<Record<string, string>> {
@@ -143,8 +151,10 @@ describe('Authorisation matrix (e2e)', () => {
     for (const status of ['DRAFT', 'IN_REVIEW', 'APPROVED', 'PUBLISHED'] as const) {
       const proc = await p.process.findFirst({ where: { status } });
       const pg = await p.page.findFirst({ where: { status } });
+      const dg = await p.diagram.findFirst({ where: { status } });
       if (proc) lifecycle.processes.push(proc.id);
       if (pg) lifecycle.pages.push(pg.id);
+      if (dg) lifecycle.diagrams.push(dg.id);
     }
     lifecycle.pages.push(page.body.id);
     Object.assign(ids, {
@@ -193,6 +203,10 @@ describe('Authorisation matrix (e2e)', () => {
       kpi: (await p.kpi.findFirst())?.objectId ?? '',
       measurement: await anyId(p.kpiMeasurement.findFirst()),
       objective: await anyId(p.strategicObjective.findFirst()),
+      // Diagram types from the demo seed (an EPC: every route applies, incl. the conversion).
+      diagram: await anyId(p.diagram.findFirst({ where: { type: 'EPC' } })),
+      diagramVersion: await anyId(p.diagramVersion.findFirst()),
+      diagramLink: '00000000-0000-4000-8000-000000000000',
     });
   });
 
@@ -203,7 +217,7 @@ describe('Authorisation matrix (e2e)', () => {
   /** Concrete URLs for a route: both content types, and every lifecycle state for governance. */
   function urls(path: string): string[] {
     const types = path.includes(':type')
-      ? (['processes', 'pages'] as const)
+      ? (['processes', 'pages', 'diagrams'] as const)
       : (['processes'] as const);
     return types.flatMap((type) =>
       path.startsWith('/governance/:type/:id')
@@ -213,7 +227,7 @@ describe('Authorisation matrix (e2e)', () => {
   }
 
   /** Fills route parameters with ids of real records (restricted / draft content where possible). */
-  function fill(path: string, type: 'processes' | 'pages'): string {
+  function fill(path: string, type: 'processes' | 'pages' | 'diagrams'): string {
     const [, first, second] = path.split('/');
     const grc: Record<string, string> = {
       risks: ids.risk,
@@ -243,8 +257,10 @@ describe('Authorisation matrix (e2e)', () => {
       feedback: ids.feedback,
       notifications: ids.notification,
       integrations: ids.gitItem,
-      portal: type === 'processes' ? ids.process : ids.page,
-      governance: type === 'processes' ? ids.process : ids.page,
+      portal: type === 'processes' ? ids.process : type === 'diagrams' ? ids.diagram : ids.page,
+      governance: type === 'processes' ? ids.process : type === 'diagrams' ? ids.diagram : ids.page,
+      comments: type === 'diagrams' ? ids.diagram : type === 'pages' ? ids.page : ids.process,
+      diagrams: ids.diagram,
       'control-tests': ids.controlTest,
       issues: ids.issue,
       audits: ids.engagement,
@@ -254,8 +270,19 @@ describe('Authorisation matrix (e2e)', () => {
       .replace(':type', type)
       .replace(':spaceId', ids.space)
       .replace(':commentId', ids.comment)
-      .replace(':versionId', first === 'pages' ? ids.pageVersion : ids.processVersion)
-      .replace(':linkId', first === 'pages' ? ids.pageLink : ids.processLink)
+      .replace(
+        ':versionId',
+        first === 'pages'
+          ? ids.pageVersion
+          : first === 'diagrams'
+            ? ids.diagramVersion
+            : ids.processVersion,
+      )
+      .replace(
+        ':linkId',
+        first === 'pages' ? ids.pageLink : first === 'diagrams' ? ids.diagramLink : ids.processLink,
+      )
+      .replace(':roleId', ids.object)
       .replace(':measurementId', ids.measurement)
       .replace(':processId', ids.process)
       .replace(':kind', first === 'ea' ? 'applications' : 'kpis')
@@ -292,6 +319,9 @@ describe('Authorisation matrix (e2e)', () => {
     'POST /comments/:type/:id': { body: 'x' },
     'PATCH /comments/:commentId': { body: 'x' },
     'POST /ai/translate': { kind: 'fields', target: 'ar', fields: [{ key: 'a', text: 'Hello' }] },
+    'PATCH /diagrams/:id': { nameEn: 'Hacked' },
+    'POST /diagrams': { type: 'VALUE_CHAIN', nameEn: 'Hacked' },
+    'POST /diagrams/:id/convert-to-bpmn': { code: 'HACK.1', category: 'CORE' },
   };
 
   /** Self-service writes every signed-in user may make (own session, profile, notifications). */

@@ -28,6 +28,7 @@
 | **Assurance** | Approval of changes to risks / controls, control testing with samples and four-eyes review, issues and action plans, audit universe / plan / engagements / findings / Word report, questionnaires and self-assessments, assurance dashboard | ✅ 4.2 |
 | **Enterprise architecture** | Application catalogue (the IT systems linked to steps: type, vendor, owners, hosting country, lifecycle, criticality, data classification), interfaces, data objects with system of record and CRUD matrix, 3-level capability map with "colour by" (coverage, applications, lifecycle, risk), application landscape diagram (SVG / PNG), traceability capability → process → step → application → data (+ risks / controls), impact analysis of an application, Excel import / export, modeler "colour by application lifecycle", handbook "Systems and data" | 4.3 |
 | **KPIs & dashboards** | KPI catalogue (formula, unit, direction, frequency, targets and green / amber / red thresholds per period, owner, data source), strategic objectives, key risk indicators, links to processes and steps; values with comment and evidence, owner reminders in My tasks, Excel import, history; KPIs calculated from step attributes (duration, waiting, cost, handovers, automation rate); KPI dashboard by objective with sparklines and drill-down chart, KPI badges and "colour by KPI status" in the modeler, process performance card, optional portal section; optional read-only **Salesforce** KPI link (mapping, preview, scheduled sync, sync log) | 4.3 |
+| **More diagram types** | One framework for **value chains** (chevrons / blocks / frames, drill-down to processes and value chains, status / KPI / risk badges, "colour by", generation from the process house), **organisation charts** (units, positions, persons, reporting and staff lines; generated from departments, roles and people with merge-by-id regeneration and preview; a position shows the steps it performs with RACI), **DMN decision tables** (dmn-js, bilingual names, hit policies, typed inputs / outputs, FEEL "Test decision", validation, import / export, linked to BPMN business rule tasks), **EPC** (ARIS notation, syntax rules as warnings, conversion to a draft BPMN process with mapping report) and **SIPOC** (generated from a process); versions with visual compare, review workflow, comments on elements, object links, where used, Knowledge Portal (browse by type, value chain start page), handbook sections, export SVG / PNG / PDF | Diagrams |
 | **Process Mining & Execution** | Event-log analysis, bottlenecks, running approved processes as workflows | 5 |
 
 ## Quick start (Docker)
@@ -72,6 +73,28 @@ content in every lifecycle state, comments, notifications and portal feedback.
 
 Demo users are only created on a demo installation (`SEED_DEMO_DATA=true`, the default). **Emails** sent by
 the demo installation go to the bundled **Mailpit** at **http://localhost:8025** — nothing leaves the machine.
+
+### A short tour of the diagram types — value chain, organisation chart, DMN, EPC, SIPOC
+
+- As `modeler@processhub.local`: the repository tree (**Processes**) shows the demo diagrams with a type icon — the
+  value chain and the organisation chart under **Diagrams**, the decision table, EPC and SIPOC under *Procure to
+  Pay*. **New** offers a process and each diagram type (value chain: generate from the process house; organisation
+  chart: generate from departments and roles; SIPOC: generate from a process). Open **VC-001 Enterprise value
+  chain** → *Open editor*: the elements are linked to processes (↗ opens them), carry status / KPI / risk badges, and
+  *Colour by* recolours them by process status, KPI status, residual risk or department.
+- **ORG-001**: click a position (e.g. *Procurement Officer*) — the side panel lists the steps it performs with RACI
+  letters; *Regenerate* previews what changes when departments or roles changed (manual edits are kept).
+- **DMN-001 Approval authority**: the decision table editor with hit policy FIRST; the **Test** tab evaluates it
+  (50 000 / IT → *IT Director*, matching row highlighted), **Validation** checks the FEEL entries, **Translations**
+  holds the Arabic names; export / import `.dmn`. The process *S.01.02 Purchase approval* uses it from the business
+  rule task *Determine approver* (modeler side panel → *View table*).
+- **EPC-001**: the ARIS chain with its **Validation** tab; *Convert to BPMN* creates a draft process with lanes,
+  gateways and branch labels and shows the mapping report (the demo conversion is *S.01.03*).
+- **SIPOC-001**: the five columns generated from *Purchase Requisition*, editable in both languages.
+- As `viewer@processhub.local`: the portal home starts with the published value chain — click a chevron to drill
+  down to the process; **Diagrams** lists the published diagrams by type. The process handbook (process page →
+  *More* → *Process handbook*) can include the value chain path, SIPOC, linked decision tables and the
+  organisation chart excerpt.
 
 ### A short tour of Phase 4.3 — enterprise architecture, KPIs and the Salesforce link
 

@@ -255,6 +255,7 @@ zod / UUID pipe; file uploads are checked in the service (allow-list, content sn
 | PATCH  | `/diagrams/:id`                              | any of `processes.edit`, `processes.edit_own`             | body, param `id`                    | default    |
 | GET    | `/diagrams/:id/content`                      | `processes.read`                                          | param `id`                          | default    |
 | PUT    | `/diagrams/:id/content`                      | any of `models.edit`, `models.edit_own`                   | body, param `id`                    | default    |
+| POST   | `/diagrams/:id/convert-to-bpmn`              | `processes.create`                                        | body, param `id`                    | default    |
 | GET    | `/diagrams/:id/links`                        | `processes.read`                                          | param `id`                          | default    |
 | POST   | `/diagrams/:id/links`                        | any of `models.edit`, `models.edit_own`, `grc.edit`       | body, param `id`                    | default    |
 | DELETE | `/diagrams/:id/links/:linkId`                | any of `models.edit`, `models.edit_own`, `grc.edit`       | param `id`, param `linkId`          | default    |
@@ -264,6 +265,9 @@ zod / UUID pipe; file uploads are checked in the service (allow-list, content sn
 | PATCH  | `/diagrams/:id/versions/:versionId`          | any of `models.edit`, `models.edit_own`                   | body, param `id`, param `versionId` | default    |
 | POST   | `/diagrams/:id/versions/:versionId/restore`  | any of `models.edit`, `models.edit_own`                   | body, param `id`, param `versionId` | default    |
 | GET    | `/diagrams/all`                              | `processes.read`                                          | —                                   | default    |
+| GET    | `/diagrams/org-source`                       | `processes.read`                                          | —                                   | default    |
+| GET    | `/diagrams/process-facts`                    | `processes.read`                                          | query                               | default    |
+| GET    | `/diagrams/role-activities/:roleId`          | `processes.read`                                          | param `roleId`                      | default    |
 | GET    | `/diagrams/where-used`                       | `processes.read`                                          | query                               | default    |
 | POST   | `/dictionary/objects/:id/rename`             | `objects.read` + `processes.read`                         | body, param `id`                    | default    |
 | POST   | `/dictionary/objects/:id/rename-preview`     | `objects.read` + `processes.read`                         | body, param `id`                    | default    |

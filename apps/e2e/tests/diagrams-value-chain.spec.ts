@@ -48,6 +48,8 @@ test('modeler creates a value chain generated from the process house', async ({ 
 });
 
 test('modeler edits the value chain and saves a version', async ({ page }) => {
+  // Stepped drags on the canvas are slow on a loaded CI runner.
+  test.setTimeout(60_000);
   await login(page, DEMO.modeler);
   await page.goto(`/diagrams/${diagramId}/edit`);
   const canvas = page.locator('.ph-ws-canvas');

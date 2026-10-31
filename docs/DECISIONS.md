@@ -1653,3 +1653,21 @@ Supersedes the "act as the Super Admin" rule of D-116.
   process, customers from the lane of the end event and the pools receiving messages. The source process is stored
   in the content (`processId`); everything stays editable.
 - SIPOC is an optional section of the process handbook (step 7).
+
+## D-126 — Diagram types in reports, portal and demo data (Diagram types, 2026-10-31)
+
+- **Process handbook** (Word, B2): four optional sections per process — _Place in the value chain_ (the path
+  "value chain › frame › element (› process-house levels)" for every value chain linking the process or one of its
+  ancestors), _SIPOC_ (the SIPOCs generated from / attached to the process, as a five-column table), _Decision
+  tables_ (the DMN tables of its business rule tasks: inputs, outputs, rules and annotations) and _Organisation_
+  (positions of the organisation charts that perform its steps — lane roles and PERFORMS links — with their unit
+  and superior). The working source uses the current diagram content, the published source only published diagram
+  versions. Built server-side (`DiagramReportService` in the reports module; DMN read with regular expressions,
+  `readDmnTables`, since dmn-js is browser-only).
+- **Knowledge Portal**: _Diagrams_ menu (browse published diagrams by type), diagram page with drill-down to
+  published processes / value chains, print / PDF, feedback; Setting **portal.startDiagramId** (Portal settings →
+  _Start page_): a published value chain shown first on the portal home with drill-down. Diagrams can be featured.
+- **Demo seed** (demo installations only, once): VC-001 (from the process house, published, start page), ORG-001
+  (from departments, roles with departments and job-role holders, published), DMN-001 approval authority
+  (published) used by the business rule task of the new demo process S.01.02, EPC-001 with its conversion S.01.03,
+  SIPOC-001 of S.01.01.
