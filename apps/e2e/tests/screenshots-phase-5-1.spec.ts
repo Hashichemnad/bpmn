@@ -23,11 +23,9 @@ async function shot(page: Page, name: string, locale: 'en' | 'ar') {
 for (const locale of ['en', 'ar'] as const) {
   test(`process mining and simulation (${locale})`, async ({ page }) => {
     await login(page, DEMO.performance, locale);
-    const logs = await apiCall<{ items: { id: string; code: string; process: { id: string } | null }[] }>(
-      page,
-      'GET',
-      '/mining/logs?q=LOG-001',
-    );
+    const logs = await apiCall<{
+      items: { id: string; code: string; process: { id: string } | null }[];
+    }>(page, 'GET', '/mining/logs?q=LOG-001');
     const log = logs.data.items.find((l) => l.code === 'LOG-001')!;
 
     // 1. Import: column mapping with the preview (sample CSV).
@@ -64,7 +62,9 @@ for (const locale of ['en', 'ar'] as const) {
     await page.goto(`/mining/logs/${log.id}/conformance`);
     await expect(page.getByTestId('conformance-summary')).toBeVisible();
     await shot(page, '5-conformance', locale);
-    await page.goto(`/processes/${log.process!.id}/model?view=1&colourBy=miningDuration&log=${log.id}`);
+    await page.goto(
+      `/processes/${log.process!.id}/model?view=1&colourBy=miningDuration&log=${log.id}`,
+    );
     await expect(page.locator('.ph-metric-badge').first()).toBeVisible();
     await shot(page, '6-conformance-overlay', locale);
 
