@@ -246,6 +246,7 @@ export function pmsProgramRequestXml(ids: PmsIds): string {
       id: 'CorrectRequest',
       type: 'userTask',
       lane: 'L_Requester',
+      col: 1,
       en: 'Correct the request',
       ar: 'تصحيح الطلب',
       slaMinutes: 2400,

@@ -45,6 +45,8 @@ export interface WfNodeSpec {
   linkedProcessId?: string;
   descEn?: string;
   descAr?: string;
+  /** Layout: fixed column (e.g. a correction step reached only by "return" flows). */
+  col?: number;
 }
 
 export interface WfFlowSpec {
@@ -97,7 +99,11 @@ export function buildWorkflowBpmn(
   // Column = longest distance from a start event (back edges ignored).
   const depth = new Map<string, number>();
   const out = new Map<string, string[]>();
-  for (const f of flows) (out.get(f.from) ?? out.set(f.from, []).get(f.from)!).push(f.to);
+  // "Return" and "reject" flows go back or out: they do not push the columns of their targets.
+  const backward = (f: WfFlowSpec) => f.exec?.outcome === 'RETURN' || f.exec?.outcome === 'REJECT';
+  for (const f of flows)
+    if (!backward(f) && byId.get(f.to)?.col === undefined)
+      (out.get(f.from) ?? out.set(f.from, []).get(f.from)!).push(f.to);
   const visit = (id: string, d: number, path: Set<string>) => {
     if (path.has(id)) return;
     if ((depth.get(id) ?? -1) >= d) return;
@@ -111,6 +117,15 @@ export function buildWorkflowBpmn(
       const d = depth.get(n.attachedTo) ?? 0;
       for (const t of out.get(n.id) ?? []) visit(t, d + 1, new Set([n.id]));
     }
+  const deepest = Math.max(0, ...[...depth.values()]);
+  for (const n of nodes) {
+    if (n.col !== undefined) {
+      depth.set(n.id, n.col);
+      for (const t of out.get(n.id) ?? []) visit(t, n.col + 1, new Set([n.id]));
+    }
+  }
+  for (const n of nodes)
+    if (!depth.has(n.id) && n.type !== 'boundaryEvent') depth.set(n.id, deepest + 1);
   const laneIndex = new Map(lanes.map((l, i) => [l.id, i]));
   const laneOf = (n: WfNodeSpec): string | undefined =>
     n.type === 'boundaryEvent' && n.attachedTo
@@ -212,7 +227,7 @@ export function buildWorkflowBpmn(
     : '';
   const center = (id: string) => {
     const p = pos.get(id)!;
-    return { x: p.x + p.w / 2, y: p.y + p.h / 2, ...p };
+    return { ...p, x: p.x + p.w / 2, y: p.y + p.h / 2 };
   };
   const edges = flows
     .map((f) => {
