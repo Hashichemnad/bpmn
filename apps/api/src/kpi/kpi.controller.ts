@@ -28,6 +28,7 @@ import {
   kpiListQuerySchema,
   kpiSettingsSchema,
   measurementSchema,
+  scorecardQuerySchema,
   updateKpiSchema,
   updateObjectiveSchema,
   type CreateKpiInput,
@@ -38,6 +39,7 @@ import {
   type KpiListQuery,
   type KpiSettings,
   type MeasurementInput,
+  type ScorecardQuery,
   type UpdateKpiInput,
   type UpdateObjectiveInput,
 } from '@processhub/shared';
@@ -102,6 +104,26 @@ export class KpiController {
   @RequirePermissions(READ)
   forProcess(@Param('processId', UuidPipe()) processId: string) {
     return this.kpis.forProcess(processId);
+  }
+
+  // ---------- Dashboard ----------
+
+  /** Objectives → KPIs with status and trend, filtered by department, process, owner, as-of month. */
+  @Get('scorecard')
+  @RequirePermissions(READ)
+  scorecard(@Query(new ZodPipe(scorecardQuerySchema)) q: ScorecardQuery) {
+    return this.kpis.scorecard(q);
+  }
+
+  @Get('scorecard/export')
+  @RequirePermissions(READ)
+  async scorecardExport(
+    @Query(new ZodPipe(scorecardQuerySchema)) q: ScorecardQuery,
+    @CurrentUser() user: AuthUser,
+    @ReqMeta() meta: RequestMeta,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    return download(res, await this.excel.scorecard(q, user, meta));
   }
 
   // ---------- Objectives ----------

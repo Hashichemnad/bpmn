@@ -10,6 +10,7 @@ import type {
   ObjectiveDto,
   Paginated,
   ProcessKpisDto,
+  ScorecardDto,
 } from '@processhub/shared';
 import { api } from './client';
 
@@ -179,3 +180,10 @@ export function useKpiImport(kind: KpiImportKind) {
     },
   });
 }
+
+export const useScorecard = (q: KpiQuery) =>
+  useQuery({
+    queryKey: ['kpis', 'scorecard', q],
+    queryFn: () => api<ScorecardDto>('/kpis/scorecard', { query: q }),
+    placeholderData: keepPreviousData,
+  });

@@ -1371,10 +1371,23 @@ id, so links stay); later ones get theirs lazily. KPI objects can no longer be c
   objectives for `kpi.edit`; measurements also for owners (rows of other people's KPIs are reported `NOT_OWNER`);
   imported values have source "Excel import".
 
-## D-113 — Charts: Recharts (Phase 4.3, 2026-10-30)
+## D-113 — KPI dashboards, process performance, portal; charts with Recharts (Phase 4.3, 2026-10-30)
 
 The web app had no chart library (Phase 4.1 / 4.2 dashboards use Ant Design tiles and bars). The KPI detail line
 chart (actuals vs per-period target, green / red threshold lines, points coloured by status) uses **Recharts 2.15**
 — a proven, MIT-licensed React library built on SVG (no canvas), small enough, and without new runtime services.
 Arabic: the x axis is reversed and the y axis moves to the right; numbers and periods via `Intl`. Sparklines in
 tables and the landscape diagram stay plain SVG.
+
+- **KPI dashboard** (`GET /kpis/scorecard`, `/kpis/scorecard/export` EN / AR): active KPIs in scope (department,
+  process — linked or calculated from it —, owner) as of a month (each KPI's latest value of a period that started by
+  then), grouped by strategic objective (ancestors shown for the tree, worst status per objective, KPIs worst first,
+  "without an objective" last); summary tiles open the filtered register; a KPI row opens a drawer with its chart.
+- **Process performance**: the process page shows the KPIs of the process and its steps with their latest status and
+  the calculated process KPIs; the modeler side panel gains a **KPIs** tab (selected step or whole process; model
+  editors link / unlink KPIs — `MEASURES` links); the badges (B1) gain a KPI chip per step in the colour of the
+  worst status, and "Colour by" gains **KPI status**.
+- **Knowledge Portal**: Setting `kpi.showInPortal` (off by default; KPI settings, `kpi.edit`). When on, a published
+  process page lists the KPIs linked to the process or to steps of the published diagram with the live latest status,
+  value / target and trend (KPI values are live data, not part of the published snapshot); when off, KPI links are
+  also hidden from the step details.

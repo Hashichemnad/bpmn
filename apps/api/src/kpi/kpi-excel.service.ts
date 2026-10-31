@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import ExcelJS from 'exceljs';
 import type { z } from 'zod';
 import {
   KPI_DATA_SOURCES,
@@ -18,6 +19,7 @@ import {
   type KpiImportRowIssue,
   type Locale,
   type ObjectiveDto,
+  type ScorecardQuery,
 } from '@processhub/shared';
 import { PrismaService } from '../prisma/prisma.service';
 import { AuditService } from '../audit/audit.service';
@@ -25,6 +27,7 @@ import { forbidden } from '../common/app-exception';
 import type { AuthUser, RequestMeta } from '../common/auth-user';
 import {
   XLSX_TYPE,
+  addSheet,
   catalogueWorkbook,
   lookup,
   norm,
@@ -274,6 +277,88 @@ export class KpiExcelService {
         locale,
       ),
       fileName: `${kind}-template.xlsx`,
+      contentType: XLSX_TYPE,
+    };
+  }
+
+  /** The KPI dashboard as a workbook (objective, KPI, latest value, target, status, trend). */
+  async scorecard(q: ScorecardQuery, actor: AuthUser, meta: RequestMeta): Promise<ExcelFile> {
+    const card = await this.kpis.scorecard(q);
+    const locale = q.locale;
+    const ar = locale === 'ar';
+    const L = (en: string, a: string) => (ar ? a : en);
+    const pick = (o: { nameEn: string; nameAr: string }) =>
+      ar ? o.nameAr || o.nameEn : o.nameEn || o.nameAr;
+    const RAG: Record<string, [string, string]> = {
+      GREEN: ['On target', 'ضمن المستهدف'],
+      AMBER: ['Watch', 'تحت المراقبة'],
+      RED: ['Off target', 'خارج المستهدف'],
+    };
+    const wb = new ExcelJS.Workbook();
+    wb.creator = 'ProcessHub';
+    const ws = addSheet(
+      wb,
+      L('KPI scorecard', 'بطاقة الأداء'),
+      [
+        L('Objective', 'الهدف'),
+        L('KPI code', 'رمز المؤشر'),
+        L('KPI', 'المؤشر'),
+        L('Unit', 'الوحدة'),
+        L('Period', 'الفترة'),
+        L('Actual', 'الفعلي'),
+        L('Target', 'المستهدف'),
+        L('Status', 'الحالة'),
+        L('Trend (last values)', 'الاتجاه (آخر القيم)'),
+        L('Owner', 'المالك'),
+      ],
+      [34, 12, 40, 8, 10, 10, 10, 16, 36, 24],
+      locale,
+    );
+    for (const row of card.objectives)
+      for (const k of row.kpis)
+        ws.addRow([
+          row.objective
+            ? `${'  '.repeat(row.level - 1)}${row.objective.code ?? ''} ${pick(row.objective)}`.trim()
+            : L('Without objective', 'دون هدف'),
+          k.code ?? '',
+          pick(k),
+          k.unit,
+          k.latest?.period ?? '',
+          k.latest?.value ?? null,
+          k.latest?.target ?? null,
+          k.latest?.rag ? RAG[k.latest.rag][ar ? 1 : 0] : L('No value', 'لا توجد قيمة'),
+          k.trend
+            .slice(-6)
+            .map((p) => p.value)
+            .join(' · '),
+          k.owner ? pick(k.owner) || k.owner.email : '',
+        ]);
+    const sum = addSheet(
+      wb,
+      L('Summary', 'الملخص'),
+      [L('Status', 'الحالة'), L('KPIs', 'المؤشرات')],
+      [30, 10],
+      locale,
+    );
+    for (const [key, en, a] of [
+      ['GREEN', 'On target', 'ضمن المستهدف'],
+      ['AMBER', 'Watch', 'تحت المراقبة'],
+      ['RED', 'Off target', 'خارج المستهدف'],
+      ['none', 'No value', 'لا توجد قيمة'],
+      ['due', 'Value due', 'قيمة مستحقة'],
+      ['total', 'All KPIs', 'كل المؤشرات'],
+    ] as const)
+      sum.addRow([L(en, a), card.summary[key]]);
+    await this.audit.log({
+      action: 'EXPORT',
+      entityType: 'Kpi',
+      userId: actor.id,
+      summary: { report: 'kpi-scorecard', rows: card.summary.total, ...q },
+      meta,
+    });
+    return {
+      data: Buffer.from(await wb.xlsx.writeBuffer()),
+      fileName: 'kpi-scorecard.xlsx',
       contentType: XLSX_TYPE,
     };
   }

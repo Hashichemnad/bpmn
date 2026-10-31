@@ -1,7 +1,10 @@
 import { GrcSettingsService } from '../grc/grc-settings.service';
+import { KpiSettingsService } from '../kpi/kpi-settings.service';
+import { KpiService } from '../kpi/kpi.service';
 import { Injectable } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import {
+  PROCESS_ELEMENT_ID,
   HIGHLIGHT_END,
   HIGHLIGHT_START,
   PERMISSIONS,
@@ -68,6 +71,8 @@ export class PortalService {
     private readonly content: ContentService,
     private readonly workflows: WorkflowsService,
     private readonly grcSettings: GrcSettingsService,
+    private readonly kpiSettings: KpiSettingsService,
+    private readonly kpis: KpiService,
   ) {}
 
   // ---------- Settings ----------
@@ -267,7 +272,12 @@ export class PortalService {
     const { pub, process } = await this.access.publicationOf('PROCESS', id, user);
     const p = process!;
     // Risks and controls only as Settings → Risk & Compliance allows (default: none, D-092).
-    const hidden = portalHiddenTypes((await this.grcSettings.get()).portalVisibility);
+    const showKpis = (await this.kpiSettings.get()).showInPortal;
+    // KPIs only when Settings → KPIs shows them in the portal (off by default, D-113).
+    const hidden = [
+      ...portalHiddenTypes((await this.grcSettings.get()).portalVisibility),
+      ...(showKpis ? [] : (['KPI'] as const)),
+    ];
     const [version, department, tree, links] = await Promise.all([
       this.prisma.processVersion.findUnique({
         where: { processId_versionNumber: { processId: id, versionNumber: pub.versionNumber } },
@@ -330,7 +340,23 @@ export class PortalService {
         .filter((n) => drill.has(n.id))
         .map((n) => ({ id: n.id, code: n.code, nameEn: n.nameEn, nameAr: n.nameAr })),
       relatedPages: related,
+      // Live KPI status (Setting `kpi.showInPortal`): the process's current KPI links, limited to
+      // the whole process and the steps of the published diagram.
+      kpis: showKpis ? await this.portalKpis(id, xml) : null,
     };
+  }
+
+  private async portalKpis(processId: string, xml: string | null) {
+    const links = await this.prisma.objectLink.findMany({
+      where: { processId, relation: 'MEASURES', repoObject: { type: 'KPI', deletedAt: null } },
+      select: { repoObjectId: true, bpmnElementId: true },
+    });
+    const steps = xml ? new Set([...xml.matchAll(/\sid="([^"]+)"/g)].map((m) => m[1])) : new Set();
+    return this.kpis.portalKpis(
+      links
+        .filter((l) => l.bpmnElementId === PROCESS_ELEMENT_ID || steps.has(l.bpmnElementId))
+        .map((l) => ({ objectId: l.repoObjectId, bpmnElementId: l.bpmnElementId })),
+    );
   }
 
   private async relatedPages(processId: string, user: AuthUser): Promise<PortalItemDto[]> {

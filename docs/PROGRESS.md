@@ -43,7 +43,12 @@ Steps (tick as they are committed; a new session continues at the first unticked
       (12 applications, 10 interfaces, 7 data objects, 17 capabilities, 2 objectives, 8 KPIs × 12 months, KRI on
       RSK-03) — pulled forward from step 6 for the e2e tests. Tests: shared 3, API 5 (`kpi.e2e-spec.ts`),
       Playwright 1 (`kpi.spec.ts`).
-- [ ] 4. KPI dashboards: scorecard, KPI detail chart, process performance, KPI badge and colour-by, portal setting.
+- [x] 4. KPI dashboards (D-113): `GET /kpis/scorecard` (+ Excel; filters department / process / owner / as-of
+      month), KPI dashboard page (tiles → filtered register, scorecard by objective with status, value, target,
+      sparkline, drill-down drawer with the chart); process page "Performance" card (KPIs + calculated process
+      KPIs); modeler "KPIs" tab (link / unlink), KPI badge (worst status), "Colour by → KPI status" (also in the
+      preview); portal KPI section behind Setting `kpi.showInPortal` (live links, published steps only). Tests: API
+      +1, Playwright +1 (helper `loginAdmin` with the stored TOTP secret).
 - [ ] 5. Salesforce KPI link (off by default): settings, encrypted credentials, mapping, preview, apply, scheduled
       sync, sync log, notifications; mocked API in tests; DEPLOYMENT.md setup.
 - [ ] 6. Demo data, permission tests, e2e, screenshots EN / AR, docs.

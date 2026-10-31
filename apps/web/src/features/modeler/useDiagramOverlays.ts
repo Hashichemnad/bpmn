@@ -1,6 +1,13 @@
 import { useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { CommentDto, ObjectType, StepGrcSummary } from '@processhub/shared';
+import {
+  PROCESS_ELEMENT_ID,
+  worstRag,
+  type CommentDto,
+  type KpiRag,
+  type ObjectType,
+  type StepGrcSummary,
+} from '@processhub/shared';
 import type { BpmnInstance, ElementRegistry, EventBus, Overlays } from './bpmn-types';
 import { BADGE_KINDS, renderBadges, type BadgeItem, type BadgeKind } from './badges';
 import { canDrillDown, linkedProcessOf } from './diagram';
@@ -41,6 +48,32 @@ export function grcAlertBadgeItems(steps: Map<string, StepGrcSummary>, name: str
   return [...steps]
     .filter(([, s]) => s.alert)
     .map(([elementId]) => ({ elementId, kind: 'ALERT' as const, name }));
+}
+
+/** KPI badges: one chip per step in the colour of its worst latest status (Phase 4.3). */
+export function kpiBadgeItems(
+  kpis: {
+    bpmnElementId: string;
+    rag: KpiRag | null;
+    code: string | null;
+    nameEn: string;
+    nameAr: string;
+  }[],
+  name: (o: { nameEn: string; nameAr: string }) => string,
+): BadgeItem[] {
+  const byStep = new Map<string, typeof kpis>();
+  for (const k of kpis)
+    if (k.bpmnElementId !== PROCESS_ELEMENT_ID)
+      byStep.set(k.bpmnElementId, [...(byStep.get(k.bpmnElementId) ?? []), k]);
+  return [...byStep].flatMap(([elementId, list]) => {
+    const worst = worstRag(list.map((k) => k.rag));
+    const kind = (worst ? `KPI_${worst}` : 'KPI_NONE') as BadgeKind;
+    return list.map((k) => ({
+      elementId,
+      kind,
+      name: [k.code, name(k)].filter(Boolean).join(' '),
+    }));
+  });
 }
 
 /**

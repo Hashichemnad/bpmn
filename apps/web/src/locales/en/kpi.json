@@ -154,5 +154,24 @@
   },
   "period": {
     "quarter": "Q{{q}} {{year}}"
+  },
+  "process": {
+    "title": "Performance",
+    "tab": "KPIs",
+    "none": "No KPIs linked yet",
+    "ofStep": "KPIs of “{{name}}”",
+    "ofProcess": "KPIs of the whole process",
+    "link": "Link a KPI…"
+  },
+  "portal": {
+    "title": "Performance indicators"
+  },
+  "dashboard": {
+    "title": "KPI dashboard",
+    "subtitle": "Strategic objectives and their KPIs: latest status, value against target and trend",
+    "asOf": "As of month",
+    "noObjective": "KPIs without an objective",
+    "rollUp": "See the sub-objectives below",
+    "openKpi": "Open KPI"
   }
 }

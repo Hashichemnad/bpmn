@@ -736,6 +736,23 @@ button.ph-badge:focus-visible {
   color: #15803d;
 }
 
+/* KPI badge (Phase 4.3): colour of the worst latest status of the step's KPIs. */
+.ph-badge-kpi_red {
+  color: #dc2626;
+  border-color: #fca5a5;
+}
+.ph-badge-kpi_amber {
+  color: #b45309;
+  border-color: #fcd34d;
+}
+.ph-badge-kpi_green {
+  color: #15803d;
+  border-color: #86efac;
+}
+.ph-badge-kpi_none {
+  color: #64748b;
+}
+
 .ph-badge-comment {
   color: #1d4ed8;
 }

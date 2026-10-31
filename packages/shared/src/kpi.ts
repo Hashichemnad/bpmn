@@ -337,10 +337,23 @@ export const kpiListQuerySchema = z.object({
   dataSource: z.enum(KPI_DATA_SOURCES).optional(),
   /** Only KPIs whose last completed period has no value yet. */
   due: bool,
-  /** Status as of this period (default: each KPI's latest measurement). */
-  period: periodKey.optional(),
+  /** Status as of this month (`2026-09`): each KPI's latest value of a period starting by then. */
+  asOf: z
+    .string()
+    .trim()
+    .regex(/^\d{4}-(0[1-9]|1[0-2])$/, 'INVALID_PERIOD')
+    .optional(),
 });
 export type KpiListQuery = z.infer<typeof kpiListQuerySchema>;
+
+export const scorecardQuerySchema = z.object({
+  departmentId: id.optional(),
+  processId: id.optional(),
+  ownerId: id.optional(),
+  asOf: kpiListQuerySchema.shape.asOf,
+  locale: z.enum(['en', 'ar']).default('en'),
+});
+export type ScorecardQuery = z.infer<typeof scorecardQuerySchema>;
 
 export const kpiExportQuerySchema = z.object({ locale: z.enum(['en', 'ar']).default('en') });
 export type KpiExportQuery = z.infer<typeof kpiExportQuerySchema>;
@@ -443,6 +456,35 @@ export interface ProcessKpisDto {
     latest: KpiDto['latest'];
   })[];
   calculated: CalculatedProcessKpis | null;
+}
+
+export interface RagCounts {
+  GREEN: number;
+  AMBER: number;
+  RED: number;
+  none: number;
+}
+
+/** KPI dashboard: objectives (with their ancestors) and their KPIs in scope, worst status first. */
+export interface ScorecardDto {
+  asOf: string | null;
+  summary: RagCounts & { total: number; due: number };
+  objectives: {
+    /** null: KPIs without an objective. */
+    objective: ObjectiveRef | null;
+    level: number;
+    kpis: KpiDto[];
+    counts: RagCounts;
+    worst: KpiRag | null;
+  }[];
+}
+
+/** KPIs on a Knowledge Portal process page (Setting `kpi.showInPortal`). */
+export interface PortalKpiDto extends KpiRef {
+  direction: KpiDirection;
+  bpmnElementId: string;
+  latest: KpiDto['latest'];
+  trend: KpiDto['trend'];
 }
 
 export interface KpiTaskDto {

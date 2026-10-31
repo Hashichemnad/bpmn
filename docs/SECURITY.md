@@ -369,6 +369,8 @@ zod / UUID pipe; file uploads are checked in the service (allow-list, content sn
 | DELETE | `/kpis/objectives/:id`                       | `kpi.edit`                                                | param `id`                          | default    |
 | PATCH  | `/kpis/objectives/:id`                       | `kpi.edit`                                                | body, param `id`                    | default    |
 | GET    | `/kpis/processes/:processId`                 | `kpi.read`                                                | param `processId`                   | default    |
+| GET    | `/kpis/scorecard`                            | `kpi.read`                                                | query                               | default    |
+| GET    | `/kpis/scorecard/export`                     | `kpi.read`                                                | query                               | default    |
 | GET    | `/kpis/settings`                             | any of `kpi.read`, `portal.manage`                        | —                                   | default    |
 | PUT    | `/kpis/settings`                             | `kpi.edit`                                                | body                                | default    |
 | GET    | `/kpis/tasks`                                | any of `kpi.edit`, `kpi.measure`                          | —                                   | default    |

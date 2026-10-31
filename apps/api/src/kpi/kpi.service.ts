@@ -28,6 +28,12 @@ import {
   type Paginated,
   type ProcessKpisDto,
   type ProcessStatus,
+  type PortalKpiDto,
+  type RagCounts,
+  type ScorecardDto,
+  type ScorecardQuery,
+  RAG_SEVERITY,
+  worstRag,
   type UpdateKpiInput,
   type UpdateObjectiveInput,
 } from '@processhub/shared';
@@ -71,7 +77,7 @@ const kpiInclude = {
           },
         },
       },
-      measurements: { orderBy: { periodStart: 'desc' }, take: 12 },
+      measurements: { orderBy: { periodStart: 'desc' }, take: 36 },
     },
   },
 } satisfies Prisma.RepoObjectInclude;
@@ -111,7 +117,7 @@ const KPI_FIELDS = [
 
 const codeOrNull = (v: string | null | undefined) => (v === undefined ? undefined : v || null);
 
-export function toKpiDto(o: KpiRow, now = new Date(), period?: string): KpiDto {
+export function toKpiDto(o: KpiRow, now = new Date(), asOf?: string): KpiDto {
   const k = o.kpi!;
   const thresholds = {
     direction: k.direction,
@@ -120,12 +126,13 @@ export function toKpiDto(o: KpiRow, now = new Date(), period?: string): KpiDto {
     redThreshold: k.redThreshold,
   };
   const rag = (p: string, v: number) => kpiRag(v, thresholdsFor(thresholds, p, k.periodTargets));
-  const measured = [...k.measurements].sort(
-    (a, b) => a.periodStart.getTime() - b.periodStart.getTime(),
-  );
-  const latestRow = period
-    ? measured.find((m) => m.period === period)
-    : measured[measured.length - 1];
+  // "As of" a month: only periods that started by then count (dashboard period filter).
+  const cutoff = asOf ? periodStart(asOf).getTime() : Infinity;
+  const measured = [...k.measurements]
+    .filter((m) => m.periodStart.getTime() <= cutoff)
+    .sort((a, b) => a.periodStart.getTime() - b.periodStart.getTime())
+    .slice(-12);
+  const latestRow = measured[measured.length - 1];
   const due = duePeriod(now, k.frequency);
   const manual = k.dataSource === 'MANUAL' || k.dataSource === 'EXCEL';
   return {
@@ -353,7 +360,7 @@ export class KpiService {
       },
       include: kpiInclude,
     });
-    let items = rows.map((r) => toKpiDto(r, new Date(), q.period));
+    let items = rows.map((r) => toKpiDto(r, new Date(), q.asOf));
     if (q.rag) items = items.filter((k) => k.latest?.rag === q.rag);
     if (q.due !== undefined) items = items.filter((k) => k.due === q.due);
     const rank = { RED: 0, AMBER: 1, GREEN: 2 } as Record<string, number>;
@@ -899,6 +906,121 @@ export class KpiService {
         // More than a month after the period ended.
         overdue: now.getTime() - periodStart(k.duePeriod).getTime() > 62 * 86_400_000,
       }));
+  }
+
+  // ---------- Dashboard ----------
+
+  /** Objectives (with their ancestors) and the KPIs in scope, as of a month. */
+  async scorecard(q: ScorecardQuery): Promise<ScorecardDto> {
+    const list = await this.list({
+      page: 1,
+      pageSize: 100_000,
+      order: 'asc',
+      sort: 'code',
+      status: 'ACTIVE',
+      departmentId: q.departmentId,
+      processId: q.processId,
+      ownerId: q.ownerId,
+      asOf: q.asOf,
+    });
+    const kpis = list.items;
+    const objectives = await this.objectives();
+    const byId = new Map(objectives.map((o) => [o.id, o]));
+    const counts = (l: KpiDto[]): RagCounts => ({
+      GREEN: l.filter((k) => k.latest?.rag === 'GREEN').length,
+      AMBER: l.filter((k) => k.latest?.rag === 'AMBER').length,
+      RED: l.filter((k) => k.latest?.rag === 'RED').length,
+      none: l.filter((k) => !k.latest?.rag).length,
+    });
+    const rank = (k: KpiDto) => (k.latest?.rag ? RAG_SEVERITY[k.latest.rag] : -1);
+    const sortKpis = (l: KpiDto[]) =>
+      [...l].sort(
+        (a, b) =>
+          rank(b) - rank(a) ||
+          (a.code ?? '').localeCompare(b.code ?? '', undefined, { numeric: true }),
+      );
+    // Objectives with KPIs in scope and their ancestors, in tree order.
+    const direct = new Map<string, KpiDto[]>();
+    for (const k of kpis)
+      for (const o of k.objectives) direct.set(o.id, [...(direct.get(o.id) ?? []), k]);
+    const keep = new Set<string>();
+    for (const id of direct.keys()) {
+      let cur: string | null = id;
+      while (cur && byId.has(cur) && !keep.has(cur)) {
+        keep.add(cur);
+        cur = byId.get(cur)!.parentId;
+      }
+    }
+    const rows: ScorecardDto['objectives'] = [];
+    const walk = (parentId: string | null, level: number) => {
+      for (const o of objectives.filter((x) => x.parentId === parentId && keep.has(x.id))) {
+        const own = sortKpis(direct.get(o.id) ?? []);
+        rows.push({
+          objective: {
+            id: o.id,
+            code: o.code,
+            nameEn: o.nameEn,
+            nameAr: o.nameAr,
+            parentId: o.parentId,
+          },
+          level,
+          kpis: own,
+          counts: counts(own),
+          worst: worstRag(own.map((k) => k.latest?.rag)),
+        });
+        walk(o.id, level + 1);
+      }
+    };
+    walk(null, 1);
+    const orphans = sortKpis(kpis.filter((k) => !k.objectives.length));
+    if (orphans.length)
+      rows.push({
+        objective: null,
+        level: 1,
+        kpis: orphans,
+        counts: counts(orphans),
+        worst: worstRag(orphans.map((k) => k.latest?.rag)),
+      });
+    return {
+      asOf: q.asOf ?? null,
+      summary: { ...counts(kpis), total: kpis.length, due: kpis.filter((k) => k.due).length },
+      objectives: rows,
+    };
+  }
+
+  /** KPIs of the given library objects for the Knowledge Portal (active ones only). */
+  async portalKpis(links: { objectId: string; bpmnElementId: string }[]): Promise<PortalKpiDto[]> {
+    if (!links.length) return [];
+    const rows = await this.prisma.repoObject.findMany({
+      where: {
+        id: { in: links.map((l) => l.objectId) },
+        type: 'KPI',
+        deletedAt: null,
+        kpi: { is: { status: 'ACTIVE' } },
+      },
+      include: kpiInclude,
+    });
+    const byId = new Map(rows.map((r) => [r.id, toKpiDto(r)]));
+    return links.flatMap((l) => {
+      const k = byId.get(l.objectId);
+      return k
+        ? [
+            {
+              id: k.id,
+              code: k.code,
+              nameEn: k.nameEn,
+              nameAr: k.nameAr,
+              unit: k.unit,
+              frequency: k.frequency,
+              status: k.status,
+              direction: k.direction,
+              bpmnElementId: l.bpmnElementId,
+              latest: k.latest,
+              trend: k.trend,
+            },
+          ]
+        : [];
+    });
   }
 
   // ---------- Objectives ----------

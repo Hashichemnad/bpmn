@@ -75,6 +75,7 @@ import { TraceabilityPage } from '@/features/ea/TraceabilityPage';
 import { KpisPage } from '@/features/kpi/KpisPage';
 import { KpiDetailPage } from '@/features/kpi/KpiDetailPage';
 import { ObjectivesPage } from '@/features/kpi/ObjectivesPage';
+import { KpiDashboardPage } from '@/features/kpi/KpiDashboardPage';
 
 const P = PERMISSIONS;
 
@@ -386,6 +387,14 @@ export const routes: RouteObject[] = [
                     element: (
                       <RequirePermission all={[P.KPI_READ]}>
                         <KpisPage />
+                      </RequirePermission>
+                    ),
+                  },
+                  {
+                    path: 'kpis/dashboard',
+                    element: (
+                      <RequirePermission all={[P.KPI_READ]}>
+                        <KpiDashboardPage />
                       </RequirePermission>
                     ),
                   },

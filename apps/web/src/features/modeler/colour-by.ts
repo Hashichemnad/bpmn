@@ -6,6 +6,8 @@ import {
   type DurationBand,
   type AppLifecycle,
   LIFECYCLE_SEVERITY,
+  type KpiRag,
+  worstRag,
   type ObjectLinkDto,
   type StepType,
 } from '@processhub/shared';
@@ -32,6 +34,8 @@ export const COLOUR_BY_MODES = [
   'riskControl',
   // Architecture (Phase 4.3): steps using applications that are phasing out or retired.
   'appLifecycle',
+  // KPIs (Phase 4.3): worst latest status of the step's KPIs.
+  'kpiStatus',
 ] as const;
 export type ColourByMode = (typeof COLOUR_BY_MODES)[number];
 
@@ -82,6 +86,10 @@ const FIXED: Record<string, { fill: string; stroke: string }> = {
   'lifecycle:PLANNED': { fill: '#DBEAFE', stroke: '#1D4ED8' },
   'lifecycle:PHASING_OUT': { fill: '#FFEDD5', stroke: '#C2410C' },
   'lifecycle:RETIRED': { fill: '#FEE2E2', stroke: '#DC2626' },
+  'kpi:GREEN': { fill: '#DCFCE7', stroke: '#16A34A' },
+  'kpi:AMBER': { fill: '#FEF3C7', stroke: '#D97706' },
+  'kpi:RED': { fill: '#FEE2E2', stroke: '#DC2626' },
+  'kpi:noValue': { fill: '#E2E8F0', stroke: '#64748B' },
 };
 
 /** What a step lacks in the "missing information" view. */
@@ -96,6 +104,8 @@ export interface ColourByContext {
   grc?: { steps: Map<string, StepGrcSummary>; bands: GrcBand[] };
   /** Lifecycle of each application (library SYSTEM object id → lifecycle), Phase 4.3. */
   lifecycles?: Map<string, AppLifecycle>;
+  /** Latest status of the KPIs of each step (element id → statuses), Phase 4.3. */
+  kpis?: Map<string, (KpiRag | null)[]>;
 }
 
 export interface ColourByResult {
@@ -159,6 +169,14 @@ function categoryOf(
       return worst
         ? { key: `lifecycle:${worst}`, label: ctx.label(`lifecycle:${worst}`) }
         : { key: 'none', label: ctx.label('none') };
+    }
+    case 'kpiStatus': {
+      if (!isStep) return null;
+      const list = ctx.kpis?.get(el.id);
+      if (!list?.length) return { key: 'none', label: ctx.label('none') };
+      const worst = worstRag(list);
+      const key = worst ? `kpi:${worst}` : 'kpi:noValue';
+      return { key, label: ctx.label(key) };
     }
     case 'duration': {
       if (!isStep) return null;
@@ -253,7 +271,15 @@ export function planColourBy(
   items.sort(
     (a, b) =>
       Number(a.key === 'none') - Number(b.key === 'none') ||
-      (['type', 'duration', 'missing', 'riskRating', 'riskControl', 'appLifecycle'].includes(mode)
+      ([
+        'type',
+        'duration',
+        'missing',
+        'riskRating',
+        'riskControl',
+        'appLifecycle',
+        'kpiStatus',
+      ].includes(mode)
         ? 0
         : b.count - a.count),
   );

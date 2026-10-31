@@ -20,7 +20,9 @@ import { FeedbackButton } from './FeedbackButton';
 import { PortalDiagram } from './PortalDiagram';
 import type { StepInfo } from './step-info';
 import { PortalMeta } from './PortalMeta';
+import { extractBpmnLabels } from '@processhub/shared';
 import { StepDetails } from './StepDetails';
+import { PortalKpis } from '@/features/kpi/PortalKpis';
 import { portalItemLink } from './portal-links';
 import { ReportDialog, type ReportKind } from '@/features/reports/ReportDialog';
 
@@ -41,6 +43,12 @@ export function PortalProcessPage() {
     return <ErrorState error={process.error} onRetry={() => void process.refetch()} />;
   }
   const p = process.data;
+  // Step names of the published diagram (KPI list).
+  const stepLabels = p.kpis?.length && p.bpmnXml ? extractBpmnLabels(p.bpmnXml) : null;
+  const stepName = (id: string) => {
+    const l = stepLabels?.get(id);
+    return (l && loc({ nameEn: l.nameEn || l.name, nameAr: l.nameAr })) || id;
+  };
   const select = (s: StepInfo | null) => {
     setStep(s);
     setParams(s ? { step: s.id } : {}, { replace: true });
@@ -188,6 +196,11 @@ export function PortalProcessPage() {
           </Card>
         </Col>
       </Row>
+      {p.kpis && p.kpis.length > 0 && (
+        <div style={{ marginBlockStart: 16 }}>
+          <PortalKpis kpis={p.kpis} stepName={stepName} />
+        </div>
+      )}
       {report && (
         <ReportDialog
           kind={report}

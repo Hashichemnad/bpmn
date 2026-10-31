@@ -144,3 +144,39 @@ export async function createSampleProcess(
   expect(saved.status).toBe(200);
   return created.data.id;
 }
+
+/**
+ * Signs in the seeded Super Admin with two-factor: the stored TOTP secret (`.auth/`), or enrols on
+ * the first sign-in against a fresh database (like auth.spec) and stores the secret.
+ */
+export async function loginAdmin(page: Page, locale: 'en' | 'ar' = 'en') {
+  await page.context().clearCookies();
+  await page.goto('/login');
+  await page.locator('input[autocomplete=username]').fill(ADMIN.email);
+  await page.locator('input[type=password]').fill(ADMIN.password);
+  await page.locator('button[type=submit]').click();
+  const setup = page.getByText('Your role requires two-step verification');
+  const verify = page.getByRole('button', { name: 'Use a recovery code instead' });
+  await expect(setup.or(verify)).toBeVisible();
+  if (await verify.isVisible()) {
+    const stored = readAdminMfa();
+    if (!stored) throw new Error('The admin 2FA secret is unknown (run auth.spec.ts first)');
+    // A code is accepted once per 30-second window: wait for a fresh one when needed.
+    const left = 30 - (Math.floor(Date.now() / 1000) % 30);
+    if (left < 4) await page.waitForTimeout(left * 1000 + 500);
+    await typeCode(page, totpCode(stored.secret));
+    await page.getByRole('button', { name: 'Verify' }).click();
+  } else {
+    const key = page.locator('.ant-typography code').first();
+    await expect(key).toBeVisible();
+    const secret = (await key.innerText()).replace(/\s+/g, '');
+    await typeCode(page, totpCode(secret));
+    await page.getByRole('button', { name: 'Confirm and turn on' }).click();
+    const codes = page.getByTestId('recovery-codes').locator('code');
+    await expect(codes.first()).toBeVisible();
+    writeAdminMfa({ secret, recoveryCodes: await codes.allInnerTexts() });
+    await page.getByRole('button', { name: 'Continue' }).click();
+  }
+  await page.waitForFunction(() => !location.pathname.startsWith('/login'));
+  await setLocale(page, locale);
+}

@@ -380,6 +380,106 @@ describe('KPIs (e2e)', () => {
         .sort(),
     ).toEqual(['CREATE', 'DELETE', 'EXPORT', 'EXPORT', 'EXPORT']);
   });
+  it('scorecard by objective with filters and as-of month, Excel; portal KPIs follow the setting', async () => {
+    const so = (
+      await admin.post('/kpis/objectives').send({ code: 'SO-1', nameEn: 'Top' }).expect(201)
+    ).body;
+    const child = (
+      await admin
+        .post('/kpis/objectives')
+        .send({ code: 'SO-1.1', nameEn: 'Child', parentId: so.id })
+        .expect(201)
+    ).body;
+    const red = (
+      await kpi(admin, {
+        objectiveIds: [child.id],
+        links: [{ processId, bpmnElementId: 'T1' }],
+      }).expect(201)
+    ).body.item.id;
+    const green = (
+      await kpi(admin, { code: 'KPI-02', nameEn: 'Green one', objectiveIds: [child.id] }).expect(
+        201,
+      )
+    ).body.item.id;
+    await kpi(admin, { code: 'KPI-03', nameEn: 'Lonely' }).expect(201);
+    await owner
+      .put(`/kpis/${red}/measurements`)
+      .send({ period: prev(2), value: 95 })
+      .expect(200);
+    await owner.put(`/kpis/${red}/measurements`).send({ period: month, value: 70 }).expect(200);
+    await owner.put(`/kpis/${green}/measurements`).send({ period: month, value: 99 }).expect(200);
+
+    const card = (await modeler.get('/kpis/scorecard').expect(200)).body;
+    expect(card.summary).toMatchObject({ total: 3, GREEN: 1, RED: 1, none: 1 });
+    // The parent objective appears (no KPIs of its own), then the child with red first, then the rest.
+    expect(
+      card.objectives.map((o: { objective: { code: string } | null; level: number }) => [
+        o.objective?.code ?? null,
+        o.level,
+      ]),
+    ).toEqual([
+      ['SO-1', 1],
+      ['SO-1.1', 2],
+      [null, 1],
+    ]);
+    expect(card.objectives[1]).toMatchObject({ worst: 'RED', counts: { RED: 1, GREEN: 1 } });
+    expect(card.objectives[1].kpis.map((k: { code: string }) => k.code)).toEqual([
+      'KPI-01',
+      'KPI-02',
+    ]);
+    // As of two months ago only the first value counts; filter by process.
+    const past = (await modeler.get(`/kpis/scorecard?asOf=${prev(2)}`).expect(200)).body;
+    expect(past.objectives[1].kpis[0]).toMatchObject({ latest: { period: prev(2), rag: 'GREEN' } });
+    const scoped = (await modeler.get(`/kpis/scorecard?processId=${processId}`).expect(200)).body;
+    expect(scoped.summary.total).toBe(1);
+    await modeler.get('/kpis/scorecard/export?locale=ar').expect(200);
+    await viewer.get('/kpis/scorecard').expect(403);
+
+    // Portal: a published process shows its KPIs only with the setting on (off by default).
+    await createUser(ctx.prisma, 'reviewer@test.local', ['REVIEWER']);
+    const reviewer = await loggedIn(ctx.app, 'reviewer@test.local');
+    const wf = (
+      await admin
+        .post('/workflows')
+        .send({
+          nameEn: 'Review',
+          steps: [{ nameEn: 'Review', assignees: [{ type: 'ROLE', roleKey: 'REVIEWER' }] }],
+        })
+        .expect(201)
+    ).body.id;
+    await admin
+      .put('/governance/settings')
+      .send({
+        reviewIntervalMonths: 12,
+        reminderDays: 14,
+        reviewDueDays: 5,
+        defaultWorkflowId: wf,
+        categoryWorkflows: { MANAGEMENT: null, CORE: null, SUPPORT: null },
+      })
+      .expect(200);
+    await modeler
+      .post(`/processes/${processId}/versions`)
+      .send({ bpmnXml: laneXml(), changeNote: 'v1' })
+      .expect(201);
+    await modeler.post(`/governance/processes/${processId}/submit`).send({}).expect(200);
+    const review = (await reviewer.get('/tasks').expect(200)).body.reviews[0];
+    await reviewer.post(`/reviews/${review.id}/decision`).send({ decision: 'APPROVE' }).expect(200);
+    await modeler.post(`/governance/processes/${processId}/publish`).send({}).expect(200);
+    const hidden = (await viewer.get(`/portal/processes/${processId}`).expect(200)).body;
+    expect(hidden.kpis).toBeNull();
+    expect(hidden.links.some((l: { object: { type: string } }) => l.object.type === 'KPI')).toBe(
+      false,
+    );
+    await admin.put('/kpis/settings').send({ showInPortal: true, reminders: true }).expect(200);
+    const shown = (await viewer.get(`/portal/processes/${processId}`).expect(200)).body;
+    expect(shown.kpis).toEqual([
+      expect.objectContaining({
+        code: 'KPI-01',
+        bpmnElementId: 'T1',
+        latest: expect.objectContaining({ rag: 'RED', value: 70 }),
+      }),
+    ]);
+  });
 });
 
 /** Three tasks in two lanes: T1 (60 + 30 min) → T2 (service task, 60 min) in another lane → T3. */

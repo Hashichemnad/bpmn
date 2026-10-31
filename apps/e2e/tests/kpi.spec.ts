@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { DEMO, apiCall, login } from './helpers';
+import { DEMO, apiCall, login, loginAdmin } from './helpers';
 
 /**
  * KPIs (Phase 4.3, M12): the owner of a seeded KPI sees the due value in My tasks, enters it with a
@@ -55,4 +55,61 @@ test('enter a KPI measurement: status and catalogue update', async ({ page }) =>
     value: 1,
   });
   expect(denied.status).toBe(403);
+});
+
+test('KPI dashboard, process performance, modeler KPI badge and colour-by, portal setting', async ({
+  page,
+}) => {
+  await login(page, DEMO.owner);
+  // KPI-07 (IT incidents within SLA) is off target in the demo data.
+  await page.goto('/kpis/dashboard');
+  await expect(page.getByTestId('kpi-scorecard')).toContainText('KPI-07');
+  const red = Number(
+    await page.getByTestId('kpi-tile-RED').locator('.ant-statistic-content-value').innerText(),
+  );
+  expect(red).toBeGreaterThan(0);
+  // Drill-down: the chart of the KPI.
+  await page.getByTestId('kpi-scorecard').getByText('KPI-07', { exact: false }).first().click();
+  await expect(page.getByTestId('kpi-drawer').getByTestId('kpi-chart')).toBeVisible();
+  await page.keyboard.press('Escape');
+  // A filter by process narrows the scorecard; the tiles open the filtered register.
+  const procs = await apiCall<{ id: string; code: string }[]>(page, 'GET', '/processes/tree');
+  const req = procs.data.find((p) => p.code === 'S.01.01')!;
+  await page.goto(`/kpis/dashboard?processId=${req.id}`);
+  await expect(page.getByTestId('kpi-scorecard')).toContainText('KPI-01');
+  await expect(page.getByTestId('kpi-scorecard')).not.toContainText('KPI-07');
+
+  // Process page: performance card with the KPIs and the calculated process KPIs.
+  await page.goto(`/processes/${req.id}`);
+  await expect(page.getByTestId('process-kpis')).toContainText('KPI-01');
+  await expect(page.getByTestId('calculated-kpis')).toBeVisible();
+
+  // Modeler: a KPI badge on the approval step and "Colour by → KPI status".
+  await page.goto(`/processes/${req.id}/model`);
+  await expect(
+    page.locator('.djs-overlay .ph-badge[class*="ph-badge-kpi_"]').first(),
+  ).toBeVisible();
+  await page.getByRole('button', { name: 'View', exact: true }).click();
+  await page.getByText('KPI status', { exact: true }).click();
+  const legend = page.getByRole('region', { name: 'Colour legend' });
+  await expect(legend.getByRole('listitem').first()).toBeVisible();
+
+  // Portal: KPIs only with "Show KPIs in the portal" (off by default; on for this test, then off).
+  await loginAdmin(page);
+  const set = (on: boolean) =>
+    apiCall(page, 'PUT', '/kpis/settings', { showInPortal: on, reminders: true });
+  expect((await set(true)).status).toBe(200);
+  await login(page, DEMO.viewer);
+  const published = await apiCall<{ id: string; code: string }[]>(page, 'GET', '/portal/processes');
+  const withKpis = published.data.find((p) => p.code === 'S.01.01');
+  if (withKpis) {
+    const res = await apiCall<{ kpis: unknown[] | null }>(
+      page,
+      'GET',
+      `/portal/processes/${withKpis.id}`,
+    );
+    expect(res.data.kpis).not.toBeNull();
+  }
+  await loginAdmin(page);
+  expect((await set(false)).status).toBe(200);
 });
