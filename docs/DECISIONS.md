@@ -1773,3 +1773,41 @@ Supersedes the "act as the Super Admin" rule of D-116.
   became active** and end = decision (so waiting vs processing is known), "Publish" and "Withdraw". Attributes:
   item type and workflow; resources and departments are the users'. Filters: item kinds, submission period, language
   of the activity names. Built as an import job like a file; re-import refreshes it.
+
+## D-133 — Discovery and analysis: one analysis bundle per filter set (Phase 5.1, 2026-10-31)
+
+- **One pass, one bundle.** `analyseLog` (shared, worker thread) computes for the filtered cases: the
+  **directly-follows graph** with frequency (events, cases, start / end counts per activity; count and cases per
+  edge, start ▶ and end ■ markers) and performance (edge time = end of one event → start of the next; per activity
+  processing = end − start and waiting = previous end → start when the log has start times; mean, median, max,
+  P90, total), the **variants** (most frequent 300 with share, mean / median throughput time, example cases; a
+  variant id is a hash of the activity sequence), **statistics** (throughput mean / median / P10–P95, weekly or
+  monthly trend of cases started and mean throughput of completed cases, histogram, rework per activity, activities
+  per resource, resource and department **handovers**), **bottlenecks** (slowest 25 transitions and activities with
+  the 5 slowest cases each) and the filter choices. The bundle is cached (`MiningResultCache`) per log data version
+  and request; the UI's tabs share it.
+- **Sliders.** The **activity slider** keeps the most frequent activities and *projects* the others out (their
+  predecessor and successor get connected), computed on the server; the **path slider** is client-side: it keeps the
+  most frequent edges but never leaves an activity without its strongest incoming and outgoing edge. Layout with
+  **dagre** (`@dagrejs/dagre`, MIT, top to bottom in both languages). Case animation is not built (BACKLOG).
+- **Filters** (stackable, AND, case level): period (cases running / started / completed / contained in a range),
+  attribute values, variants, throughput time range, contains / does not contain activities, follows relation
+  (directly or eventually, include or exclude), resources, departments. Filter stacks are saved **per user**
+  (`MiningFilterPreset`, per log or for all logs).
+- **Responsiveness**: the request waits up to 8 s for the analysis job, otherwise the client long-polls the job
+  (progress shown); identical requests share one job. Excel exports (variants, bottlenecks, activities, resources,
+  handovers; EN / AR headers, RTL sheets in Arabic) are audited (`EXPORT`).
+
+## D-134 — "Generate BPMN from log": heuristics miner (Phase 5.1, 2026-10-31)
+
+- Algorithm: heuristics miner (Weijters & van der Aalst 2006) with the usual thresholds — dependency (default 0.9,
+  a slider in the dialog), positive observations, relative-to-best, length-two loops, AND measure (0.1) — and the
+  all-tasks-connected heuristic (every activity keeps its best input and output). Splits and joins are AND when
+  every pair of branches passes the AND measure, otherwise XOR (mixed groups become XOR — a known simplification;
+  the result is a draft).
+- The net becomes the AI builder's `ProcessStructure` (one task per activity, join / split gateways, one start and
+  end event, XOR gateways for several start / end activities) and is laid out by the shared layered layout
+  (`structureToBpmn`, theme colours). **Lanes** come from the most frequent department (or resource) of each
+  activity. Labels go to `nameEn` or `nameAr` by script. The result is a **new draft process** owned by the
+  requester (needs `mining.manage`, `processes.create` and model rights), never published automatically; audited as
+  `EXPORT` on the log.

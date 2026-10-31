@@ -1,3 +1,15 @@
+import type {
+  AnalysisRequest,
+  AnalysisResponse,
+  DiscoverProcessInput,
+  DiscoverResultDto,
+  FilterPresetDto,
+  FilterPresetInput,
+  LogAnalysis,
+  MiningExportKind,
+} from '@processhub/shared';
+import { useState } from 'react';
+import { apiDownload } from './client';
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type {
   ActivityMappingInput,
@@ -222,4 +234,89 @@ export function useSaveMiningSettings() {
       api<MiningSettings>('/mining/settings', { method: 'PUT', body }),
     onSuccess: (data) => qc.setQueryData(miningKeys.settings, data),
   });
+}
+
+// ---------- Analysis (step 2) ----------
+
+/**
+ * Analysis of a log for a request (filters, activity slider): the server answers from its cache or
+ * runs a job; while it runs the job is long-polled and its progress exposed.
+ */
+export function useAnalysis(logId: string | undefined, request: Partial<AnalysisRequest>) {
+  const [job, setJob] = useState<MiningJobDto | null>(null);
+  const query = useQuery({
+    queryKey: ['mining', 'analysis', logId ?? '', request],
+    queryFn: async ({ signal }) => {
+      for (;;) {
+        const res = await api<AnalysisResponse<LogAnalysis>>(`/mining/logs/${logId}/analysis`, {
+          method: 'POST',
+          body: request,
+          signal,
+        });
+        if (res.status === 'DONE' && res.result) {
+          setJob(null);
+          return res.result;
+        }
+        let j = res.job!;
+        setJob(j);
+        while (j.status === 'QUEUED' || j.status === 'RUNNING') {
+          j = await api<MiningJobDto>(`/mining/jobs/${j.id}`, { query: { wait: 5 }, signal });
+          setJob(j);
+        }
+        if (j.status !== 'DONE') throw new Error(j.error ?? j.status);
+      }
+    },
+    enabled: !!logId,
+    placeholderData: keepPreviousData,
+    staleTime: 5 * 60_000,
+  });
+  return { ...query, job };
+}
+
+export const useFilterPresets = (logId: string) =>
+  useQuery({
+    queryKey: ['mining', 'presets', logId],
+    queryFn: () => api<FilterPresetDto[]>(`/mining/logs/${logId}/presets`),
+  });
+
+export function useSavePreset(logId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (body: FilterPresetInput) =>
+      api<FilterPresetDto>(`/mining/logs/${logId}/presets`, { method: 'POST', body }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['mining', 'presets', logId] }),
+  });
+}
+
+export function useDeletePreset(logId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => api<void>(`/mining/presets/${id}`, { method: 'DELETE' }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['mining', 'presets', logId] }),
+  });
+}
+
+export function useDiscover(logId: string) {
+  return useMutation({
+    mutationFn: (body: Partial<DiscoverProcessInput>) =>
+      api<DiscoverResultDto>(`/mining/logs/${logId}/discover`, { method: 'POST', body }),
+  });
+}
+
+export async function exportAnalysis(
+  logId: string,
+  kind: MiningExportKind,
+  request: Partial<AnalysisRequest>,
+) {
+  const file = await apiDownload(
+    `/mining/logs/${logId}/export`,
+    { method: 'POST', body: { kind, request } },
+    `${kind}.xlsx`,
+  );
+  const url = URL.createObjectURL(file.blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = file.fileName;
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
 }

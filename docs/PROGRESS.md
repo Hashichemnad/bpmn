@@ -37,10 +37,20 @@ Steps (tick as they are committed; a new session continues at the first unticked
       steps, access), EN / AR. Tests: shared 8 (`mining/import.test.ts`), API 7 (`mining-logs.e2e-spec.ts`),
       Playwright `mining.spec.ts` (import CSV with mapping → validation → import → Arabic → viewer denied).
       Note: API tests run the worker on `packages/shared/dist` — build the shared package after changing it.
-- [ ] 2. Discovery and analysis: shared DFG, variants, statistics, filters, bottlenecks, handovers, heuristics miner;
-      analysis jobs in worker threads + cache; process map (frequency / performance, activity + path sliders, start /
-      end), variants (compare, open on map), stackable filters saved per user, statistics dashboard, bottlenecks with
-      Excel export, "Generate BPMN from log" (new draft process with lanes). Tests + Playwright.
+- [x] 2. Discovery and analysis (D-133, D-134): shared `mining/filters.ts` (stackable case filters, variant ids),
+      `mining/analysis.ts` (`analyseLog`: DFG frequency / performance with activity projection, variants, statistics,
+      rework, resources, handovers, bottlenecks with slow cases), `mining/heuristics.ts` (heuristics miner, AND / XOR,
+      loops, `netToStructure`); worker tasks `analyse` / `discover`. API `MiningAnalysisService`:
+      `POST /mining/logs/:id/analysis` (cache `MiningResultCache`, job + 8 s wait, deduplicated), `POST …/export`
+      (Excel, audited), filter presets per user (`/mining/logs/:id/presets`, `DELETE /mining/presets/:id`),
+      `POST …/discover` (new draft process with lanes via `structureToBpmn`). Web: log tabs Process map (dagre SVG,
+      frequency / performance, activity slider server side, path slider, zoom, variant highlight), Variants (share,
+      times, expand with example cases, compare two with LCS diff, show on map), Statistics (tiles, weekly / monthly
+      trend, histogram, rework, resources, handover graph + department table), Bottlenecks (slowest transitions /
+      activities, waiting share, slow cases → case drawer), filter bar (8 filter types, saved filters), Excel buttons,
+      "Generate BPMN" dialog. Tests: shared +9 (`mining/discovery.test.ts`: L1 DFG, projection, durations, rework,
+      filters, heuristics on L1, AND / XOR, loops), API 4 (`mining-analysis.e2e-spec.ts`), Playwright `mining.spec.ts`
+      extended (map, performance, attribute filter, variants on map + compare, statistics, bottlenecks).
 - [ ] 3. Conformance: BPMN → Petri net, token-based replay (fitness), deviations (skipped / inserted / wrong order),
       overlay on the BPMN diagram ("Colour by → mining: duration / frequency / deviations"), mining-based KPIs
       (data source "event log"), measured vs planned step attributes with accepted suggestions → new version.

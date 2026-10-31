@@ -1,5 +1,8 @@
 {
-  "nav": { "group": "Process mining", "logs": "Event logs" },
+  "nav": {
+    "group": "Process mining",
+    "logs": "Event logs"
+  },
   "status": {
     "DRAFT": "Draft",
     "IMPORTING": "Importing",
@@ -7,7 +10,10 @@
     "FAILED": "Failed",
     "DELETING": "Deleting"
   },
-  "source": { "FILE": "Uploaded file", "PROCESSHUB": "ProcessHub reviews" },
+  "source": {
+    "FILE": "Uploaded file",
+    "PROCESSHUB": "ProcessHub reviews"
+  },
   "units": {
     "s": "{{n}} s",
     "min": "{{n}} min",
@@ -74,7 +80,11 @@
     "create": "Create log",
     "started": "The log is being built",
     "items": "Reviews of",
-    "item": { "PROCESS": "Processes", "PAGE": "Pages", "DIAGRAM": "Diagrams" },
+    "item": {
+      "PROCESS": "Processes",
+      "PAGE": "Pages",
+      "DIAGRAM": "Diagrams"
+    },
     "period": "Submitted between",
     "language": "Language of the activity names"
   },
@@ -156,7 +166,15 @@
     "column": "Column",
     "value": "Value"
   },
-  "tabs": { "overview": "Overview", "activities": "Activities and steps", "access": "Access" },
+  "tabs": {
+    "overview": "Overview",
+    "activities": "Activities and steps",
+    "access": "Access",
+    "map": "Process map",
+    "variants": "Variants",
+    "statistics": "Statistics",
+    "bottlenecks": "Bottlenecks"
+  },
   "log": {
     "edit": "Edit",
     "continueImport": "Continue import",
@@ -178,7 +196,11 @@
     "step": "BPMN step",
     "unmapped": "Not in the model",
     "match": "Matched by",
-    "matchKind": { "LABEL": "Label", "SYNONYM": "Dictionary synonym", "MANUAL": "Manual" }
+    "matchKind": {
+      "LABEL": "Label",
+      "SYNONYM": "Dictionary synonym",
+      "MANUAL": "Manual"
+    }
   },
   "access": {
     "title": "Who can see this log",
@@ -187,5 +209,133 @@
     "revoke": "Remove",
     "user": "User",
     "email": "E-mail"
+  },
+  "analysis": {
+    "cases": "{{cases}} of {{total}} cases",
+    "excel": "Excel"
+  },
+  "map": {
+    "title": "Process map",
+    "paths": "Paths",
+    "activities": "Activities",
+    "shown": "{{edges}} of {{total}} paths shown",
+    "zoomIn": "Zoom in",
+    "zoomOut": "Zoom out",
+    "zoomReset": "Fit",
+    "frequency": "Frequency",
+    "performance": "Performance",
+    "mean": "mean",
+    "median": "median",
+    "max": "max",
+    "wait": "wait",
+    "work": "work",
+    "variantShown": "Variant highlighted",
+    "noStartTimes": "No start times in this log: the performance view shows the time between events only."
+  },
+  "filters": {
+    "none": "No filters: all cases",
+    "add": "Add filter",
+    "clear": "Clear",
+    "save": "Save filters",
+    "presets": "Saved filters",
+    "presetName": "Name of the saved filters",
+    "apply": "Apply",
+    "not": "not",
+    "cases": "Cases",
+    "range": "Period",
+    "periodModeLabel": "Cases that",
+    "periodMode": {
+      "intersecting": "Run in the period",
+      "started": "Started in the period",
+      "completed": "Completed in the period",
+      "contained": "Started and completed in the period"
+    },
+    "activityMode": {
+      "contains": "Contain",
+      "notContains": "Do not contain"
+    },
+    "attribute": "Attribute",
+    "values": "Values",
+    "activities": "Activities",
+    "from": "From",
+    "to": "To",
+    "directly": "Directly followed (no step in between)",
+    "exclude": "Exclude these cases instead",
+    "minHours": "Minimum (hours)",
+    "maxHours": "Maximum (hours)",
+    "types": {
+      "period": "Period",
+      "attribute": "Attribute value",
+      "variant": "Variant",
+      "throughput": "Throughput time",
+      "activity": "Contains activity",
+      "follows": "Follows relation",
+      "resource": "Resource",
+      "department": "Department",
+      "cases": "Cases"
+    }
+  },
+  "variants": {
+    "compare": "Compare variants",
+    "variant": "Variant {{n}}",
+    "difference": "Difference: {{time}} mean throughput time, {{steps}} steps",
+    "summary": "{{total}} variants in the filtered cases; the {{shown}} most frequent are listed. Select two to compare.",
+    "examples": "Example cases:",
+    "share": "Share",
+    "mean": "Mean",
+    "median": "Median",
+    "steps": "Steps",
+    "path": "Path",
+    "onMap": "Show on map"
+  },
+  "stats": {
+    "variants": "Variants",
+    "mean": "Mean throughput",
+    "median": "Median throughput",
+    "p90": "90th percentile",
+    "rework": "Cases with rework",
+    "eventsPerCase": "Events per case",
+    "trend": {
+      "week": "Cases started and mean throughput time per week",
+      "month": "Cases started and mean throughput time per month"
+    },
+    "started": "Cases started",
+    "meanHours": "Mean throughput (hours)",
+    "histogram": "Throughput time distribution",
+    "max": "max",
+    "reworkTitle": "Rework (repeated activities)",
+    "repeats": "Repetitions",
+    "resources": "Activities per resource",
+    "handovers": "Handovers of work",
+    "noHandovers": "No resources in this log.",
+    "departmentHandovers": "Between departments",
+    "resourceHandovers": "Between resources",
+    "count": "Count"
+  },
+  "bottlenecks": {
+    "noStart": "The log has one timestamp per event: waiting and processing time cannot be separated; transitions show the time between events.",
+    "edges": "Slowest transitions",
+    "activities": "Slowest activities (waiting vs processing)",
+    "transition": "Transition",
+    "slowCases": "Cases that drive it",
+    "waiting": "Mean waiting",
+    "processing": "Mean processing",
+    "waitShare": "Share waiting"
+  },
+  "case": {
+    "title": "Case {{id}}",
+    "end": "End"
+  },
+  "discover": {
+    "button": "Generate BPMN",
+    "title": "Generate BPMN from the log",
+    "help": "The heuristics miner builds a process model from the filtered cases: tasks, gateways (AND / XOR from the data) and lanes from the departments or resources. The result is a new draft process for a person to review — it is never published automatically.",
+    "generate": "Generate",
+    "open": "Open in the modeler",
+    "done": "Draft process {{code}} created.",
+    "review": "Review the model, rename the steps and link roles before submitting it for review.",
+    "dependency": "Dependency threshold",
+    "dependencyHint": "Higher = only strong relations (simpler model); every activity keeps its strongest input and output.",
+    "lanes": "Lanes from departments / resources"
   }
 }

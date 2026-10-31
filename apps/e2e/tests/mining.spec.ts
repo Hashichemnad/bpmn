@@ -71,6 +71,55 @@ test('import an event log: mapping, validation, import', async ({ page }) => {
   await page.getByRole('tab', { name: 'Activities and steps' }).click();
   await expect(page.getByTestId('mining-activities')).toContainText('Check budget');
 
+  // Process map: frequency labels, performance view, path slider.
+  await page.getByRole('tab', { name: 'Process map' }).click();
+  const map = page.getByTestId('process-map');
+  await expect(map.locator('[data-node="Check budget"]')).toBeVisible();
+  await expect(map.locator('[data-edge="Check budget>Check budget"]')).toBeVisible();
+  await expect(map.locator('[data-edge="Create request>Check budget"]')).toContainText('6');
+  await page.getByTestId('map-mode').getByText('Performance').click();
+  await expect(map.locator('[data-edge="Create request>Check budget"]')).toContainText('30 min');
+  // Filter: only e-mail cases (attribute) → 3 of 6 cases.
+  await page.getByTestId('add-filter').click();
+  await page.getByRole('menuitem', { name: 'Attribute value' }).click();
+  const dlg = page.getByRole('dialog');
+  await dlg.getByLabel('Attribute').click();
+  await page
+    .locator('.ant-select-dropdown:visible .ant-select-item-option-content', {
+      hasText: /^Channel$/,
+    })
+    .click();
+  await dlg.getByLabel('Values').click();
+  await page
+    .locator('.ant-select-dropdown:visible .ant-select-item-option-content', { hasText: /^email$/ })
+    .click();
+  await page.keyboard.press('Escape');
+  await dlg.getByRole('button', { name: 'Apply' }).click();
+  await expect(page.getByTestId('filtered-cases')).toContainText('3 of 6 cases');
+  await page.getByTestId('mining-filters').getByRole('button', { name: 'Clear' }).click();
+  await expect(page.getByTestId('filtered-cases')).toContainText('6 of 6 cases');
+
+  // Variants: two variants, the rework one on the map.
+  await page.getByRole('tab', { name: 'Variants' }).click();
+  const variants = page.getByTestId('variants-table');
+  await expect(variants.locator('tbody tr.ant-table-row')).toHaveCount(2);
+  await variants
+    .locator('tbody tr.ant-table-row')
+    .nth(1)
+    .getByRole('button', { name: 'Show on map' })
+    .click();
+  await expect(page.getByText('Variant highlighted')).toBeVisible();
+  await page.getByRole('tab', { name: 'Variants' }).click();
+  await variants.locator('tbody tr.ant-table-row .ant-checkbox-input').nth(0).check();
+  await variants.locator('tbody tr.ant-table-row .ant-checkbox-input').nth(1).check();
+  await expect(page.getByTestId('variant-compare')).toContainText('Check budget');
+
+  // Statistics and bottlenecks.
+  await page.getByRole('tab', { name: 'Statistics' }).click();
+  await expect(page.getByTestId('mining-stats')).toContainText('Cases with rework');
+  await page.getByRole('tab', { name: 'Bottlenecks' }).click();
+  await expect(page.getByTestId('mining-bottlenecks')).toContainText('Check budget');
+
   // Arabic: list and page in RTL.
   await setLocale(page, 'ar');
   await page.goto('/mining/logs');

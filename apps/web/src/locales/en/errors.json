@@ -214,5 +214,8 @@
   "FILE_UNREADABLE": "The file cannot be read. Check its format and encoding (UTF-8).",
   "JOB_RUNNING": "An import or validation of this log is already running.",
   "STEP_NOT_FOUND": "The step does not exist in the process model.",
-  "INVALID_TIME_ZONE": "Unknown time zone."
+  "INVALID_TIME_ZONE": "Unknown time zone.",
+  "ANALYSIS_RUNNING": "The analysis is still running — try again in a moment.",
+  "DISCOVERY_FAILED": "The process model could not be generated.",
+  "EMPTY_LOG": "No cases are left after the filters."
 }
