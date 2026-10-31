@@ -3,6 +3,25 @@
 Ideas and follow-ups noted during development, outside the current phase scope. Group by the phase
 where they belong; move items into the plan when that phase starts.
 
+## Phase 5.1 — process mining and simulation follow-ups (noted during the work)
+
+- Workflow execution (Phase 5.2, M14): run approved processes as task flows; its own runs then become event logs.
+- Connectors that pull event logs automatically from other systems (ERP, Salesforce, ticketing) on a schedule —
+  integrations phase (4.4); today logs are uploaded or built from ProcessHub reviews.
+- Object-centric process mining (OCEL 2.0), predictive monitoring (remaining time, outcome), alignment-based
+  conformance and the inductive miner (would need a sidecar or a larger TypeScript implementation, D-128).
+- **Case animation** on the process map (replay of tokens over time) — not built.
+- Import speed: PostgreSQL `COPY` instead of `createMany` (~5× faster inserts, D-141); CSV encodings other than
+  UTF-8 (Windows-1256 for Arabic Excel exports).
+- Process map: manual node positions, export SVG / PNG, swim lanes per department; compare two periods or two filter
+  sets side by side.
+- Conformance: deviations on the portal; conformance per attribute value (e.g. channel); a conformance KPI.
+- Simulation: resource calendars and shifts per lane, multitasking, priorities, batch processing, case attributes
+  driving branch probabilities, calibration from the log (durations per step as distributions fitted to the log),
+  confidence intervals over several replications, animation.
+- Simulation results in the portal (today workspace only); AI proposals that change gateways / branch
+  probabilities.
+
 ## Diagram types — follow-ups (noted during the work)
 
 - UML, ERM / data-model diagrams and customer journey maps (not in this part).
@@ -28,7 +47,6 @@ where they belong; move items into the plan when that phase starts.
 - Word / HTML / XPDL export of processes and diagrams; Git sync of the diagram types (value chain, org chart, DMN,
   EPC, SIPOC).
 - Salesforce risk link and other external connectors (KPIs and risks are managed in ProcessHub for now).
-- Process mining and simulation stay in Phase 5.
 
 ## Phase 4.3 follow-ups (noted during the work)
 

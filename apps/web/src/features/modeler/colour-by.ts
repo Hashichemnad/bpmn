@@ -307,24 +307,31 @@ export function planColourBy(
     colours.set(el.id, { fill: item.fill, stroke: item.stroke });
   }
   const items = [...legend.values()];
-  // "None" / "complete" last, then by count.
-  items.sort(
-    (a, b) =>
-      Number(a.key === 'none' || a.key === 'metric:none') -
-        Number(b.key === 'none' || b.key === 'metric:none') ||
-      ([
-        'type',
-        'duration',
-        'missing',
-        'riskRating',
-        'riskControl',
-        'appLifecycle',
-        'kpiStatus',
-        ...METRIC_MODES,
-      ].includes(mode)
-        ? 0
-        : b.count - a.count),
-  );
+  const BAND = ['low', 'medium', 'high'];
+  const bandRank = (k: string) => {
+    const i = BAND.indexOf(k.split(':')[1] ?? '');
+    return i < 0 ? 9 : i;
+  };
+  if (METRIC_MODES.includes(mode)) items.sort((a, b) => bandRank(a.key) - bandRank(b.key));
+  else
+    // "None" / "complete" last, then by count.
+    items.sort(
+      (a, b) =>
+        Number(a.key === 'none' || a.key === 'metric:none') -
+          Number(b.key === 'none' || b.key === 'metric:none') ||
+        ([
+          'type',
+          'duration',
+          'missing',
+          'riskRating',
+          'riskControl',
+          'appLifecycle',
+          'kpiStatus',
+          ...METRIC_MODES,
+        ].includes(mode)
+          ? 0
+          : b.count - a.count),
+    );
   return { legend: items, missing, classes, colours };
 }
 
@@ -417,7 +424,7 @@ export function applyMetricOverlays(instance: BpmnInstance, metric: MetricValues
     const cls = `ph-mf-${flows.length}`;
     canvas.addMarker(id, cls);
     flows.push(id);
-    const w = 1.5 + 2 * Math.max(0, Math.min(1, v.weight));
+    const w = 1.5 + 1.5 * Math.max(0, Math.min(1, v.weight));
     rules.push(
       `.djs-element.${cls} .djs-visual > path { stroke: #7C3AED !important; stroke-width: ${w.toFixed(1)}px !important; }`,
     );

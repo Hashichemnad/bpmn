@@ -2,7 +2,7 @@
 
 Read this together with `CLAUDE.md` at the start of every session.
 
-## Current state — 2026-10-31 (Phase 5 — Part 1: Process mining and simulation, branch `phase-5-1-mining-simulation`, in progress)
+## Current state — 2026-10-31 (Phase 5 — Part 1: Process mining and simulation, branch `phase-5-1-mining-simulation`, done — awaiting review)
 
 Everything up to the diagram types is merged into `main`. This branch builds module M13 (process mining) and
 simulation — Signavio Process Intelligence / ARIS Process Mining parity, DOF RFP analysis items. Workflow execution
@@ -77,9 +77,51 @@ Steps (tick as they are committed; a new session continues at the first unticked
       waiting time". Tests: shared 8 (`mining/simulation.test.ts`: M/M/1, M/M/2, reproducibility, branching,
       fork / join, calendar, distributions, validation), API 3 (`mining-simulation.e2e-spec.ts`), Playwright
       `mining.spec.ts` "simulation: as-is and to-be scenarios, comparison and bottleneck view".
-- [ ] 5. Portal "Performance" tab (setting, off by default), handbook "Performance analysis", demo seed (~5,000 cases,
-      simulation with as-is + two to-be), `docs/samples/` CSV + XES, permission matrix, 1M-event performance script
-      with measured timings, screenshots EN / AR (`docs/screenshots/phase-5-1/`), docs, audit, PR.
+- [x] 5. Portal, reports, demo data, tests, docs (D-141, D-142):
+  - Portal "Performance" section on published processes (Setting `mining.portalPerformance`, off by default;
+    `GET /mining/portal/processes/:id/performance`, aggregated only) and the mining settings dialog (retention,
+    portal, concurrency, time zone; Super Admin) on the event log list.
+  - Handbook option "Performance analysis" (`includePerformance`, `MiningReportService`: mining summary of the most
+    recent visible log + the latest simulation's scenarios).
+  - Demo seed `prisma/seed-mining.ts` (demo installations only, once): process **S.01.04 Invoice processing**
+    (lanes, step attributes), **LOG-001** 5,000 generated cases / 27,585 events (`prisma/demo-event-log.ts`: rework
+    loop, finance approval bottleneck, payments without PO matching, late approvals) with mapped activities,
+    **KPI-M01 Invoice cycle time** (EVENT_LOG, monthly values), **SIM-001** with as-is, _Second finance approver_
+    and _Automatic PO matching_ (results computed in the seed). Asserted in `seed.e2e-spec.ts`.
+  - `docs/samples/invoice-processing-log.csv` (200 cases) / `.xes` (40 cases, start / complete) + README section on
+    the column format (`prisma/generate-mining-samples.ts`).
+  - Authorization matrix: watches the mining / simulation tables, fills the routes with the demo log, simulation and
+    scenario; read-only POSTs (analysis, conformance, export, own filters, AI explanations) are allowed for readers.
+    `docs/SECURITY.md` route table regenerated; route-security allow-list has the upload route.
+  - Performance script `prisma/perf-mining.ts` (timings below, D-141); screenshots EN / AR in
+    `docs/screenshots/phase-5-1/` (spec `screenshots-phase-5-1.spec.ts`, `SCREENSHOTS=1`): import mapping, process
+    map, variants, statistics, conformance, conformance overlay on BPMN, simulation scenarios, comparison, bottleneck
+    view.
+  - Docs: README (feature table, Phase 5.1 tour), CLAUDE.md (phase table, data model), DECISIONS D-128 – D-142,
+    BACKLOG (Phase 5.1 follow-ups), DEPLOYMENT.md (sizing / upload limit / retention note), `.env.example*`.
+    csv-parse upgraded to 7.0.2 (GHSA-8cw4-87c7-c6xx).
+
+Measured timings (D-141, `npx ts-node --transpile-only prisma/perf-mining.ts 180000` in this sandbox, PostgreSQL 16
+local, Node 22): 994,022 events / 180,000 cases (CSV 92 MB) — import (stream parse + validate + batched inserts)
+115 s, of which inserts 96 s; snapshot 39 MB (6 MB gzip) in 1.8 s, decode < 0.1 s; analysis bundle 1.2 s (with a
+filter and the activity slider 0.2 s); heuristics miner < 0.1 s; token replay 0.6 s; case drill-down 0.1 s; delete
+8.9 s. Simulation: 90 days of the demo (≈ 2,100 cases) in well under a second; the M/M/1 unit test (~110,000 cases)
+in a few seconds.
+
+Verification on 2026-10-31: shared 192, web 91, API 407 tests pass (64 suites; the only failure of the first full
+run was the regenerated SECURITY.md table, fixed); Playwright `mining.spec.ts` (import → map / filters / variants /
+statistics / bottlenecks; conformance → overlay; simulation → comparison → bottleneck view) passes locally; lint,
+format, type-check clean; `pnpm build` succeeds; `pnpm audit --audit-level high --prod` clean (9 moderate, as
+before). **Not verified here:** Docker image builds and the full Playwright suite in Docker (CI runs both).
+
+### Next (continue here)
+
+1. Review and merge the pull request `phase-5-1-mining-simulation` → `main`.
+2. Product owner decisions (see the PR): who may see all event logs (today owner / department / grants, Super Admins
+   all — Admins not, D-131); default retention period; whether the portal "Performance" section is wanted; the UAE
+   holiday list for 2026 / 2027 (Islamic dates are announced late — editable per scenario).
+3. Then Phase 5.2 (workflow execution), Phase 4.4 (integrations, incl. log connectors), M15 migration; final
+   performance / polish session last.
 
 ## Previous state — 2026-10-31 (More diagram types, branch `diagram-types`, done — awaiting review)
 

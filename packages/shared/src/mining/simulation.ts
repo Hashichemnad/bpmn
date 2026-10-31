@@ -133,6 +133,17 @@ export const UAE_HOLIDAYS: Record<number, string[]> = {
   ],
 };
 
+/** JSON with sorted object keys: a stable hash input (PostgreSQL JSONB reorders keys). */
+export function stableJson(v: unknown): string {
+  if (Array.isArray(v)) return `[${v.map(stableJson).join(',')}]`;
+  if (v && typeof v === 'object')
+    return `{${Object.keys(v as object)
+      .sort()
+      .map((k) => `${JSON.stringify(k)}:${stableJson((v as Record<string, unknown>)[k])}`)
+      .join(',')}}`;
+  return JSON.stringify(v);
+}
+
 // ---------- Random numbers ----------
 
 /** Mulberry32: small, fast, seedable PRNG with a 2^32 period (enough for one run). */

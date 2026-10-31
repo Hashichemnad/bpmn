@@ -1909,3 +1909,33 @@ SIMULATION_INVALID` with the issues); missing durations (0 used) and no end even
   scenarios" returns up to three proposals (bilingual name, rationale, lane capacities, step durations); ids the
   model invents are dropped. Nothing changes until the user clicks **Create scenario** on a proposal, which creates
   a to-be scenario through the normal endpoint. Tests mock the provider.
+
+## D-141 — Scale: 1 million events / 100,000 cases (Phase 5.1, 2026-10-31)
+
+- Measured with `apps/api/prisma/perf-mining.ts` (same reader, normaliser, batched inserts and analyses as the jobs)
+  on the development sandbox (PostgreSQL 16 on the same host, Node 22): **994,022 events / 180,000 cases** — CSV
+  92 MB — import (stream parse + validation + inserts in batches of 5,000) **115 s**, of which inserts 96 s;
+  columnar snapshot 39 MB (6 MB gzip) built in 1.8 s and decoded in < 0.1 s; analysis bundle (map, variants,
+  statistics, bottlenecks) **1.2 s**, with a filter and the activity slider 0.2 s; heuristics miner < 0.1 s;
+  token replay **0.6 s** (per variant); case drill-down 0.1 s (index `(logId, caseId, endAt)`); delete in batches
+  8.9 s. The API stays responsive because inserts are awaited chunk by chunk and all CPU work runs in worker threads;
+  analysis results are cached.
+- The import is dominated by row inserts (Prisma `createMany`); PostgreSQL `COPY` would be ~5× faster but needs raw
+  SQL streaming — kept in BACKLOG, the current time is acceptable for a background job with progress. Memory: the
+  script's 1.7 GB RSS includes the generated events and CSV kept for the test; the import job keeps only the
+  columnar builder (~60 MB for 1 M events) and the duplicate-check set. The production stack's API heap
+  (`API_NODE_HEAP_MB`, default 1,536 MB) and the worker heap limit (2 GB per worker) are sufficient; DEPLOYMENT.md
+  notes the upload limit and heap.
+- Not in CI (minutes); documented script instead (PROGRESS.md "Verification").
+
+## D-142 — Mining results in the portal and the handbook (Phase 5.1, 2026-10-31)
+
+- **Portal "Performance"** on a published process: off by default (Setting `mining.portalPerformance`, Process
+  mining → Settings, Super Admin). Shows the throughput time (mean, median, P90), the weekly / monthly trend of
+  completed cases and mean throughput time, and the share of cases following the model — from the most recent
+  imported log linked to the process, computed with system access but **aggregated only**: no case ids, resources,
+  attributes or the log itself reach the portal (logs stay restricted, D-131). 404 when off, unpublished or no log.
+- **Handbook "Performance analysis"** (optional, workspace handbook, users with `mining.read`): per process the
+  mining summary of the most recent log the user may see (period, cases, throughput, variants, rework, slowest
+  transition, conformance) and the scenarios of its latest simulation (throughput, P90, cost per case, highest
+  utilisation).

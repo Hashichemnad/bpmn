@@ -8,6 +8,7 @@ import {
   parseBpmnGraph,
   periodStart,
   scenarioParamsSchema,
+  stableJson,
   shiftPeriod,
   simulate,
   summariseLog,
@@ -346,7 +347,7 @@ export async function seedMiningDemo(prisma: PrismaClient, adminId: string | nul
         sortOrder: i,
         params: params as unknown as Prisma.InputJsonValue,
         result: result as unknown as Prisma.InputJsonValue,
-        resultModel: `working:${hash(xml)}|${hash(JSON.stringify(params))}`,
+        resultModel: `working:${hash(xml)}|${hash(stableJson(params))}`,
         ranAt: new Date(),
       },
     });

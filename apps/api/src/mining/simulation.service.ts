@@ -10,6 +10,7 @@ import {
   modelArrivalsPerMonth,
   parseBpmnGraph,
   scenarioParamsSchema,
+  stableJson,
   validateScenario,
   type AiScenarioProposal,
   type BpmnGraph,
@@ -175,7 +176,7 @@ export class SimulationService implements OnModuleInit {
         ? await this.modelXml(s.processId, sc.processVersion).catch(() => null)
         : working;
       const g = model ? (model === working ? graph : parseBpmnGraph(model.xml)) : graph;
-      const paramsHash = hash(JSON.stringify(params));
+      const paramsHash = hash(stableJson(params));
       scenarios.push({
         id: sc.id,
         nameEn: sc.nameEn,
@@ -494,7 +495,7 @@ export class SimulationService implements OnModuleInit {
       where: { id: sc.id },
       data: {
         result: result as unknown as Prisma.InputJsonValue,
-        resultModel: `${model.label}|${hash(JSON.stringify(params))}`,
+        resultModel: `${model.label}|${hash(stableJson(params))}`,
         ranAt: new Date(),
         ranById: ctx.job.createdById,
       },

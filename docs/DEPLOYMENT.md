@@ -61,6 +61,12 @@ from the file `docker-compose.prod.yml`:
 - The defaults in `.env` fit the first row. For the second row, set the larger values listed in `.env` under
   "Server size" (e.g. `API_MEMORY=4G`, `POSTGRES_MEMORY=6G`, `PG_SHARED_BUFFERS=2GB`).
 - The AI assistant runs at the AI provider, not on your server; it needs no extra capacity.
+- **Process mining** (Phase 5.1) stores events in the database: about 0.5 GB per million events (rows and
+  indexes) plus a small snapshot in the file storage. Imports and analyses run in background worker threads; for
+  logs of a million events give the API at least 4 GB (`API_MEMORY=4G`, `API_NODE_HEAP_MB=2048`). Event log files
+  up to `MINING_UPLOAD_MAX_MB` (default 200 MB) are accepted on the upload route only (Caddy and nginx allow
+  210 MB there). Set the retention (Process mining → Event logs → Settings) to your data-protection policy; event
+  logs can contain personal data (who did what when) — use _pseudonymise_ at import where names are not needed.
 - Region: choose the region where your data must stay (e.g. Azure **UAE North** or AWS **me-central-1**,
   both in the UAE). Store backup copies in the same region.
 

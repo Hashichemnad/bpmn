@@ -331,86 +331,91 @@ export function ImportMappingPage() {
                 </Space>
               )}
             </Flex>
-            <Row gutter={[16, 8]} data-testid="mining-mapping">
-              {ROLE_FIELDS.map((f) => (
-                <Col xs={24} md={8} key={f}>
-                  <Form.Item
-                    label={t(`mining:mapping.${f}`)}
-                    required={f === 'caseColumn' || f === 'activityColumn'}
-                    style={{ marginBottom: 8 }}
-                  >
+            <Form layout="vertical" component="div">
+              <Row gutter={[16, 8]} data-testid="mining-mapping">
+                {ROLE_FIELDS.map((f) => (
+                  <Col xs={24} md={8} key={f}>
+                    <Form.Item
+                      label={t(`mining:mapping.${f}`)}
+                      required={f === 'caseColumn' || f === 'activityColumn'}
+                      style={{ marginBottom: 8 }}
+                    >
+                      <Select
+                        allowClear={f !== 'caseColumn' && f !== 'activityColumn'}
+                        data-testid={`map-${f}`}
+                        value={mapping[f] ?? undefined}
+                        onChange={(v) => set({ [f]: v ?? null })}
+                        options={columns}
+                        placeholder={t('mining:mapping.none')}
+                      />
+                    </Form.Item>
+                  </Col>
+                ))}
+                <Col xs={24} md={16}>
+                  <Form.Item label={t('mining:mapping.attributes')} style={{ marginBottom: 8 }}>
                     <Select
-                      allowClear={f !== 'caseColumn' && f !== 'activityColumn'}
-                      data-testid={`map-${f}`}
-                      value={mapping[f] ?? undefined}
-                      onChange={(v) => set({ [f]: v ?? null })}
-                      options={columns}
-                      placeholder={t('mining:mapping.none')}
+                      mode="multiple"
+                      value={mapping.attributeColumns ?? []}
+                      onChange={(v) => set({ attributeColumns: v })}
+                      options={columns.filter((c) => !used.has(c.value))}
                     />
                   </Form.Item>
                 </Col>
-              ))}
-              <Col xs={24} md={16}>
-                <Form.Item label={t('mining:mapping.attributes')} style={{ marginBottom: 8 }}>
-                  <Select
-                    mode="multiple"
-                    value={mapping.attributeColumns ?? []}
-                    onChange={(v) => set({ attributeColumns: v })}
-                    options={columns.filter((c) => !used.has(c.value))}
-                  />
-                </Form.Item>
-              </Col>
-              <Col xs={24} md={8}>
-                <Form.Item label={t('mining:mapping.timestampFormat')} style={{ marginBottom: 8 }}>
-                  <Select
-                    value={mapping.timestampFormat ?? 'auto'}
-                    onChange={(v) =>
-                      set({
-                        timestampFormat:
-                          v === 'auto' ? null : (v as MiningMappingInput['timestampFormat']),
-                      })
-                    }
-                    options={[
-                      { value: 'auto', label: t('mining:mapping.formats.auto') },
-                      ...TIMESTAMP_FORMATS.map((f) => ({
-                        value: f,
-                        label: t(`mining:mapping.formats.${f}`),
-                      })),
-                    ]}
-                  />
-                </Form.Item>
-              </Col>
-              <Col xs={24} md={8}>
-                <Form.Item label={t('mining:mapping.timeZone')} style={{ marginBottom: 8 }}>
-                  <Select
-                    showSearch
-                    value={mapping.timeZone ?? DEFAULT_MINING_TIME_ZONE}
-                    onChange={(v) => set({ timeZone: v })}
-                    options={TIME_ZONES.map((z) => ({ value: z, label: z }))}
-                  />
-                </Form.Item>
-              </Col>
-              <Col xs={24} md={8}>
-                <Form.Item
-                  label={t('mining:mapping.pseudonymise')}
-                  extra={t('mining:mapping.pseudonymiseHint')}
-                  style={{ marginBottom: 8 }}
-                >
-                  <Switch
-                    checked={!!mapping.pseudonymise}
-                    onChange={(v) => set({ pseudonymise: v })}
-                  />
-                </Form.Item>
-              </Col>
-              <Col xs={24} md={8}>
-                <Form.Item label={t('mining:mapping.dropDuplicates')} style={{ marginBottom: 8 }}>
-                  <Switch
-                    checked={mapping.dropDuplicates !== false}
-                    onChange={(v) => set({ dropDuplicates: v })}
-                  />
-                </Form.Item>
-              </Col>
-            </Row>
+                <Col xs={24} md={8}>
+                  <Form.Item
+                    label={t('mining:mapping.timestampFormat')}
+                    style={{ marginBottom: 8 }}
+                  >
+                    <Select
+                      value={mapping.timestampFormat ?? 'auto'}
+                      onChange={(v) =>
+                        set({
+                          timestampFormat:
+                            v === 'auto' ? null : (v as MiningMappingInput['timestampFormat']),
+                        })
+                      }
+                      options={[
+                        { value: 'auto', label: t('mining:mapping.formats.auto') },
+                        ...TIMESTAMP_FORMATS.map((f) => ({
+                          value: f,
+                          label: t(`mining:mapping.formats.${f}`),
+                        })),
+                      ]}
+                    />
+                  </Form.Item>
+                </Col>
+                <Col xs={24} md={8}>
+                  <Form.Item label={t('mining:mapping.timeZone')} style={{ marginBottom: 8 }}>
+                    <Select
+                      showSearch
+                      value={mapping.timeZone ?? DEFAULT_MINING_TIME_ZONE}
+                      onChange={(v) => set({ timeZone: v })}
+                      options={TIME_ZONES.map((z) => ({ value: z, label: z }))}
+                    />
+                  </Form.Item>
+                </Col>
+                <Col xs={24} md={8}>
+                  <Form.Item
+                    label={t('mining:mapping.pseudonymise')}
+                    extra={t('mining:mapping.pseudonymiseHint')}
+                    style={{ marginBottom: 8 }}
+                  >
+                    <Switch
+                      checked={!!mapping.pseudonymise}
+                      onChange={(v) => set({ pseudonymise: v })}
+                    />
+                  </Form.Item>
+                </Col>
+                <Col xs={24} md={8}>
+                  <Form.Item label={t('mining:mapping.dropDuplicates')} style={{ marginBottom: 8 }}>
+                    <Switch
+                      checked={mapping.dropDuplicates !== false}
+                      onChange={(v) => set({ dropDuplicates: v })}
+                    />
+                  </Form.Item>
+                </Col>
+              </Row>
+            </Form>
             <Typography.Title level={5}>{t('mining:import.preview')}</Typography.Title>
             <Table
               size="small"
