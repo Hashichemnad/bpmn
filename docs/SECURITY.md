@@ -601,6 +601,7 @@ zod / UUID pipe; file uploads are checked in the service (allow-list, content sn
 | POST   | `/workflow/catalogue/:processId/start`            | `workflow.start`                                               | body, param `processId`              | default    |
 | GET    | `/workflow/dashboard`                             | any of `workflow.monitor`, `workflow.admin`                    | query                                | default    |
 | GET    | `/workflow/dashboard/export`                      | any of `workflow.monitor`, `workflow.admin`                    | query                                | default    |
+| GET    | `/workflow/departments`                           | authenticated                                                  | —                                    | default    |
 | POST   | `/workflow/files`                                 | authenticated                                                  | body, file                           | default    |
 | GET    | `/workflow/files/:id`                             | authenticated                                                  | param `id`                           | default    |
 | GET    | `/workflow/monitor`                               | any of `workflow.monitor`, `workflow.admin`                    | —                                    | default    |

@@ -25,19 +25,21 @@ export function renderTemplate(
   /** Display values for some keys (choice labels, user names) — checked first. */
   display: Record<string, string> = {},
 ): string {
-  return text
-    .replace(PLACEHOLDER, (_, path: string) => {
-      if (display[path] !== undefined) return display[path];
-      let cur: unknown = vars;
-      for (const seg of path.split('.')) {
-        if (!cur || typeof cur !== 'object' || !Object.prototype.hasOwnProperty.call(cur, seg))
-          return '';
-        cur = (cur as Record<string, unknown>)[seg];
-      }
-      return formatTemplateValue(cur, locale);
-    })
-    // Control characters except tab and line breaks.
-    .replace(/(?![\t\n\r])\p{Cc}/gu, '');
+  return (
+    text
+      .replace(PLACEHOLDER, (_, path: string) => {
+        if (display[path] !== undefined) return display[path];
+        let cur: unknown = vars;
+        for (const seg of path.split('.')) {
+          if (!cur || typeof cur !== 'object' || !Object.prototype.hasOwnProperty.call(cur, seg))
+            return '';
+          cur = (cur as Record<string, unknown>)[seg];
+        }
+        return formatTemplateValue(cur, locale);
+      })
+      // Control characters except tab and line breaks.
+      .replace(/(?![\t\n\r])\p{Cc}/gu, '')
+  );
 }
 
 /** Placeholder names used in a template (editor hints, checks). */

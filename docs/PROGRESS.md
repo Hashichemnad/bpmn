@@ -2,7 +2,7 @@
 
 Read this together with `CLAUDE.md` at the start of every session.
 
-## Current state — 2026-10-31 (Phase 5 — Part 2: Workflow execution, branch `phase-5-2-workflow-execution`, in progress)
+## Current state — 2026-10-31 (Phase 5 — Part 2: Workflow execution, branch `phase-5-2-workflow-execution`, done — awaiting review)
 
 Everything up to Phase 5.1 (process mining and simulation) is merged into `main`. This branch builds module M14:
 run approved processes as task flows with forms, assignments, approvals, SLAs and monitoring. The session works on
@@ -44,18 +44,42 @@ Steps (tick as they are committed; a new session continues at the first unticked
       retention, live event log, deploy, deployments); `ph:exec` in the moddle descriptor; `api/workflow.ts`;
       namespace `workflow` (EN / AR, generated from the scratch translation tables), errors, audit labels,
       `WORKFLOW` notification texts. Playwright: covered by `workflow.spec.ts` (written with step 3, see below).
-- [ ] 2. Assignment, tasks and inbox (web): workflow tasks in "My tasks" (filters, due colouring, claim, complete
-      with form, approve / reject / return, delegate), out of office in the profile, workflow settings (calendar,
-      reminders, escalation); Playwright.
-- [ ] 3. Starting and following cases (web): service catalogue in the portal, start form, case page (diagram with
-      current / completed steps, timeline, step data, files, comments, documents, withdraw), "My requests";
-      Playwright.
-- [ ] 4. Monitoring (web): workflow monitor (retry, cancel, reassign), dashboard + Excel; live event log link;
-      Playwright.
-- [ ] 5. Security and data: review of permissions / visibility tests, retention setting in the UI, template
-      sanitising notes, audit.
-- [ ] 6. Demo data (PMS-01 executable + leave request, demo cases), performance measurement, screenshots EN / AR,
-      `docs/WORKFLOWS.md`, README, docs; PR and CI.
+- [x] 2. Assignment, tasks and inbox (web): "My tasks" → **Workflow tasks** (assigned / group, due filter, search,
+      due colouring, claim) in the workspace and the portal, task page (form, approve / reject / return with a
+      mandatory comment, complete, save draft, claim / give back, delegate, admin reassign, four-eyes notice,
+      diagram), out of office in the profile, Settings → Workflow execution (working week, hours, zone,
+      reminder, escalation). Assignment, calendar, reminders and escalation are in the backend commit.
+- [x] 3. Starting and following cases (web): portal **Services** (catalogue) and start form, request page (diagram
+      with current / completed steps, current steps, data per step read-only, files incl. the generated letter,
+      timeline, comments with @mentions, withdraw / cancel / retry), **My requests** (portal and workspace),
+      Viewers redirected to portal equivalents, navigation in both layouts.
+- [x] 4. Monitoring (web): **Workflow monitor** (per process counts, stuck requests with retry / cancel, overdue
+      tasks with reassign, all requests), **Workflow dashboard** (tiles, trend chart, steps SLA, workload by user /
+      role / department, most overdue, Excel); live event log linked from the process page.
+- [x] 5. Security and data: permissions `workflow.*` on every route (route-security table regenerated,
+      authorization matrix watches the workflow tables and allows only own-data reads for Viewers), case
+      visibility tests (initiator, assignees, owner, monitors, Auditors read-only), retention (D-152), template
+      text-only rendering, audit of deploy / start / complete / claim / delegate / reassign / withdraw / cancel /
+      retry / export.
+- [x] 6. Demo data and docs: `prisma/seed-workflow.ts` (PMS-01 + DMN-002 + HR-01, five demo users, 7 requests
+      through the real services, back-dated), `prisma/perf-workflow.ts` (D-153), screenshots EN / AR in
+      `docs/screenshots/phase-5-2/` (`screenshots-phase-5-2.spec.ts`, `SCREENSHOTS=1`), `docs/WORKFLOWS.md`, README
+      (feature table + tour), CLAUDE.md, DECISIONS D-144 – D-153, BACKLOG, DEPLOYMENT step 12, SECURITY checklist.
+
+Measured (D-153, 10,000 open requests, 500 users): start 44 ms, completion 60 ms, inbox 18 ms, monitor 29 ms,
+dashboard 633 ms, job poll 9 ms.
+
+Verification on 2026-10-31: shared 220, web 91, API 428 tests pass (62 suites, incl. `workflow.e2e-spec.ts` 20);
+Playwright `workflow.spec.ts` (4) and the screenshot spec pass locally against API + Vite dev server + a local S3
+stand-in (s3rver) — no Docker daemon in this sandbox; lint, format, type-check clean; `pnpm audit --audit-level high
+--prod` clean (9 moderate, as before). **Not verified here:** Docker image builds and the full Playwright suite in
+Docker (CI runs both).
+
+### Next (continue here)
+
+1. Review and merge the pull request `phase-5-2-workflow-execution` → `main` (CI: lint/test, e2e, Docker).
+2. Product owner decisions listed in the pull request (role mapping of `workflow.*`, retention, escalation default).
+3. Then Phase 4.4 (integrations, incl. REST service tasks), M15 migration; final performance / polish session.
 
 ## Previous state — 2026-10-31 (Phase 5 — Part 1: Process mining and simulation, branch `phase-5-1-mining-simulation`, done — awaiting review)
 

@@ -40,6 +40,7 @@ const DOCX = 'application/vnd.openxmlformats-officedocument.wordprocessingml.doc
 export class WorkflowJobsService implements OnApplicationBootstrap, OnModuleDestroy {
   private readonly logger = new Logger(WorkflowJobsService.name);
   private timer?: ReturnType<typeof setInterval>;
+  private first?: ReturnType<typeof setTimeout>;
   private running: Promise<number> | null = null;
   private again = false;
   private lastPurge = 0;
@@ -61,10 +62,12 @@ export class WorkflowJobsService implements OnApplicationBootstrap, OnModuleDest
     if (!seconds || this.appConfig.NODE_ENV === 'test') return;
     this.runner.onJobs = () => this.kick();
     this.timer = setInterval(() => this.kick(), seconds * 1000);
-    setTimeout(() => this.kick(), 5000);
+    this.first = setTimeout(() => this.kick(), 5000);
   }
 
   onModuleDestroy() {
+    clearTimeout(this.first);
+    this.runner.onJobs = null;
     clearInterval(this.timer);
   }
 

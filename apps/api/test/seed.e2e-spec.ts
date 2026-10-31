@@ -61,11 +61,17 @@ describe('Seed (e2e)', () => {
       ['architect@processhub.local', 'ENTERPRISE_ARCHITECT'],
       ['audit@processhub.local', 'INTERNAL_AUDIT'],
       ['auditor@processhub.local', 'AUDITOR'],
+      // Workflow execution demo (Phase 5.2): the approval chain of PMS-01 and HR-01.
+      ['dgo@processhub.local', 'REVIEWER'],
+      ['finance@processhub.local', 'REVIEWER'],
+      ['hr@processhub.local', 'REVIEWER'],
       ['modeler@processhub.local', 'MODELER'],
       ['owner@processhub.local', 'PROCESS_OWNER'],
       ['performance@processhub.local', 'PERFORMANCE_OFFICER'],
+      ['pmo@processhub.local', 'REVIEWER'],
       ['reviewer@processhub.local', 'REVIEWER'],
       ['risk@processhub.local', 'RISK_OFFICER'],
+      ['section@processhub.local', 'REVIEWER'],
       ['viewer@processhub.local', 'VIEWER'],
     ]);
     // Phase 4.1: risks, controls and requirements linked to steps, incl. a critical residual
@@ -139,6 +145,8 @@ describe('Seed (e2e)', () => {
     const diagrams = await ctx.prisma.diagram.findMany({ orderBy: { code: 'asc' } });
     expect(diagrams.map((d) => `${d.code}:${d.status}`)).toEqual([
       'DMN-001:PUBLISHED',
+      // Program budget approval of the workflow demo (PMS-01 business rule task).
+      'DMN-002:PUBLISHED',
       'EPC-001:DRAFT',
       'ORG-001:PUBLISHED',
       'SIPOC-001:DRAFT',
@@ -158,6 +166,7 @@ describe('Seed (e2e)', () => {
     expect(await ctx.prisma.process.count({ where: { code: 'S.01.03' } })).toBe(1);
     // Process mining demo (Phase 5.1): log mapped to S.01.04, KPI from the log, simulation run.
     const log = await ctx.prisma.eventLog.findFirstOrThrow({
+      where: { code: 'LOG-001' },
       include: { process: true, activities: true },
     });
     expect(log).toMatchObject({
@@ -178,6 +187,27 @@ describe('Seed (e2e)', () => {
     });
     expect(scenarios.map((s) => s.kind)).toEqual(['AS_IS', 'TO_BE', 'TO_BE']);
     expect(scenarios.every((s) => s.result)).toBe(true);
+    // Workflow execution demo (Phase 5.2): PMS-01 and HR-01 executable and deployed, demo requests in
+    // different states, live event logs fed by the executed steps.
+    const configs = await ctx.prisma.workflowProcessConfig.findMany({ include: { process: true } });
+    expect(
+      configs.map((c) => [c.process.code, c.casePrefix, c.enabled, !!c.activeDefinitionId]).sort(),
+    ).toEqual([
+      ['HR-01', 'LEAVE', true, true],
+      ['PMS-01', 'PMS', true, true],
+    ]);
+    const cases = await ctx.prisma.workflowCase.findMany();
+    expect(cases).toHaveLength(7);
+    expect(new Set(cases.map((c) => c.status))).toEqual(new Set(['RUNNING', 'COMPLETED']));
+    expect(cases.some((c) => c.stuck)).toBe(false);
+    expect(
+      await ctx.prisma.workflowTask.count({
+        where: { status: 'OPEN', elementId: 'BudgetApprovalTask' },
+      }),
+    ).toBe(1);
+    const live = await ctx.prisma.eventLog.findMany({ where: { source: 'WORKFLOW' } });
+    expect(live).toHaveLength(2);
+    expect(live.every((l) => l.eventCount > 0)).toBe(true);
   });
 
   it('a production install without demo data has no value chain portal start page', async () => {
