@@ -365,7 +365,22 @@
       "GRC_CHANGE_batch": "استورد {{actor}} تعديلات على المخاطر والضوابط تحتاج اعتمادك",
       "KPI": "مؤشر أداء: {{title}}",
       "KPI_due": "حان موعد إدخال قيمة {{comment}}: {{title}}",
-      "KPI_syncFailed": "فشلت مزامنة مؤشرات Salesforce: {{comment}}"
+      "KPI_syncFailed": "فشلت مزامنة مؤشرات Salesforce: {{comment}}",
+      "WORKFLOW": "طلب: {{title}}",
+      "WORKFLOW_assigned": "مهمة جديدة «{{step}}»: {{title}}",
+      "WORKFLOW_group": "مهمة بانتظار الاستلام «{{step}}»: {{title}}",
+      "WORKFLOW_reminder": "تستحق {{due}}: «{{step}}» — {{title}}",
+      "WORKFLOW_overdue": "متأخرة منذ {{due}}: «{{step}}» — {{title}}",
+      "WORKFLOW_escalated": "تصعيد — «{{step}}» لدى {{actor}} متأخرة: {{title}}",
+      "WORKFLOW_delegated": "فوّض {{actor}} إليك «{{step}}»: {{title}}",
+      "WORKFLOW_reassigned": "أسند {{actor}} إليك «{{step}}»: {{title}}",
+      "WORKFLOW_returned": "أعاده {{actor}} للتصحيح: {{title}}",
+      "WORKFLOW_completed": "اكتمل الطلب: {{title}}",
+      "WORKFLOW_rejected": "رُفض الطلب في «{{step}}»: {{title}}",
+      "WORKFLOW_withdrawn": "سحب {{actor}} الطلب {{title}}",
+      "WORKFLOW_cancelled": "ألغى {{actor}} الطلب {{title}}",
+      "WORKFLOW_incident": "الطلب متوقف عند «{{step}}»: {{title}}",
+      "WORKFLOW_message": "{{msgSubject}}"
     }
   },
   "prefs": {
@@ -392,7 +407,8 @@
       "ISSUE": "الملاحظات والإجراءات (الإسناد والمواعيد والتصعيد)",
       "AUDIT": "مهام ونتائج التدقيق",
       "SURVEY": "استبيانات للإجابة",
-      "KPI": "مواعيد قيم المؤشرات وأخطاء مزامنة Salesforce"
+      "KPI": "مواعيد قيم المؤشرات وأخطاء مزامنة Salesforce",
+      "WORKFLOW": "مهام وطلبات سير العمل (الإسناد والاستحقاق والتصعيد والنتائج)"
     }
   },
   "feedback": {

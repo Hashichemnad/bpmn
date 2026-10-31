@@ -54,3 +54,13 @@ export function useLocale(): LocaleContextValue {
   if (!ctx) throw new Error('useLocale must be used inside LocaleProvider');
   return ctx;
 }
+
+/** Renders children with another content language (e.g. a bilingual form preview); UI texts stay. */
+export function LocaleOverride({ locale, children }: { locale: Locale; children: ReactNode }) {
+  const parent = useLocale();
+  const value = useMemo<LocaleContextValue>(
+    () => ({ ...parent, locale, dir: RTL_LOCALES.includes(locale) ? 'rtl' : 'ltr' }),
+    [parent, locale],
+  );
+  return <LocaleContext.Provider value={value}>{children}</LocaleContext.Provider>;
+}

@@ -62,7 +62,11 @@ import { WorkflowSettingsService } from './workflow-settings.service';
 const P = PERMISSIONS;
 const upload = FileInterceptor('file', { limits: { fileSize: ATTACHMENT_MAX_BYTES, files: 1 } });
 const uploadBody = z.object({ caseId: uuidSchema.optional(), taskId: uuidSchema.optional() });
-const userQuery = z.object({ q: z.string().trim().max(100).default('') });
+const userQuery = z.object({
+  q: z.string().trim().max(100).default(''),
+  /** Resolve these ids (comma-separated) instead of searching. */
+  ids: z.string().max(2000).optional(),
+});
 const dashboardExport = dashboardQuerySchema.extend({ locale: z.enum(['en', 'ar']).default('en') });
 
 /** Workflow execution (Phase 5.2, M14): execution settings, deployment, cases, tasks, monitor. */
@@ -378,7 +382,14 @@ export class WorkflowController {
     @Query(new ZodPipe(userQuery)) q: z.infer<typeof userQuery>,
     @CurrentUser() user: AuthUser,
   ) {
-    return this.tasks.users(q.q, user);
+    return this.tasks.users(q.q, user, q.ids ? q.ids.split(',').slice(0, 50) : undefined);
+  }
+
+  /** Departments for department fields of forms (id and names only). */
+  @Get('departments')
+  @Authenticated()
+  departments() {
+    return this.tasks.departments();
   }
 
   // ---------- Monitor and dashboard ----------

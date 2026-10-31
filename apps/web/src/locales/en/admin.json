@@ -107,7 +107,15 @@
       "MFA_RECOVERY_CODES": "New 2FA recovery codes",
       "EXPORT": "Report downloaded",
       "IMPORT": "Import",
-      "ASSESS": "Assessment"
+      "ASSESS": "Assessment",
+      "DEPLOY": "Deploy",
+      "START": "Start",
+      "COMPLETE": "Complete",
+      "CLAIM": "Claim",
+      "DELEGATE": "Delegate",
+      "REASSIGN": "Reassign",
+      "CANCEL": "Cancel",
+      "RETRY": "Retry"
     },
     "entities": {
       "User": "User",
@@ -154,7 +162,12 @@
       "DiagramVersion": "Diagram version",
       "DiagramLink": "Diagram link",
       "EventLog": "Event log",
-      "SimulationScenario": "Simulation scenario"
+      "SimulationScenario": "Simulation scenario",
+      "WorkflowProcessConfig": "Execution settings",
+      "WorkflowDefinition": "Workflow deployment",
+      "WorkflowCase": "Request (case)",
+      "WorkflowTask": "Workflow task",
+      "WorkflowFile": "Request file"
     }
   },
   "settings": {

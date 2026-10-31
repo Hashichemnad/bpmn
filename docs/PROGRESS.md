@@ -34,9 +34,16 @@ Steps (tick as they are committed; a new session continues at the first unticked
       event log, Word documents); `WORKFLOW_POLL_SECONDS`; demo model builders `prisma/workflow-bpmn.ts`,
       `prisma/workflow-demo.ts`; API tests `test/workflow.e2e-spec.ts` (20) + authorization matrix / route security
       updated, SECURITY.md route table regenerated.
-- [ ] 1. Executable processes (web): modeler Execution tab (process settings, deploy, element settings, form
-      editor, conditions, approval outcomes, timers, notification / document templates) and the executable check in
-      the Validation panel; Playwright.
+- [x] 1. Executable processes (web): `features/workflow/` — `ExecutionPanel` (modeler tab "Execution", visible
+      when the process is executable: start / task forms, assignment rules, due time, four-eyes, escalation,
+      approval outcome and condition / default on flows with S-FEEL syntax check and data chips, timers, boundary
+      interruption, error codes, notification and document templates, set data), `FormEditor` (field list,
+      drawer, bilingual preview with `LocaleOverride`), `WorkflowForm` / `FormValues` (renderer, read-only view),
+      `ExecIssueList` (executable check in the Validation panel, client side; server check on deploy),
+      `WorkflowConfigCard` (process page tab "Execution": executable, prefix, start rights, withdraw, monitors,
+      retention, live event log, deploy, deployments); `ph:exec` in the moddle descriptor; `api/workflow.ts`;
+      namespace `workflow` (EN / AR, generated from the scratch translation tables), errors, audit labels,
+      `WORKFLOW` notification texts. Playwright: covered by `workflow.spec.ts` (written with step 3, see below).
 - [ ] 2. Assignment, tasks and inbox (web): workflow tasks in "My tasks" (filters, due colouring, claim, complete
       with form, approve / reject / return, delegate), out of office in the profile, workflow settings (calendar,
       reminders, escalation); Playwright.

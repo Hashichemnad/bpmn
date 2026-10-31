@@ -156,8 +156,12 @@ import {
 import { ColourByLegend } from './ColourByLegend';
 import { useMetricValues } from '@/features/mining/useMetricValues';
 import { ReportDialog, type ReportKind } from '@/features/reports/ReportDialog';
+import { checkExecutable, readWorkflowModel, type ExecIssue } from '@processhub/shared';
+import { useWorkflowConfig } from '@/api/workflow';
+import { ExecutionPanel } from '@/features/workflow/ExecutionPanel';
+import { ExecIssueList } from '@/features/workflow/ExecIssueList';
 
-type PanelTab = 'properties' | 'grc' | 'kpis' | 'issues' | 'comments' | 'ai';
+type PanelTab = 'properties' | 'execution' | 'grc' | 'kpis' | 'issues' | 'comments' | 'ai';
 
 interface Props {
   process: ProcessDto;
@@ -263,6 +267,12 @@ export function BpmnEditor({ process, focusElementId, readOnly = false, onClose 
   const [dirty, setDirty] = useState(false);
   const [issues, setIssues] = useState<BpmnIssue[]>([]);
   const [conventionFindings, setConventionFindings] = useState<ConventionIssue[]>([]);
+  /** Executable check (Phase 5.2) while the process is executable. */
+  const [execIssues, setExecIssues] = useState<ExecIssue[]>([]);
+  const workflowConfig = useWorkflowConfig(process.id);
+  const executable = !!workflowConfig.data?.enabled;
+  const executableRef = useRef(executable);
+  executableRef.current = executable;
   const conventions = useConventions();
   const conventionsRef = useRef(conventions.data);
   conventionsRef.current = conventions.data;
@@ -296,6 +306,11 @@ export function BpmnEditor({ process, focusElementId, readOnly = false, onClose 
     const inst = instanceRef.current;
     if (!inst) return;
     setIssues(validateBpmnGraph(buildGraph(inst)));
+    if (executableRef.current)
+      void exportXml(inst, stateRef.current.locale)
+        .then((xml) => setExecIssues(checkExecutable(readWorkflowModel(xml))))
+        .catch(() => undefined);
+    else setExecIssues([]);
     const rules = conventionsRef.current;
     if (!rules) return;
     const run = ++conventionRun.current;
@@ -309,6 +324,9 @@ export function BpmnEditor({ process, focusElementId, readOnly = false, onClose 
   useEffect(() => {
     if (conventions.data) revalidate();
   }, [conventions.data, revalidate]);
+  useEffect(() => {
+    revalidate();
+  }, [executable, revalidate]);
 
   const selectElement = useCallback(
     (el: DiagramElement, tab: PanelTab = 'properties') => {
@@ -867,7 +885,7 @@ export function BpmnEditor({ process, focusElementId, readOnly = false, onClose 
   };
 
   const shownIssues = withoutDuplicates(issues, conventionFindings);
-  const issueCount = shownIssues.length + conventionFindings.length;
+  const issueCount = shownIssues.length + conventionFindings.length + execIssues.length;
   const warnings =
     shownIssues.filter((i) => i.severity === 'warning').length + conventionFindings.length;
   const blockingConventions = conventionFindings.some((i) => i.mandatory);
@@ -1364,6 +1382,29 @@ export function BpmnEditor({ process, focusElementId, readOnly = false, onClose 
                       />
                     ),
                   },
+                  ...(executable
+                    ? [
+                        {
+                          key: 'execution',
+                          label: (
+                            <Space size={4}>
+                              {t('workflow:exec.tab')}
+                              {execIssues.some((i) => i.severity === 'error') && (
+                                <Badge status="error" />
+                              )}
+                            </Space>
+                          ),
+                          children: (
+                            <ExecutionPanel
+                              instance={instance}
+                              element={selected}
+                              process={process}
+                              canEdit={canEdit}
+                            />
+                          ),
+                        },
+                      ]
+                    : []),
                   ...(canReadGrc
                     ? [
                         {
@@ -1451,6 +1492,11 @@ export function BpmnEditor({ process, focusElementId, readOnly = false, onClose 
                           >
                             {t('ai:analyse.explainWarnings')}
                           </AiButton>
+                          <ExecIssueList
+                            issues={execIssues}
+                            labelOf={labelOf}
+                            onFocus={focusElement}
+                          />
                           <ConventionIssueList
                             issues={conventionFindings}
                             labelOf={labelOf}
