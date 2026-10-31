@@ -42,7 +42,7 @@ with no per-user licensing. Target: 50–500 users on a single server.
 | AI | M16 AI Assistant (after Phase 3) | ✅ Done (merged into `main`) |
 | 4.1 | M10 GRC core: risks, controls, requirements linked to process steps; heat maps, coverage dashboard, RCM export, reminders, AI control-gap check | ✅ Done (merged into `main`, D-089 – D-097) |
 | 4.2 | M10 assurance: approval of GRC changes, control testing, issues and actions, audits, questionnaires, assurance dashboard | ✅ Done (merged into `main`, D-098 – D-106) |
-| 4.3 | M11 EA (application catalogue, interfaces, data objects, capability map, traceability); M12 KPIs, dashboards + Salesforce KPI link | 🟡 In progress on branch `phase-4-3-ea-kpi` (D-107 –) |
+| 4.3 | M11 EA (application catalogue, interfaces, data objects, capability map, traceability); M12 KPIs, dashboards + Salesforce KPI link | 🟡 Done on branch `phase-4-3-ea-kpi` (D-107 – D-116), awaiting review |
 | 4.4 | Integration & export: Oracle Fusion Risk Management overlay, other connectors, API keys, webhooks, Word/HTML/XPDL export | ⬜ |
 | 5 | M13 Mining, M14 Execution, simulation | ⬜ |
 | Design A | Modeler design upgrade — Part A: look and feel (colour theme as BPMN-in-Color, renderer, colour picker, fonts/RTL, apply theme) | ✅ Done (merged into `main`, D-067 – D-073) |

@@ -2,7 +2,7 @@
 
 Read this together with `CLAUDE.md` at the start of every session.
 
-## Current state — 2026-10-30 (Phase 4 — Part 3: EA, KPIs and the Salesforce KPI link, branch `phase-4-3-ea-kpi`, in progress)
+## Current state — 2026-10-30 (Phase 4 — Part 3: EA, KPIs and the Salesforce KPI link, branch `phase-4-3-ea-kpi`, done — awaiting review)
 
 Everything up to Phase 4.2 (GRC core and assurance) is merged into `main`. This branch builds module M11 (enterprise
 architecture: application catalogue, interfaces, data objects, capability map, traceability) and M12 (KPIs,
@@ -58,7 +58,30 @@ Steps (tick as they are committed; a new session continues at the first unticked
       (integration user, read-only permission set, connected app). CI: e2e `.env` gets an encryption key and
       `OUTBOUND_ALLOWED_HOSTS=…,host.docker.internal`; compose `extra_hosts` for the API. Tests: API 3
       (`salesforce.e2e-spec.ts`, fixtures), Playwright 1 (`salesforce.spec.ts` + `salesforce-mock.ts`).
-- [ ] 6. Demo data, permission tests, e2e, screenshots EN / AR, docs.
+- [x] 6. Demo data, permission tests, e2e, screenshots, docs: demo seed (step 3) asserted in `seed.e2e-spec.ts`;
+      authorization matrix watches the new tables and sweeps every `/ea`, `/kpis` and `/integrations/salesforce` write
+      route as a Modeler; screenshots EN / AR in `docs/screenshots/phase-4-3/` (spec `screenshots-phase-4-3.spec.ts`,
+      `SCREENSHOTS=1`); e2e helper `loginAdmin` (stored TOTP secret, waits for a fresh code); README tour, CLAUDE.md
+      (roles, data model, phase table), BACKLOG (4.3 follow-ups, Phase 4.4), DEPLOYMENT.md §6.4; Recharts in its own
+      chunk.
+
+Verification on 2026-10-31: shared 151, web 82, API 377 tests pass (56 suites); Playwright 44 tests — full run 36
+passed / 4 skipped (screenshot specs) / 4 failed on the 30 s budget and on the admin's language left in Arabic by
+the screenshot run (fixed: 90 s budget for the multi-sign-in specs, screenshots reset the language, `loginAdmin`
+waits for a fresh TOTP window); the affected specs (auth, ea, kpi, salesforce) then pass. Lint, format and
+type-check clean; `pnpm build` succeeds (Vite warns that the main chunk is > 1.5 MB — route-level code splitting is
+for the final polish session); `pnpm audit --audit-level high --prod` clean (9 moderate in exceljs / minio /
+nodemailer dependencies, none new from this phase). **Not verified here:** Docker image builds (no Docker daemon
+in this sandbox; CI builds them). Local e2e: `E2E_SALESFORCE_MOCK_HOST=localhost` and the API with
+`OUTBOUND_ALLOWED_HOSTS=localhost`.
+
+### Next (continue here)
+
+1. Review and merge the pull request `phase-4-3-ea-kpi` → `main` (CI builds the images and runs the e2e suite with
+   the mock Salesforce on `host.docker.internal`).
+2. Product owner decisions listed in the pull request (Salesforce object meanings / mapping defaults D-115, who
+   holds `kpi.edit`, live portal KPIs, scheduled-sync actor).
+3. Then Phase 4.4 (Integration & export — BACKLOG).
 
 ## Previous state — 2026-10-30 (Phase 4 — Part 2: GRC assurance, branch `phase-4-2-grc-assurance`, done — awaiting review)
 

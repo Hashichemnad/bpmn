@@ -149,6 +149,9 @@ export async function createSampleProcess(
  * Signs in the seeded Super Admin with two-factor: the stored TOTP secret (`.auth/`), or enrols on
  * the first sign-in against a fresh database (like auth.spec) and stores the secret.
  */
+/** Time step of the last TOTP code used by this worker (codes are single-use on the server). */
+let lastTotpStep = -1;
+
 export async function loginAdmin(page: Page, locale: 'en' | 'ar' = 'en') {
   await page.context().clearCookies();
   await page.goto('/login');
@@ -164,9 +167,12 @@ export async function loginAdmin(page: Page, locale: 'en' | 'ar' = 'en') {
   if (await verify.isVisible()) {
     const stored = readAdminMfa();
     if (!stored) throw new Error('The admin 2FA secret is unknown (run auth.spec.ts first)');
-    // A code is accepted once per 30-second window: wait for a fresh one when needed.
+    // A code is accepted once per 30-second window: wait for a fresh window when this one was used
+    // already (an earlier sign-in) or is about to end.
+    const step = () => Math.floor(Date.now() / 30_000);
     const left = 30 - (Math.floor(Date.now() / 1000) % 30);
-    if (left < 4) await page.waitForTimeout(left * 1000 + 500);
+    if (step() === lastTotpStep || left < 4) await page.waitForTimeout(left * 1000 + 500);
+    lastTotpStep = step();
     await typeCode(page, totpCode(stored.secret));
     await page.getByRole('button', { name: 'Verify' }).click();
   } else {
