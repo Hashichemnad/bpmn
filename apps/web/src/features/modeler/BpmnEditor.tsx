@@ -56,6 +56,7 @@ import {
   type Locale,
   type ProcessDto,
   type ProcessSummaryDto,
+  type KpiRag,
 } from '@processhub/shared';
 import {
   useCreateLink,
@@ -114,6 +115,9 @@ import { ElementPanel } from './ElementPanel';
 import { GrcStepPanel } from '@/features/grc/GrcStepPanel';
 import { ControlGapsDrawer } from '@/features/grc/ControlGapsDrawer';
 import { useGrcSettings, useProcessGrc } from '@/api/grc';
+import { useProcessKpis } from '@/api/kpi';
+import { KpiStepPanel } from '@/features/kpi/ProcessKpis';
+import { useAllApplications } from '@/api/ea';
 import { VersionsDrawer } from './VersionsDrawer';
 import { useWorkspacePrefs } from './workspace-prefs';
 import { initialPanelState, panelReducer } from './panel-state';
@@ -128,6 +132,7 @@ import { autoLayoutModule, runAutoLayout } from './auto-layout';
 import {
   commentBadgeItems,
   grcAlertBadgeItems,
+  kpiBadgeItems,
   linkBadgeItems,
   useDiagramOverlays,
 } from './useDiagramOverlays';
@@ -148,7 +153,7 @@ import {
 import { ColourByLegend } from './ColourByLegend';
 import { ReportDialog, type ReportKind } from '@/features/reports/ReportDialog';
 
-type PanelTab = 'properties' | 'grc' | 'issues' | 'comments' | 'ai';
+type PanelTab = 'properties' | 'grc' | 'kpis' | 'issues' | 'comments' | 'ai';
 
 interface Props {
   process: ProcessDto;
@@ -207,6 +212,22 @@ export function BpmnEditor({ process, focusElementId, readOnly = false, onClose 
   const [tableOpened, setTableOpened] = useState(false);
   /** "Colour by" view (view only, stored colours never change). */
   const [colourBy, setColourBy] = useState<ColourByMode>('none');
+  // KPIs of the process and its steps (Phase 4.3): side panel, badges, "Colour by → KPI status".
+  const canReadKpi = can(PERMISSIONS.KPI_READ);
+  const processKpis = useProcessKpis(process.id, canReadKpi);
+  const kpiSteps = useMemo(() => {
+    const m = new Map<string, (KpiRag | null)[]>();
+    for (const k of processKpis.data?.items ?? [])
+      m.set(k.bpmnElementId, [...(m.get(k.bpmnElementId) ?? []), k.rag]);
+    return m;
+  }, [processKpis.data]);
+  // Application lifecycles for "Colour by → Application lifecycle" (Phase 4.3).
+  const canReadEa = can(PERMISSIONS.EA_READ);
+  const applications = useAllApplications(canReadEa && colourBy === 'appLifecycle');
+  const lifecycles = useMemo(
+    () => new Map((applications.data?.items ?? []).map((a) => [a.id, a.lifecycle])),
+    [applications.data],
+  );
   const [legend, setLegend] = useState<LegendItem[]>([]);
   const [missingCounts, setMissingCounts] = useState({ role: 0, description: 0 });
   const [report, setReport] = useState<ReportKind | null>(null);
@@ -297,8 +318,9 @@ export function BpmnEditor({ process, focusElementId, readOnly = false, onClose 
       ),
       ...commentBadgeItems(comments.data ?? []),
       ...grcAlertBadgeItems(grcSteps, t('grc:detail.notControlled')),
+      ...kpiBadgeItems(processKpis.data?.items ?? [], loc),
     ],
-    [links.data, comments.data, loc, grcSteps, t],
+    [links.data, comments.data, loc, grcSteps, t, processKpis.data],
   );
   useDiagramOverlays({
     instance,
@@ -313,7 +335,9 @@ export function BpmnEditor({ process, focusElementId, readOnly = false, onClose 
             ? 'comments'
             : canReadGrc && ['RISK', 'CONTROL', 'ALERT'].includes(kind)
               ? 'grc'
-              : 'properties',
+              : canReadKpi && kind.startsWith('KPI_')
+                ? 'kpis'
+                : 'properties',
         );
     },
     drill: { open: (target) => navigate(`/processes/${target}/model`) },
@@ -338,6 +362,8 @@ export function BpmnEditor({ process, focusElementId, readOnly = false, onClose 
           locale,
           label: (key) => t(`modeler:colourBy.categories.${key.replace(':', '.')}`),
           grc: { steps: grcSteps, bands: grcConfig.data?.bands ?? DEFAULT_GRC_SETTINGS.bands },
+          lifecycles,
+          kpis: kpiSteps,
         });
         setLegend(result.legend);
         const lacks = [...result.missing.values()];
@@ -355,7 +381,18 @@ export function BpmnEditor({ process, focusElementId, readOnly = false, onClose 
       eventBus.off(['commandStack.changed', 'import.done'], apply);
       clearColourBy(instance);
     };
-  }, [instance, loaded, colourBy, links.data, locale, t, grcSteps, grcConfig.data]);
+  }, [
+    instance,
+    loaded,
+    colourBy,
+    links.data,
+    locale,
+    t,
+    grcSteps,
+    grcConfig.data,
+    lifecycles,
+    kpiSteps,
+  ]);
 
   // The colour theme (Settings → Branding) applies to new elements and the colour picker.
   const theme = settings.data?.diagramTheme;
@@ -1029,7 +1066,10 @@ export function BpmnEditor({ process, focusElementId, readOnly = false, onClose 
                   type: 'group' as const,
                   label: t('modeler:colourBy.title'),
                   children: COLOUR_BY_MODES.filter(
-                    (m) => canReadGrc || (m !== 'riskRating' && m !== 'riskControl'),
+                    (m) =>
+                      (canReadGrc || (m !== 'riskRating' && m !== 'riskControl')) &&
+                      (canReadEa || m !== 'appLifecycle') &&
+                      (canReadKpi || m !== 'kpiStatus'),
                   ).map((mode) => ({
                     key: `colourBy-${mode}`,
                     label: t(`modeler:colourBy.modes.${mode}`),
@@ -1331,6 +1371,36 @@ export function BpmnEditor({ process, focusElementId, readOnly = false, onClose 
                                 process.status === 'IN_REVIEW' || process.status === 'ARCHIVED'
                               }
                               onCheckGaps={() => setGapsOpen(true)}
+                            />
+                          ),
+                        },
+                      ]
+                    : []),
+                  ...(canReadKpi
+                    ? [
+                        {
+                          key: 'kpis',
+                          label: (
+                            <Space size={4}>
+                              {t('kpi:process.tab')}
+                              {(processKpis.data?.items ?? []).some((k) => k.rag === 'RED') && (
+                                <Badge status="error" />
+                              )}
+                            </Space>
+                          ),
+                          children: (
+                            <KpiStepPanel
+                              processId={process.id}
+                              data={processKpis.data}
+                              elementId={
+                                selected && selected.type !== 'bpmn:Process' ? selected.id : null
+                              }
+                              elementName={selected ? labelOf(selected.id) || selected.id : ''}
+                              canLink={
+                                process.canEditModel &&
+                                process.status !== 'IN_REVIEW' &&
+                                process.status !== 'ARCHIVED'
+                              }
                             />
                           ),
                         },

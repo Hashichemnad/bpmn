@@ -1,0 +1,221 @@
+{
+  "nav": {
+    "group": "البنية المؤسسية",
+    "applications": "التطبيقات",
+    "interfaces": "الواجهات",
+    "dataObjects": "كائنات البيانات",
+    "capabilities": "القدرات",
+    "landscape": "خريطة التطبيقات",
+    "traceability": "التتبع"
+  },
+  "applications": {
+    "title": "كتالوج التطبيقات",
+    "subtitle": "التطبيقات والمنصات والخدمات والأنظمة الخارجية التي تدعم العمليات",
+    "new": "تطبيق جديد",
+    "edit": "تعديل التطبيق",
+    "empty": "لا توجد تطبيقات بعد",
+    "deleteConfirm": "حذف هذا التطبيق؟ ستُزال روابطه بالخطوات وواجهاته واستخداماته للبيانات.",
+    "endOfLifeInUse": "قيد الإيقاف التدريجي / موقوف ولا يزال مستخدمًا"
+  },
+  "interfaces": {
+    "title": "الواجهات",
+    "subtitle": "تدفقات البيانات بين التطبيقات",
+    "new": "واجهة جديدة",
+    "edit": "تعديل الواجهة",
+    "empty": "لا توجد واجهات بعد",
+    "deleteConfirm": "حذف هذه الواجهة؟"
+  },
+  "dataObjects": {
+    "title": "كائنات البيانات",
+    "subtitle": "كيانات الأعمال ونظام السجل لكل منها والتطبيقات التي تنشئها أو تقرؤها أو تعدّلها أو تحذفها",
+    "new": "كائن بيانات جديد",
+    "edit": "تعديل كائن البيانات",
+    "empty": "لا توجد كائنات بيانات بعد",
+    "deleteConfirm": "حذف كائن البيانات هذا؟",
+    "list": "القائمة",
+    "matrix": "مصفوفة الاستخدام (CRUD)",
+    "matrixHint": "C = إنشاء، R = قراءة، U = تعديل، D = حذف؛ ★ = نظام السجل",
+    "addApplication": "إضافة تطبيق"
+  },
+  "capabilities": {
+    "title": "قدرات الأعمال",
+    "subtitle": "خريطة القدرات (المستويات 1–3) مع العمليات والتطبيقات التي تقف خلف كل قدرة",
+    "new": "قدرة جديدة",
+    "newChild": "إضافة قدرة فرعية",
+    "edit": "تعديل القدرة",
+    "empty": "لا توجد قدرات بعد",
+    "deleteConfirm": "حذف هذه القدرة؟",
+    "tree": "القائمة",
+    "map": "خريطة القدرات",
+    "level": "المستوى {{level}}"
+  },
+  "fields": {
+    "code": "الرمز",
+    "name": "الاسم",
+    "type": "النوع",
+    "vendor": "المورّد",
+    "version": "الإصدار",
+    "businessOwner": "مالك الأعمال",
+    "itOwner": "مالك تقنية المعلومات",
+    "owner": "المالك",
+    "department": "الإدارة",
+    "hosting": "الاستضافة",
+    "hostingCountry": "بلد الاستضافة",
+    "hostingCountryHint": "رمز ISO، مثل AE — لموقع حفظ البيانات",
+    "lifecycle": "دورة الحياة",
+    "liveFrom": "التشغيل منذ",
+    "phaseOutFrom": "بدء الإيقاف التدريجي",
+    "retiredAt": "تاريخ الإيقاف",
+    "criticality": "الأهمية الحرجة",
+    "dataClassification": "تصنيف البيانات",
+    "classification": "التصنيف",
+    "licenceNotes": "ملاحظات الترخيص / العقد",
+    "url": "الرابط",
+    "capabilities": "القدرات",
+    "steps": "الخطوات",
+    "interfaces": "الواجهات",
+    "source": "المصدر",
+    "target": "الهدف",
+    "direction": "الاتجاه",
+    "technology": "التقنية",
+    "frequency": "التكرار",
+    "status": "الحالة",
+    "dataObjects": "كائنات البيانات",
+    "definitionEn": "التعريف (إنجليزي)",
+    "definitionAr": "التعريف (عربي)",
+    "systemOfRecord": "نظام السجل",
+    "usage": "يستخدمه (CRUD)",
+    "application": "التطبيق",
+    "parent": "القدرة الأم",
+    "importance": "الأهمية الاستراتيجية",
+    "processes": "العمليات",
+    "applications": "التطبيقات",
+    "process": "العملية",
+    "step": "الخطوة",
+    "wholeProcess": "العملية كاملة",
+    "updated": "آخر تحديث"
+  },
+  "detail": {
+    "overview": "نظرة عامة",
+    "supportedSteps": "العمليات والخطوات المدعومة",
+    "noSteps": "غير مرتبط بأي خطوة بعد",
+    "noInterfaces": "لا توجد واجهات",
+    "noData": "لا توجد كائنات بيانات",
+    "open": "فتح"
+  },
+  "appType": {
+    "APPLICATION": "تطبيق",
+    "PLATFORM": "منصة",
+    "SERVICE": "خدمة",
+    "DATABASE": "قاعدة بيانات",
+    "EXTERNAL": "نظام خارجي"
+  },
+  "hosting": {
+    "ON_PREMISE": "داخلي (في المقر)",
+    "CLOUD": "سحابي",
+    "SAAS": "برمجيات كخدمة"
+  },
+  "lifecycle": {
+    "PLANNED": "مخطط",
+    "ACTIVE": "نشط",
+    "PHASING_OUT": "قيد الإيقاف التدريجي",
+    "RETIRED": "موقوف"
+  },
+  "criticality": {
+    "LOW": "منخفضة",
+    "MEDIUM": "متوسطة",
+    "HIGH": "مرتفعة",
+    "CRITICAL": "حرجة"
+  },
+  "classification": {
+    "PUBLIC": "عام",
+    "INTERNAL": "داخلي",
+    "CONFIDENTIAL": "سري",
+    "SECRET": "سري للغاية"
+  },
+  "direction": {
+    "ONE_WAY": "باتجاه واحد",
+    "TWO_WAY": "بالاتجاهين"
+  },
+  "technology": {
+    "API": "واجهة برمجية",
+    "FILE": "ملف",
+    "DB_LINK": "ربط قاعدة بيانات",
+    "MANUAL": "يدوي",
+    "MESSAGE_QUEUE": "طابور رسائل"
+  },
+  "frequency": {
+    "REAL_TIME": "فوري",
+    "HOURLY": "كل ساعة",
+    "DAILY": "يومي",
+    "WEEKLY": "أسبوعي",
+    "MONTHLY": "شهري",
+    "ON_DEMAND": "عند الطلب"
+  },
+  "status": {
+    "PLANNED": "مخطط",
+    "ACTIVE": "نشط",
+    "RETIRED": "موقوف"
+  },
+  "importance": {
+    "LOW": "منخفضة",
+    "MEDIUM": "متوسطة",
+    "HIGH": "مرتفعة"
+  },
+  "crud": {
+    "create": "إنشاء",
+    "read": "قراءة",
+    "update": "تعديل",
+    "delete": "حذف"
+  },
+  "filters": {
+    "search": "ابحث بالرمز أو الاسم أو المورّد",
+    "all": "الكل"
+  },
+  "map": {
+    "colourBy": "التلوين حسب",
+    "legend": "مفتاح الألوان",
+    "modes": {
+      "coverage": "تغطية العمليات",
+      "applications": "عدد التطبيقات",
+      "lifecycle": "دورة حياة التطبيقات",
+      "risk": "تقييم المخاطر"
+    },
+    "coverage": {
+      "none": "لا توجد عملية",
+      "one": "عملية واحدة",
+      "many": "عمليتان أو أكثر"
+    },
+    "noApplications": "لا يوجد تطبيق",
+    "noRisk": "لا توجد مخاطر",
+    "counts": "{{processes}} عمليات · {{applications}} تطبيقات",
+    "riskScore": "أعلى خطر متبقٍ {{score}}"
+  },
+  "landscape": {
+    "title": "خريطة التطبيقات",
+    "subtitle": "التطبيقات والواجهات بينها؛ انقر على تطبيق لفتحه",
+    "export": "تصدير",
+    "neighbours": "إظهار التطبيقات المتصلة",
+    "empty": "لا توجد تطبيقات تطابق عوامل التصفية"
+  },
+  "trace": {
+    "title": "التتبع",
+    "subtitle": "القدرة ← العملية ← الخطوة ← التطبيق ← كائن البيانات، مع المخاطر والضوابط على كل خطوة",
+    "empty": "لا يوجد ما يمكن تتبعه بهذه العوامل",
+    "noApplication": "لا يوجد تطبيق على خطواتها",
+    "risksControls": "المخاطر والضوابط"
+  },
+  "impact": {
+    "tab": "تحليل الأثر",
+    "headline": "إذا أُوقف {{name}} فستتأثر هذه العمليات والخطوات والضوابط",
+    "processes": "العمليات",
+    "steps": "الخطوات",
+    "controls": "الضوابط",
+    "risks": "المخاطر",
+    "stepsTitle": "العمليات والخطوات المدعومة",
+    "controlsTitle": "الضوابط المتأثرة",
+    "control": "الضابط",
+    "runsIn": "يعمل داخل التطبيق",
+    "onSteps": "على الخطوات المدعومة"
+  }
+}

@@ -69,6 +69,30 @@ describe('colour by', () => {
     expect(plan.legend[plan.legend.length - 1].key).toBe('none');
   });
 
+  it('application lifecycle: the step with a phasing-out system stands out', async () => {
+    const m = await load();
+    const link = (bpmnElementId: string, id: string) => ({
+      bpmnElementId,
+      relation: 'SUPPORTS' as const,
+      repoObject: { id, type: 'SYSTEM' as const, code: null, nameEn: id, nameAr: '' },
+    });
+    const plan = planColourBy(reg(m), 'appLifecycle', {
+      ...ctx([
+        link('Task_CreateRequest', 'erp'),
+        link('Task_CreateRequest', 'crm'),
+        link('Task_Screening', 'crm'),
+      ]),
+      lifecycles: new Map([
+        ['erp', 'PHASING_OUT'],
+        ['crm', 'ACTIVE'],
+      ]),
+    });
+    expect(plan.legend.find((l) => l.key === 'lifecycle:PHASING_OUT')?.count).toBe(1);
+    expect(plan.legend.find((l) => l.key === 'lifecycle:ACTIVE')?.count).toBe(1);
+    expect(plan.colours.get('Task_CreateRequest')).toEqual({ fill: '#FFEDD5', stroke: '#C2410C' });
+    expect(plan.legend[plan.legend.length - 1].key).toBe('none');
+  });
+
   it('step type, duration bands and missing information', async () => {
     const m = await load();
     const types = planColourBy(reg(m), 'type', ctx()).legend.map((l) => l.key);

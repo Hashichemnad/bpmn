@@ -11,6 +11,8 @@ export const DEMO = {
   modeler: 'modeler@processhub.local',
   risk: 'risk@processhub.local',
   audit: 'audit@processhub.local',
+  architect: 'architect@processhub.local',
+  performance: 'performance@processhub.local',
 };
 const PASSWORD = process.env.E2E_DEMO_PASSWORD ?? 'Demo-Password1';
 
@@ -142,4 +144,49 @@ export async function createSampleProcess(
   const saved = await apiCall(page, 'PUT', `/processes/${created.data.id}/model`, { bpmnXml: xml });
   expect(saved.status).toBe(200);
   return created.data.id;
+}
+
+/**
+ * Signs in the seeded Super Admin with two-factor: the stored TOTP secret (`.auth/`), or enrols on
+ * the first sign-in against a fresh database (like auth.spec) and stores the secret.
+ */
+/** Time step of the last TOTP code used by this worker (codes are single-use on the server). */
+let lastTotpStep = -1;
+
+export async function loginAdmin(page: Page, locale: 'en' | 'ar' = 'en') {
+  await page.context().clearCookies();
+  await page.goto('/login');
+  // The sign-in texts below are English: start the login page in English (stored language).
+  await page.evaluate(() => localStorage.setItem('ph.locale', 'en'));
+  await page.reload();
+  await page.locator('input[autocomplete=username]').fill(ADMIN.email);
+  await page.locator('input[type=password]').fill(ADMIN.password);
+  await page.locator('button[type=submit]').click();
+  const setup = page.getByText('Your role requires two-step verification');
+  const verify = page.getByRole('button', { name: 'Use a recovery code instead' });
+  await expect(setup.or(verify)).toBeVisible();
+  if (await verify.isVisible()) {
+    const stored = readAdminMfa();
+    if (!stored) throw new Error('The admin 2FA secret is unknown (run auth.spec.ts first)');
+    // A code is accepted once per 30-second window: wait for a fresh window when this one was used
+    // already (an earlier sign-in) or is about to end.
+    const step = () => Math.floor(Date.now() / 30_000);
+    const left = 30 - (Math.floor(Date.now() / 1000) % 30);
+    if (step() === lastTotpStep || left < 4) await page.waitForTimeout(left * 1000 + 500);
+    lastTotpStep = step();
+    await typeCode(page, totpCode(stored.secret));
+    await page.getByRole('button', { name: 'Verify' }).click();
+  } else {
+    const key = page.locator('.ant-typography code').first();
+    await expect(key).toBeVisible();
+    const secret = (await key.innerText()).replace(/\s+/g, '');
+    await typeCode(page, totpCode(secret));
+    await page.getByRole('button', { name: 'Confirm and turn on' }).click();
+    const codes = page.getByTestId('recovery-codes').locator('code');
+    await expect(codes.first()).toBeVisible();
+    writeAdminMfa({ secret, recoveryCodes: await codes.allInnerTexts() });
+    await page.getByRole('button', { name: 'Continue' }).click();
+  }
+  await page.waitForFunction(() => !location.pathname.startsWith('/login'));
+  await setLocale(page, locale);
 }

@@ -73,6 +73,20 @@ export const PERMISSIONS = {
   SURVEYS_MANAGE: 'surveys.manage',
   /** Answer questionnaires one is asked to answer. */
   SURVEYS_RESPOND: 'surveys.respond',
+  /** Enterprise architecture (Phase 4.3): application catalogue, interfaces, data, capabilities (read). */
+  EA_READ: 'ea.read',
+  /** Create and change applications, interfaces, data objects and capabilities; Excel import. */
+  EA_EDIT: 'ea.edit',
+  /** Delete architecture items. */
+  EA_ADMIN: 'ea.admin',
+  /** KPIs, strategic objectives, measurements and dashboards (read). Phase 4.3. */
+  KPI_READ: 'kpi.read',
+  /** Define KPIs and objectives, enter any measurement, Excel import, KPI settings. */
+  KPI_EDIT: 'kpi.edit',
+  /** Enter the measurements of the KPIs one owns. */
+  KPI_MEASURE: 'kpi.measure',
+  /** Preview and run the Salesforce KPI sync and read its log (credentials stay with Super Admins). */
+  KPI_SYNC: 'kpi.sync',
 } as const;
 export type Permission = (typeof PERMISSIONS)[keyof typeof PERMISSIONS];
 export const ALL_PERMISSIONS: Permission[] = Object.values(PERMISSIONS);
@@ -86,6 +100,8 @@ export const SYSTEM_ROLE_KEYS = [
   'AUDITOR',
   'RISK_OFFICER',
   'INTERNAL_AUDIT',
+  'ENTERPRISE_ARCHITECT',
+  'PERFORMANCE_OFFICER',
   'VIEWER',
 ] as const;
 export type SystemRoleKey = (typeof SYSTEM_ROLE_KEYS)[number];
@@ -117,7 +133,8 @@ export const SYSTEM_ROLES: Record<
   ADMIN: {
     nameEn: 'Admin',
     nameAr: 'مسؤول',
-    permissions: ALL_PERMISSIONS.filter((p) => p !== P.SETTINGS_MANAGE),
+    // The Salesforce link stays with Super Admins and Performance Officers (D-118).
+    permissions: ALL_PERMISSIONS.filter((p) => p !== P.SETTINGS_MANAGE && p !== P.KPI_SYNC),
   },
   PROCESS_OWNER: {
     nameEn: 'Process Owner',
@@ -135,6 +152,9 @@ export const SYSTEM_ROLES: Record<
       P.GRC_PROPOSE,
       P.CONTROLS_TEST,
       P.SURVEYS_RESPOND,
+      P.EA_READ,
+      P.KPI_READ,
+      P.KPI_MEASURE,
     ],
   },
   MODELER: {
@@ -152,12 +172,21 @@ export const SYSTEM_ROLES: Record<
       P.GRC_READ,
       P.GRC_PROPOSE,
       P.SURVEYS_RESPOND,
+      P.EA_READ,
+      P.KPI_READ,
     ],
   },
   REVIEWER: {
     nameEn: 'Reviewer',
     nameAr: 'مراجع',
-    permissions: [...READ_REPOSITORY, P.USERS_READ, P.GRC_READ, P.SURVEYS_RESPOND],
+    permissions: [
+      ...READ_REPOSITORY,
+      P.USERS_READ,
+      P.GRC_READ,
+      P.SURVEYS_RESPOND,
+      P.EA_READ,
+      P.KPI_READ,
+    ],
   },
   AUDITOR: {
     nameEn: 'Auditor',
@@ -176,6 +205,8 @@ export const SYSTEM_ROLES: Record<
       P.AI_USAGE_READ,
       P.GRC_READ,
       P.SURVEYS_RESPOND,
+      P.EA_READ,
+      P.KPI_READ,
     ],
   },
   RISK_OFFICER: {
@@ -195,6 +226,8 @@ export const SYSTEM_ROLES: Record<
       P.ISSUES_MANAGE,
       P.SURVEYS_MANAGE,
       P.SURVEYS_RESPOND,
+      P.EA_READ,
+      P.KPI_READ,
     ],
   },
   INTERNAL_AUDIT: {
@@ -211,6 +244,42 @@ export const SYSTEM_ROLES: Record<
       P.CONTROLS_REVIEW,
       P.SURVEYS_MANAGE,
       P.SURVEYS_RESPOND,
+      P.EA_READ,
+      P.KPI_READ,
+    ],
+  },
+  ENTERPRISE_ARCHITECT: {
+    nameEn: 'Enterprise Architect',
+    nameAr: 'مهندس المؤسسة',
+    // Application catalogue, interfaces, data objects and the capability map; the rest read-only (D-108).
+    permissions: [
+      ...READ_REPOSITORY,
+      P.USERS_READ,
+      P.GOVERNANCE_DASHBOARD,
+      P.GRC_READ,
+      P.SURVEYS_RESPOND,
+      P.EA_READ,
+      P.EA_EDIT,
+      P.EA_ADMIN,
+      P.KPI_READ,
+    ],
+  },
+  PERFORMANCE_OFFICER: {
+    nameEn: 'Performance Officer',
+    nameAr: 'مسؤول الأداء',
+    // Strategy Office: all KPIs, objectives, targets and values; runs and reviews the Salesforce
+    // sync; the rest of the workspace read-only (D-118).
+    permissions: [
+      ...READ_REPOSITORY,
+      P.USERS_READ,
+      P.GOVERNANCE_DASHBOARD,
+      P.GRC_READ,
+      P.EA_READ,
+      P.SURVEYS_RESPOND,
+      P.KPI_READ,
+      P.KPI_EDIT,
+      P.KPI_MEASURE,
+      P.KPI_SYNC,
     ],
   },
   VIEWER: {
@@ -364,6 +433,13 @@ export const AUDIT_ENTITY_TYPES = [
   'Questionnaire',
   'SurveyCampaign',
   'SurveyResponse',
+  'Application',
+  'AppInterface',
+  'DataObject',
+  'Capability',
+  'Kpi',
+  'KpiMeasurement',
+  'StrategicObjective',
 ] as const;
 export type AuditEntityType = (typeof AUDIT_ENTITY_TYPES)[number];
 
@@ -386,6 +462,10 @@ export const SETTING_KEYS = {
   GRC: 'grc',
   /** Assurance (Phase 4.2): issue severity scale, escalation. */
   ASSURANCE: 'assurance',
+  /** KPIs (Phase 4.3): portal visibility, reminders. */
+  KPI: 'kpi',
+  /** Salesforce KPI link (Phase 4.3): connection (secret sealed), mapping, schedule. */
+  SALESFORCE: 'integrations.salesforce',
 } as const;
 
 /** Logo upload limits. */
@@ -597,6 +677,8 @@ export const NOTIFICATION_TYPES = [
   'AUDIT',
   /** Questionnaire to answer: invited / reminder (params.kind). */
   'SURVEY',
+  /** KPI value due / overdue for the owner; Salesforce sync failed for Super Admins (params.kind). */
+  'KPI',
 ] as const;
 export type NotificationType = (typeof NOTIFICATION_TYPES)[number];
 

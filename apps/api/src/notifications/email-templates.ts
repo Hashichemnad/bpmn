@@ -71,6 +71,7 @@ const TEMPLATES: Record<Locale, Record<NotificationType, Template>> = {
     ISSUE: BY_KIND,
     AUDIT: BY_KIND,
     SURVEY: BY_KIND,
+    KPI: BY_KIND,
   },
   ar: {
     REVIEW_REQUESTED: {
@@ -126,6 +127,7 @@ const TEMPLATES: Record<Locale, Record<NotificationType, Template>> = {
     ISSUE: BY_KIND,
     AUDIT: BY_KIND,
     SURVEY: BY_KIND,
+    KPI: BY_KIND,
   },
 };
 
@@ -247,6 +249,14 @@ export const KIND_TEMPLATES: Record<Locale, Record<string, { subject: string; bo
       subject: 'Reminder — questionnaire: {title}',
       body: 'The questionnaire “{title}” closes on {due}. Please answer it if you have not done so yet.',
     },
+    'KPI:due': {
+      subject: 'KPI value due: {title}',
+      body: 'The actual value of “{title}” for {comment} is due. Please enter it in ProcessHub (My tasks).',
+    },
+    'KPI:syncFailed': {
+      subject: 'Salesforce KPI sync failed',
+      body: 'The Salesforce KPI sync failed: {comment}. See Settings → Integrations → Salesforce for the sync log.',
+    },
     'GRC_CHANGE:batch': {
       subject: 'Approval requested: imported changes of risks and controls',
       body: '{actor} imported changes of active risks or controls from Excel. They wait for your approval in My tasks (approve or reject them together).',
@@ -364,6 +374,14 @@ export const KIND_TEMPLATES: Record<Locale, Record<string, { subject: string; bo
     'SURVEY:reminder': {
       subject: 'تذكير — استبيان: {title}',
       body: 'يُغلق الاستبيان «{title}» في {due}. يرجى الإجابة عليه إن لم تفعل بعد.',
+    },
+    'KPI:due': {
+      subject: 'موعد إدخال قيمة المؤشر: {title}',
+      body: 'حان موعد إدخال القيمة الفعلية لـ «{title}» عن الفترة {comment}. يرجى إدخالها في بروسس هب (مهامي).',
+    },
+    'KPI:syncFailed': {
+      subject: 'فشلت مزامنة مؤشرات Salesforce',
+      body: 'فشلت مزامنة مؤشرات الأداء من Salesforce: {comment}. راجع الإعدادات ← التكاملات ← Salesforce لسجل المزامنة.',
     },
     'GRC_CHANGE:batch': {
       subject: 'طلب اعتماد: تعديلات مستوردة على المخاطر والضوابط',

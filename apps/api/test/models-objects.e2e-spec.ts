@@ -121,8 +121,11 @@ describe('Models, versions, objects and links (e2e)', () => {
     ).body;
     expect(updated.descriptionAr).toBe('وصف');
     await modeler.post('/objects').send({ type: 'ALIEN', nameEn: 'X' }).expect(400);
-    // Other object types are supported by the data model already
-    await modeler.post('/objects').send({ type: 'KPI', nameEn: 'Lead time' }).expect(201);
+    // KPIs live in the KPI catalogue (Phase 4.3, D-111).
+    expect(
+      (await modeler.post('/objects').send({ type: 'KPI', nameEn: 'Lead time' }).expect(400)).body
+        .code,
+    ).toBe('USE_KPI_REGISTER');
     // Risks, controls and requirements live in the Risk & Compliance registers (D-089).
     for (const type of ['RISK', 'CONTROL', 'REQUIREMENT']) {
       const res = await modeler.post('/objects').send({ type, nameEn: 'Fraud' }).expect(400);

@@ -25,6 +25,7 @@ export default defineConfig({
           react: ['react', 'react-dom', 'react-router-dom'],
           antd: ['antd', '@ant-design/icons'],
           bpmn: ['bpmn-js/lib/Modeler', 'bpmn-js/lib/NavigatedViewer'],
+          charts: ['recharts'],
         },
       },
     },

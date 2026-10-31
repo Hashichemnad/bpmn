@@ -8,7 +8,9 @@
     "AUDITOR": "Auditor",
     "VIEWER": "Viewer",
     "RISK_OFFICER": "Risk & Compliance Officer",
-    "INTERNAL_AUDIT": "Internal Audit"
+    "INTERNAL_AUDIT": "Internal Audit",
+    "ENTERPRISE_ARCHITECT": "Enterprise Architect",
+    "PERFORMANCE_OFFICER": "Performance Officer"
   },
   "status": {
     "ACTIVE": "Active",
@@ -140,7 +142,14 @@
       "AuditFinding": "Audit finding",
       "Questionnaire": "Questionnaire",
       "SurveyCampaign": "Survey campaign",
-      "SurveyResponse": "Survey response"
+      "SurveyResponse": "Survey response",
+      "Application": "Application",
+      "AppInterface": "Interface",
+      "DataObject": "Data object",
+      "Capability": "Capability",
+      "Kpi": "KPI",
+      "KpiMeasurement": "KPI value",
+      "StrategicObjective": "Strategic objective"
     }
   },
   "settings": {
@@ -381,5 +390,133 @@
         "hint": "An approval step leads straight into a decision (gateway) with its outcomes, such as approved / returned / rejected."
       }
     }
+  },
+  "salesforce": {
+    "title": "Salesforce KPI link",
+    "subtitle": "Read-only import of the corporate KPI catalogue and its results from the PMS app",
+    "card": "Salesforce KPI link",
+    "cardHint": "Import KPI definitions and actual values from Salesforce (read-only, off by default).",
+    "open": "Open Salesforce settings",
+    "noKey": "INTEGRATIONS_ENCRYPTION_KEY is not set: credentials cannot be stored.",
+    "connection": "Connection",
+    "enabled": "Enabled",
+    "instanceUrl": "Instance URL (My Domain)",
+    "authFlow": "Authentication",
+    "flows": {
+      "CLIENT_CREDENTIALS": "OAuth 2.0 client credentials",
+      "JWT_BEARER": "JWT bearer (certificate)"
+    },
+    "clientId": "Consumer key (client id)",
+    "clientSecret": "Consumer secret",
+    "loginUrl": "Login URL (token audience)",
+    "username": "Integration user",
+    "privateKey": "Private key (PEM)",
+    "secretStored": "Stored encrypted — leave empty to keep it.",
+    "apiVersion": "API version",
+    "test": "Test connection",
+    "testOk": "Connected to Salesforce",
+    "scheduleTitle": "Schedule",
+    "schedule": "Scheduled sync",
+    "schedules": {
+      "OFF": "Off (manual only)",
+      "HOURLY": "Hourly",
+      "DAILY": "Daily",
+      "WEEKLY": "Weekly (Monday)"
+    },
+    "hour": "Hour (UTC)",
+    "syncValues": "Import actual values",
+    "readOnly": "ProcessHub only reads from Salesforce (SOQL queries); it never writes. Use a dedicated integration user with a read-only permission set.",
+    "syncTitle": "Sync",
+    "preview": "Preview changes",
+    "syncNow": "Sync now",
+    "synced": "Sync finished",
+    "failed": "Sync failed",
+    "counts": "{{create}} new · {{update}} changed · {{unchanged}} unchanged",
+    "objectives": "Objectives",
+    "kpis": "KPIs",
+    "values": "Actual values",
+    "warnings": "Warnings",
+    "mapping": "Field mapping",
+    "mappingHint": "Salesforce API names; use “Load fields” to pick from the object.",
+    "object": "Salesforce object",
+    "loadFields": "Load fields",
+    "objectiveSource": "Objectives come from",
+    "objectiveSources": {
+      "NONE": "No objectives",
+      "OBJECT": "Their own object (lookup on the KPI)",
+      "KPI_FIELD": "The values of a KPI field (picklist)"
+    },
+    "valueMapHint": "One per line: Salesforce value = ProcessHub value",
+    "valueMaps": {
+      "directionValues": "Direction values",
+      "frequencyValues": "Frequency values",
+      "statusValues": "Status values",
+      "periodValues": "Period values (Q1…Q4, H1 / H2, M01…M12, YEAR)"
+    },
+    "fields": {
+      "objectives": {
+        "code": "Code",
+        "nameEn": "Name (English)",
+        "nameAr": "Name (Arabic)",
+        "descriptionEn": "Description (English)",
+        "descriptionAr": "Description (Arabic)"
+      },
+      "kpis": {
+        "code": "Code",
+        "nameEn": "Name (English)",
+        "nameAr": "Name (Arabic)",
+        "descriptionEn": "Definition (English)",
+        "descriptionAr": "Definition (Arabic)",
+        "unit": "Unit",
+        "direction": "Direction",
+        "frequency": "Frequency",
+        "target": "Target",
+        "status": "Status",
+        "objective": "Objective (lookup or field)"
+      },
+      "results": {
+        "kpi": "KPI (record id path)",
+        "year": "Year",
+        "period": "Period",
+        "value": "Actual value",
+        "target": "Target",
+        "comment": "Comment",
+        "causality": "Causality",
+        "correctiveActions": "Corrective actions",
+        "approved": "Approved (checkbox)"
+      },
+      "measures": {
+        "kpi": "KPI (record id path)",
+        "year": "Year",
+        "target": "Yearly target",
+        "value": "Achieved value"
+      }
+    },
+    "log": "Sync log",
+    "started": "Started",
+    "trigger": "Trigger",
+    "triggers": {
+      "MANUAL": "Manual",
+      "SCHEDULED": "Scheduled"
+    },
+    "status": "Status",
+    "statuses": {
+      "RUNNING": "Running",
+      "SUCCESS": "Succeeded",
+      "FAILED": "Failed"
+    },
+    "result": "Result",
+    "by": "By",
+    "measures": "Yearly target and achieved value",
+    "includeUnapproved": "Include results not yet approved",
+    "includeUnapprovedHint": "Off: only period results with the approval checkbox set are imported.",
+    "syncOnly": "Only a Super Admin changes the connection and mapping. You can preview and run the sync and review the sync log.",
+    "valueLinks": "Link picklist values to existing objectives",
+    "valueLinksHint": "Values not linked here become new objectives on the next sync.",
+    "picklistValue": "Salesforce value",
+    "objective": "Objective",
+    "addValueLink": "Link a value",
+    "systemActor": "Salesforce sync (system)",
+    "configuredBy": "Configured by"
   }
 }

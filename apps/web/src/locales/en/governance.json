@@ -345,7 +345,10 @@
       "SURVEY": "Questionnaire: {{title}}",
       "SURVEY_invited": "Please answer the questionnaire {{title}} (by {{due}})",
       "SURVEY_reminder": "Reminder: the questionnaire {{title}} closes on {{due}}",
-      "GRC_CHANGE_batch": "{{actor}} imported changes of risks and controls that need your approval"
+      "GRC_CHANGE_batch": "{{actor}} imported changes of risks and controls that need your approval",
+      "KPI": "KPI: {{title}}",
+      "KPI_due": "KPI value due for {{comment}}: {{title}}",
+      "KPI_syncFailed": "Salesforce KPI sync failed: {{comment}}"
     }
   },
   "prefs": {
@@ -371,7 +374,8 @@
       "CONTROL_TEST": "Control tests (assigned, due, reviews)",
       "ISSUE": "Issues and actions (assigned, due, escalations)",
       "AUDIT": "Audit engagements and findings",
-      "SURVEY": "Questionnaires to answer"
+      "SURVEY": "Questionnaires to answer",
+      "KPI": "KPI values due and Salesforce sync failures"
     }
   },
   "feedback": {

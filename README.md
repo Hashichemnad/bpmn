@@ -25,7 +25,9 @@
 | **Knowledge Portal** | Read-only portal for all staff with published content only: process house, step details, documentation with table of contents, English/Arabic search, "my processes", feedback to owners, PDF download, branding and access settings | ✅ 3 |
 | **AI Assistant** *(optional, off by default)* | Generate a BPMN process (lanes, bilingual labels, auto-layout) from a description; refine it by chat with a visual review; SOP / work instruction from a process and a process from a page; EN↔AR translation of fields, labels and pages; analysis (missing steps, responsibilities, bottlenecks, risks, controls) and plain-language validation warnings; summaries and "what changed"; a Knowledge Portal assistant that answers only from published content with links. Anthropic Claude, encrypted key, roles, limits, usage report, full audit | ✅ AI |
 | **Risk & Compliance (GRC core)** | Risk register (inherent / residual 5 × 5 ratings, configurable categories and rating bands), control library (type, nature, frequency, key control, IT system, design effectiveness), requirements (law → section → clause); risk ↔ control ↔ requirement relations; assessment history and comments; links to process steps with a modeler panel, warning badges and "colour by" risk views; heat maps, coverage dashboard with drill-down, risk–control matrix and Excel import / export; review reminders; portal visibility setting; handbook section; AI control-gap check | ✅ 4.1 |
-| **EA & KPIs** | Control testing, issues, audits, IT landscape, KPI dashboards, Salesforce link | 4.2 / 4.3 |
+| **Assurance** | Approval of changes to risks / controls, control testing with samples and four-eyes review, issues and action plans, audit universe / plan / engagements / findings / Word report, questionnaires and self-assessments, assurance dashboard | ✅ 4.2 |
+| **Enterprise architecture** | Application catalogue (the IT systems linked to steps: type, vendor, owners, hosting country, lifecycle, criticality, data classification), interfaces, data objects with system of record and CRUD matrix, 3-level capability map with "colour by" (coverage, applications, lifecycle, risk), application landscape diagram (SVG / PNG), traceability capability → process → step → application → data (+ risks / controls), impact analysis of an application, Excel import / export, modeler "colour by application lifecycle", handbook "Systems and data" | 4.3 |
+| **KPIs & dashboards** | KPI catalogue (formula, unit, direction, frequency, targets and green / amber / red thresholds per period, owner, data source), strategic objectives, key risk indicators, links to processes and steps; values with comment and evidence, owner reminders in My tasks, Excel import, history; KPIs calculated from step attributes (duration, waiting, cost, handovers, automation rate); KPI dashboard by objective with sparklines and drill-down chart, KPI badges and "colour by KPI status" in the modeler, process performance card, optional portal section; optional read-only **Salesforce** KPI link (mapping, preview, scheduled sync, sync log) | 4.3 |
 | **Process Mining & Execution** | Event-log analysis, bottlenecks, running approved processes as workflows | 5 |
 
 ## Quick start (Docker)
@@ -65,9 +67,33 @@ content in every lifecycle state, comments, notifications and portal feedback.
 | `auditor@processhub.local` | Auditor (Adel) | Workspace, read-only — drafts, history, reviews, audit log, AI usage, Risk & Compliance (read) |
 | `risk@processhub.local` | Risk & Compliance Officer (Rana) | Risk & Compliance — registers, dashboard, settings; rest of the workspace read-only |
 | `audit@processhub.local` | Internal Audit (Iman) | Audits — audit plan, engagements, findings; tests and reviews controls; rest read-only |
+| `architect@processhub.local` | Enterprise Architect (Ali) | Architecture — applications, interfaces, data objects, capability map; rest read-only |
+| `performance@processhub.local` | Performance Officer (Perla) | KPIs — defines KPIs, objectives and targets, enters any value, runs the Salesforce sync; rest read-only |
 
 Demo users are only created on a demo installation (`SEED_DEMO_DATA=true`, the default). **Emails** sent by
 the demo installation go to the bundled **Mailpit** at **http://localhost:8025** — nothing leaves the machine.
+
+### A short tour of Phase 4.3 — enterprise architecture, KPIs and the Salesforce link
+
+- As `architect@processhub.local`: **Architecture → Capabilities** shows the capability map (levels 1–3); switch
+  *Colour by* between process coverage, number of applications, application lifecycle and risk rating; a tile
+  opens its processes and applications. **Applications** lists the twelve demo applications (the IT systems the
+  modeler links to steps); open *ERP* → **Impact analysis**: the processes, steps and controls affected if it were
+  retired, with Excel export. **Landscape** draws applications and interfaces (filter by capability, department,
+  lifecycle; SVG / PNG); **Data objects** has the CRUD matrix; **Traceability** follows capability → process → step →
+  application → data object with the risks and controls on each step. Every catalogue has Excel export / template /
+  import.
+- As `owner@processhub.local`: **Performance → KPI dashboard** — two strategic objectives with eight KPIs (green,
+  amber and red), sparklines, filters (department, process, owner, as-of month) and a drill-down chart; **My tasks**
+  → *KPI values to enter* (KPI-06 is due): enter the value with a comment and evidence and watch the status
+  change. The process *Purchase Requisition* shows a **Performance** card; in the modeler the steps carry KPI badges
+  and *View → Colour by → KPI status / Application lifecycle* colours the diagram.
+- As the Super Admin: **Administration → Salesforce KPI link** — connect a Salesforce org with a read-only
+  integration user (DEPLOYMENT.md §6.4), map the PMS objects (defaults included), preview the differences, sync
+  now or on a schedule; imported KPIs show "Source: Salesforce" and stay read-only. Scheduled syncs run as the
+  system actor "Salesforce sync". As `performance@processhub.local` (Performance Officer): **Performance →
+  Salesforce KPI link** previews and runs the sync (settings read-only). In the KPI settings (KPI
+  catalogue → *KPI settings*) **Show KPIs in the portal** adds the KPIs to the portal page of a process.
 
 ### A short tour of Phase 4.2 — assurance (control testing, issues, audits, questionnaires)
 

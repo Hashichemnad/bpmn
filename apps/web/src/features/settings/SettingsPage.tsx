@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import {
   App,
   Button,
@@ -183,6 +184,16 @@ export function SettingsPage() {
         </Col>
         <Col span={24}>
           <GitIntegrationCard />
+        </Col>
+        <Col span={24}>
+          <Card title={t('admin:salesforce.card')} data-testid="salesforce-card">
+            <Typography.Paragraph type="secondary">
+              {t('admin:salesforce.cardHint')}
+            </Typography.Paragraph>
+            <Link to="/settings/salesforce">
+              <Button>{t('admin:salesforce.open')}</Button>
+            </Link>
+          </Card>
         </Col>
       </Row>
     </>

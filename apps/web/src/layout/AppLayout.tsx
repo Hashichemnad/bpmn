@@ -42,6 +42,13 @@ import {
   FormOutlined,
   FundOutlined,
   IssuesCloseOutlined,
+  PartitionOutlined,
+  SwapOutlined,
+  DatabaseOutlined,
+  NodeIndexOutlined,
+  LineChartOutlined,
+  AimOutlined,
+  CloudSyncOutlined,
 } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
 import { PERMISSIONS, type Locale } from '@processhub/shared';
@@ -56,6 +63,7 @@ import { GlobalSearch } from '@/features/search/GlobalSearch';
 import { NotificationBell } from '@/features/notifications/NotificationBell';
 import { assuranceTaskCount, useAssuranceTasks } from '@/api/assurance';
 import { useMyTasks } from '@/api/governance';
+import { useKpiTasks } from '@/api/kpi';
 
 const { Header, Sider, Content } = Layout;
 
@@ -97,6 +105,7 @@ export function AppLayout() {
 
   const tasks = useMyTasks();
   const assurance = useAssuranceTasks(!!user);
+  const kpiTasks = useKpiTasks(!!user && canAny(PERMISSIONS.KPI_MEASURE, PERMISSIONS.KPI_EDIT));
   const taskCount = tasks.data
     ? tasks.data.reviews.length +
       tasks.data.toPublish.length +
@@ -104,7 +113,8 @@ export function AppLayout() {
       tasks.data.dueReviews.length +
       tasks.data.grcReviews.length +
       tasks.data.feedback.length +
-      assuranceTaskCount(assurance.data)
+      assuranceTaskCount(assurance.data) +
+      (kpiTasks.data?.length ?? 0)
     : 0;
 
   const items = useMemo<MenuProps['items']>(() => {
@@ -226,6 +236,77 @@ export function AppLayout() {
         ],
       });
     }
+    if (can(PERMISSIONS.KPI_READ)) {
+      list.push({
+        type: 'group',
+        label: t('kpi:nav.group'),
+        children: [
+          {
+            key: '/kpis/dashboard',
+            icon: <LineChartOutlined />,
+            label: <Link to="/kpis/dashboard">{t('kpi:nav.dashboard')}</Link>,
+          },
+          {
+            key: '/kpis',
+            icon: <DashboardOutlined />,
+            label: <Link to="/kpis">{t('kpi:nav.kpis')}</Link>,
+          },
+          {
+            key: '/kpis/objectives',
+            icon: <AimOutlined />,
+            label: <Link to="/kpis/objectives">{t('kpi:nav.objectives')}</Link>,
+          },
+          // Performance Officers run and review the Salesforce sync (D-118).
+          ...(can(PERMISSIONS.KPI_SYNC) && !can(PERMISSIONS.SETTINGS_MANAGE)
+            ? [
+                {
+                  key: '/settings/salesforce',
+                  icon: <CloudSyncOutlined />,
+                  label: <Link to="/settings/salesforce">{t('admin:salesforce.card')}</Link>,
+                },
+              ]
+            : []),
+        ],
+      });
+    }
+    if (can(PERMISSIONS.EA_READ)) {
+      list.push({
+        type: 'group',
+        label: t('ea:nav.group'),
+        children: [
+          {
+            key: '/ea/capabilities',
+            icon: <PartitionOutlined />,
+            label: <Link to="/ea/capabilities">{t('ea:nav.capabilities')}</Link>,
+          },
+          {
+            key: '/ea/applications',
+            icon: <DesktopOutlined />,
+            label: <Link to="/ea/applications">{t('ea:nav.applications')}</Link>,
+          },
+          {
+            key: '/ea/interfaces',
+            icon: <SwapOutlined />,
+            label: <Link to="/ea/interfaces">{t('ea:nav.interfaces')}</Link>,
+          },
+          {
+            key: '/ea/data',
+            icon: <DatabaseOutlined />,
+            label: <Link to="/ea/data">{t('ea:nav.dataObjects')}</Link>,
+          },
+          {
+            key: '/ea/landscape',
+            icon: <ClusterOutlined />,
+            label: <Link to="/ea/landscape">{t('ea:nav.landscape')}</Link>,
+          },
+          {
+            key: '/ea/traceability',
+            icon: <NodeIndexOutlined />,
+            label: <Link to="/ea/traceability">{t('ea:nav.traceability')}</Link>,
+          },
+        ],
+      });
+    }
     if (can(PERMISSIONS.OBJECTS_READ)) {
       list.push({
         type: 'group',
@@ -236,11 +317,15 @@ export function AppLayout() {
             icon: <TeamOutlined />,
             label: <Link to="/library/roles">{t('nav.roles')}</Link>,
           },
-          {
-            key: '/library/systems',
-            icon: <DesktopOutlined />,
-            label: <Link to="/library/systems">{t('nav.systems')}</Link>,
-          },
+          ...(can(PERMISSIONS.EA_READ)
+            ? []
+            : [
+                {
+                  key: '/library/systems',
+                  icon: <DesktopOutlined />,
+                  label: <Link to="/library/systems">{t('nav.systems')}</Link>,
+                },
+              ]),
           {
             key: '/library/documents',
             icon: <FileOutlined />,
@@ -316,6 +401,11 @@ export function AppLayout() {
         key: '/settings',
         icon: <SettingOutlined />,
         label: <Link to="/settings">{t('nav.settings')}</Link>,
+      });
+      admin.push({
+        key: '/settings/salesforce',
+        icon: <CloudSyncOutlined />,
+        label: <Link to="/settings/salesforce">{t('admin:salesforce.card')}</Link>,
       });
     }
     if (admin.length) list.push({ type: 'group', label: t('nav.administration'), children: admin });

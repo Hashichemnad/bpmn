@@ -6,6 +6,7 @@ import { useTranslation } from 'react-i18next';
 import { PERMISSIONS, summariseSteps, type ProcessDto } from '@processhub/shared';
 import { useAuth } from '@/auth/AuthProvider';
 import { useProcessGrc } from '@/api/grc';
+import { useProcessKpis } from '@/api/kpi';
 import { useLinks, useProcessModel } from '@/api/hooks';
 import { useComments } from '@/api/governance';
 import { useLocale } from '@/app/LocaleProvider';
@@ -18,6 +19,7 @@ import { afterLayout, fitWidth } from './view';
 import {
   commentBadgeItems,
   grcAlertBadgeItems,
+  kpiBadgeItems,
   linkBadgeItems,
   useDiagramOverlays,
 } from './useDiagramOverlays';
@@ -36,6 +38,7 @@ export function ModelPreview({ process, elementId }: { process: ProcessDto; elem
   const comments = useComments('PROCESS', process.id);
   const { can } = useAuth();
   const grc = useProcessGrc(process.id, can(PERMISSIONS.GRC_READ));
+  const kpis = useProcessKpis(process.id, can(PERMISSIONS.KPI_READ));
   const ref = useRef<HTMLDivElement>(null);
   const [viewer, setViewer] = useState<BpmnInstance | null>(null);
   const [version, setVersion] = useState(0);
@@ -99,8 +102,9 @@ export function ModelPreview({ process, elementId }: { process: ProcessDto; elem
       ),
       ...commentBadgeItems(comments.data ?? []),
       ...grcAlertBadgeItems(summariseSteps(grc.data?.items ?? []), t('grc:detail.notControlled')),
+      ...kpiBadgeItems(kpis.data?.items ?? [], loc),
     ],
-    [links.data, comments.data, loc, grc.data, t],
+    [links.data, comments.data, loc, grc.data, t, kpis.data],
   );
   useDiagramOverlays({
     instance: viewer,

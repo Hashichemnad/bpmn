@@ -1,0 +1,36 @@
+{
+  "totalSize": 3,
+  "done": true,
+  "records": [
+    {
+      "attributes": {
+        "type": "Org_Kpi_Measure__c"
+      },
+      "Id": "a0ZFAKE000000001",
+      "Org_Kpi_Goal__c": "a0XFAKE000000001",
+      "Measuring_Year__c": "2025",
+      "Total_Target_Value__c": 100,
+      "Total_Achieve_Value__c": null
+    },
+    {
+      "attributes": {
+        "type": "Org_Kpi_Measure__c"
+      },
+      "Id": "a0ZFAKE000000002",
+      "Org_Kpi_Goal__c": "a0XFAKE000000002",
+      "Measuring_Year__c": "2025",
+      "Total_Target_Value__c": 15,
+      "Total_Achieve_Value__c": 21
+    },
+    {
+      "attributes": {
+        "type": "Org_Kpi_Measure__c"
+      },
+      "Id": "a0ZFAKE000000003",
+      "Org_Kpi_Goal__c": "a0XFAKE000000002",
+      "Measuring_Year__c": "2024",
+      "Total_Target_Value__c": 20,
+      "Total_Achieve_Value__c": 25
+    }
+  ]
+}

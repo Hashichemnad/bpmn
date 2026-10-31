@@ -64,6 +64,19 @@ import { QuestionnaireBuilderPage } from '@/features/assurance/QuestionnaireBuil
 import { CampaignPage } from '@/features/assurance/CampaignPage';
 import { SurveyResponsePage } from '@/features/assurance/SurveyResponsePage';
 import { AssuranceDashboardPage } from '@/features/assurance/AssuranceDashboardPage';
+import { ApplicationsPage } from '@/features/ea/ApplicationsPage';
+import { ApplicationDetailPage } from '@/features/ea/ApplicationDetailPage';
+import { InterfacesPage } from '@/features/ea/InterfacesPage';
+import { DataObjectsPage } from '@/features/ea/DataObjectsPage';
+import { CapabilitiesPage } from '@/features/ea/CapabilitiesPage';
+import { SystemsLibraryRoute } from '@/features/ea/SystemsLibraryRoute';
+import { LandscapePage } from '@/features/ea/LandscapePage';
+import { TraceabilityPage } from '@/features/ea/TraceabilityPage';
+import { KpisPage } from '@/features/kpi/KpisPage';
+import { KpiDetailPage } from '@/features/kpi/KpiDetailPage';
+import { ObjectivesPage } from '@/features/kpi/ObjectivesPage';
+import { KpiDashboardPage } from '@/features/kpi/KpiDashboardPage';
+import { SalesforceSettingsPage } from '@/features/settings/SalesforceSettingsPage';
 
 const P = PERMISSIONS;
 
@@ -164,6 +177,14 @@ export const routes: RouteObject[] = [
                     element: (
                       <RequirePermission all={[P.GOVERNANCE_MANAGE]}>
                         <WorkflowsSettingsPage />
+                      </RequirePermission>
+                    ),
+                  },
+                  {
+                    path: 'settings/salesforce',
+                    element: (
+                      <RequirePermission any={[P.SETTINGS_MANAGE, P.KPI_SYNC]}>
+                        <SalesforceSettingsPage />
                       </RequirePermission>
                     ),
                   },
@@ -339,6 +360,94 @@ export const routes: RouteObject[] = [
                     ],
                   },
                   {
+                    path: 'ea/applications',
+                    element: (
+                      <RequirePermission all={[P.EA_READ]}>
+                        <ApplicationsPage />
+                      </RequirePermission>
+                    ),
+                  },
+                  {
+                    path: 'ea/applications/:id',
+                    element: (
+                      <RequirePermission all={[P.EA_READ]}>
+                        <ApplicationDetailPage />
+                      </RequirePermission>
+                    ),
+                  },
+                  {
+                    path: 'ea/interfaces',
+                    element: (
+                      <RequirePermission all={[P.EA_READ]}>
+                        <InterfacesPage />
+                      </RequirePermission>
+                    ),
+                  },
+                  {
+                    path: 'ea/data',
+                    element: (
+                      <RequirePermission all={[P.EA_READ]}>
+                        <DataObjectsPage />
+                      </RequirePermission>
+                    ),
+                  },
+                  {
+                    path: 'kpis',
+                    element: (
+                      <RequirePermission all={[P.KPI_READ]}>
+                        <KpisPage />
+                      </RequirePermission>
+                    ),
+                  },
+                  {
+                    path: 'kpis/dashboard',
+                    element: (
+                      <RequirePermission all={[P.KPI_READ]}>
+                        <KpiDashboardPage />
+                      </RequirePermission>
+                    ),
+                  },
+                  {
+                    path: 'kpis/objectives',
+                    element: (
+                      <RequirePermission all={[P.KPI_READ]}>
+                        <ObjectivesPage />
+                      </RequirePermission>
+                    ),
+                  },
+                  {
+                    path: 'kpis/:id',
+                    element: (
+                      <RequirePermission all={[P.KPI_READ]}>
+                        <KpiDetailPage />
+                      </RequirePermission>
+                    ),
+                  },
+                  {
+                    path: 'ea/landscape',
+                    element: (
+                      <RequirePermission all={[P.EA_READ]}>
+                        <LandscapePage />
+                      </RequirePermission>
+                    ),
+                  },
+                  {
+                    path: 'ea/traceability',
+                    element: (
+                      <RequirePermission all={[P.EA_READ]}>
+                        <TraceabilityPage />
+                      </RequirePermission>
+                    ),
+                  },
+                  {
+                    path: 'ea/capabilities',
+                    element: (
+                      <RequirePermission all={[P.EA_READ]}>
+                        <CapabilitiesPage />
+                      </RequirePermission>
+                    ),
+                  },
+                  {
                     path: 'library/roles',
                     element: (
                       <RequirePermission all={[P.OBJECTS_READ]}>
@@ -350,7 +459,7 @@ export const routes: RouteObject[] = [
                     path: 'library/systems',
                     element: (
                       <RequirePermission all={[P.OBJECTS_READ]}>
-                        <ObjectLibraryPage key="SYSTEM" type="SYSTEM" />
+                        <SystemsLibraryRoute />
                       </RequirePermission>
                     ),
                   },

@@ -38,6 +38,7 @@ import type {
   ReviewTaskStatus,
   WorkflowSource,
 } from './constants';
+import type { PortalKpiDto } from './kpi';
 
 /** API response shapes shared by web and api. Dates are ISO strings on the wire. */
 
@@ -884,6 +885,8 @@ export interface PortalProcessDto extends PortalProcessNodeDto {
   /** Published processes that call activities drill down into. */
   drillTargets: Pick<PortalProcessNodeDto, 'id' | 'code' | 'nameEn' | 'nameAr'>[];
   relatedPages: PortalItemDto[];
+  /** KPIs of the process and its steps with their latest status; null when the portal hides KPIs. */
+  kpis: PortalKpiDto[] | null;
 }
 
 export interface PortalSpaceDto {

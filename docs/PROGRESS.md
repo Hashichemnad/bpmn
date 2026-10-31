@@ -2,7 +2,105 @@
 
 Read this together with `CLAUDE.md` at the start of every session.
 
-## Current state — 2026-10-30 (Phase 4 — Part 2: GRC assurance, branch `phase-4-2-grc-assurance`, done — awaiting review)
+## Current state — 2026-10-31 (Phase 4 — Part 3: EA, KPIs and the Salesforce KPI link, branch `phase-4-3-ea-kpi`, done — awaiting review)
+
+Everything up to Phase 4.2 (GRC core and assurance) is merged into `main`. This branch builds module M11 (enterprise
+architecture: application catalogue, interfaces, data objects, capability map, traceability) and M12 (KPIs,
+measurements, dashboards, Salesforce KPI link) — DOF RFP §4.4 / §4.6. Oracle Fusion overlay and other connectors stay
+in BACKLOG (Phase 4.4). The session works on `claude/amazing-meitner-tj41n1` (the harness branch) and pushes the same
+commits to `phase-4-3-ea-kpi`.
+
+Local setup: PostgreSQL 16 (`service postgresql start`; role `processhub` / `devpassword`, databases `processhub`,
+`processhub_test`); API suites `npx jest --runInBand test/<file> --selectProjects e2e`.
+
+Steps (tick as they are committed; a new session continues at the first unticked one):
+
+- [x] 0. CLAUDE.md phase table (4.1 / 4.2 merged, 4.4 added), this plan.
+- [x] 1. IT architecture data model and workspace (M11, D-107 – D-109): `Application` 1:1 on the SYSTEM library
+      objects (migration backfills rows; ids / links / badges kept; `/library/systems` → `/ea/applications`),
+      `AppInterface` (+ data objects carried), `DataObject` + `DataObjectUsage` (CRUD matrix, system of record),
+      `Capability` (levels 1–3, moves recompute levels) with `CapabilityProcess` / `CapabilityApplication`;
+      permissions `ea.read` / `ea.edit` / `ea.admin`, role `ENTERPRISE_ARCHITECT` (+ demo user
+      `architect@processhub.local`); API `/ea/applications|interfaces|data-objects|capabilities` (+ Excel
+      export / template / import per catalogue, shared `common/excel.ts`), all audited. Web: Architecture menu
+      (Capabilities with list + basic map, Applications list / detail, Interfaces, Data objects with CRUD matrix),
+      generic `components/ExcelMenu.tsx`. Tests: API 4 (`ea.e2e-spec.ts`), Playwright 1 (`ea.spec.ts`).
+- [x] 2. EA views and traceability (D-110): `GET /ea/capability-map` (roll-up metrics: processes, applications,
+      lifecycles, highest residual risk), `/ea/landscape` (filters + neighbours), `/ea/trace` (+ Excel),
+      `/ea/applications/:id/impact` (+ Excel EN / AR). Web: capability map with colour-by (coverage, number of
+      applications, lifecycle, risk rating) and detail drawer; Landscape page (SVG, layered layout
+      `landscape-layout.ts`, RTL, export SVG / PNG); Traceability page; "Impact analysis" tab on the application;
+      modeler "Colour by → Application lifecycle"; handbook option "Systems and data". Tests: API +1, web +3
+      (layout 2, colour-by 1), Playwright +1.
+- [x] 3. KPIs (M12, D-111 – D-113): `Kpi` 1:1 on the KPI library objects (migration backfills; `/objects` refuses
+      KPI), `KpiPeriodTarget`, `KpiMeasurement`, `StrategicObjective`, `KpiObjective` / `KpiCapability` / `KpiRisk`
+      (key risk indicators); step / process links via `MEASURES`; shared `kpi.ts` (periods, `kpiRag`, calculated
+      process KPIs); permissions `kpi.read` / `kpi.edit` / `kpi.measure` (owners); API `/kpis` (catalogue, values,
+      evidence via the assurance file store, recalculate, objectives, process view, tasks, settings, Excel for
+      kpis / measurements / objectives), `KpiScheduler` reminders (notification `KPI`). Web: Performance menu
+      (KPIs register with status + sparkline, KPI page with Recharts chart, value entry with status preview and
+      evidence, objectives tree, settings modal), My tasks "KPI values to enter". Demo seed `seed-ea-kpi.ts`
+      (12 applications, 10 interfaces, 7 data objects, 17 capabilities, 2 objectives, 8 KPIs × 12 months, KRI on
+      RSK-03) — pulled forward from step 6 for the e2e tests. Tests: shared 3, API 5 (`kpi.e2e-spec.ts`),
+      Playwright 1 (`kpi.spec.ts`).
+- [x] 4. KPI dashboards (D-113): `GET /kpis/scorecard` (+ Excel; filters department / process / owner / as-of
+      month), KPI dashboard page (tiles → filtered register, scorecard by objective with status, value, target,
+      sparkline, drill-down drawer with the chart); process page "Performance" card (KPIs + calculated process
+      KPIs); modeler "KPIs" tab (link / unlink), KPI badge (worst status), "Colour by → KPI status" (also in the
+      preview); portal KPI section behind Setting `kpi.showInPortal` (live links, published steps only). Tests: API
+      +1, Playwright +1 (helper `loginAdmin` with the stored TOTP secret).
+- [x] 5. Salesforce KPI link (D-114 – D-116): module `salesforce` — `SalesforceHttp` (read-only transport),
+      `SalesforceClient` (client credentials / JWT bearer, SOQL with paging, describe), settings with sealed
+      secrets (Super Admin only), configurable mapping (defaults = documented PMS model), preview / sync by
+      Salesforce Id, `SalesforceSyncRun` log, schedule via `KpiScheduler`, failure notifications to Super Admins;
+      read-only Salesforce fields / values on KPIs. Web: `/settings/salesforce` (connection, test, schedule,
+      mapping with "Load fields", preview, sync, log), admin menu item, link card on Settings. DEPLOYMENT.md §6.4
+      (integration user, read-only permission set, connected app). CI: e2e `.env` gets an encryption key and
+      `OUTBOUND_ALLOWED_HOSTS=…,host.docker.internal`; compose `extra_hosts` for the API. Tests: API 3
+      (`salesforce.e2e-spec.ts`, fixtures), Playwright 1 (`salesforce.spec.ts` + `salesforce-mock.ts`).
+- [x] 6. Demo data, permission tests, e2e, screenshots, docs: demo seed (step 3) asserted in `seed.e2e-spec.ts`;
+      authorization matrix watches the new tables and sweeps every `/ea`, `/kpis` and `/integrations/salesforce` write
+      route as a Modeler; screenshots EN / AR in `docs/screenshots/phase-4-3/` (spec `screenshots-phase-4-3.spec.ts`,
+      `SCREENSHOTS=1`); e2e helper `loginAdmin` (stored TOTP secret, waits for a fresh code); README tour, CLAUDE.md
+      (roles, data model, phase table), BACKLOG (4.3 follow-ups, Phase 4.4), DEPLOYMENT.md §6.4; Recharts in its own
+      chunk.
+- [x] 7. Product owner answers (D-117 – D-119): Salesforce mapping per the documented PMS model —
+      `Org_Kpi_Measure__c` yearly targets (target of the year's last period; annual KPIs also the value),
+      `Org_Kpi_Process__c` results only with `Approved__c = true` (Setting `includeUnapproved`, off), causality and
+      corrective actions in the comment, half years (`SEMI_ANNUAL`, `2026-H1`), picklist values linkable to existing
+      objectives, process mapping removed; role **Performance Officer** (`PERFORMANCE_OFFICER`, permission
+      `kpi.sync`: settings read-only, preview, sync, log; demo user `performance@processhub.local`; Admins do not
+      get `kpi.sync`); scheduled syncs by the system actor "Salesforce sync" (no user id on runs / records / audit
+      entries) with **configured by** on the run and in the audit summaries, independent of that admin being active;
+      failure notices to Super Admins + `kpi.sync` holders; portal KPI values show period and last-updated date.
+      Migration `20261031011406_kpi_owner_answers`. DEPLOYMENT §6.4 (read access to the three objects, field names
+      to be confirmed with IT). Tests: shared +1 (half years), API +2 (`salesforce.e2e-spec.ts` unapproved / value
+      links / half years / system actor / Performance Officer; `kpi.e2e-spec.ts` Performance Officer permissions),
+      Playwright `salesforce.spec.ts` now runs the second sync as the Performance Officer.
+
+Verification of step 7 on 2026-10-31: shared 151, web 82, API 379 tests pass (56 suites); Playwright
+`salesforce.spec.ts` and `kpi.spec.ts` pass locally; lint, format, type-check clean; `docs/SECURITY.md` route table
+regenerated (`any of settings.manage, kpi.sync` on the sync routes).
+
+Verification on 2026-10-31 (steps 0–6): shared 151, web 82, API 377 tests pass (56 suites); Playwright 44 tests — full run 36
+passed / 4 skipped (screenshot specs) / 4 failed on the 30 s budget and on the admin's language left in Arabic by
+the screenshot run (fixed: 90 s budget for the multi-sign-in specs, screenshots reset the language, `loginAdmin`
+waits for a fresh TOTP window); the affected specs (auth, ea, kpi, salesforce) then pass. Lint, format and
+type-check clean; `pnpm build` succeeds (Vite warns that the main chunk is > 1.5 MB — route-level code splitting is
+for the final polish session); `pnpm audit --audit-level high --prod` clean (9 moderate in exceljs / minio /
+nodemailer dependencies, none new from this phase). **Not verified here:** Docker image builds (no Docker daemon
+in this sandbox; CI builds them). Local e2e: `E2E_SALESFORCE_MOCK_HOST=localhost` and the API with
+`OUTBOUND_ALLOWED_HOSTS=localhost`.
+
+### Next (continue here)
+
+1. Review and merge the pull request `phase-4-3-ea-kpi` → `main` (CI builds the images and runs the e2e suite with
+   the mock Salesforce on `host.docker.internal`).
+2. When IT sets up the Salesforce integration user: confirm the field names of the three PMS objects against the
+   default mapping (D-117, DEPLOYMENT §6.4).
+3. Then Phase 4.4 (Integration & export — BACKLOG).
+
+## Previous state — 2026-10-30 (Phase 4 — Part 2: GRC assurance, branch `phase-4-2-grc-assurance`, done — awaiting review)
 
 Everything up to Phase 4.1 (GRC core) is merged into `main`. This branch builds module M10 assurance (DOF RFP §4.5,
 compliance items 32–36): approval of changes to active risks / controls, control testing, issues and action plans,

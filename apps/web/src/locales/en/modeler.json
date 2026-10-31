@@ -281,7 +281,15 @@
     "COMMENT_one": "{{count}} open comment",
     "COMMENT_other": "{{count}} open comments",
     "ALERT_one": "{{count}} high risk without an effective control",
-    "ALERT_other": "{{count}} high risks without an effective control"
+    "ALERT_other": "{{count}} high risks without an effective control",
+    "KPI_RED_one": "{{count}} KPI (off target)",
+    "KPI_RED_other": "{{count}} KPIs (off target)",
+    "KPI_AMBER_one": "{{count}} KPI (watch)",
+    "KPI_AMBER_other": "{{count}} KPIs (watch)",
+    "KPI_GREEN_one": "{{count}} KPI (on target)",
+    "KPI_GREEN_other": "{{count}} KPIs (on target)",
+    "KPI_NONE_one": "{{count}} KPI (no value yet)",
+    "KPI_NONE_other": "{{count}} KPIs (no value yet)"
   },
   "preview": {
     "title": "Diagram",
@@ -411,7 +419,9 @@
       "duration": "Planned duration",
       "missing": "Missing information",
       "riskRating": "Residual risk rating",
-      "riskControl": "Risks without controls"
+      "riskControl": "Risks without controls",
+      "appLifecycle": "Application lifecycle",
+      "kpiStatus": "KPI status"
     },
     "categories": {
       "none": "Not set",
@@ -438,6 +448,18 @@
         "noRisk": "No risk linked",
         "uncovered": "Risk but no control",
         "covered": "Risk with controls"
+      },
+      "lifecycle": {
+        "PLANNED": "Planned application",
+        "ACTIVE": "Active application",
+        "PHASING_OUT": "Phasing out",
+        "RETIRED": "Retired application"
+      },
+      "kpi": {
+        "GREEN": "On target",
+        "AMBER": "Watch",
+        "RED": "Off target",
+        "noValue": "KPI without a value"
       }
     },
     "missingRole_one": "{{count}} step without a role",

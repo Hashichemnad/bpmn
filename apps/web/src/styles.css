@@ -736,6 +736,23 @@ button.ph-badge:focus-visible {
   color: #15803d;
 }
 
+/* KPI badge (Phase 4.3): colour of the worst latest status of the step's KPIs. */
+.ph-badge-kpi_red {
+  color: #dc2626;
+  border-color: #fca5a5;
+}
+.ph-badge-kpi_amber {
+  color: #b45309;
+  border-color: #fcd34d;
+}
+.ph-badge-kpi_green {
+  color: #15803d;
+  border-color: #86efac;
+}
+.ph-badge-kpi_none {
+  color: #64748b;
+}
+
 .ph-badge-comment {
   color: #1d4ed8;
 }
@@ -2574,4 +2591,67 @@ button.ph-risk-matrix-cell:focus-visible {
   background: #dc2626;
   border-color: #dc2626;
   color: #fff;
+}
+
+/* Arrows that point along the reading direction (→ becomes ← in Arabic). */
+[dir='rtl'] .ph-flip-rtl {
+  display: inline-block;
+  transform: scaleX(-1);
+}
+
+/* Capability map (Phase 4.3): level-1 columns with nested tiles. */
+.ph-cap-map {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 12px;
+  align-items: start;
+}
+.ph-cap-tile {
+  border: 1px solid #d9e1ec;
+  border-radius: 8px;
+  padding: 8px 10px;
+  background: var(--ph-cap-bg, #fff);
+  border-inline-start: 4px solid var(--ph-cap-accent, #94a3b8);
+}
+.ph-cap-tile.ph-cap-l1 {
+  background: var(--ph-cap-bg, #f1f5f9);
+}
+.ph-cap-tile.ph-cap-clickable {
+  cursor: pointer;
+}
+.ph-cap-tile.ph-cap-clickable:hover,
+.ph-cap-tile.ph-cap-clickable:focus-visible {
+  outline: 2px solid #1677ff;
+  outline-offset: 1px;
+}
+.ph-cap-children {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-block-start: 8px;
+}
+.ph-cap-meta {
+  display: block;
+  font-size: 12px;
+  color: var(--ph-muted);
+}
+
+/* Application landscape (Phase 4.3). */
+.ph-landscape-scroll {
+  overflow: auto;
+  max-height: 72vh;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+}
+.ph-landscape-scroll g[role='link']:focus-visible rect:first-of-type {
+  stroke: #1677ff;
+  stroke-width: 3;
+}
+.ph-legend-swatch {
+  display: inline-block;
+  inline-size: 14px;
+  block-size: 14px;
+  border-radius: 3px;
+  border: 2px solid transparent;
+  vertical-align: middle;
 }

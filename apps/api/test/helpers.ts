@@ -15,6 +15,9 @@ import { syncRolesAndPermissions } from '../prisma/seed';
 import { Readable } from 'node:stream';
 import { GitProviders } from '../src/integrations/git-providers';
 import { GitHttp } from '../src/integrations/providers/git-http';
+import { SalesforceHttp } from '../src/salesforce/salesforce-http';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import {
   MailTransport,
   type MailMessage,
@@ -130,6 +133,85 @@ export interface TestContext {
   git: FakeGitRepo;
   mail: FakeMailer;
   ai: FakeAi;
+  salesforce: FakeSalesforce;
+}
+
+const SF_FIXTURES = join(__dirname, 'fixtures', 'salesforce');
+const sfFixture = (name: string) =>
+  JSON.parse(readFileSync(join(SF_FIXTURES, `${name}.json`), 'utf8')) as Record<string, unknown>;
+
+/**
+ * Salesforce REST API stand-in serving the recorded fixtures (test/fixtures/salesforce): token,
+ * SOQL queries by object (with a second page) and describes. Tests change `records` to simulate
+ * updates in Salesforce; `failToken` simulates a rejected sign-in. Every request is logged.
+ */
+export class FakeSalesforce {
+  requests: { method: string; url: string }[] = [];
+  failToken = false;
+  records: Record<string, Record<string, unknown>> = {};
+  /** Checkbox of the last query's `WHERE <field> = true` (applied to its next page too). */
+  private where: string | null = null;
+
+  reset() {
+    this.requests = [];
+    this.where = null;
+    this.failToken = false;
+    this.records = {
+      Org_Kpi_Goal__c: sfFixture('Org_Kpi_Goal__c'),
+      Org_Kpi_Measure__c: sfFixture('Org_Kpi_Measure__c'),
+      Org_Kpi_Process__c: sfFixture('Org_Kpi_Process__c'),
+      'Org_Kpi_Process__c.page2': sfFixture('Org_Kpi_Process__c.page2'),
+    };
+  }
+
+  private filtered(body: Record<string, unknown>) {
+    const where = this.where;
+    if (!where) return body;
+    const records = (body.records as Record<string, unknown>[]).filter((r) => r[where] === true);
+    return { ...body, records };
+  }
+
+  async token(url: string) {
+    this.requests.push({ method: 'POST', url });
+    if (this.failToken)
+      return {
+        status: 400,
+        body: { error: 'invalid_client', error_description: 'invalid client credentials' },
+      };
+    return { status: 200, body: sfFixture('token') };
+  }
+
+  async get(url: string) {
+    this.requests.push({ method: 'GET', url });
+    const u = new URL(url);
+    if (u.pathname.endsWith('/query')) {
+      const soql = u.searchParams.get('q') ?? '';
+      const object = /FROM\s+(\w+)/i.exec(soql)?.[1] ?? '';
+      if (object === 'Organization')
+        return { status: 200, body: { records: [{ Id: '00DFAKE0000000000' }] } };
+      this.where = /WHERE\s+(\w+)\s*=\s*true/i.exec(soql)?.[1] ?? null;
+      const body = this.records[object];
+      return body
+        ? { status: 200, body: this.filtered(body) }
+        : { status: 400, body: [{ message: `sObject type '${object}' is not supported.` }] };
+    }
+    if (/\/query\/01gFAKE/.test(u.pathname))
+      return { status: 200, body: this.filtered(this.records['Org_Kpi_Process__c.page2']) };
+    const describe = /\/sobjects\/(\w+)\/describe$/.exec(u.pathname);
+    if (describe) {
+      try {
+        return { status: 200, body: sfFixture(`${describe[1]}.describe`) };
+      } catch {
+        return {
+          status: 200,
+          body: { name: describe[1], fields: [{ name: 'Id', label: 'Id', type: 'id' }] },
+        };
+      }
+    }
+    if (u.pathname.endsWith('/chatter/users/me'))
+      return { status: 200, body: { username: 'kpi.integration@example.test' } };
+    return { status: 404, body: [{ message: 'not found' }] };
+  }
 }
 
 /** In-memory Git repository standing in for GitHub/GitLab: tests never call real services. */
@@ -174,6 +256,8 @@ export async function createApp(): Promise<TestContext> {
   const git = new FakeGitRepo();
   const mail = new FakeMailer();
   const ai = new FakeAi();
+  const salesforce = new FakeSalesforce();
+  salesforce.reset();
   const moduleRef = await Test.createTestingModule({ imports: [AppModule] })
     .overrideProvider(StorageService)
     .useValue(storage)
@@ -183,6 +267,8 @@ export async function createApp(): Promise<TestContext> {
     .useValue(mail)
     .overrideProvider(AiProviders)
     .useValue({ client: () => ai })
+    .overrideProvider(SalesforceHttp)
+    .useValue(salesforce)
     .overrideProvider(GitHttp)
     .useValue({
       request: () => {
@@ -196,10 +282,26 @@ export async function createApp(): Promise<TestContext> {
   });
   configureApp(app);
   await app.init();
-  return { app, prisma: app.get(PrismaService), storage, git, mail, ai };
+  return { app, prisma: app.get(PrismaService), storage, git, mail, ai, salesforce };
 }
 
 const TABLES = [
+  'SalesforceSyncRun',
+  'KpiRisk',
+  'KpiCapability',
+  'KpiObjective',
+  'KpiMeasurement',
+  'KpiPeriodTarget',
+  'StrategicObjective',
+  'Kpi',
+  'InterfaceDataObject',
+  'DataObjectUsage',
+  'AppInterface',
+  'DataObject',
+  'CapabilityProcess',
+  'CapabilityApplication',
+  'Capability',
+  'Application',
   'SurveyProposal',
   'SurveyResponse',
   'SurveyCampaign',

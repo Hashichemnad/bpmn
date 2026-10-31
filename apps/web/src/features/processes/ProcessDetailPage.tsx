@@ -40,6 +40,8 @@ import { ProcessFormModal } from './ProcessFormModal';
 import { ModelPreview } from '@/features/modeler/ModelPreview';
 import { RelatedDocsCard } from '@/features/docs/RelatedDocsCard';
 import { ProcessTotalsCard } from './ProcessTotalsCard';
+import { useProcessKpis } from '@/api/kpi';
+import { ProcessKpisCard } from '@/features/kpi/ProcessKpis';
 import { ReportDialog, type ReportKind } from '@/features/reports/ReportDialog';
 import { useRelatedPages } from '@/api/docs';
 import { useComments, useGovernance } from '@/api/governance';
@@ -63,6 +65,7 @@ export function ProcessDetailPage() {
   const links = useLinks(id!);
   const remove = useDeleteProcess();
   const related = useRelatedPages('processes', id, can(PERMISSIONS.DOCS_READ));
+  const processKpis = useProcessKpis(id, can(PERMISSIONS.KPI_READ));
   const governance = useGovernance('PROCESS', id);
   const comments = useComments('PROCESS', id!);
   const [modalState, setModalState] = useState<'edit' | 'sub' | null>(null);
@@ -174,6 +177,11 @@ export function ProcessDetailPage() {
           )}
         </Card>
         {p.hasModel && <ProcessTotalsCard processId={p.id} />}
+        {can(PERMISSIONS.KPI_READ) && (
+          <div style={{ marginBlockStart: 24 }}>
+            <ProcessKpisCard data={processKpis.data} />
+          </div>
+        )}
       </Col>
       <Col xs={24} xl={8}>
         <GovernancePanel type="PROCESS" id={p.id} />

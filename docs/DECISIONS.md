@@ -1257,3 +1257,251 @@ Product owner decision (PR #14, decision 6), confirming D-099 with two additions
 5. **Feedback-request answers** stay process comments signed by the respondent; each starts with a label naming the
    campaign — "[Feedback request] <campaign title>" (Arabic: «[طلب ملاحظات]»).
 6. Tested effectiveness replaces the self-assessed one: see D-105.
+
+## D-107 — Application catalogue on the IT system library objects (Phase 4.3, 2026-10-30)
+
+The application catalogue (module M11) extends the existing IT system objects instead of replacing them, the same
+pattern as risks and controls (D-089): a new table `Application` is one-to-one with a `RepoObject` of type `SYSTEM`
+(`objectId` = the object id). Code, bilingual name and description stay on the library object; the catalogue fields
+(type, vendor, version, business / IT owner, department, hosting + ISO country for data residency, lifecycle with
+live / phase-out / retired dates, criticality, data classification, licence notes, URL) live on `Application`.
+
+- **Ids, step links, badges and "where used" keep working**: the modeler still links `SYSTEM` objects (relation
+  `SUPPORTS`), Risk & Compliance still points controls at them (`Control.systemId`).
+- The migration creates an `Application` row for every existing `SYSTEM` object; objects created later through the
+  library, the seed or an import get theirs on creation or lazily (`EaService.ensureApplicationRows`).
+- The library menu item "IT systems" becomes "Applications" in the new **Architecture** menu group for users with
+  `ea.read`; `/library/systems` redirects there (users without `ea.read` keep the plain library page).
+- Deleting an application (soft delete, `ea.admin`) removes its step links, interfaces, CRUD usages and capability
+  relations, like deleting a library object.
+
+## D-108 — Architecture permissions and the Enterprise Architect role (Phase 4.3, 2026-10-30)
+
+New permissions `ea.read` (catalogues, views, traceability, exports), `ea.edit` (create / change, Excel import) and
+`ea.admin` (delete). New system role **Enterprise Architect** (`ENTERPRISE_ARCHITECT`): the three EA permissions, the
+rest of the workspace read-only (like the Risk & Compliance Officer, D-090) plus `grc.read` for the risk columns of
+the impact analysis. `ea.read` is added to every workspace role (Process Owner, Modeler, Reviewer, Auditor, Risk &
+Compliance Officer, Internal Audit); Viewers (portal only) never see the architecture workspace. Demo user
+`architect@processhub.local`. Every endpoint has a server guard and a permission test (`ea.e2e-spec.ts`); every write
+is audited (entity types `Application`, `AppInterface`, `DataObject`, `Capability`; `EXPORT` / `IMPORT` for Excel).
+
+## D-109 — Interfaces, data objects and the capability map (Phase 4.3, 2026-10-30)
+
+- **Interfaces** (`AppInterface`): source → target application, direction (one way / both ways), technology (API,
+  file, DB link, manual, message queue), frequency, data objects carried (`InterfaceDataObject`), owner, status
+  (planned / active / retired); optional bilingual name (the list shows "Source → Target" when empty).
+- **Data objects** (`DataObject`): bilingual name and definition, classification, system of record (one
+  application), owner; the **CRUD matrix** is `DataObjectUsage` (application × data object with four flags), edited
+  on the data object and shown as a matrix (★ = system of record).
+- **Capabilities** (`Capability`): a tree of at most three levels (level stored, recomputed on a move; deeper trees
+  and cycles are refused with `CAPABILITY_TOO_DEEP` / `INVALID_PARENT`; only leaves can be deleted), owner, strategic
+  importance, relations to processes (`CapabilityProcess`) and applications (`CapabilityApplication`).
+- **Excel** for each catalogue (`/ea/export|template|import/:kind`, kinds applications, interfaces, data-objects,
+  capabilities): the Phase 4.1 pattern — upsert by code, the whole file is checked first and nothing is imported
+  while it has errors; references by code (applications, capabilities, processes, data objects) or e-mail (users);
+  the CRUD column reads `APP:CRUD; APP2:R`; capability parents may be defined later in the same file. Shared helpers
+  in `apps/api/src/common/excel.ts` (also used by the KPI catalogue).
+
+## D-110 — Architecture views, traceability and impact analysis (Phase 4.3, 2026-10-30)
+
+- **Capability map** (`GET /ea/capability-map`): every capability with metrics rolled up over its sub-capabilities —
+  processes, applications, applications per lifecycle, the worst lifecycle (retired > phasing out > planned >
+  active) and the highest residual score / band of active risks on any step of those processes (only for users with
+  `grc.read`). The web map shows level-1 columns with nested level-2 / 3 tiles and "colour by" process coverage
+  (none / one / several), number of applications, application lifecycle or risk rating (GRC bands); a tile opens a
+  drawer with the processes and applications and links to the landscape and the traceability of that capability.
+- **Landscape** (`GET /ea/landscape`, filters department / capability (with sub-capabilities) / lifecycle, optionally
+  the connected applications one hop away): drawn in the browser as SVG with a small layered layout
+  (`features/ea/landscape-layout.ts`: longest-path ranks, cycles broken by DFS, two barycentre sweeps, unconnected
+  applications in a last row) — no new diagram library. Right-to-left in Arabic; export SVG / PNG.
+- **Traceability** (`GET /ea/trace` + `/ea/trace/export`): rows capability → process → step → application → data
+  objects (CRUD, system of record), with the risks and controls linked to the same step (only with `grc.read`);
+  filter by capability, process, application or data object (backwards from data to steps). Processes of a
+  capability without any application on their steps still appear (one row).
+- **Impact analysis** (`GET /ea/applications/:id/impact` + `/export`): supported steps with their risks and controls,
+  controls affected (running in the application via `Control.systemId` or sitting on a supported step), interfaces,
+  data objects, capabilities and summary counts; Excel EN / AR (summary, steps, controls, interfaces, data), audited
+  `EXPORT`.
+- **Modeler**: the IT system link of a step is the application catalogue (same objects); "Colour by" gains
+  **Application lifecycle** (the worst lifecycle of the step's applications; steps using phasing-out systems stand
+  out). **Process handbook**: optional section **"Systems and data"** (application, lifecycle, steps supported, data
+  objects with CRUD and ★ for the system of record) for users with `ea.read`.
+
+## D-111 — KPI table on the KPI library objects; objectives and relations (Phase 4.3, 2026-10-30)
+
+The plain KPI library object type is replaced by a full KPI definition the same way as risks (D-089) and applications
+(D-107): table `Kpi` one-to-one with a `RepoObject` of type `KPI`. Code, bilingual name, definition (the object's
+description) and owner stay on the object; `Kpi` holds formula (EN / AR), unit, direction (higher / lower is better),
+frequency (monthly / quarterly / annual), target, green and red thresholds, baseline (+ period), department, data
+source (manual / Excel / Salesforce / calculated), status (draft / active / retired), the calculated metric and
+process, and the Salesforce fields of step 5. The migration creates a `Kpi` row for every existing KPI object (same
+id, so links stay); later ones get theirs lazily. KPI objects can no longer be created or changed through
+`/objects` (`USE_KPI_REGISTER`).
+
+- **Per-period targets** (`KpiPeriodTarget`) override target / thresholds for one period.
+- **Relations**: process and step via the existing `ObjectLink` relation `MEASURES` (process-level = `#process`),
+  capability (`KpiCapability`), strategic objective (`KpiObjective`; `StrategicObjective` is a simple bilingual tree
+  with owner and order), risk = **key risk indicator** (`KpiRisk`).
+- **Status** (shared `kpiRag`): higher is better — at or above green (default: the target) GREEN, at or below red RED,
+  between AMBER; lower is better mirrored; without a red threshold everything short of green is RED; no target and no
+  green threshold — no status. Computed, never stored, so a threshold change re-colours the history.
+- **Calculated process KPIs** (shared `calculatedProcessKpis`, from the B2 step attributes of the working model, main
+  path as in the process totals): planned duration, waiting time, cost per execution, handovers between lanes on the
+  main path, automation rate (system steps ÷ steps). Shown on the process page / modeler; a KPI with data source
+  "calculated" records the current value for the due period on "Record current value".
+
+## D-112 — KPI permissions, measurements, reminders and evidence (Phase 4.3, 2026-10-30)
+
+- Permissions `kpi.read` (catalogue, dashboards, process KPIs), `kpi.edit` (define KPIs and objectives, any value,
+  Excel import of the catalogue, KPI settings) and `kpi.measure` (enter values of **the KPIs one owns** — checked on
+  the server against `RepoObject.ownerId`). `kpi.read` for every workspace role, `kpi.measure` for Process Owners,
+  `kpi.edit` for Admins (and Super Admins) only — a dedicated "Performance Officer" role was not requested (open
+  question in the pull request).
+- **Measurements** (`KpiMeasurement`, unique per KPI and period `2026-03` / `2026-Q1` / `2026`, period must match the
+  frequency and have started), with comment, source and full audit history (create / update / delete, `SYNC` for
+  Salesforce). Values of Salesforce KPIs cannot be entered or deleted in ProcessHub. A frequency change is refused
+  once values exist.
+- **Evidence** reuses the assurance file store (`AssuranceFile` owner type `KPI_MEASUREMENT`: allow-list, magic
+  bytes, size limit; download `/assurance/files/:id` for `kpi.read` holders, upload / delete for whoever may enter
+  the value).
+- **Due values**: the last completed period of an active manual / Excel KPI without a value is "due": My tasks tab
+  "KPI values to enter" (`GET /kpis/tasks`) and one reminder per KPI and period from the `KpiScheduler` (notification
+  type `KPI`, kind `due`, EN / AR e-mail; Setting `kpi.reminders`).
+- **Excel** (`/kpis/export|template|import/:kind`, kinds kpis, measurements, objectives): the catalogue and the
+  objectives for `kpi.edit`; measurements also for owners (rows of other people's KPIs are reported `NOT_OWNER`);
+  imported values have source "Excel import".
+
+## D-113 — KPI dashboards, process performance, portal; charts with Recharts (Phase 4.3, 2026-10-30)
+
+The web app had no chart library (Phase 4.1 / 4.2 dashboards use Ant Design tiles and bars). The KPI detail line
+chart (actuals vs per-period target, green / red threshold lines, points coloured by status) uses **Recharts 2.15**
+— a proven, MIT-licensed React library built on SVG (no canvas), small enough, and without new runtime services.
+Arabic: the x axis is reversed and the y axis moves to the right; numbers and periods via `Intl`. Sparklines in
+tables and the landscape diagram stay plain SVG.
+
+- **KPI dashboard** (`GET /kpis/scorecard`, `/kpis/scorecard/export` EN / AR): active KPIs in scope (department,
+  process — linked or calculated from it —, owner) as of a month (each KPI's latest value of a period that started by
+  then), grouped by strategic objective (ancestors shown for the tree, worst status per objective, KPIs worst first,
+  "without an objective" last); summary tiles open the filtered register; a KPI row opens a drawer with its chart.
+- **Process performance**: the process page shows the KPIs of the process and its steps with their latest status and
+  the calculated process KPIs; the modeler side panel gains a **KPIs** tab (selected step or whole process; model
+  editors link / unlink KPIs — `MEASURES` links); the badges (B1) gain a KPI chip per step in the colour of the
+  worst status, and "Colour by" gains **KPI status**.
+- **Knowledge Portal**: Setting `kpi.showInPortal` (off by default; KPI settings, `kpi.edit`). When on, a published
+  process page lists the KPIs linked to the process or to steps of the published diagram with the live latest status,
+  value / target and trend (KPI values are live data, not part of the published snapshot); when off, KPI links are
+  also hidden from the step details.
+
+## D-114 — Salesforce KPI link: settings, credentials, read-only access (Phase 4.3, 2026-10-30)
+
+- **Settings → Integrations → Salesforce** (`/settings/salesforce`, API `/integrations/salesforce`): **Super Admin
+  only** (`settings.manage`), **off by default**. Instance URL (My Domain), authentication **OAuth 2.0 client
+  credentials** (consumer key + secret, "Run As" integration user) or **JWT bearer** (consumer key, integration
+  username, login URL, private key of the connected app certificate, RS256 signed in the API with Node `crypto`),
+  API version, schedule, "import actual values".
+- Secrets (consumer secret, private key) are **write-only** and stored only as **AES-256-GCM** ciphertext with
+  `INTEGRATIONS_ENCRYPTION_KEY` (the Git integration's `SecretBox`); the DTO says only whether they are stored; the
+  audit entry records that they changed, never the values.
+- **Read-only by construction**: the transport (`SalesforceHttp`, the only network code) sends `GET` for SOQL
+  queries / describes and `POST` only to `/services/oauth2/token`. SOQL is built from object / field API names
+  validated against `^[A-Za-z][A-Za-z0-9_]*(\.[A-Za-z][A-Za-z0-9_]*)*$` (no free-text WHERE clauses); pages follow
+  `nextRecordsUrl` only within `/services/data/vXX.X/query/`. Outbound policy as for Git: https only, internal
+  addresses refused, plain http only for `OUTBOUND_ALLOWED_HOSTS` (used by the e2e mock), timeout
+  `SALESFORCE_HTTP_TIMEOUT_MS`. Salesforce-side setup (integration user, read-only permission set, connected app):
+  DEPLOYMENT.md §6.4.
+- KPIs linked to Salesforce show "Source: Salesforce", the last sync time and a link to the record
+  (`/lightning/r/<Id>/view`); the mapped definition fields (`Kpi.lockedFields`) and the values are read-only in
+  ProcessHub (`SALESFORCE_OWNED`); thresholds, owner, relations and process links stay editable.
+
+## D-115 — Salesforce field mapping, defaults and matching (Phase 4.3, 2026-10-30)
+
+The brief described `Org_Kpi_Goal__c` as objectives, `Org_Kpi_Measure__c` as KPIs and `Org_Kpi_Process__c` as the
+KPI ↔ process mapping. The documented PMS data model differs: `Org_Kpi_Goal__c` is the **KPI Description Card**
+(the corporate KPI catalogue, with the strategic objective as the picklist `Department_Goal__c`),
+`Org_Kpi_Measure__c` is one row per KPI and **measuring year** (yearly target / achievement), and
+`Org_Kpi_Process__c` is the **period result** (quarter / half / full year, target, achievement, notes). The defaults
+therefore follow the documented model, and **everything is configurable** on the mapping screen (Settings), so a
+sandbox with other names or the brief's reading needs no code change:
+
+- **Objectives**: from their own object (lookup on the KPI) or from the values of a KPI field (default
+  `Department_Goal__c`; Salesforce Id stored as `<field>:<value>`), or none.
+- **KPIs**: object (default `Org_Kpi_Goal__c`) and fields for code, names, definitions, unit, direction,
+  frequency, target, status, objective; value lists translate Salesforce picklist values (e.g. `Increase =
+HIGHER_IS_BETTER`, `Quarterly = QUARTERLY`).
+- **Actual values**: object (default `Org_Kpi_Process__c`) with the KPI id path, year, period, value, target and
+  comment (defaults through `Org_Kpi_Measure__r`); period values map to Q1–Q4, M01–M12 or YEAR; a period that does not
+  fit the KPI's frequency is skipped with a warning; future periods are skipped; a result's target becomes the
+  KPI's target of that period.
+- **KPI ↔ process mapping**: optional object with the KPI id path and a field holding the ProcessHub process
+  code (whole-process `MEASURES` links; unknown codes are reported). Empty by default (not in the documented model).
+- **Matching** by the Salesforce Id stored on the objective (`StrategicObjective.salesforceId`) / KPI
+  (`Kpi.salesforceId`) and per KPI + period for values; nothing is ever deleted by a sync.
+
+## D-116 — Salesforce preview, sync runs, schedule and failures (Phase 4.3, 2026-10-30)
+
+- **Preview** (`POST /integrations/salesforce/preview`) reads Salesforce and lists what a sync would create /
+  change (objectives, KPIs with field-level from → to, values, process links) and the warnings; nothing is written.
+- **Sync** (`POST …/sync`, manual or scheduled) applies the same differences through the KPI service (audit
+  entries with action `SYNC` per objective / KPI / value) and records a **sync run** (`SalesforceSyncRun`: trigger,
+  status, counts, warnings, error; one at a time) shown in the **sync log**; the run itself is audited (`SYNC`,
+  entity `Integration`).
+- **Schedule**: off / hourly / daily / weekly (Monday) at an hour (UTC), run by the `KpiScheduler` (the Salesforce
+  module registers a job; the last slot is stored so a restart does not repeat it). Scheduled runs act as the Super
+  Admin who last saved the settings.
+- **Failures** (sign-in refused, query error, network) mark the run FAILED with the scrubbed message and notify
+  every active Super Admin (notification `KPI`, kind `syncFailed`, EN / AR e-mail).
+- **Tests** never call Salesforce: the API tests replace the transport with `FakeSalesforce` serving recorded
+  fixtures (`apps/api/test/fixtures/salesforce`, invented ids and values); the Playwright test runs a mock HTTP
+  server with the same fixtures, reached from the API through `host.docker.internal` (CI) / `localhost` (local).
+
+## D-117 — Salesforce mapping confirmed by the product owner (Phase 4.3, 2026-10-31)
+
+Answers to the open questions of D-115; supersedes its process mapping and adds what the PMS model holds.
+
+- **Objects** (documented PMS model is the default): `Org_Kpi_Goal__c` (KPI description card) = the KPI
+  definition; its strategic objective picklist `Department_Goal__c` → ProcessHub strategic objectives;
+  `Org_Kpi_Measure__c` = yearly target and achieved value per KPI; `Org_Kpi_Process__c` = period results (Q1–Q4,
+  half year, full year) imported as measurements.
+- **Objectives**: a picklist value not yet mapped becomes an objective (matched by `<field>:<value>` as before); the
+  mapping screen can link a value to an **existing** objective (`mapping.objectives.valueLinks`: value → objective
+  id; a deleted objective falls back to the import).
+- **Results**: only `Approved__c = true` (a `WHERE` on the validated field name); Setting
+  `includeUnapproved` (off by default) imports the others too. **Causality** and **corrective actions** are added to
+  the measurement comment (`Causality: …` / `Corrective actions: …`).
+- **Half years**: new KPI frequency `SEMI_ANNUAL` with periods `2026-H1` / `2026-H2` (shared period helpers,
+  value lists `Semi-Annual`, `First Half`, `Second Half`).
+- **Yearly measures**: the yearly target becomes the target of the year's last period (Q4, H2, December or the
+  year) unless a period result gives one; for annual KPIs the achieved value is the year's value when no result
+  exists.
+- **No KPI ↔ process mapping from Salesforce** (it has none): the `processMap` group and the preview's process
+  links are removed; links are made in ProcessHub.
+- Field names are to be confirmed when IT sets up the integration user (DEPLOYMENT §6.4); everything stays
+  editable on the mapping screen.
+
+## D-118 — Performance Officer role (Phase 4.3, 2026-10-31)
+
+- New system role **Performance Officer** (Strategy Office, `PERFORMANCE_OFFICER`): `kpi.read`, `kpi.edit`,
+  `kpi.measure` and the new **`kpi.sync`**, plus read access to the repository, users, governance dashboard, GRC
+  and architecture. It creates and edits all KPIs, objectives and targets and enters values for any KPI.
+- **`kpi.sync`**: read the Salesforce settings (never the secrets), preview, run the sync and read the sync log.
+  Changing the connection, mapping, test and describe stay `settings.manage` (Super Admin). Admins keep their
+  rights (`kpi.edit`) but do not get `kpi.sync` — the Salesforce link stays with Super Admins and Performance
+  Officers. Process Owners still enter values only for the KPIs they own.
+- Failed syncs notify Super Admins and holders of `kpi.sync`. Demo user `performance@processhub.local`.
+- Confirmed by the product owner (2026-10-31): Admins stay without `kpi.sync`; Performance Officers keep the KPI
+  settings (show KPIs in the portal, reminders — part of `kpi.edit`). Every change of those settings is audited
+  (action `UPDATE`, entity `Setting` `kpi`, the user, before / after).
+
+## D-119 — Scheduled Salesforce syncs run as a system actor (Phase 4.3, 2026-10-31)
+
+Supersedes the "act as the Super Admin" rule of D-116.
+
+- Scheduled runs use the system actor **"Salesforce sync"**: no user id on the run, on the records it creates
+  (`createdById` / `updatedById` empty) or on the audit entries, so automatic changes are not attributed to a
+  person. Manual runs keep the user who started them.
+- Every run stores **configured by** (`SalesforceSyncRun.configuredById` = the user who last saved the Salesforce
+  settings); audit entries of a sync carry `actor: "Salesforce sync"` (scheduled) and `configuredBy` (id, e-mail,
+  name) in their summary. The sync log shows both.
+- The schedule does not depend on that admin: it keeps running when they leave or are deactivated.
+- Portal KPIs (D-113, agreed): only KPIs on steps of the published diagram, each value with its period and
+  last-updated date.

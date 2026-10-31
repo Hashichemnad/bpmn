@@ -6,7 +6,18 @@ import type { BpmnInstance, ElementRegistry, Overlays } from './bpmn-types';
  * names, clicking it calls `onClick`. Used by the modeler workspace, the read-only preview and the
  * Knowledge Portal (published links only).
  */
-export type BadgeKind = 'ALERT' | 'ROLE' | 'SYSTEM' | 'DOCUMENT' | 'RISK' | 'CONTROL' | 'COMMENT';
+export type BadgeKind =
+  | 'ALERT'
+  | 'ROLE'
+  | 'SYSTEM'
+  | 'DOCUMENT'
+  | 'RISK'
+  | 'CONTROL'
+  | 'KPI_RED'
+  | 'KPI_AMBER'
+  | 'KPI_GREEN'
+  | 'KPI_NONE'
+  | 'COMMENT';
 
 export const BADGE_KINDS: BadgeKind[] = [
   /** High / critical residual risk without an effective control at the step (Phase 4.1). */
@@ -16,6 +27,11 @@ export const BADGE_KINDS: BadgeKind[] = [
   'DOCUMENT',
   'RISK',
   'CONTROL',
+  /** KPIs of the step, coloured by the worst latest status (Phase 4.3); one chip per step. */
+  'KPI_RED',
+  'KPI_AMBER',
+  'KPI_GREEN',
+  'KPI_NONE',
   'COMMENT',
 ];
 
@@ -24,6 +40,8 @@ export interface BadgeItem {
   kind: BadgeKind;
   name: string;
 }
+
+const KPI_ICON = '<path d="M1.5 14.5h13"/><path d="m2.5 11 3.5-4 3 2.5 4.5-6"/>';
 
 /** Static icons (16 × 16, stroked in the chip colour). */
 const ICONS: Record<BadgeKind, string> = {
@@ -35,6 +53,10 @@ const ICONS: Record<BadgeKind, string> = {
   CONTROL:
     '<path d="M8 1.5 13.5 3.5v4c0 3.2-2.3 5.6-5.5 7-3.2-1.4-5.5-3.8-5.5-7v-4z"/><path d="m5.5 8 1.8 1.8 3.4-3.5"/>',
   COMMENT: '<path d="M2 2.5h12v8.5H6.5L3 14v-3H2z"/>',
+  KPI_RED: KPI_ICON,
+  KPI_AMBER: KPI_ICON,
+  KPI_GREEN: KPI_ICON,
+  KPI_NONE: KPI_ICON,
 };
 
 export const OVERLAY_TYPE = 'ph-badges';

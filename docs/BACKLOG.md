@@ -3,10 +3,27 @@
 Ideas and follow-ups noted during development, outside the current phase scope. Group by the phase
 where they belong; move items into the plan when that phase starts.
 
-## Phase 4.3 — after GRC assurance (Phase 4.2)
+## Phase 4.4 — Integration & export (next)
 
-- IT architecture (applications, interfaces, data objects, capability map — M11), KPIs and dashboards (M12),
-  Salesforce KPI link, Oracle Fusion Risk Management overlay.
+- Oracle Fusion Risk Management overlay (risks / controls from Oracle, read-only first) and other connectors.
+- Public API keys and outgoing webhooks (process published, KPI turned red, sync failed).
+- Word / HTML / XPDL export of processes; other diagram types (EPC, value chain, org chart, DMN).
+- Process mining and simulation stay in Phase 5.
+
+## Phase 4.3 follow-ups (noted during the work)
+
+- KPI editors: a dedicated "Performance Officer" role with `kpi.edit` (today Admins define KPIs, owners enter
+  values) — product owner decision.
+- Salesforce: write-back is out of scope by design (D-114); possible later: import of `Org_Kpi_Measure__c` yearly
+  targets as per-period targets of annual KPIs, the `Responsible_Department__c` / `Responsible_Person__c` mapping to
+  department and owner (Contact → user by e-mail), `Risk_Kpi_Relation__c` as key risk indicators.
+- Salesforce "Run As" user per sync run in the audit log instead of the Super Admin who saved the settings.
+- Capability map: drag-and-drop ordering and a printable A3 export; heat-map overlay of KPI status per capability.
+- Landscape: grouping by department / capability swim-lanes, saved layouts, manual node positions.
+- Data objects: data lineage (interface chains) and a "who reads personal data" report for data protection.
+- KPI dashboard: comparison of two periods, PDF export, KPI targets per department (cascading).
+- Calculated KPIs: from process mining (Phase 5) instead of the planned step attributes.
+- Portal: KPI section as a small chart per KPI (today status, value and sparkline).
 
 ## Phase 4.2 follow-ups (noted during the work)
 

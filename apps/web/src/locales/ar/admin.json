@@ -8,7 +8,9 @@
     "AUDITOR": "مدقق",
     "VIEWER": "مشاهد",
     "RISK_OFFICER": "مسؤول المخاطر والامتثال",
-    "INTERNAL_AUDIT": "التدقيق الداخلي"
+    "INTERNAL_AUDIT": "التدقيق الداخلي",
+    "ENTERPRISE_ARCHITECT": "مهندس المؤسسة",
+    "PERFORMANCE_OFFICER": "مسؤول الأداء"
   },
   "status": {
     "ACTIVE": "نشط",
@@ -140,7 +142,14 @@
       "AuditFinding": "نتيجة تدقيق",
       "Questionnaire": "استبيان",
       "SurveyCampaign": "حملة استبيان",
-      "SurveyResponse": "رد على استبيان"
+      "SurveyResponse": "رد على استبيان",
+      "Application": "تطبيق",
+      "AppInterface": "واجهة",
+      "DataObject": "كائن بيانات",
+      "Capability": "قدرة",
+      "Kpi": "مؤشر أداء",
+      "KpiMeasurement": "قيمة مؤشر",
+      "StrategicObjective": "هدف استراتيجي"
     }
   },
   "settings": {
@@ -405,5 +414,133 @@
         "hint": "تؤدي خطوة الاعتماد مباشرة إلى قرار (بوابة) بنتائجه، مثل: معتمد / مُعاد / مرفوض."
       }
     }
+  },
+  "salesforce": {
+    "title": "ربط مؤشرات Salesforce",
+    "subtitle": "استيراد للقراءة فقط لكتالوج مؤشرات الأداء المؤسسية ونتائجها من تطبيق PMS",
+    "card": "ربط مؤشرات Salesforce",
+    "cardHint": "استيراد تعريفات المؤشرات وقيمها الفعلية من Salesforce (قراءة فقط، معطّل افتراضيًا).",
+    "open": "فتح إعدادات Salesforce",
+    "noKey": "المتغير INTEGRATIONS_ENCRYPTION_KEY غير مضبوط: لا يمكن حفظ بيانات الاعتماد.",
+    "connection": "الاتصال",
+    "enabled": "مفعّل",
+    "instanceUrl": "عنوان المثيل (My Domain)",
+    "authFlow": "المصادقة",
+    "flows": {
+      "CLIENT_CREDENTIALS": "OAuth 2.0 ببيانات العميل",
+      "JWT_BEARER": "JWT bearer (شهادة)"
+    },
+    "clientId": "مفتاح المستهلك (معرّف العميل)",
+    "clientSecret": "سرّ المستهلك",
+    "loginUrl": "عنوان تسجيل الدخول (جمهور الرمز)",
+    "username": "مستخدم التكامل",
+    "privateKey": "المفتاح الخاص (PEM)",
+    "secretStored": "محفوظ مشفّرًا — اتركه فارغًا للإبقاء عليه.",
+    "apiVersion": "إصدار الواجهة البرمجية",
+    "test": "اختبار الاتصال",
+    "testOk": "تم الاتصال بـ Salesforce",
+    "scheduleTitle": "الجدولة",
+    "schedule": "المزامنة المجدولة",
+    "schedules": {
+      "OFF": "متوقفة (يدويًا فقط)",
+      "HOURLY": "كل ساعة",
+      "DAILY": "يوميًا",
+      "WEEKLY": "أسبوعيًا (الاثنين)"
+    },
+    "hour": "الساعة (UTC)",
+    "syncValues": "استيراد القيم الفعلية",
+    "readOnly": "بروسس هب يقرأ من Salesforce فقط (استعلامات SOQL) ولا يكتب إليه أبدًا. استخدم مستخدم تكامل مخصصًا بمجموعة صلاحيات للقراءة فقط.",
+    "syncTitle": "المزامنة",
+    "preview": "معاينة التغييرات",
+    "syncNow": "مزامنة الآن",
+    "synced": "اكتملت المزامنة",
+    "failed": "فشلت المزامنة",
+    "counts": "{{create}} جديد · {{update}} معدّل · {{unchanged}} دون تغيير",
+    "objectives": "الأهداف",
+    "kpis": "المؤشرات",
+    "values": "القيم الفعلية",
+    "warnings": "تنبيهات",
+    "mapping": "ربط الحقول",
+    "mappingHint": "أسماء الواجهة البرمجية في Salesforce؛ استخدم «تحميل الحقول» للاختيار من الكائن.",
+    "object": "كائن Salesforce",
+    "loadFields": "تحميل الحقول",
+    "objectiveSource": "مصدر الأهداف",
+    "objectiveSources": {
+      "NONE": "دون أهداف",
+      "OBJECT": "كائن خاص بها (حقل بحث في المؤشر)",
+      "KPI_FIELD": "قيم حقل في المؤشر (قائمة اختيار)"
+    },
+    "valueMapHint": "سطر لكل قيمة: قيمة Salesforce = قيمة بروسس هب",
+    "valueMaps": {
+      "directionValues": "قيم الاتجاه",
+      "frequencyValues": "قيم الدورية",
+      "statusValues": "قيم الحالة",
+      "periodValues": "قيم الفترة (Q1…Q4، H1 / H2، M01…M12، YEAR)"
+    },
+    "fields": {
+      "objectives": {
+        "code": "الرمز",
+        "nameEn": "الاسم (إنجليزي)",
+        "nameAr": "الاسم (عربي)",
+        "descriptionEn": "الوصف (إنجليزي)",
+        "descriptionAr": "الوصف (عربي)"
+      },
+      "kpis": {
+        "code": "الرمز",
+        "nameEn": "الاسم (إنجليزي)",
+        "nameAr": "الاسم (عربي)",
+        "descriptionEn": "التعريف (إنجليزي)",
+        "descriptionAr": "التعريف (عربي)",
+        "unit": "الوحدة",
+        "direction": "الاتجاه",
+        "frequency": "الدورية",
+        "target": "المستهدف",
+        "status": "الحالة",
+        "objective": "الهدف (بحث أو حقل)"
+      },
+      "results": {
+        "kpi": "المؤشر (مسار معرّف السجل)",
+        "year": "السنة",
+        "period": "الفترة",
+        "value": "القيمة الفعلية",
+        "target": "المستهدف",
+        "comment": "تعليق",
+        "causality": "الأسباب",
+        "correctiveActions": "الإجراءات التصحيحية",
+        "approved": "معتمد (خانة اختيار)"
+      },
+      "measures": {
+        "kpi": "المؤشر (مسار معرّف السجل)",
+        "year": "السنة",
+        "target": "المستهدف السنوي",
+        "value": "القيمة المحققة"
+      }
+    },
+    "log": "سجل المزامنة",
+    "started": "البدء",
+    "trigger": "المشغّل",
+    "triggers": {
+      "MANUAL": "يدوي",
+      "SCHEDULED": "مجدول"
+    },
+    "status": "الحالة",
+    "statuses": {
+      "RUNNING": "قيد التنفيذ",
+      "SUCCESS": "نجحت",
+      "FAILED": "فشلت"
+    },
+    "result": "النتيجة",
+    "by": "بواسطة",
+    "measures": "المستهدف السنوي والقيمة المحققة",
+    "includeUnapproved": "تضمين النتائج غير المعتمدة",
+    "includeUnapprovedHint": "عند الإيقاف: تُستورد نتائج الفترات المؤشَّر عليها بالاعتماد فقط.",
+    "syncOnly": "يغيّر مسؤول النظام الأعلى وحده الاتصال وربط الحقول. يمكنك معاينة المزامنة وتشغيلها ومراجعة سجلها.",
+    "valueLinks": "ربط قيم قائمة الاختيار بأهداف موجودة",
+    "valueLinksHint": "القيم غير المرتبطة هنا تصبح أهدافًا جديدة في المزامنة التالية.",
+    "picklistValue": "قيمة Salesforce",
+    "objective": "الهدف",
+    "addValueLink": "ربط قيمة",
+    "systemActor": "مزامنة Salesforce (النظام)",
+    "configuredBy": "تم الإعداد بواسطة"
   }
 }
