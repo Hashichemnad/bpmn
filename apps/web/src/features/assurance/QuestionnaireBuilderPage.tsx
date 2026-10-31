@@ -182,6 +182,7 @@ function QuestionEditor({
                 size="small"
                 type="text"
                 danger
+                aria-label={t('delete')}
                 icon={<DeleteOutlined />}
                 disabled={q.options.length <= 2}
                 onClick={() => set({ options: q.options.filter((_, j) => j !== i) })}
@@ -450,6 +451,7 @@ export function QuestionnaireBuilderPage() {
                         size="small"
                         type="text"
                         danger
+                        aria-label={t('delete')}
                         icon={<DeleteOutlined />}
                         disabled={def.sections.length <= 1}
                         onClick={() =>
@@ -468,6 +470,7 @@ export function QuestionnaireBuilderPage() {
                             <Button
                               size="small"
                               type="text"
+                              aria-label={t('moveUp')}
                               icon={<ArrowUpOutlined />}
                               disabled={qi === 0}
                               onClick={() =>
@@ -477,6 +480,7 @@ export function QuestionnaireBuilderPage() {
                             <Button
                               size="small"
                               type="text"
+                              aria-label={t('moveDown')}
                               icon={<ArrowDownOutlined />}
                               disabled={qi === s.questions.length - 1}
                               onClick={() =>
@@ -487,6 +491,7 @@ export function QuestionnaireBuilderPage() {
                               size="small"
                               type="text"
                               danger
+                              aria-label={t('delete')}
                               icon={<DeleteOutlined />}
                               onClick={() =>
                                 setSection(si, {

@@ -5,6 +5,7 @@ import type { AiAnalysisDto, BpmnIssue } from '@processhub/shared';
 import { useLocale } from '@/app/LocaleProvider';
 import { useAiRun } from './useAi';
 import { AiError, AiIcon, AiNotice, AiSuggestionChips, AiWorking } from './AiParts';
+import { activateProps } from '@/components/a11y';
 
 const SEVERITY_COLOR = { HIGH: 'red', MEDIUM: 'orange', LOW: 'blue' } as const;
 
@@ -59,7 +60,7 @@ export function AnalysisDrawer({
   }, [open]);
 
   const elementTag = (id: string) => (
-    <Tag key={id} className="ph-ai-element" onClick={() => onFocusElement(id)} role="button">
+    <Tag key={id} className="ph-ai-element" {...activateProps(() => onFocusElement(id))}>
       {nameOf(id) || id}
     </Tag>
   );
