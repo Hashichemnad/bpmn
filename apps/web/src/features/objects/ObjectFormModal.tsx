@@ -71,7 +71,7 @@ export function ObjectFormModal({ open, type, object, defaults, onClose }: Props
     } else {
       form.setFieldsValue({ attributes: [], synonymsEn: [], synonymsAr: [], ...defaults });
     }
-  }, [open, object, defaults, form]);
+  }, [open, object, defaults, form, type]);
 
   const submit = async () => {
     const values = await form.validateFields();
