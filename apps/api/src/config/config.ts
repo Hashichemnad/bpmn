@@ -52,6 +52,8 @@ const envSchema = z.object({
     ),
   /** Timeout for calls to GitHub / GitLab, in milliseconds. */
   GIT_HTTP_TIMEOUT_MS: z.coerce.number().int().min(1000).default(20000),
+  /** Timeout for calls to Salesforce (KPI link), in milliseconds. */
+  SALESFORCE_HTTP_TIMEOUT_MS: z.coerce.number().int().min(1000).default(30000),
 
   /** Public URL users open (links in notification emails). */
   APP_URL: z

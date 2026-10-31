@@ -20,3 +20,4 @@ export * from './grc';
 export * from './assurance';
 export * from './ea';
 export * from './kpi';
+export * from './salesforce';

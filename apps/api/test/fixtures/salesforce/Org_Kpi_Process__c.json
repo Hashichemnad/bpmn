@@ -1,0 +1,25 @@
+{
+  "totalSize": 4,
+  "done": false,
+  "nextRecordsUrl": "/services/data/v61.0/query/01gFAKE0000000001-2000",
+  "records": [
+    {
+      "attributes": { "type": "Org_Kpi_Process__c" },
+      "Id": "a0YFAKE000000001",
+      "Org_Kpi_Measure__r": { "Org_Kpi_Goal__c": "a0XFAKE000000001", "Measuring_Year__c": "2025" },
+      "Quarter__c": "Q1",
+      "Achieve_Value__c": 18.5,
+      "Target_Value__c": 25,
+      "Notes__c": "Slow start of the fiscal year."
+    },
+    {
+      "attributes": { "type": "Org_Kpi_Process__c" },
+      "Id": "a0YFAKE000000002",
+      "Org_Kpi_Measure__r": { "Org_Kpi_Goal__c": "a0XFAKE000000001", "Measuring_Year__c": "2025" },
+      "Quarter__c": "Q2",
+      "Achieve_Value__c": 47,
+      "Target_Value__c": 50,
+      "Notes__c": null
+    }
+  ]
+}

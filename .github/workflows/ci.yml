@@ -80,8 +80,12 @@ jobs:
       - name: Environment for the test stack
         # Defaults from docker-compose.yml (demo data, admin and demo users); the login rate limit
         # is raised because every test signs in from the same address.
+        # The mock Salesforce of the e2e suite runs on the runner (host.docker.internal); secrets
+        # of the Salesforce settings need an encryption key.
         run: |
           printf 'LOGIN_RATE_LIMIT_MAX=1000\nRATE_LIMIT_MAX=5000\n' > .env
+          printf 'OUTBOUND_ALLOWED_HOSTS=mailpit,host.docker.internal\n' >> .env
+          printf 'INTEGRATIONS_ENCRYPTION_KEY=%s\n' "$(openssl rand -base64 32)" >> .env
       - name: Start the stack
         run: docker compose up -d --build --wait --wait-timeout 300
       - run: pnpm install --frozen-lockfile --filter @processhub/e2e

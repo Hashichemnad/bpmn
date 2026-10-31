@@ -431,6 +431,52 @@ ProcessHub (Profile → Change password). **Test it every quarter** (sign in, si
 vault access leaves (then also change the password). If both the password and the recovery codes are lost: the
 emergency switch below.
 
+### 6.4 Salesforce KPI link (optional)
+
+ProcessHub can import the corporate KPI catalogue and its results from the Salesforce PMS app (objects
+`Org_Kpi_Goal__c`, `Org_Kpi_Measure__c`, `Org_Kpi_Process__c`). The link is **off by default**, only a **Super
+Admin** configures it, and ProcessHub **only reads** from Salesforce (SOQL queries; it never creates, changes or
+deletes Salesforce records). A Salesforce administrator and the ProcessHub Super Admin do this together, about
+30 minutes:
+
+1. **Integration user** (Salesforce Setup → Users → New User): licence _Salesforce Integration_ (or a normal
+   licence if your org has no integration licences), profile _Minimum Access – API Only Integrations_ (or
+   _Minimum Access – Salesforce_), e-mail of a team mailbox, e.g. `processhub-integration@yourcompany.com`. It is
+   not a person's account.
+2. **Read-only permission set** (Setup → Permission Sets → New, e.g. `ProcessHub KPI read`): _API Enabled_;
+   **Object settings → Read** (no Create / Edit / Delete, no View All / Modify All) on `Org_Kpi_Goal__c`,
+   `Org_Kpi_Measure__c`, `Org_Kpi_Process__c` and, if you map them, `Department__c` and the process-mapping
+   object; **Read** field access on the fields of the mapping. Assign it to the integration user.
+3. **Connected app** (Setup → App Manager → New Connected App, or an _External Client App_ in newer orgs):
+   name `ProcessHub KPI link`, _Enable OAuth Settings_, scopes **Manage user data via APIs (api)** only.
+   - **Client credentials** (simplest): tick _Enable Client Credentials Flow_; in _Manage → Edit Policies_ set
+     **Run As** = the integration user. Copy the **Consumer Key** and **Consumer Secret**.
+   - **JWT bearer** (no shared secret): create a certificate (`openssl req -x509 -newkey rsa:2048 -nodes -keyout
+processhub-sf.key -out processhub-sf.crt -days 730 -subj "/CN=ProcessHub"`), tick _Use digital signatures_
+     and upload `processhub-sf.crt`; in _Manage → Edit Policies_ set _Permitted Users_ = "Admin approved users are
+     pre-authorized" and add the permission set to the app. Keep `processhub-sf.key` for step 5.
+   - _IP Relaxation_: "Enforce IP restrictions" with the ProcessHub server's outbound IP in a trusted range is
+     recommended.
+4. **Network**: the ProcessHub server must reach `https://<your-domain>.my.salesforce.com` (and, for JWT,
+   `https://login.salesforce.com` or `https://test.salesforce.com`) on port 443. `INTEGRATIONS_ENCRYPTION_KEY`
+   must be set (`.env`, see 4.6) — the secret / private key is stored encrypted with it.
+5. **ProcessHub**: _Administration → Salesforce KPI link_: instance URL (My Domain), authentication, consumer key
+   and secret (or integration username, login URL and the private key), API version → **Save** → **Test
+   connection** (shows the organisation id and whether the mapped objects are readable).
+6. **Field mapping**: the defaults follow the documented PMS data model (KPIs from `Org_Kpi_Goal__c`, objectives
+   from its _Department Goal_ picklist, actual values from `Org_Kpi_Process__c` with year and quarter through
+   `Org_Kpi_Measure__r`). If your sandbox uses other names, use **Load fields** next to each object and pick the
+   fields; adjust the value lists (e.g. `Increase = HIGHER_IS_BETTER`, `Full Year = YEAR`). **Save**.
+7. **Preview changes** shows what would be created or updated (nothing is written yet); then **Sync now**.
+   Imported KPIs show "Source: Salesforce" with the last sync time and a link to the record; the fields that come
+   from Salesforce and their values are read-only in ProcessHub (thresholds, owner, links to processes stay
+   editable). Choose the **schedule** (default daily at 02:00 UTC).
+8. **Check** the **sync log** on the same page after the first scheduled run. Failed runs are also notified to
+   every Super Admin (in-app and e-mail) and recorded in the audit log (_Sync_).
+
+To stop the link: switch **Enabled** off (nothing is deleted; imported KPIs stay with their history). To revoke
+access on the Salesforce side: deactivate the integration user or the connected app.
+
 ## 7. Backups
 
 ### What is backed up

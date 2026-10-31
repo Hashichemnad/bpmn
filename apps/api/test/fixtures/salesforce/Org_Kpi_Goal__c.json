@@ -1,0 +1,38 @@
+{
+  "totalSize": 2,
+  "done": true,
+  "records": [
+    {
+      "attributes": {
+        "type": "Org_Kpi_Goal__c",
+        "url": "/services/data/v61.0/sobjects/Org_Kpi_Goal__c/a0XFAKE000000001"
+      },
+      "Id": "a0XFAKE000000001",
+      "Name": "KPI-0001",
+      "Proposed_Kpi_Name__c": "Budget execution rate",
+      "Kpi_Description_En__c": "Share of the approved budget spent in the period.",
+      "Kpi_Description_Ar__c": "نسبة الميزانية المعتمدة المصروفة خلال الفترة.",
+      "Measuring_Unit__c": "%",
+      "Measuring_Direction__c": "Increase",
+      "Measuring_Period__c": "Quarterly",
+      "Department_Goal__c": "Financial sustainability",
+      "Status__c": "Active"
+    },
+    {
+      "attributes": {
+        "type": "Org_Kpi_Goal__c",
+        "url": "/services/data/v61.0/sobjects/Org_Kpi_Goal__c/a0XFAKE000000002"
+      },
+      "Id": "a0XFAKE000000002",
+      "Name": "KPI-0002",
+      "Proposed_Kpi_Name__c": "Average payment time",
+      "Kpi_Description_En__c": "Average days from invoice receipt to payment.",
+      "Kpi_Description_Ar__c": "متوسط الأيام من استلام الفاتورة حتى الدفع.",
+      "Measuring_Unit__c": "days",
+      "Measuring_Direction__c": "Decrease",
+      "Measuring_Period__c": "Annual",
+      "Department_Goal__c": "Efficient government services",
+      "Status__c": "Active"
+    }
+  ]
+}

@@ -49,8 +49,15 @@ Steps (tick as they are committed; a new session continues at the first unticked
       KPIs); modeler "KPIs" tab (link / unlink), KPI badge (worst status), "Colour by → KPI status" (also in the
       preview); portal KPI section behind Setting `kpi.showInPortal` (live links, published steps only). Tests: API
       +1, Playwright +1 (helper `loginAdmin` with the stored TOTP secret).
-- [ ] 5. Salesforce KPI link (off by default): settings, encrypted credentials, mapping, preview, apply, scheduled
-      sync, sync log, notifications; mocked API in tests; DEPLOYMENT.md setup.
+- [x] 5. Salesforce KPI link (D-114 – D-116): module `salesforce` — `SalesforceHttp` (read-only transport),
+      `SalesforceClient` (client credentials / JWT bearer, SOQL with paging, describe), settings with sealed
+      secrets (Super Admin only), configurable mapping (defaults = documented PMS model), preview / sync by
+      Salesforce Id, `SalesforceSyncRun` log, schedule via `KpiScheduler`, failure notifications to Super Admins;
+      read-only Salesforce fields / values on KPIs. Web: `/settings/salesforce` (connection, test, schedule,
+      mapping with "Load fields", preview, sync, log), admin menu item, link card on Settings. DEPLOYMENT.md §6.4
+      (integration user, read-only permission set, connected app). CI: e2e `.env` gets an encryption key and
+      `OUTBOUND_ALLOWED_HOSTS=…,host.docker.internal`; compose `extra_hosts` for the API. Tests: API 3
+      (`salesforce.e2e-spec.ts`, fixtures), Playwright 1 (`salesforce.spec.ts` + `salesforce-mock.ts`).
 - [ ] 6. Demo data, permission tests, e2e, screenshots EN / AR, docs.
 
 ## Previous state — 2026-10-30 (Phase 4 — Part 2: GRC assurance, branch `phase-4-2-grc-assurance`, done — awaiting review)

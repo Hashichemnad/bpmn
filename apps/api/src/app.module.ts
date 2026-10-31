@@ -30,6 +30,7 @@ import { AiModule } from './ai/ai.module';
 import { AssuranceModule } from './assurance/assurance.module';
 import { EaModule } from './ea/ea.module';
 import { KpiModule } from './kpi/kpi.module';
+import { SalesforceModule } from './salesforce/salesforce.module';
 import { HealthController } from './health/health.controller';
 import { CsrfGuard, JwtAuthGuard, PermissionsGuard } from './common/guards';
 import { AllExceptionsFilter } from './common/http-exception.filter';
@@ -66,6 +67,7 @@ import { AllExceptionsFilter } from './common/http-exception.filter';
     AssuranceModule,
     EaModule,
     KpiModule,
+    SalesforceModule,
     DocsModule,
     SearchModule,
     IntegrationsModule,

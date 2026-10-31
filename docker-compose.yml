@@ -55,6 +55,10 @@ services:
       context: .
       dockerfile: apps/api/Dockerfile
     restart: unless-stopped
+    # Lets the API reach test doubles on the host (e2e mock Salesforce); only used when the host
+    # is listed in OUTBOUND_ALLOWED_HOSTS.
+    extra_hosts:
+      - 'host.docker.internal:host-gateway'
     env_file:
       - path: .env
         required: false

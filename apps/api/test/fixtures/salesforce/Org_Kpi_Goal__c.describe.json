@@ -1,0 +1,57 @@
+{
+  "name": "Org_Kpi_Goal__c",
+  "label": "KPI Description Card",
+  "fields": [
+    { "name": "Id", "label": "Record ID", "type": "id", "referenceTo": [] },
+    { "name": "Name", "label": "KPI Description Card Name", "type": "string", "referenceTo": [] },
+    {
+      "name": "Proposed_Kpi_Name__c",
+      "label": "Proposed KPI Name",
+      "type": "string",
+      "referenceTo": []
+    },
+    {
+      "name": "Kpi_Description_En__c",
+      "label": "KPI Description (EN)",
+      "type": "textarea",
+      "referenceTo": []
+    },
+    {
+      "name": "Kpi_Description_Ar__c",
+      "label": "KPI Description (AR)",
+      "type": "textarea",
+      "referenceTo": []
+    },
+    {
+      "name": "Measuring_Unit__c",
+      "label": "Measuring Unit",
+      "type": "picklist",
+      "referenceTo": []
+    },
+    {
+      "name": "Measuring_Direction__c",
+      "label": "Measuring Direction",
+      "type": "picklist",
+      "referenceTo": []
+    },
+    {
+      "name": "Measuring_Period__c",
+      "label": "Measuring Period",
+      "type": "picklist",
+      "referenceTo": []
+    },
+    {
+      "name": "Department_Goal__c",
+      "label": "Department Goal",
+      "type": "picklist",
+      "referenceTo": []
+    },
+    {
+      "name": "Responsible_Department__c",
+      "label": "Responsible Department",
+      "type": "reference",
+      "referenceTo": ["Department__c"]
+    },
+    { "name": "Status__c", "label": "Status", "type": "picklist", "referenceTo": [] }
+  ]
+}

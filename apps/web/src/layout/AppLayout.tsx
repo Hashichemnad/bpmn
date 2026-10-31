@@ -48,6 +48,7 @@ import {
   NodeIndexOutlined,
   LineChartOutlined,
   AimOutlined,
+  CloudSyncOutlined,
 } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
 import { PERMISSIONS, type Locale } from '@processhub/shared';
@@ -390,6 +391,11 @@ export function AppLayout() {
         key: '/settings',
         icon: <SettingOutlined />,
         label: <Link to="/settings">{t('nav.settings')}</Link>,
+      });
+      admin.push({
+        key: '/settings/salesforce',
+        icon: <CloudSyncOutlined />,
+        label: <Link to="/settings/salesforce">{t('admin:salesforce.card')}</Link>,
       });
     }
     if (admin.length) list.push({ type: 'group', label: t('nav.administration'), children: admin });

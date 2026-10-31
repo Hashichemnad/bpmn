@@ -185,5 +185,19 @@
   "NO_CALCULATED_VALUE": "The process model has no values for this calculation yet.",
   "OBJECTIVE_HAS_CHILDREN": "Delete or move the sub-objectives first.",
   "INVALID_OBJECTIVE": "Choose an objective from the list.",
-  "USE_KPI_REGISTER": "KPIs are managed in the KPI catalogue (Performance)."
+  "USE_KPI_REGISTER": "KPIs are managed in the KPI catalogue (Performance).",
+  "SF_NOT_CONFIGURED": "Salesforce is not fully configured.",
+  "SF_AUTH_FAILED": "Salesforce refused the sign-in. Check the consumer key, secret or certificate.",
+  "SF_HOST_BLOCKED": "The Salesforce address is not allowed.",
+  "SF_NETWORK": "Salesforce cannot be reached.",
+  "SF_QUERY_FAILED": "A Salesforce query failed — check the object and field names of the mapping.",
+  "SF_NO_KEY": "The private key cannot sign the token (PEM, RSA).",
+  "SALESFORCE_INCOMPLETE": "Enter the instance URL, the consumer key and the secret (or the username and private key) first.",
+  "SALESFORCE_DISABLED": "Turn the Salesforce link on first.",
+  "SYNC_RUNNING": "A sync is already running.",
+  "INVALID_API_NAME": "Not a valid Salesforce API name.",
+  "INVALID_PRIVATE_KEY": "Paste the private key in PEM format.",
+  "UNMAPPED_VALUE": "A Salesforce value has no mapping.",
+  "UNKNOWN_KPI": "The KPI of this record is not in the import.",
+  "PERIOD_MISMATCH": "The period does not match the KPI's frequency."
 }

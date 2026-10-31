@@ -185,5 +185,19 @@
   "NO_CALCULATED_VALUE": "لا توجد في نموذج العملية قيم لهذا الحساب بعد.",
   "OBJECTIVE_HAS_CHILDREN": "احذف الأهداف الفرعية أو انقلها أولًا.",
   "INVALID_OBJECTIVE": "اختر هدفًا من القائمة.",
-  "USE_KPI_REGISTER": "تُدار المؤشرات في كتالوج مؤشرات الأداء (الأداء)."
+  "USE_KPI_REGISTER": "تُدار المؤشرات في كتالوج مؤشرات الأداء (الأداء).",
+  "SF_NOT_CONFIGURED": "إعداد Salesforce غير مكتمل.",
+  "SF_AUTH_FAILED": "رفض Salesforce تسجيل الدخول. تحقق من مفتاح المستهلك أو السرّ أو الشهادة.",
+  "SF_HOST_BLOCKED": "عنوان Salesforce غير مسموح.",
+  "SF_NETWORK": "تعذّر الوصول إلى Salesforce.",
+  "SF_QUERY_FAILED": "فشل استعلام في Salesforce — تحقق من أسماء الكائنات والحقول في الربط.",
+  "SF_NO_KEY": "المفتاح الخاص لا يستطيع توقيع الرمز (PEM، RSA).",
+  "SALESFORCE_INCOMPLETE": "أدخل عنوان المثيل ومفتاح المستهلك والسرّ (أو اسم المستخدم والمفتاح الخاص) أولًا.",
+  "SALESFORCE_DISABLED": "فعّل ربط Salesforce أولًا.",
+  "SYNC_RUNNING": "هناك مزامنة قيد التنفيذ.",
+  "INVALID_API_NAME": "ليس اسم واجهة برمجية صالحًا في Salesforce.",
+  "INVALID_PRIVATE_KEY": "الصق المفتاح الخاص بصيغة PEM.",
+  "UNMAPPED_VALUE": "قيمة من Salesforce بلا ربط.",
+  "UNKNOWN_KPI": "مؤشر هذا السجل غير موجود في الاستيراد.",
+  "PERIOD_MISMATCH": "الفترة لا تتوافق مع دورية المؤشر."
 }

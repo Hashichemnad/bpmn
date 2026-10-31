@@ -1391,3 +1391,65 @@ tables and the landscape diagram stay plain SVG.
   process page lists the KPIs linked to the process or to steps of the published diagram with the live latest status,
   value / target and trend (KPI values are live data, not part of the published snapshot); when off, KPI links are
   also hidden from the step details.
+
+## D-114 — Salesforce KPI link: settings, credentials, read-only access (Phase 4.3, 2026-10-30)
+
+- **Settings → Integrations → Salesforce** (`/settings/salesforce`, API `/integrations/salesforce`): **Super Admin
+  only** (`settings.manage`), **off by default**. Instance URL (My Domain), authentication **OAuth 2.0 client
+  credentials** (consumer key + secret, "Run As" integration user) or **JWT bearer** (consumer key, integration
+  username, login URL, private key of the connected app certificate, RS256 signed in the API with Node `crypto`),
+  API version, schedule, "import actual values".
+- Secrets (consumer secret, private key) are **write-only** and stored only as **AES-256-GCM** ciphertext with
+  `INTEGRATIONS_ENCRYPTION_KEY` (the Git integration's `SecretBox`); the DTO says only whether they are stored; the
+  audit entry records that they changed, never the values.
+- **Read-only by construction**: the transport (`SalesforceHttp`, the only network code) sends `GET` for SOQL
+  queries / describes and `POST` only to `/services/oauth2/token`. SOQL is built from object / field API names
+  validated against `^[A-Za-z][A-Za-z0-9_]*(\.[A-Za-z][A-Za-z0-9_]*)*$` (no free-text WHERE clauses); pages follow
+  `nextRecordsUrl` only within `/services/data/vXX.X/query/`. Outbound policy as for Git: https only, internal
+  addresses refused, plain http only for `OUTBOUND_ALLOWED_HOSTS` (used by the e2e mock), timeout
+  `SALESFORCE_HTTP_TIMEOUT_MS`. Salesforce-side setup (integration user, read-only permission set, connected app):
+  DEPLOYMENT.md §6.4.
+- KPIs linked to Salesforce show "Source: Salesforce", the last sync time and a link to the record
+  (`/lightning/r/<Id>/view`); the mapped definition fields (`Kpi.lockedFields`) and the values are read-only in
+  ProcessHub (`SALESFORCE_OWNED`); thresholds, owner, relations and process links stay editable.
+
+## D-115 — Salesforce field mapping, defaults and matching (Phase 4.3, 2026-10-30)
+
+The brief described `Org_Kpi_Goal__c` as objectives, `Org_Kpi_Measure__c` as KPIs and `Org_Kpi_Process__c` as the
+KPI ↔ process mapping. The documented PMS data model differs: `Org_Kpi_Goal__c` is the **KPI Description Card**
+(the corporate KPI catalogue, with the strategic objective as the picklist `Department_Goal__c`),
+`Org_Kpi_Measure__c` is one row per KPI and **measuring year** (yearly target / achievement), and
+`Org_Kpi_Process__c` is the **period result** (quarter / half / full year, target, achievement, notes). The defaults
+therefore follow the documented model, and **everything is configurable** on the mapping screen (Settings), so a
+sandbox with other names or the brief's reading needs no code change:
+
+- **Objectives**: from their own object (lookup on the KPI) or from the values of a KPI field (default
+  `Department_Goal__c`; Salesforce Id stored as `<field>:<value>`), or none.
+- **KPIs**: object (default `Org_Kpi_Goal__c`) and fields for code, names, definitions, unit, direction,
+  frequency, target, status, objective; value lists translate Salesforce picklist values (e.g. `Increase =
+HIGHER_IS_BETTER`, `Quarterly = QUARTERLY`).
+- **Actual values**: object (default `Org_Kpi_Process__c`) with the KPI id path, year, period, value, target and
+  comment (defaults through `Org_Kpi_Measure__r`); period values map to Q1–Q4, M01–M12 or YEAR; a period that does not
+  fit the KPI's frequency is skipped with a warning; future periods are skipped; a result's target becomes the
+  KPI's target of that period.
+- **KPI ↔ process mapping**: optional object with the KPI id path and a field holding the ProcessHub process
+  code (whole-process `MEASURES` links; unknown codes are reported). Empty by default (not in the documented model).
+- **Matching** by the Salesforce Id stored on the objective (`StrategicObjective.salesforceId`) / KPI
+  (`Kpi.salesforceId`) and per KPI + period for values; nothing is ever deleted by a sync.
+
+## D-116 — Salesforce preview, sync runs, schedule and failures (Phase 4.3, 2026-10-30)
+
+- **Preview** (`POST /integrations/salesforce/preview`) reads Salesforce and lists what a sync would create /
+  change (objectives, KPIs with field-level from → to, values, process links) and the warnings; nothing is written.
+- **Sync** (`POST …/sync`, manual or scheduled) applies the same differences through the KPI service (audit
+  entries with action `SYNC` per objective / KPI / value) and records a **sync run** (`SalesforceSyncRun`: trigger,
+  status, counts, warnings, error; one at a time) shown in the **sync log**; the run itself is audited (`SYNC`,
+  entity `Integration`).
+- **Schedule**: off / hourly / daily / weekly (Monday) at an hour (UTC), run by the `KpiScheduler` (the Salesforce
+  module registers a job; the last slot is stored so a restart does not repeat it). Scheduled runs act as the Super
+  Admin who last saved the settings.
+- **Failures** (sign-in refused, query error, network) mark the run FAILED with the scrubbed message and notify
+  every active Super Admin (notification `KPI`, kind `syncFailed`, EN / AR e-mail).
+- **Tests** never call Salesforce: the API tests replace the transport with `FakeSalesforce` serving recorded
+  fixtures (`apps/api/test/fixtures/salesforce`, invented ids and values); the Playwright test runs a mock HTTP
+  server with the same fixtures, reached from the API through `host.docker.internal` (CI) / `localhost` (local).

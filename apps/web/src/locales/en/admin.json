@@ -389,5 +389,119 @@
         "hint": "An approval step leads straight into a decision (gateway) with its outcomes, such as approved / returned / rejected."
       }
     }
+  },
+  "salesforce": {
+    "title": "Salesforce KPI link",
+    "subtitle": "Read-only import of the corporate KPI catalogue and its results from the PMS app",
+    "card": "Salesforce KPI link",
+    "cardHint": "Import KPI definitions and actual values from Salesforce (read-only, off by default).",
+    "open": "Open Salesforce settings",
+    "noKey": "INTEGRATIONS_ENCRYPTION_KEY is not set: credentials cannot be stored.",
+    "connection": "Connection",
+    "enabled": "Enabled",
+    "instanceUrl": "Instance URL (My Domain)",
+    "authFlow": "Authentication",
+    "flows": {
+      "CLIENT_CREDENTIALS": "OAuth 2.0 client credentials",
+      "JWT_BEARER": "JWT bearer (certificate)"
+    },
+    "clientId": "Consumer key (client id)",
+    "clientSecret": "Consumer secret",
+    "loginUrl": "Login URL (token audience)",
+    "username": "Integration user",
+    "privateKey": "Private key (PEM)",
+    "secretStored": "Stored encrypted — leave empty to keep it.",
+    "apiVersion": "API version",
+    "test": "Test connection",
+    "testOk": "Connected to Salesforce",
+    "scheduleTitle": "Schedule",
+    "schedule": "Scheduled sync",
+    "schedules": {
+      "OFF": "Off (manual only)",
+      "HOURLY": "Hourly",
+      "DAILY": "Daily",
+      "WEEKLY": "Weekly (Monday)"
+    },
+    "hour": "Hour (UTC)",
+    "syncValues": "Import actual values",
+    "readOnly": "ProcessHub only reads from Salesforce (SOQL queries); it never writes. Use a dedicated integration user with a read-only permission set.",
+    "syncTitle": "Sync",
+    "preview": "Preview changes",
+    "syncNow": "Sync now",
+    "synced": "Sync finished",
+    "failed": "Sync failed",
+    "counts": "{{create}} new · {{update}} changed · {{unchanged}} unchanged",
+    "objectives": "Objectives",
+    "kpis": "KPIs",
+    "values": "Actual values",
+    "links": "KPI ↔ process mapping",
+    "warnings": "Warnings",
+    "unknownProcesses": "Unknown process codes: {{codes}}",
+    "mapping": "Field mapping",
+    "mappingHint": "Salesforce API names; use “Load fields” to pick from the object.",
+    "object": "Salesforce object",
+    "loadFields": "Load fields",
+    "objectiveSource": "Objectives come from",
+    "objectiveSources": {
+      "NONE": "No objectives",
+      "OBJECT": "Their own object (lookup on the KPI)",
+      "KPI_FIELD": "The values of a KPI field (picklist)"
+    },
+    "valueMapHint": "One per line: Salesforce value = ProcessHub value",
+    "valueMaps": {
+      "directionValues": "Direction values",
+      "frequencyValues": "Frequency values",
+      "statusValues": "Status values",
+      "periodValues": "Period values (Q1…Q4, M01…M12, YEAR)"
+    },
+    "fields": {
+      "objectives": {
+        "code": "Code",
+        "nameEn": "Name (English)",
+        "nameAr": "Name (Arabic)",
+        "descriptionEn": "Description (English)",
+        "descriptionAr": "Description (Arabic)"
+      },
+      "kpis": {
+        "code": "Code",
+        "nameEn": "Name (English)",
+        "nameAr": "Name (Arabic)",
+        "descriptionEn": "Definition (English)",
+        "descriptionAr": "Definition (Arabic)",
+        "unit": "Unit",
+        "direction": "Direction",
+        "frequency": "Frequency",
+        "target": "Target",
+        "status": "Status",
+        "objective": "Objective (lookup or field)"
+      },
+      "results": {
+        "kpi": "KPI (record id path)",
+        "year": "Year",
+        "period": "Period",
+        "value": "Actual value",
+        "target": "Target",
+        "comment": "Comment"
+      },
+      "processMap": {
+        "kpi": "KPI (record id path)",
+        "processCode": "Process code"
+      }
+    },
+    "log": "Sync log",
+    "started": "Started",
+    "trigger": "Trigger",
+    "triggers": {
+      "MANUAL": "Manual",
+      "SCHEDULED": "Scheduled"
+    },
+    "status": "Status",
+    "statuses": {
+      "RUNNING": "Running",
+      "SUCCESS": "Succeeded",
+      "FAILED": "Failed"
+    },
+    "result": "Result",
+    "by": "By"
   }
 }

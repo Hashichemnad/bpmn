@@ -413,5 +413,119 @@
         "hint": "تؤدي خطوة الاعتماد مباشرة إلى قرار (بوابة) بنتائجه، مثل: معتمد / مُعاد / مرفوض."
       }
     }
+  },
+  "salesforce": {
+    "title": "ربط مؤشرات Salesforce",
+    "subtitle": "استيراد للقراءة فقط لكتالوج مؤشرات الأداء المؤسسية ونتائجها من تطبيق PMS",
+    "card": "ربط مؤشرات Salesforce",
+    "cardHint": "استيراد تعريفات المؤشرات وقيمها الفعلية من Salesforce (قراءة فقط، معطّل افتراضيًا).",
+    "open": "فتح إعدادات Salesforce",
+    "noKey": "المتغير INTEGRATIONS_ENCRYPTION_KEY غير مضبوط: لا يمكن حفظ بيانات الاعتماد.",
+    "connection": "الاتصال",
+    "enabled": "مفعّل",
+    "instanceUrl": "عنوان المثيل (My Domain)",
+    "authFlow": "المصادقة",
+    "flows": {
+      "CLIENT_CREDENTIALS": "OAuth 2.0 ببيانات العميل",
+      "JWT_BEARER": "JWT bearer (شهادة)"
+    },
+    "clientId": "مفتاح المستهلك (معرّف العميل)",
+    "clientSecret": "سرّ المستهلك",
+    "loginUrl": "عنوان تسجيل الدخول (جمهور الرمز)",
+    "username": "مستخدم التكامل",
+    "privateKey": "المفتاح الخاص (PEM)",
+    "secretStored": "محفوظ مشفّرًا — اتركه فارغًا للإبقاء عليه.",
+    "apiVersion": "إصدار الواجهة البرمجية",
+    "test": "اختبار الاتصال",
+    "testOk": "تم الاتصال بـ Salesforce",
+    "scheduleTitle": "الجدولة",
+    "schedule": "المزامنة المجدولة",
+    "schedules": {
+      "OFF": "متوقفة (يدويًا فقط)",
+      "HOURLY": "كل ساعة",
+      "DAILY": "يوميًا",
+      "WEEKLY": "أسبوعيًا (الاثنين)"
+    },
+    "hour": "الساعة (UTC)",
+    "syncValues": "استيراد القيم الفعلية",
+    "readOnly": "بروسس هب يقرأ من Salesforce فقط (استعلامات SOQL) ولا يكتب إليه أبدًا. استخدم مستخدم تكامل مخصصًا بمجموعة صلاحيات للقراءة فقط.",
+    "syncTitle": "المزامنة",
+    "preview": "معاينة التغييرات",
+    "syncNow": "مزامنة الآن",
+    "synced": "اكتملت المزامنة",
+    "failed": "فشلت المزامنة",
+    "counts": "{{create}} جديد · {{update}} معدّل · {{unchanged}} دون تغيير",
+    "objectives": "الأهداف",
+    "kpis": "المؤشرات",
+    "values": "القيم الفعلية",
+    "links": "ربط المؤشرات بالعمليات",
+    "warnings": "تنبيهات",
+    "unknownProcesses": "رموز عمليات غير معروفة: {{codes}}",
+    "mapping": "ربط الحقول",
+    "mappingHint": "أسماء الواجهة البرمجية في Salesforce؛ استخدم «تحميل الحقول» للاختيار من الكائن.",
+    "object": "كائن Salesforce",
+    "loadFields": "تحميل الحقول",
+    "objectiveSource": "مصدر الأهداف",
+    "objectiveSources": {
+      "NONE": "دون أهداف",
+      "OBJECT": "كائن خاص بها (حقل بحث في المؤشر)",
+      "KPI_FIELD": "قيم حقل في المؤشر (قائمة اختيار)"
+    },
+    "valueMapHint": "سطر لكل قيمة: قيمة Salesforce = قيمة بروسس هب",
+    "valueMaps": {
+      "directionValues": "قيم الاتجاه",
+      "frequencyValues": "قيم الدورية",
+      "statusValues": "قيم الحالة",
+      "periodValues": "قيم الفترة (Q1…Q4، M01…M12، YEAR)"
+    },
+    "fields": {
+      "objectives": {
+        "code": "الرمز",
+        "nameEn": "الاسم (إنجليزي)",
+        "nameAr": "الاسم (عربي)",
+        "descriptionEn": "الوصف (إنجليزي)",
+        "descriptionAr": "الوصف (عربي)"
+      },
+      "kpis": {
+        "code": "الرمز",
+        "nameEn": "الاسم (إنجليزي)",
+        "nameAr": "الاسم (عربي)",
+        "descriptionEn": "التعريف (إنجليزي)",
+        "descriptionAr": "التعريف (عربي)",
+        "unit": "الوحدة",
+        "direction": "الاتجاه",
+        "frequency": "الدورية",
+        "target": "المستهدف",
+        "status": "الحالة",
+        "objective": "الهدف (بحث أو حقل)"
+      },
+      "results": {
+        "kpi": "المؤشر (مسار معرّف السجل)",
+        "year": "السنة",
+        "period": "الفترة",
+        "value": "القيمة الفعلية",
+        "target": "المستهدف",
+        "comment": "تعليق"
+      },
+      "processMap": {
+        "kpi": "المؤشر (مسار معرّف السجل)",
+        "processCode": "رمز العملية"
+      }
+    },
+    "log": "سجل المزامنة",
+    "started": "البدء",
+    "trigger": "المشغّل",
+    "triggers": {
+      "MANUAL": "يدوي",
+      "SCHEDULED": "مجدول"
+    },
+    "status": "الحالة",
+    "statuses": {
+      "RUNNING": "قيد التنفيذ",
+      "SUCCESS": "نجحت",
+      "FAILED": "فشلت"
+    },
+    "result": "النتيجة",
+    "by": "بواسطة"
   }
 }

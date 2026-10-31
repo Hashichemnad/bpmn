@@ -76,6 +76,7 @@ import { KpisPage } from '@/features/kpi/KpisPage';
 import { KpiDetailPage } from '@/features/kpi/KpiDetailPage';
 import { ObjectivesPage } from '@/features/kpi/ObjectivesPage';
 import { KpiDashboardPage } from '@/features/kpi/KpiDashboardPage';
+import { SalesforceSettingsPage } from '@/features/settings/SalesforceSettingsPage';
 
 const P = PERMISSIONS;
 
@@ -176,6 +177,14 @@ export const routes: RouteObject[] = [
                     element: (
                       <RequirePermission all={[P.GOVERNANCE_MANAGE]}>
                         <WorkflowsSettingsPage />
+                      </RequirePermission>
+                    ),
+                  },
+                  {
+                    path: 'settings/salesforce',
+                    element: (
+                      <RequirePermission all={[P.SETTINGS_MANAGE]}>
+                        <SalesforceSettingsPage />
                       </RequirePermission>
                     ),
                   },
