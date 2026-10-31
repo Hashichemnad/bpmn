@@ -149,7 +149,10 @@
       "Capability": "قدرة",
       "Kpi": "مؤشر أداء",
       "KpiMeasurement": "قيمة مؤشر",
-      "StrategicObjective": "هدف استراتيجي"
+      "StrategicObjective": "هدف استراتيجي",
+      "Diagram": "مخطط",
+      "DiagramVersion": "إصدار مخطط",
+      "DiagramLink": "رابط مخطط"
     }
   },
   "settings": {

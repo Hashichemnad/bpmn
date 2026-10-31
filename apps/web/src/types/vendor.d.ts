@@ -35,3 +35,14 @@ declare module 'diagram-js-minimap' {
   const module: Record<string, unknown>;
   export default module;
 }
+
+declare module 'dmn-js/lib/Modeler' {
+  /** dmn-js modeler (DRD, decision table, literal expression editors). */
+  const DmnModeler: new (options: Record<string, unknown>) => unknown;
+  export default DmnModeler;
+}
+
+declare module 'dmn-js/lib/NavigatedViewer' {
+  const DmnViewer: new (options: Record<string, unknown>) => unknown;
+  export default DmnViewer;
+}

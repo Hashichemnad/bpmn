@@ -16,11 +16,23 @@ Local setup: PostgreSQL 16 (`service postgresql start`; role `processhub` / `dev
 Steps (tick as they are committed; a new session continues at the first unticked one):
 
 - [x] 0. CLAUDE.md phase table (4.3 merged, row "Diagrams"), this plan, D-120 design.
-- [ ] 1. Shared diagram framework: `Diagram` / `DiagramVersion` / `DiagramLink`, `ContentType` `DIAGRAM` through
-      governance, comments, feedback, notifications, portal and search; API `/diagrams` (CRUD, content, versions,
-      links, where used); shared content schemas (zod); web: shared diagram-js modeler kit (workspace, palette,
-      context pad, snapping, align, zoom / mini-map, undo, shortcuts, bilingual labels, theme, export SVG / PNG /
-      PDF), diagram page (details, versions, governance, comments), repository tree with type icons and "New" menu.
+- [x] 1. Shared diagram framework (D-120): `Diagram` / `DiagramVersion` / `DiagramLink` (migration
+      `20261031023651_diagram_types`), `ContentType` `DIAGRAM` through governance (reviews, workflows, publications,
+      dashboard, My tasks, reminders), comments on elements, feedback, notifications, portal (list, view, search,
+      home counts) and the review compare (`kind: 'DIAGRAM'`); shared `diagrams.ts` (types, zod content schemas for
+      graph JSON / SIPOC, DMN checks, element / text / reference helpers, DTOs); API `/diagrams` (CRUD with generated
+      codes VC-001 …, content with validation + link pruning, versions / restore / label, links, where used),
+      `/portal/diagrams`, DMN XML safety checks; permissions as processes. Web: shared diagram-js kit
+      (`features/diagrams/kit/`: notations, shapes, renderer with theme colours and bilingual labels, rules, layout +
+      cropping, undoable property command, direct label editing in the active language, keyboard, context pad,
+      import / export JSON, SVG export), `DiagramWorkspace` shell (autosave, Save version, undo / redo, versions
+      drawer with view / compare / label / restore, export SVG / PNG / PDF, Links and Comments tabs), `GraphEditor`
+      (palette, properties, zoom / fit / mini-map, align / distribute), `DiagramView` / `DiagramCompare`
+      (side by side with added / changed / removed markers), diagram page `/diagrams/:id` (preview, governance,
+      details, links, where used, comments), workspace `/diagrams/:id/edit`, print `/print/diagrams/:id` and
+      `/portal/print/diagrams/:id`, portal `/portal/diagrams` (+ `:id` with drill-down), repository tree with type
+      icons and a "Diagrams" group, "New" menu (process + each type). dmn-js 17.12.3, feelin 8.2.0 added (used in
+      step 4). Tests: shared +3, web +3, API 3 (`diagrams.e2e-spec.ts`).
 - [ ] 2. Value chain (chevrons, blocks, frames, arrows; drill-down; badges; colour by; generate from process house).
 - [ ] 3. Organisation chart (units, positions, persons, reporting lines, staff functions; generate from data with
       merge + preview; position → processes / RACI; handbook section).

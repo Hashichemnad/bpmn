@@ -149,8 +149,7 @@ export class CommentsService {
         parent = await this.prisma.comment.findUniqueOrThrow({ where: { id: parent.parentId } });
       }
     }
-    if (input.bpmnElementId && (type === 'PAGE' || parent))
-      throw badRequest('INVALID_ELEMENT_ID');
+    if (input.bpmnElementId && (type === 'PAGE' || parent)) throw badRequest('INVALID_ELEMENT_ID');
     const mentionIds = await this.readableMentions(item, input.body);
     const row = await this.prisma.$transaction(async (tx) => {
       const c = await tx.comment.create({

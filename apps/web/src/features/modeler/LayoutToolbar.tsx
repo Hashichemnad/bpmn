@@ -2,7 +2,7 @@ import { Button, Tooltip } from 'antd';
 import { useTranslation } from 'react-i18next';
 import alignIcons from 'bpmn-js/lib/features/align-elements/AlignElementsIcons';
 import distributeIcons from 'bpmn-js/lib/features/distribute-elements/DistributeElementsIcons';
-import type { BpmnInstance, DiagramElement } from './bpmn-types';
+import type { DiagramElement, DiagramServices } from './bpmn-types';
 
 const ALIGN = ['left', 'center', 'right', 'top', 'middle', 'bottom'] as const;
 const DISTRIBUTE = ['horizontal', 'vertical'] as const;
@@ -21,7 +21,7 @@ export function LayoutToolbar({
   instance,
   selection,
 }: {
-  instance: BpmnInstance;
+  instance: DiagramServices;
   selection: DiagramElement[];
 }) {
   const { t } = useTranslation();

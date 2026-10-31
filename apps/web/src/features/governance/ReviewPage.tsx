@@ -263,7 +263,7 @@ export function ReviewPage() {
       )}
       <Row gutter={[24, 24]}>
         <Col xs={24} xl={16}>
-          {aiAvailable && (
+          {aiAvailable && r.item.entityType !== 'DIAGRAM' && (
             <Card
               className="ph-ai-card"
               title={
@@ -276,7 +276,11 @@ export function ReviewPage() {
             >
               <SummaryView
                 auto={false}
-                target={{ type: r.item.entityType, id: r.item.entityId, reviewId: r.id }}
+                target={{
+                  type: r.item.entityType as 'PROCESS' | 'PAGE',
+                  id: r.item.entityId,
+                  reviewId: r.id,
+                }}
               />
             </Card>
           )}

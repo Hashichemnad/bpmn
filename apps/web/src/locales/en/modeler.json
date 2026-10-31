@@ -41,7 +41,11 @@
   "add": {
     "ROLE": "Add a role…",
     "SYSTEM": "Add an IT system…",
-    "DOCUMENT": "Add a document…"
+    "DOCUMENT": "Add a document…",
+    "TERM": "Link a dictionary term…",
+    "RISK": "Link a risk…",
+    "CONTROL": "Link a control…",
+    "KPI": "Link a KPI…"
   },
   "linked": {
     "ROLE": "Performed by (roles)",

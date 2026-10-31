@@ -2655,3 +2655,162 @@ button.ph-risk-matrix-cell:focus-visible {
   border: 2px solid transparent;
   vertical-align: middle;
 }
+
+/* ---------- Diagram types (value chain, org chart, DMN, EPC, SIPOC — D-120) ---------- */
+
+.ph-graph-canvas {
+  position: relative;
+  inline-size: 100%;
+  background: #fff;
+  border-radius: 8px;
+  overflow: hidden;
+}
+.ph-ws .ph-graph-canvas {
+  border-radius: 0;
+}
+img.ph-palette-icon {
+  inline-size: 24px;
+  block-size: 24px;
+}
+.ph-graph-label {
+  pointer-events: none;
+}
+/* Version compare: added / changed / removed elements. */
+.ph-diff-added .djs-visual > :first-child {
+  stroke: #16a34a !important;
+  stroke-width: 3px !important;
+}
+.ph-diff-changed .djs-visual > :first-child {
+  stroke: #d97706 !important;
+  stroke-width: 3px !important;
+}
+.ph-diff-removed .djs-visual > :first-child {
+  stroke: #dc2626 !important;
+  stroke-width: 3px !important;
+  stroke-dasharray: 6 3;
+}
+li.ph-diff-added {
+  background: #dcfce7;
+}
+li.ph-diff-changed {
+  background: #fef3c7;
+}
+li.ph-diff-removed {
+  background: #fee2e2;
+  text-decoration: line-through;
+}
+/* Portal drill-down: elements that open a published process or diagram. */
+.ph-drill {
+  cursor: pointer;
+}
+.ph-drill .djs-visual > :first-child {
+  stroke-width: 2.5px !important;
+  filter: drop-shadow(0 1px 2px rgba(29, 78, 216, 0.35));
+}
+.ph-drill:hover .djs-visual > :first-child {
+  stroke: #1d4ed8 !important;
+}
+
+/* SIPOC: five columns. */
+.ph-sipoc {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(140px, 1fr));
+  gap: 8px;
+  overflow-x: auto;
+}
+.ph-sipoc-col {
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  background: #fff;
+  min-block-size: 220px;
+}
+.ph-sipoc-head {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  padding: 8px 10px;
+  font-weight: 600;
+  border-block-end: 1px solid #e2e8f0;
+  background: #f8fafc;
+  border-start-start-radius: 8px;
+  border-start-end-radius: 8px;
+}
+.ph-sipoc-steps .ph-sipoc-head {
+  background: #e8f1fb;
+}
+.ph-sipoc-letter {
+  display: inline-grid;
+  place-items: center;
+  inline-size: 26px;
+  block-size: 26px;
+  border-radius: 50%;
+  background: #1f5fa8;
+  color: #fff;
+  font-size: 13px;
+}
+.ph-sipoc-items {
+  list-style: none;
+  margin: 0;
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.ph-sipoc-items li {
+  display: flex;
+  gap: 6px;
+  align-items: flex-start;
+  padding: 6px 8px;
+  border-radius: 6px;
+  background: #f1f5f9;
+}
+.ph-sipoc-num {
+  font-weight: 600;
+  color: #1f5fa8;
+}
+
+/* DMN (dmn-js renders its own UI; the decision table scrolls inside the container). */
+.ph-dmn-view .ant-segmented {
+  margin-block-end: 8px;
+}
+.ph-dmn-container {
+  position: relative;
+  overflow: auto;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+}
+
+/* Print layout of a diagram. */
+.ph-print-diagram .ph-print-header {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  margin-block-end: 12px;
+}
+.ph-print-diagram-canvas .ph-graph-canvas,
+.ph-print-diagram-canvas .ph-dmn-container {
+  border: 1px solid #e2e8f0;
+}
+.ph-print-elements table {
+  inline-size: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+.ph-print-elements th,
+.ph-print-elements td {
+  border: 1px solid #e2e8f0;
+  padding: 4px 6px;
+  text-align: start;
+}
+.ph-print-diagram .ph-print-toolbar {
+  margin-block-end: 12px;
+}
+@media print {
+  .ph-print-diagram .no-print {
+    display: none;
+  }
+  .ph-print-elements {
+    break-before: page;
+  }
+}

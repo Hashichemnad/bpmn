@@ -8,16 +8,9 @@ import {
 } from '@ant-design/icons';
 import type { CSSProperties } from 'react';
 import type { DiagramType } from '@processhub/shared';
+import { DIAGRAM_TYPE_COLOURS } from './kit/type-colours';
 
 /** One icon per notation, used in the repository tree, lists, portal cards and search. */
-export const DIAGRAM_TYPE_COLOURS: Record<DiagramType, string> = {
-  VALUE_CHAIN: '#7c3aed',
-  ORG_CHART: '#0369a1',
-  DMN: '#b45309',
-  EPC: '#15803d',
-  SIPOC: '#be185d',
-};
-
 export function DiagramTypeIcon({
   type,
   style,

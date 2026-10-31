@@ -77,7 +77,7 @@ export function GovernanceDashboardPage() {
       />
       <Row gutter={[16, 16]}>
         {CONTENT_TYPES.map((type) => (
-          <Col xs={24} xl={12} key={type}>
+          <Col xs={24} xl={8} key={type}>
             <Card title={t(`governance:dashboard.counts.${type}`)} size="small">
               <Row gutter={[8, 8]}>
                 {CONTENT_STATUSES.map((s) => (
@@ -235,9 +235,7 @@ export function GovernanceDashboardPage() {
               key: 'portal',
               width: 120,
               render: (_, r) => (
-                <Link to={portalLink(r)}>
-                  {t('governance:dashboard.viewInPortal')}
-                </Link>
+                <Link to={portalLink(r)}>{t('governance:dashboard.viewInPortal')}</Link>
               ),
             },
           ]}

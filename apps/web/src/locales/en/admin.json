@@ -149,7 +149,10 @@
       "Capability": "Capability",
       "Kpi": "KPI",
       "KpiMeasurement": "KPI value",
-      "StrategicObjective": "Strategic objective"
+      "StrategicObjective": "Strategic objective",
+      "Diagram": "Diagram",
+      "DiagramVersion": "Diagram version",
+      "DiagramLink": "Diagram link"
     }
   },
   "settings": {

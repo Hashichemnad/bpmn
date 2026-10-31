@@ -93,7 +93,7 @@ function useElementVersion(instance: BpmnInstance | null, element: DiagramElemen
   return version;
 }
 
-function ObjectPicker({
+export function ObjectPicker({
   type,
   exclude,
   onPick,

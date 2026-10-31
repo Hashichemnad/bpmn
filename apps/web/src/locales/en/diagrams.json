@@ -1,0 +1,151 @@
+{
+  "type": {
+    "VALUE_CHAIN": "Value chain",
+    "ORG_CHART": "Organisation chart",
+    "DMN": "Decision table (DMN)",
+    "EPC": "Event-driven process chain (EPC)",
+    "SIPOC": "SIPOC"
+  },
+  "typeHint": {
+    "VALUE_CHAIN": "Process landscape: primary activities as chevrons, management and support as blocks. Elements drill down to processes or other diagrams.",
+    "ORG_CHART": "Organisational units, positions and persons with reporting lines and staff functions.",
+    "DMN": "Decision tables with hit policies, typed inputs and outputs, linked to business rule tasks.",
+    "EPC": "Events, functions and connectors (ARIS notation), convertible to BPMN.",
+    "SIPOC": "Suppliers, inputs, process steps, outputs and customers of one process."
+  },
+  "new": {
+    "button": "New",
+    "PROCESS": "Process (BPMN)"
+  },
+  "newOfType": "New {{type}}",
+  "editDetails": "Edit diagram details",
+  "created": "Diagram {{code}} created",
+  "deleteTitle": "Delete “{{name}}”?",
+  "deleteText": "The diagram is removed from the repository and the portal. Its history stays in the audit log.",
+  "deleted": "Diagram deleted",
+  "fields": {
+    "type": "Diagram type",
+    "process": "Process / process-house node",
+    "processHint": "The diagram is shown under this process in the repository tree."
+  },
+  "tree": {
+    "group": "Diagrams"
+  },
+  "preview": "Diagram",
+  "openEditor": "Open editor",
+  "openViewer": "Open viewer",
+  "whereUsed": {
+    "tab": "Where used",
+    "none": "No other diagram refers to this one."
+  },
+  "links": {
+    "tab": "Links",
+    "forElement": "Library objects linked to “{{name}}”.",
+    "all": "All links of the diagram. Select an element to add links.",
+    "none": "No linked objects"
+  },
+  "export": "Export",
+  "exportPdf": "PDF (print)",
+  "print": "Print / save as PDF",
+  "elements": "Elements",
+  "draft": "Working draft",
+  "compareTitle": "Compare versions",
+  "changeNoteRequired": "Describe what changed",
+  "importFailed": "The diagram could not be loaded",
+  "invalidContent": "The diagram content is not valid",
+  "selectElement": "Select an element to see and edit its properties.",
+  "label": {
+    "en": "Label (English)",
+    "ar": "Label (Arabic)"
+  },
+  "colour": "Colour",
+  "fill": "Fill",
+  "stroke": "Border",
+  "resetColour": "Use the theme colour",
+  "fit": "Fit to screen",
+  "minimap": "Mini-map",
+  "palette": {
+    "shapes": "Shapes",
+    "flow": "Process flow",
+    "connectors": "Connectors",
+    "resources": "Organisation and data"
+  },
+  "tools": {
+    "hand": "Hand tool (H)",
+    "lasso": "Lasso (L)",
+    "connect": "Connect (C)"
+  },
+  "kinds": {
+    "chevron": "Primary activity",
+    "block": "Management / support activity",
+    "frame": "Group",
+    "arrow": "Arrow",
+    "unit": "Organisational unit",
+    "position": "Position",
+    "person": "Person",
+    "reports": "Reporting line",
+    "staff": "Staff line",
+    "event": "Event",
+    "function": "Function",
+    "and": "AND connector",
+    "or": "OR connector",
+    "xor": "XOR connector",
+    "processPath": "Process path",
+    "orgUnit": "Organisational unit",
+    "system": "Information system",
+    "information": "Information object",
+    "document": "Document",
+    "flow": "Control flow",
+    "assignment": "Assignment",
+    "suppliers": "Supplier",
+    "inputs": "Input",
+    "steps": "Process step",
+    "outputs": "Output",
+    "customers": "Customer",
+    "decision": "Decision",
+    "input": "Input",
+    "output": "Output",
+    "inputData": "Input data",
+    "knowledgeSource": "Knowledge source",
+    "businessKnowledgeModel": "Business knowledge model"
+  },
+  "diff": {
+    "title": "Changes ({{count}})",
+    "added": "Added",
+    "removed": "Removed",
+    "none": "No differences",
+    "noBase": "No earlier version",
+    "aspect": {
+      "label": "Label",
+      "layout": "Position / size",
+      "properties": "Properties"
+    }
+  },
+  "dmn": {
+    "drd": "Decision requirements"
+  },
+  "sipoc": {
+    "columns": {
+      "suppliers": "Suppliers",
+      "inputs": "Inputs",
+      "steps": "Process",
+      "outputs": "Outputs",
+      "customers": "Customers"
+    },
+    "letter": {
+      "suppliers": "S",
+      "inputs": "I",
+      "steps": "P",
+      "outputs": "O",
+      "customers": "C"
+    }
+  },
+  "portal": {
+    "nav": "Diagrams",
+    "title": "Diagrams",
+    "subtitle": "Value chains, organisation charts, decision tables, EPCs and SIPOCs — approved versions.",
+    "all": "All",
+    "none": "No published diagrams yet.",
+    "drillHint": "Click a highlighted element to open the process or diagram behind it."
+  }
+}
