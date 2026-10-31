@@ -4,7 +4,12 @@
 
 **منصة ثنائية اللغة (العربية / الإنجليزية) لإدارة العمليات المؤسسية** — تجمع بين جوهر ARIS و GBTEC (BIC) مع ويكي للتوثيق على غرار Confluence، والتحكم في الإصدارات، وتكامل اختياري مع GitHub / GitLab.
 
-> **Status:** ✅ Phase 1 (Foundation), ✅ Phase 2 (Documentation wiki, version control, Git integration), ✅ Phase 3 (Governance, Knowledge Portal) and ✅ the AI Assistant (M16); 🟡 Phase 6 hardening in progress (security review done; production deployment, backups and storage on branch `phase-6-part-2`) — see [`docs/PROGRESS.md`](./docs/PROGRESS.md).
+> **Status:** every feature module is built and merged — platform, process house and modeler, object
+> library, documentation wiki, version control, Git sync, governance, Knowledge Portal, AI assistant, Risk &
+> Compliance and assurance, enterprise architecture and KPIs, five more diagram types, process mining and
+> simulation, workflow execution and the import tools. The final hardening session (performance,
+> accessibility, production images, backup drill) is on branch `final-a-performance`; Phase 4.4 integrations
+> follow. Details: [`docs/PROGRESS.md`](./docs/PROGRESS.md).
 
 ---
 
@@ -26,13 +31,42 @@
 | **AI Assistant** *(optional, off by default)* | Generate a BPMN process (lanes, bilingual labels, auto-layout) from a description; refine it by chat with a visual review; SOP / work instruction from a process and a process from a page; EN↔AR translation of fields, labels and pages; analysis (missing steps, responsibilities, bottlenecks, risks, controls) and plain-language validation warnings; summaries and "what changed"; a Knowledge Portal assistant that answers only from published content with links. Anthropic Claude, encrypted key, roles, limits, usage report, full audit | ✅ AI |
 | **Risk & Compliance (GRC core)** | Risk register (inherent / residual 5 × 5 ratings, configurable categories and rating bands), control library (type, nature, frequency, key control, IT system, design effectiveness), requirements (law → section → clause); risk ↔ control ↔ requirement relations; assessment history and comments; links to process steps with a modeler panel, warning badges and "colour by" risk views; heat maps, coverage dashboard with drill-down, risk–control matrix and Excel import / export; review reminders; portal visibility setting; handbook section; AI control-gap check | ✅ 4.1 |
 | **Assurance** | Approval of changes to risks / controls, control testing with samples and four-eyes review, issues and action plans, audit universe / plan / engagements / findings / Word report, questionnaires and self-assessments, assurance dashboard | ✅ 4.2 |
-| **Enterprise architecture** | Application catalogue (the IT systems linked to steps: type, vendor, owners, hosting country, lifecycle, criticality, data classification), interfaces, data objects with system of record and CRUD matrix, 3-level capability map with "colour by" (coverage, applications, lifecycle, risk), application landscape diagram (SVG / PNG), traceability capability → process → step → application → data (+ risks / controls), impact analysis of an application, Excel import / export, modeler "colour by application lifecycle", handbook "Systems and data" | 4.3 |
-| **KPIs & dashboards** | KPI catalogue (formula, unit, direction, frequency, targets and green / amber / red thresholds per period, owner, data source), strategic objectives, key risk indicators, links to processes and steps; values with comment and evidence, owner reminders in My tasks, Excel import, history; KPIs calculated from step attributes (duration, waiting, cost, handovers, automation rate); KPI dashboard by objective with sparklines and drill-down chart, KPI badges and "colour by KPI status" in the modeler, process performance card, optional portal section; optional read-only **Salesforce** KPI link (mapping, preview, scheduled sync, sync log) | 4.3 |
-| **More diagram types** | One framework for **value chains** (chevrons / blocks / frames, drill-down to processes and value chains, status / KPI / risk badges, "colour by", generation from the process house), **organisation charts** (units, positions, persons, reporting and staff lines; generated from departments, roles and people with merge-by-id regeneration and preview; a position shows the steps it performs with RACI), **DMN decision tables** (dmn-js, bilingual names, hit policies, typed inputs / outputs, FEEL "Test decision", validation, import / export, linked to BPMN business rule tasks), **EPC** (ARIS notation, syntax rules as warnings, conversion to a draft BPMN process with mapping report) and **SIPOC** (generated from a process); versions with visual compare, review workflow, comments on elements, object links, where used, Knowledge Portal (browse by type, value chain start page), handbook sections, export SVG / PNG / PDF | Diagrams |
-| **Process mining** | Event logs from CSV / Excel / XES (streaming import, column mapping with templates, timestamp and time-zone detection, validation report, pseudonymisation, access per owner / department / grant, retention) or from ProcessHub's own reviews; process map with frequency / performance views and activity / path sliders, variants with compare, stackable saved filters, statistics (throughput, trend, rework, resources, handovers), bottlenecks with the cases behind them, Excel exports; "Generate BPMN" with the heuristics miner; conformance by token replay (fitness, skipped / inserted / wrong-order steps) with a "colour by" overlay on the BPMN model, KPIs calculated from logs, measured vs planned step times; optional portal "Performance" section and handbook section | 5.1 |
-| **Simulation** | Discrete-event what-if simulation from the step attributes: distributions, lanes as resources with capacity, Sun–Thu working calendar with UAE holidays, branch probabilities (from mining), as-is and to-be scenarios on any process version, validation, side-by-side comparison with charts and Excel, bottleneck view on the model, AI explanation and proposals | 5.1 |
-| **Workflow execution** | Published processes run as requests: execution settings in the modeler (forms with an editor and bilingual preview, assignment rules, due times in working time, four-eyes, approval outcomes, S-FEEL conditions, timers, DMN business rules, notifications, Word documents, call activities, error paths), executable check, deployment of the published version (cases pinned to their version), service catalogue and start forms in the portal, inbox with claim / delegate / out-of-office, approve / reject / return, case page with highlighted diagram, timeline, files and comments, reminders and escalation, workflow monitor (retry, cancel, reassign) and dashboard with Excel, live event log for process mining. See [`docs/WORKFLOWS.md`](./docs/WORKFLOWS.md) | 5.2 |
-| **Import tools / migration** | Import Center: every import is a batch — upload, background read with progress and cancel, preview with column / shape mapping and a validation report, dry run, apply, Excel result report, undo while drafts, safe re-import (matching by code, e-mail, external id, file name). Process house, departments and users (invitations, no passwords) from Excel / CSV; BPMN (ZIP, Signavio / Camunda / Bizagi / ARIS exports, Arabic label detection, auto-layout), Visio `.vsdx`, ARIS AML (EPC, value chains, roles, systems), DMN; Word, PDF, Confluence HTML exports and Markdown into the wiki with process links; the existing register imports as batches; AI proposals (SOP → BPMN, risks and controls, translation) in a review queue; migration dashboard and review queue with bulk actions; full export package and restore. Upload security: content sniffing, ZIP-slip / zip-bomb limits, no XXE, macros refused. See [`docs/MIGRATION.md`](./docs/MIGRATION.md) | Import |
+| **Enterprise architecture** | Application catalogue (the IT systems linked to steps: type, vendor, owners, hosting country, lifecycle, criticality, data classification), interfaces, data objects with system of record and CRUD matrix, 3-level capability map with "colour by" (coverage, applications, lifecycle, risk), application landscape diagram (SVG / PNG), traceability capability → process → step → application → data (+ risks / controls), impact analysis of an application, Excel import / export, modeler "colour by application lifecycle", handbook "Systems and data" | ✅ 4.3 |
+| **KPIs & dashboards** | KPI catalogue (formula, unit, direction, frequency, targets and green / amber / red thresholds per period, owner, data source), strategic objectives, key risk indicators, links to processes and steps; values with comment and evidence, owner reminders in My tasks, Excel import, history; KPIs calculated from step attributes (duration, waiting, cost, handovers, automation rate); KPI dashboard by objective with sparklines and drill-down chart, KPI badges and "colour by KPI status" in the modeler, process performance card, optional portal section; optional read-only **Salesforce** KPI link (mapping, preview, scheduled sync, sync log) | ✅ 4.3 |
+| **More diagram types** | One framework for **value chains** (chevrons / blocks / frames, drill-down to processes and value chains, status / KPI / risk badges, "colour by", generation from the process house), **organisation charts** (units, positions, persons, reporting and staff lines; generated from departments, roles and people with merge-by-id regeneration and preview; a position shows the steps it performs with RACI), **DMN decision tables** (dmn-js, bilingual names, hit policies, typed inputs / outputs, FEEL "Test decision", validation, import / export, linked to BPMN business rule tasks), **EPC** (ARIS notation, syntax rules as warnings, conversion to a draft BPMN process with mapping report) and **SIPOC** (generated from a process); versions with visual compare, review workflow, comments on elements, object links, where used, Knowledge Portal (browse by type, value chain start page), handbook sections, export SVG / PNG / PDF | ✅ Diagrams |
+| **Process mining** | Event logs from CSV / Excel / XES (streaming import, column mapping with templates, timestamp and time-zone detection, validation report, pseudonymisation, access per owner / department / grant, retention) or from ProcessHub's own reviews; process map with frequency / performance views and activity / path sliders, variants with compare, stackable saved filters, statistics (throughput, trend, rework, resources, handovers), bottlenecks with the cases behind them, Excel exports; "Generate BPMN" with the heuristics miner; conformance by token replay (fitness, skipped / inserted / wrong-order steps) with a "colour by" overlay on the BPMN model, KPIs calculated from logs, measured vs planned step times; optional portal "Performance" section and handbook section | ✅ 5.1 |
+| **Simulation** | Discrete-event what-if simulation from the step attributes: distributions, lanes as resources with capacity, Sun–Thu working calendar with UAE holidays, branch probabilities (from mining), as-is and to-be scenarios on any process version, validation, side-by-side comparison with charts and Excel, bottleneck view on the model, AI explanation and proposals | ✅ 5.1 |
+| **Workflow execution** | Published processes run as requests: execution settings in the modeler (forms with an editor and bilingual preview, assignment rules, due times in working time, four-eyes, approval outcomes, S-FEEL conditions, timers, DMN business rules, notifications, Word documents, call activities, error paths), executable check, deployment of the published version (cases pinned to their version), service catalogue and start forms in the portal, inbox with claim / delegate / out-of-office, approve / reject / return, case page with highlighted diagram, timeline, files and comments, reminders and escalation, workflow monitor (retry, cancel, reassign) and dashboard with Excel, live event log for process mining. See [`docs/WORKFLOWS.md`](./docs/WORKFLOWS.md) | ✅ 5.2 |
+| **Import tools / migration** | Import Center: every import is a batch — upload, background read with progress and cancel, preview with column / shape mapping and a validation report, dry run, apply, Excel result report, undo while drafts, safe re-import (matching by code, e-mail, external id, file name). Process house, departments and users (invitations, no passwords) from Excel / CSV; BPMN (ZIP, Signavio / Camunda / Bizagi / ARIS exports, Arabic label detection, auto-layout), Visio `.vsdx`, ARIS AML (EPC, value chains, roles, systems), DMN; Word, PDF, Confluence HTML exports and Markdown into the wiki with process links; the existing register imports as batches; AI proposals (SOP → BPMN, risks and controls, translation) in a review queue; migration dashboard and review queue with bulk actions; full export package and restore. Upload security: content sniffing, ZIP-slip / zip-bomb limits, no XXE, macros refused. See [`docs/MIGRATION.md`](./docs/MIGRATION.md) | ✅ Import |
+| **Operations & performance** | Production stack with automatic HTTPS (Caddy), slim images published to the GitHub Container Registry on every release (API, one-shot migrations, unprivileged web), checksummed backups with restore and an automated restore drill, 24-hour idle and 7-day absolute session limits, optional MFA check of single sign-on tokens; measured on a production-size volume seed (2,000 processes, 5,000 pages, 1M mining events, 10,000 requests): every screen's API call under 300 ms at P95, first page load 238 KB of JavaScript (gzip) with Brotli assets; keyboard and screen-reader support (WCAG 2.1 AA colours, skip link, announced form errors) and a CI check that English and Arabic stay complete | ✅ 6 |
+
+## Documentation
+
+| Document | For |
+| --- | --- |
+| [`docs/DEPLOYMENT.md`](./docs/DEPLOYMENT.md) | IT: server sizing, installation step by step, HTTPS, single sign-on, backups, restore and the restore drill, updates from the container registry, monitoring |
+| [`docs/SECURITY.md`](./docs/SECURITY.md) | Security review, controls (OWASP Top 10), every endpoint with its guards, remaining risks, go-live checklist, penetration-test checklist |
+| [`docs/WORKFLOWS.md`](./docs/WORKFLOWS.md) | Process owners and admins: making a process executable, forms, assignments, SLAs, monitoring |
+| [`docs/MIGRATION.md`](./docs/MIGRATION.md) | Migration team: preparing files, import order, review queue, go-live checklist |
+| [`docs/AI-DEMO.md`](./docs/AI-DEMO.md) | A guided demo of the AI assistant |
+| [`docs/PROGRESS.md`](./docs/PROGRESS.md) · [`docs/DECISIONS.md`](./docs/DECISIONS.md) · [`docs/BACKLOG.md`](./docs/BACKLOG.md) | Developers: what is done (with measurements), why, and what comes later |
+
+### Build phases
+
+| Phase | Scope | Status |
+| --- | --- | --- |
+| 1 | Platform, process house, BPMN modeler, roles & systems | ✅ |
+| 2 | Documentation wiki, version control, Git integration | ✅ |
+| 3 | Governance, Knowledge Portal | ✅ |
+| AI | AI assistant | ✅ |
+| Design A / B1 / B2 | Modeler look and feel, full-screen workspace, smarter modeling and reports | ✅ |
+| 4.1 / 4.2 | Risk & Compliance core, assurance | ✅ |
+| 4.3 | Enterprise architecture, KPIs & dashboards | ✅ |
+| Diagrams | Value chain, organisation chart, DMN, EPC, SIPOC | ✅ |
+| 5.1 / 5.2 | Process mining and simulation, workflow execution | ✅ |
+| Import | Import tools / migration | ✅ |
+| 6 | Hardening: security review, production deployment, SSO / 2FA, performance, accessibility, images, restore drill | 🟡 final review on `final-a-performance` |
+| 4.4 | Integrations & export (Oracle Fusion Risk, Salesforce risks, API keys, webhooks, Word / HTML / XPDL) | ⬜ later |
 
 ## Quick start (Docker)
 
@@ -46,6 +80,9 @@ Requirements: Docker with Compose v2.24 or newer.
 git clone <this repository> processhub && cd processhub
 docker compose up --build
 ```
+
+`docker compose up` first runs the one-shot `migrate` service (database migrations and demo data) and starts
+the API once it has finished successfully.
 
 Open **http://localhost:8080** and sign in with the default Super Admin:
 
@@ -396,7 +433,15 @@ pnpm typecheck      # TypeScript (strict)
 pnpm test           # shared + web (Vitest), api unit + e2e (Jest, needs PostgreSQL)
 pnpm build
 pnpm e2e            # Playwright smoke tests against a running, seeded stack (E2E_BASE_URL, default http://localhost:8080)
+node scripts/check-i18n.mjs                           # English / Arabic translations complete (also in CI)
+node apps/web/scripts/bundle-report.mjs --budget=250  # after the web build: initial JavaScript ≤ 250 KB gzip
+./scripts/backup-drill.sh --yes                       # backup / restore round trip on a test stack (also in CI)
 ```
+
+**Performance measurements** run against a disposable production-size database: `apps/api/prisma/seed-volume.ts`
+(refuses production, needs `VOLUME_SEED=yes`), then `prisma/perf-api.ts` (P50 / P95 of 38 screen endpoints)
+and `prisma/perf-schedulers.ts` against a running API — usage in the file headers, results in
+[`docs/PROGRESS.md`](./docs/PROGRESS.md).
 
 The Playwright tests (`apps/e2e`) need a Chromium for Playwright 1.56 (`pnpm --filter @processhub/e2e exec
 playwright install chromium` once, or `E2E_CHROMIUM_PATH` pointing at an installed Chromium). They cover
@@ -447,11 +492,12 @@ packages/
   shared/                 zod schemas, types, permissions & roles, bilingual helpers, BPMN validation,
                           lifecycle transitions and portal visibility rules
   e2e/ (in apps/)         Playwright smoke tests
-docs/                     PROGRESS.md, DECISIONS.md, BACKLOG.md, SECURITY.md, DEPLOYMENT.md, AI-DEMO.md
-docker-compose.yml        local trial: postgres, storage, mailpit (demo email), api, web
-docker-compose.prod.yml   production: caddy (HTTPS), web, api, postgres, storage
+docs/                     PROGRESS.md, DECISIONS.md, BACKLOG.md, SECURITY.md, DEPLOYMENT.md, WORKFLOWS.md,
+                          MIGRATION.md, AI-DEMO.md
+docker-compose.yml        local trial: postgres, storage, mailpit (demo email), migrate (one-shot), api, web
+docker-compose.prod.yml   production: caddy (HTTPS), web, migrate, api, postgres, storage (images from GHCR or built)
 deploy/                   Caddyfile, own certificates (optional), daily backup cron example
-scripts/                  generate-secrets, backup, restore, migrate-minio-storage
+scripts/                  generate-secrets, backup, restore, backup-drill, migrate-minio-storage, check-i18n
 ```
 
 ## Security highlights
@@ -459,7 +505,7 @@ scripts/                  generate-secrets, backup, restore, migrate-minio-stora
 - argon2id password hashing, a configurable password policy, and account lockout after repeated failures (wrong passwords and wrong 2FA codes).
 - Single sign-on: OpenID Connect code flow with PKCE, state and nonce (`openid-client`), ID-token signature, issuer, audience and expiry verified; allowed domains; no account takeover by e-mail; tests use a mock identity provider.
 - TOTP two-step verification: secret encrypted, codes cannot be replayed, single-use hashed recovery codes; required for Super Admin and Admin by default, configurable per role.
-- Short-lived JWT access tokens (15 minutes) and rotating refresh tokens (24-hour idle lifetime) in `httpOnly; Secure; SameSite=Strict` cookies, with reuse detection. Double-submit CSRF protection bound to the request origin.
+- Short-lived JWT access tokens (15 minutes) and rotating refresh tokens (24-hour idle lifetime, 7-day absolute limit) in `httpOnly; Secure; SameSite=Strict` cookies, with reuse detection. Double-submit CSRF protection bound to the request origin.
 - Permissions are checked on the server for every request, and routes are denied by default. The UI only hides what a user cannot do.
 - Rate limiting, request size limits, helmet, strict CORS, and a CSP on the web app.
 - Production stack: HTTPS with automatic certificates and HSTS (Caddy), only ports 80/443 published, database and file storage on an internal network without internet access, secrets required in `.env` (no defaults), checksummed backups.

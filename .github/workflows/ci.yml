@@ -58,6 +58,8 @@ jobs:
         run: pnpm test
       - name: Build
         run: pnpm build
+      - name: Web bundle budget (initial JavaScript ≤ 250 KB gzip)
+        run: node apps/web/scripts/bundle-report.mjs --budget=250
       - name: Dependency audit (high/critical)
         run: pnpm audit --audit-level high --prod
 

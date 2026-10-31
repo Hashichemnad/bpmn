@@ -104,7 +104,17 @@ Steps (tick as they are committed; a new session continues at the first unticked
       publishes the three images to GHCR on `v*.*.*` tags; `scripts/backup-drill.sh` runs in the CI e2e job
       (timings in the CI log). Volume database dump: 554 MB → 81 MB in 12 s.
 
-- [ ] 5. README refresh, phase table, final checks (lint, type-check, tests, audit, images), PR.
+- [x] 5. README refresh (feature table incl. operations & performance, documentation links, build phases),
+      CLAUDE.md phase table and data model, BACKLOG; CI bundle budget step (250 KB gzip). Local checks on
+      2026-11-01: format, lint, type-check, `check-i18n` (5,121 keys), web unit tests (28 files), API unit +
+      e2e (all 52 suites incl. `seed-volume`, then the changed suites again), `pnpm build`, `pnpm audit
+    --audit-level high` (no high / critical; moderate only), the three Docker images built and smoke-tested,
+      the full stack with `docker compose up` (migrate → API → web healthy), `backup-drill.sh` passed (backup
+      1 s, restore 20 s on demo data) and the Playwright suite against that stack (result below). PR: see
+      below.
+
+Next: merge review of the final-session PR; then Phase 4.4 integrations. Known limits are in BACKLOG ("From
+the final session, part A").
 
 ## Previous state — 2026-10-31 (Import tools / migration — module M15, branch `import-tools`, done — awaiting review)
 
