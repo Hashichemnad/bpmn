@@ -2243,3 +2243,45 @@ the wiki's `sanitizeRichText`, so the TipTap editor receives only its own tags.
   come from `AT_NAME` per LocaleId (Arabic LCIDs → Arabic). Other model types are listed as skipped (BACKLOG:
   organisation charts, function allocation diagrams).
 - **DMN:** through the diagram editor's server checks (`assertSafeDmnXml`), one DMN diagram per file.
+
+## D-161 — Documents into the wiki (Import tools step 4, 2026-10-31)
+
+- **Word (.docx):** `mammoth` converts the document to semantic HTML (headings incl. the Title style,
+  lists, tables, links, images); the first heading becomes the page title; blocks with Arabic text get
+  `dir="rtl"`; the page language (English or Arabic content slot) follows the text's script. Option: one
+  page per document or **split by Heading 1** (a parent page with the introduction and one child page per
+  section). A chosen page template (SOP / policy / guide) adds the template's sections the document lacks as
+  empty headings to fill in (warning lists them). Images become page **attachments** (types sniffed by the
+  existing attachment rules); everything goes through `sanitizeRichText`.
+- **PDF:** text per page via pdf.js (`unpdf`) in a **separate worker thread** with a memory limit and a 30 s
+  timeout (`isEvalSupported: false`); the original PDF is always attached and linked at the top; PDFs with
+  (almost) no text are flagged "needs manual work" (OCR in BACKLOG).
+- **Confluence space export (HTML ZIP)** and **Markdown folders** (`marked`): the hierarchy comes from the
+  breadcrumbs (Confluence) or folders with `README.md` / `index.md` (Markdown); links to other pages of the
+  export are rewritten to ProcessHub page links (page ids are assigned before the pages are written, so links
+  resolve in one pass); files of the archive become attachments; links to missing pages / files are removed
+  and **reported** per page.
+- **Links to processes:** process codes in the file name or title are pre-accepted link suggestions; codes in
+  the text and process names in the title are offered; accepted suggestions become `PageLink`s.
+- Re-import matches pages by file name / Confluence page id / Markdown path of an earlier import (drafts are
+  updated with a new version). Salesforce documents saved as Word / PDF use the same path — no connector.
+
+## D-162 — AI-assisted migration: proposals only (Import tools step 5, 2026-10-31)
+
+The assistant works on the items an applied batch created (or chosen items), as a **background job** (job
+runner kind `IMPORT_AI`, one AI request per item, max 50 per run). Every request goes through the AI
+gateway: the user's role must be allowed, the per-user daily and the organisation's monthly limits apply
+(checked before the run and before each item — when a limit is reached the remaining items are recorded as
+failed with the reason), and usage / audit are logged as for every AI call (prompts are not stored). The
+results are **`AiProposal`s** in a review queue (Import Center → AI proposals), shown side by side with the
+source document:
+
+- **SOP → BPMN** (feature `DOC_TO_PROCESS`, the existing document → process prompt and structure → BPMN
+  builder): accepting creates a new draft process (or fills a linked draft process without a diagram) with
+  the model saved as a version marked **AI output** (`aiGenerated`), plus the page ↔ process link.
+- **Risks and controls** (new feature `EXTRACT_GRC`: quotes, likelihood / impact estimates, control → risk
+  links): accepting creates the selected items as GRC **drafts** through `GrcService` (needs `grc.propose`),
+  linked to the source page, for the Risk & Compliance Officer.
+- **Translation** (feature `TRANSLATE`): the empty language side of names, descriptions, BPMN labels and page
+  title / content; accepting writes it and marks the item as AI output for a human check.
+  Nothing is published or submitted automatically; reject leaves the item unchanged. Tests mock the provider.

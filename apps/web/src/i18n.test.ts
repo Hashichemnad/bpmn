@@ -48,6 +48,9 @@ import {
   IMPORT_OPTION_KEYS,
   IMPORT_SUGGESTION_KINDS,
   PAGE_TEMPLATE_KEYS,
+  MIGRATION_PROPOSAL_KINDS,
+  MIGRATION_PROPOSAL_STATUSES,
+  VISIO_SHAPE_TYPES,
 } from '@processhub/shared';
 import {
   APPROVAL_OUTCOMES,
@@ -387,6 +390,9 @@ describe('translations', () => {
       ...IMPORT_SUGGESTION_KINDS.map((k) => `imports:suggestion.${k}`),
       ...IMPORT_OPTION_KEYS.map((k) => `imports:option.${k}`),
       ...PAGE_TEMPLATE_KEYS.map((k) => `imports:template.${k}`),
+      ...MIGRATION_PROPOSAL_KINDS.flatMap((k) => [`imports:ai.kind.${k}`, `imports:ai.run.${k}`]),
+      ...MIGRATION_PROPOSAL_STATUSES.map((k) => `imports:ai.status.${k}`),
+      ...VISIO_SHAPE_TYPES.map((k) => `imports:visioType.${k}`),
     ];
     expect(expected.filter((k) => !en.has(k))).toEqual([]);
   });

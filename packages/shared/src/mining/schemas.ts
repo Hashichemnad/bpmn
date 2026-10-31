@@ -40,6 +40,7 @@ export const MINING_JOB_KINDS = [
   // Import Center batches (M15, D-155) run on the same job runner.
   'IMPORT_PARSE',
   'IMPORT_APPLY',
+  'IMPORT_AI',
 ] as const;
 export type MiningJobKind = (typeof MINING_JOB_KINDS)[number];
 

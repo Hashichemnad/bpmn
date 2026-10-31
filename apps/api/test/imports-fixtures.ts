@@ -37,7 +37,7 @@ export async function upload(
 
 /** Polls the batch until no job runs. */
 export async function waitBatch(client: Client, id: string) {
-  for (let i = 0; i < 200; i++) {
+  for (let i = 0; i < 600; i++) {
     const b = (await client.get(`/imports/${id}`).expect(200)).body;
     if (!['UPLOADED', 'PARSING', 'APPLYING'].includes(b.status)) return b;
     await new Promise((r) => setTimeout(r, 100));
@@ -72,5 +72,6 @@ export async function itemsOf(client: Client, id: string, filter = 'all') {
     changes: { field: string; from: unknown; to: unknown }[];
     facts?: Record<string, unknown>;
     skip: boolean;
+    source: string;
   }[];
 }

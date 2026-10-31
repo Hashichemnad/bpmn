@@ -361,7 +361,15 @@
     "EPC_CONNECTOR_DEGREE": "A connector must split (one in, several out) or join (several in, one out).",
     "EPC_BRANCH_WITHOUT_CONNECTOR": "Branches and joins need a connector.",
     "EPC_RESOURCE_UNASSIGNED": "Organisational unit, system or document is not assigned to a function.",
-    "EPC_UNCONNECTED": "Element is not connected."
+    "EPC_UNCONNECTED": "Element is not connected.",
+    "SPACE_REQUIRED": "Choose the space the pages go to.",
+    "NO_DOCUMENTS_FOUND": "No documents were found in the files.",
+    "TEMPLATE_SECTIONS_ADDED": "Template sections added to fill in: {{list}}",
+    "PAGE_IN_OTHER_SPACE": "The earlier imported page is in another space; it stays there.",
+    "WORD_UNSUPPORTED_CONTENT": "{{count}} parts of the document could not be converted exactly (check the page).",
+    "PDF_NEEDS_MANUAL_WORK": "Scanned PDF without text: needs manual work (the original is attached).",
+    "PDF_UNREADABLE": "{{file}}: the PDF cannot be read.",
+    "BROKEN_LINKS": "{{count}} links point to pages or files that are not in the export: {{list}}"
   },
   "field": {
     "code": "Code",
@@ -410,5 +418,45 @@
     "ignore": "Ignore"
   },
   "flag": "Imported · {{number}}",
-  "flagSource": "Source: {{source}}"
+  "flagSource": "Source: {{source}}",
+  "ai": {
+    "title": "AI assistant for this batch",
+    "help": "Proposals only: every result goes to the review queue and is applied only when someone accepts it. Usage limits of the AI assistant apply.",
+    "queue": "AI proposals",
+    "queueHelp": "Review what the assistant proposed for imported items: accept creates drafts marked as AI output, reject discards the proposal.",
+    "empty": "No proposals",
+    "started": "The assistant is working on {{count}} items; the proposals appear in the review queue.",
+    "openResult": "Open the result",
+    "open": "Open",
+    "accept": "Accept",
+    "reject": "Reject",
+    "accepted": "Accepted: created as a draft for review.",
+    "rejected": "Proposal rejected.",
+    "notice": "AI output can be wrong. It is created as a draft marked as AI output and must be checked before it is submitted for review.",
+    "source": "Source document",
+    "proposal": "Proposal",
+    "newProcess": "Create a new draft process",
+    "linkedProcess": "Use the process linked to the page",
+    "risks": "Risks",
+    "controls": "Controls",
+    "field": "Field",
+    "from": "Original",
+    "to": "Proposed translation",
+    "kind": {
+      "SOP_TO_BPMN": "SOP → BPMN",
+      "EXTRACT_GRC": "Risks and controls",
+      "TRANSLATE": "Translation"
+    },
+    "status": {
+      "PENDING": "To review",
+      "ACCEPTED": "Accepted",
+      "REJECTED": "Rejected",
+      "FAILED": "Failed"
+    },
+    "run": {
+      "SOP_TO_BPMN": "Draft BPMN from SOP pages",
+      "EXTRACT_GRC": "Find risks and controls",
+      "TRANSLATE": "Translate missing language"
+    }
+  }
 }

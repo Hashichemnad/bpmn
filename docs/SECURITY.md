@@ -456,6 +456,11 @@ zod / UUID pipe; file uploads are checked in the service (allow-list, content sn
 | PUT    | `/kpis/settings`                                  | `kpi.edit`                                                     | body                                 | default    |
 | GET    | `/kpis/tasks`                                     | any of `kpi.edit`, `kpi.measure`                               | —                                    | default    |
 | GET    | `/kpis/template/:kind`                            | any of `kpi.edit`, `kpi.measure`                               | param `kind`, query                  | default    |
+| GET    | `/migration-ai/proposals`                         | `import.manage`                                                | query                                | default    |
+| GET    | `/migration-ai/proposals/:id`                     | `import.manage`                                                | param `id`                           | default    |
+| POST   | `/migration-ai/proposals/:id/accept`              | `import.manage`                                                | body, param `id`                     | default    |
+| POST   | `/migration-ai/proposals/:id/reject`              | `import.manage`                                                | param `id`                           | default    |
+| POST   | `/migration-ai/run`                               | `import.manage`                                                | body                                 | default    |
 | GET    | `/mining/jobs/:id`                                | `mining.read`                                                  | param `id`, query                    | default    |
 | POST   | `/mining/jobs/:id/cancel`                         | `mining.read`                                                  | param `id`                           | default    |
 | POST   | `/mining/kpis/:kpiId/recalculate`                 | `kpi.edit`                                                     | param `kpiId`                        | default    |

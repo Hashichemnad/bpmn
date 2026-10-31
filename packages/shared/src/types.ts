@@ -357,6 +357,7 @@ export interface PageDto extends PageSummaryDto {
   updatedBy: UserRef | null;
   createdAt: string;
   /** The saved content was produced by the AI assistant and not yet edited or approved by a person. */
+  importOrigin?: ImportOriginDto | null;
   aiGenerated: boolean;
   canEdit: boolean;
   canManage: boolean;

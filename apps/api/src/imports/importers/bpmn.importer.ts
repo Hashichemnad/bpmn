@@ -173,11 +173,21 @@ export async function applyDiagramItems(
     let processId = item.action === 'UPDATE' ? item.matchId : null;
     if (!processId) {
       const created = await ctx.step(item, async (tx) => {
-        const p = await createDraftProcess(tx, ctx, {
-          code: d.code,
-          nameEn: item.nameEn,
-          nameAr: item.nameAr,
-        });
+        const p = await createDraftProcess(
+          tx,
+          {
+            parentProcessId: ctx.options.parentProcessId,
+            processCategory: ctx.options.processCategory,
+            ownerId: ctx.options.defaultOwnerId,
+            batchId: ctx.batchId,
+            actorId: ctx.actor.id,
+          },
+          {
+            code: d.code,
+            nameEn: item.nameEn,
+            nameAr: item.nameAr,
+          },
+        );
         return {
           entity: 'PROCESS',
           entityId: p.id,

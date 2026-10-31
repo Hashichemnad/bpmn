@@ -48,6 +48,7 @@ import { CommentsPanel } from '@/features/comments/CommentsPanel';
 import { useGovernance } from '@/api/governance';
 import { StatusTag } from '@/components/tags';
 import { AiBadge, AiButton } from '@/features/ai/AiParts';
+import { ImportedTag } from '@/components/ImportedTag';
 import { GenerateProcessModal } from '@/features/ai/GenerateProcessModal';
 import { ProcessFormModal } from '@/features/processes/ProcessFormModal';
 import { useAuth } from '@/auth/AuthProvider';
@@ -193,6 +194,7 @@ export function PageViewPage() {
             />
             <LanguageAvailability hasEn={p.hasEn} hasAr={p.hasAr} />
             {p.aiGenerated && <AiBadge />}
+            <ImportedTag origin={p.importOrigin} />
             <Typography.Text type="secondary" style={{ fontSize: 12 }}>
               {t('docs:pages.versionMeta', {
                 version: p.version,

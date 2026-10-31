@@ -2622,3 +2622,31 @@ model ImportItem {
   @@index([entityType, entityId])
   @@index([entityType, externalKey])
 }
+
+/// An AI proposal of the migration (SOP → BPMN, risks / controls from a document, translations):
+/// reviewed and accepted by a person, never applied automatically (M15 step 5).
+model AiProposal {
+  id          String    @id @default(uuid()) @db.Uuid
+  /// SOP_TO_BPMN | EXTRACT_GRC | TRANSLATE
+  kind        String
+  /// PENDING | ACCEPTED | REJECTED | FAILED
+  status      String    @default("PENDING")
+  /// PAGE | PROCESS | DIAGRAM
+  sourceType  String
+  sourceId    String    @db.Uuid
+  batchId     String?   @db.Uuid
+  titleEn     String    @default("")
+  titleAr     String    @default("")
+  payload     Json?
+  error       String?
+  resultType  String?
+  resultId    String?   @db.Uuid
+  createdById String?   @db.Uuid
+  createdAt   DateTime  @default(now())
+  decidedById String?   @db.Uuid
+  decidedAt   DateTime?
+
+  @@index([status, kind])
+  @@index([sourceType, sourceId])
+  @@index([batchId])
+}

@@ -47,8 +47,16 @@ Steps (tick as they are committed; a new session continues at the first unticked
       `dmn.importer.ts`; "Imported" flag (`importOrigin`) on process and diagram pages; Visio mapping card on
       the batch page; samples `docs/samples/import/` (`generate-samples.mjs`); API tests
       `test/imports-diagrams.e2e-spec.ts` (7); Playwright: BPMN ZIP and Visio flows in `imports.spec.ts`.
-- [ ] 4. Documents into the wiki: Word, PDF, Confluence HTML export, Markdown folders; links to processes.
-- [ ] 5. AI-assisted migration: SOP → BPMN review queue, risks / controls extraction, bulk translation.
+- [x] 4. Documents into the wiki: Word, PDF, Confluence HTML export, Markdown folders; links to processes.
+      Done (D-161): `importers/documents.importer.ts` (WORD / PDF / CONFLUENCE / MARKDOWN, shared apply with
+      pre-assigned page ids, attachments, page links), `doc-tools.ts` (RTL blocks, Heading 1 split, template
+      gaps, process suggestions), `pdf-text.ts` (pdf.js in a worker with limits); "Imported" flag on wiki
+      pages; API tests `test/imports-documents.e2e-spec.ts` (7); Playwright: Word SOP flow.
+- [x] 5. AI-assisted migration: SOP → BPMN review queue, risks / controls extraction, bulk translation.
+      Done (D-162): migration `20261031170000_ai_proposals` (`AiProposal`), `migration-ai.service.ts` /
+      `.controller.ts` (`/migration-ai/run`, proposals, accept / reject), `migration-labels.ts`, AI feature
+      `EXTRACT_GRC`; web: "AI assistant for this batch" card on the batch page, review queue
+      `/admin/imports/ai` with side-by-side detail; API tests `test/imports-ai.e2e-spec.ts` (4, mocked provider).
 - [ ] 6. Migration dashboard and review queue (My tasks, bulk actions).
 - [ ] 7. Full export package + import into an empty installation (round-trip test).
 - [ ] 8. Samples `docs/samples/import/`, screenshots, `docs/MIGRATION.md`, README, final checks, PR.

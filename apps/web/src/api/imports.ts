@@ -1,5 +1,9 @@
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type {
+  AcceptProposalInput,
+  MigrationAiRunDto,
+  MigrationAiRunInput,
+  MigrationProposalDto,
   ImportBatchDto,
   ImportBatchSummaryDto,
   ImportDecisionInput,
@@ -136,3 +140,54 @@ export const useUndoImport = () =>
 
 export const useDiscardImport = () =>
   useBatchMutation<object>((id) => api<void>(`/imports/${id}`, { method: 'DELETE' }));
+
+// ---------- AI-assisted migration (step 5) ----------
+
+export const proposalKeys = {
+  list: (q: ImportQuery) => ['imports', 'proposals', q] as const,
+  one: (id: string) => ['imports', 'proposal', id] as const,
+};
+
+export const useProposals = (q: ImportQuery) =>
+  useQuery({
+    queryKey: proposalKeys.list(q),
+    queryFn: () => api<Paginated<MigrationProposalDto>>('/migration-ai/proposals', { query: q }),
+    placeholderData: keepPreviousData,
+    refetchInterval: 5000,
+  });
+
+export const useProposal = (id: string | undefined) =>
+  useQuery({
+    queryKey: proposalKeys.one(id ?? ''),
+    queryFn: () => api<MigrationProposalDto>(`/migration-ai/proposals/${id}`),
+    enabled: !!id,
+  });
+
+export function useRunMigrationAi() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (input: MigrationAiRunInput) =>
+      api<MigrationAiRunDto>('/migration-ai/run', { method: 'POST', body: input }),
+    onSuccess: () => void qc.invalidateQueries({ queryKey: importKeys.all }),
+  });
+}
+
+export function useDecideProposal() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      id,
+      accept,
+      body,
+    }: {
+      id: string;
+      accept: boolean;
+      body?: AcceptProposalInput;
+    }) =>
+      api<MigrationProposalDto>(`/migration-ai/proposals/${id}/${accept ? 'accept' : 'reject'}`, {
+        method: 'POST',
+        body: body ?? {},
+      }),
+    onSuccess: () => void qc.invalidateQueries({ queryKey: importKeys.all }),
+  });
+}

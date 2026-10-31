@@ -11,6 +11,7 @@ import { DepartmentsPage } from '@/features/admin/DepartmentsPage';
 import { AuditLogPage } from '@/features/admin/AuditLogPage';
 import { ImportCenterPage } from '@/features/imports/ImportCenterPage';
 import { ImportBatchPage } from '@/features/imports/ImportBatchPage';
+import { AiProposalPage, AiProposalsPage } from '@/features/imports/AiProposalsPage';
 import { SettingsPage } from '@/features/settings/SettingsPage';
 import { RepositoryLayout } from '@/features/processes/RepositoryLayout';
 import { ProcessListPage } from '@/features/processes/ProcessListPage';
@@ -696,6 +697,22 @@ export const routes: RouteObject[] = [
                     element: (
                       <RequirePermission all={[P.IMPORT_MANAGE]}>
                         <ImportCenterPage />
+                      </RequirePermission>
+                    ),
+                  },
+                  {
+                    path: 'admin/imports/ai',
+                    element: (
+                      <RequirePermission all={[P.IMPORT_MANAGE]}>
+                        <AiProposalsPage />
+                      </RequirePermission>
+                    ),
+                  },
+                  {
+                    path: 'admin/imports/ai/:id',
+                    element: (
+                      <RequirePermission all={[P.IMPORT_MANAGE]}>
+                        <AiProposalPage />
                       </RequirePermission>
                     ),
                   },

@@ -37,6 +37,6 @@ import { PortalQaService } from './features/portal-qa.service';
     ControlGapsService,
     PortalQaService,
   ],
-  exports: [AiGatewayService],
+  exports: [AiGatewayService, AiLibraryService, AiContextService],
 })
 export class AiModule {}

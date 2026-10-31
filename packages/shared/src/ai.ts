@@ -28,6 +28,8 @@ export const AI_FEATURES = [
   'CONTROL_GAPS',
   /** Process mining (Phase 5.1): explain simulation results, propose improvement scenarios. */
   'SIMULATION',
+  /** Import tools (M15): risks and controls mentioned in imported policies / SOPs. */
+  'EXTRACT_GRC',
 ] as const;
 export type AiFeature = (typeof AI_FEATURES)[number];
 

@@ -7,7 +7,7 @@ import {
   type ImportSuggestion,
 } from '@processhub/shared';
 import type { PrismaService } from '../../prisma/prisma.service';
-import type { ApplyContext, ParseContext, ParsedItem } from '../importer';
+import type { ParseContext, ParsedItem } from '../importer';
 import { issue, norm } from './tabular';
 
 /** Name of a file without folders and extension. */
@@ -130,16 +130,22 @@ export async function nextProcessCode(
 /** Creates the draft process of an imported diagram (code from the file or generated). */
 export async function createDraftProcess(
   tx: Prisma.TransactionClient,
-  ctx: ApplyContext,
+  opts: {
+    parentProcessId?: string | null;
+    processCategory?: ProcessCategory;
+    ownerId?: string | null;
+    batchId: string | null;
+    actorId: string;
+  },
   input: { code: string | null; nameEn: string; nameAr: string },
 ) {
-  const parent = ctx.options.parentProcessId
+  const parent = opts.parentProcessId
     ? await tx.process.findFirst({
-        where: { id: ctx.options.parentProcessId, deletedAt: null },
+        where: { id: opts.parentProcessId, deletedAt: null },
         select: { id: true, code: true, level: true, category: true },
       })
     : null;
-  const category = (parent?.category ?? ctx.options.processCategory ?? 'CORE') as ProcessCategory;
+  const category = (parent?.category ?? opts.processCategory ?? 'CORE') as ProcessCategory;
   let code = input.code;
   if (code && (await tx.process.count({ where: { code: { equals: code, mode: 'insensitive' } } })))
     code = null;
@@ -157,11 +163,11 @@ export async function createDraftProcess(
       parentId: parent?.id ?? null,
       level: (parent?.level ?? 0) + 1,
       sortOrder: (sort._max.sortOrder ?? -1) + 1,
-      ownerId: ctx.options.defaultOwnerId ?? null,
+      ownerId: opts.ownerId ?? null,
       status: 'DRAFT',
-      importBatchId: ctx.batchId,
-      createdById: ctx.actor.id,
-      updatedById: ctx.actor.id,
+      importBatchId: opts.batchId,
+      createdById: opts.actorId,
+      updatedById: opts.actorId,
     },
   });
 }

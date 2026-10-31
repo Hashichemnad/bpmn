@@ -739,3 +739,112 @@ export interface ImportOriginDto {
   number: string;
   source: string;
 }
+
+// ---------- AI-assisted migration (M15 step 5, proposals only) ----------
+
+export const MIGRATION_PROPOSAL_KINDS = ['SOP_TO_BPMN', 'EXTRACT_GRC', 'TRANSLATE'] as const;
+export type MigrationProposalKind = (typeof MIGRATION_PROPOSAL_KINDS)[number];
+export const MIGRATION_PROPOSAL_STATUSES = ['PENDING', 'ACCEPTED', 'REJECTED', 'FAILED'] as const;
+export type MigrationProposalStatus = (typeof MIGRATION_PROPOSAL_STATUSES)[number];
+export const MIGRATION_SOURCE_TYPES = ['PAGE', 'PROCESS', 'DIAGRAM'] as const;
+export type MigrationSourceType = (typeof MIGRATION_SOURCE_TYPES)[number];
+
+/** Items per AI run (each one is one AI request, counted against the usage limits). */
+export const MIGRATION_AI_MAX_ITEMS = 50;
+
+export const migrationAiRunSchema = z
+  .object({
+    kind: z.enum(MIGRATION_PROPOSAL_KINDS),
+    /** Everything the batch created (pages for SOP / GRC; processes, pages, diagrams to translate). */
+    batchId: z.uuid().optional(),
+    sources: z
+      .array(z.object({ type: z.enum(MIGRATION_SOURCE_TYPES), id: z.uuid() }))
+      .max(MIGRATION_AI_MAX_ITEMS)
+      .optional(),
+    language: z.enum(['en', 'ar']).default('en'),
+  })
+  .refine((v) => !!v.batchId || !!v.sources?.length, { message: 'SOURCES_REQUIRED' });
+export type MigrationAiRunInput = z.infer<typeof migrationAiRunSchema>;
+
+export const migrationProposalQuerySchema = z.object({
+  page: z.coerce.number().int().min(1).default(1),
+  pageSize: z.coerce.number().int().min(1).max(100).default(20),
+  kind: z.enum(MIGRATION_PROPOSAL_KINDS).optional(),
+  status: z.enum(MIGRATION_PROPOSAL_STATUSES).optional(),
+  batchId: z.uuid().optional(),
+});
+export type MigrationProposalQuery = z.infer<typeof migrationProposalQuerySchema>;
+
+export const acceptProposalSchema = z.object({
+  /** SOP → BPMN: put the model into this (draft) process instead of creating a new one. */
+  processId: z.uuid().nullable().optional(),
+  parentProcessId: z.uuid().nullable().optional(),
+  /** GRC extraction: indexes of the risks / controls to create (default: all). */
+  risks: z.array(z.number().int().min(0).max(99)).max(100).optional(),
+  controls: z.array(z.number().int().min(0).max(99)).max(100).optional(),
+});
+export type AcceptProposalInput = z.infer<typeof acceptProposalSchema>;
+
+export interface ExtractedRisk {
+  nameEn: string;
+  nameAr: string;
+  descriptionEn: string;
+  descriptionAr: string;
+  likelihood: number;
+  impact: number;
+  quote: string;
+}
+export interface ExtractedControl {
+  nameEn: string;
+  nameAr: string;
+  descriptionEn: string;
+  descriptionAr: string;
+  /** Indexes of the risks this control mitigates. */
+  risks: number[];
+  quote: string;
+}
+
+export interface TranslationField {
+  /** `nameEn`, `descriptionAr`, `titleAr`, `contentAr`, `label:<elementId>:ar` … */
+  key: string;
+  from: string;
+  to: string;
+}
+
+export type MigrationProposalPayload =
+  | {
+      kind: 'SOP_TO_BPMN';
+      bpmnXml: string;
+      nameEn: string;
+      nameAr: string;
+      explanation: string;
+      warnings: string[];
+      /** A process linked to the page that has no diagram yet (suggested target). */
+      suggestedProcessId: string | null;
+    }
+  | { kind: 'EXTRACT_GRC'; risks: ExtractedRisk[]; controls: ExtractedControl[] }
+  | { kind: 'TRANSLATE'; target: 'en' | 'ar'; fields: TranslationField[] };
+
+export interface MigrationProposalDto {
+  id: string;
+  kind: MigrationProposalKind;
+  status: MigrationProposalStatus;
+  sourceType: MigrationSourceType;
+  sourceId: string;
+  /** Link to the source in the web app. */
+  sourceHref: string | null;
+  titleEn: string;
+  titleAr: string;
+  batchId: string | null;
+  error: string | null;
+  payload: MigrationProposalPayload | null;
+  resultHref: string | null;
+  createdAt: string;
+  decidedAt: string | null;
+  decidedBy: { id: string; nameEn: string; nameAr: string } | null;
+}
+
+export interface MigrationAiRunDto {
+  jobId: string;
+  items: number;
+}

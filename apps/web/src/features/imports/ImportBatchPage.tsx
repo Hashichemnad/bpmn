@@ -33,6 +33,7 @@ import {
   DownloadOutlined,
   PlayCircleOutlined,
   ReloadOutlined,
+  RobotOutlined,
   RollbackOutlined,
   StopOutlined,
 } from '@ant-design/icons';
@@ -40,7 +41,9 @@ import { useTranslation } from 'react-i18next';
 import {
   IMPORT_ITEM_FILTERS,
   IMPORT_KIND_INFO,
+  PERMISSIONS,
   VISIO_SHAPE_TYPES,
+  type MigrationProposalKind,
   type ImportBatchDto,
   type ImportItemFilter,
   type ImportItemRecordDto,
@@ -56,11 +59,14 @@ import {
   useImportBatch,
   useImportItems,
   useImportRecords,
+  useRunMigrationAi,
   useUndoCheck,
   useUndoImport,
   useUpdateImportOptions,
 } from '@/api/imports';
 import { apiDownload } from '@/api/client';
+import { useAiStatus } from '@/api/ai';
+import { useAuth } from '@/auth/AuthProvider';
 import { useLocale } from '@/app/LocaleProvider';
 import { PageHeader } from '@/components/PageHeader';
 import { ErrorState, LoadingState } from '@/components/states';
@@ -139,6 +145,7 @@ export function ImportBatchPage() {
       <Row gutter={[16, 16]}>
         <Col xs={24} xl={16}>
           {b.summary && <SummaryCard b={b} />}
+          {b.status === 'APPLIED' && <AiActionsCard b={b} />}
           {b.appliedAt ? (
             <RecordsCard b={b} />
           ) : (
@@ -159,6 +166,62 @@ export function ImportBatchPage() {
         </Col>
       </Row>
     </>
+  );
+}
+
+/** AI-assisted migration of the batch's items (proposals for review, never applied directly). */
+function AiActionsCard({ b }: { b: ImportBatchDto }) {
+  const { t } = useTranslation();
+  const { message } = App.useApp();
+  const errorMessage = useErrorMessage();
+  const { can } = useAuth();
+  const status = useAiStatus();
+  const run = useRunMigrationAi();
+  const group = IMPORT_KIND_INFO[b.kind].group;
+  if (!status.data?.available || !['DOCUMENTS', 'DIAGRAMS', 'STRUCTURE'].includes(group))
+    return null;
+  const kinds: MigrationProposalKind[] =
+    group === 'DOCUMENTS'
+      ? [
+          'SOP_TO_BPMN',
+          ...(can(PERMISSIONS.GRC_PROPOSE) ? (['EXTRACT_GRC'] as const) : []),
+          'TRANSLATE',
+        ]
+      : ['TRANSLATE'];
+  return (
+    <Card
+      size="small"
+      title={
+        <Space>
+          <RobotOutlined />
+          {t('imports:ai.title')}
+        </Space>
+      }
+      extra={<Link to={`/admin/imports/ai?batchId=${b.id}`}>{t('imports:ai.queue')}</Link>}
+      style={{ marginBlockEnd: 16 }}
+      data-testid="import-ai"
+    >
+      <Typography.Paragraph type="secondary">{t('imports:ai.help')}</Typography.Paragraph>
+      <Space wrap>
+        {kinds.map((k) => (
+          <Button
+            key={k}
+            loading={run.isPending && run.variables?.kind === k}
+            onClick={() =>
+              run.mutate(
+                { kind: k, batchId: b.id, language: 'en' },
+                {
+                  onSuccess: (r) => message.success(t('imports:ai.started', { count: r.items })),
+                  onError: (e) => message.error(errorMessage(e)),
+                },
+              )
+            }
+          >
+            {t(`imports:ai.run.${k}`)}
+          </Button>
+        ))}
+      </Space>
+    </Card>
   );
 }
 

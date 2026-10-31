@@ -1,3 +1,4 @@
+import { importOrigin } from '../imports/import-origin';
 import { randomUUID } from 'node:crypto';
 import { Injectable } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
@@ -187,6 +188,7 @@ export class PagesService {
       updatedBy: page.updatedById ? (users.get(page.updatedById) ?? null) : null,
       createdAt: page.createdAt.toISOString(),
       aiGenerated: page.aiGenerated,
+      importOrigin: await importOrigin(this.prisma, 'PAGE', page.id, page.importBatchId),
       canEdit: access.canEdit,
       canManage: access.canManage,
     };

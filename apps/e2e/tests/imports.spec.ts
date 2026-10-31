@@ -149,3 +149,30 @@ test('Visio flowchart: the shape mapping table lists masters and unmapped shapes
   await applyImport(page);
   await expect(page.getByTestId('import-records')).toContainText('Created');
 });
+
+test('Word SOP into the wiki: page in the chosen space, RTL Arabic document, process link suggestion', async ({
+  page,
+}) => {
+  await loginAdmin(page);
+  await startImport(
+    page,
+    'WORD',
+    [
+      sampleFile('C.01.01 SOP Handle enquiries (EN).docx'),
+      sampleFile('C.01.02 إجراء تسجيل الطلبات (AR).docx'),
+    ],
+    async (dialog) => {
+      await dialog.locator('#spaceId').click({ force: true });
+      await page.locator('.ant-select-dropdown:visible .ant-select-item-option').first().click();
+    },
+  );
+  await expect(page.getByTestId('import-items')).toContainText('إجراء العمل القياسي');
+  await applyImport(page);
+  await page
+    .getByTestId('import-records')
+    .getByRole('link', { name: /إجراء العمل القياسي/ })
+    .first()
+    .click();
+  await expect(page.getByTestId('imported-tag')).toBeVisible();
+  await expect(page.locator('[dir="rtl"]').first()).toBeVisible();
+});

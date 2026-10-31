@@ -9,6 +9,7 @@ import {
   FolderOpenOutlined,
   PartitionOutlined,
   DatabaseOutlined,
+  RobotOutlined,
 } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
 import {
@@ -81,7 +82,15 @@ export function ImportCenterPage() {
   const available = kinds.data ?? [];
   return (
     <>
-      <PageHeader title={t('imports:center.title')} subtitle={t('imports:center.subtitle')} />
+      <PageHeader
+        title={t('imports:center.title')}
+        subtitle={t('imports:center.subtitle')}
+        extra={
+          <Link to="/admin/imports/ai">
+            <Button icon={<RobotOutlined />}>{t('imports:ai.queue')}</Button>
+          </Link>
+        }
+      />
       <Row gutter={[16, 16]} style={{ marginBlockEnd: 16 }}>
         {IMPORT_GROUPS.map((g) => {
           const items = available.filter((k) => k.info.group === g);

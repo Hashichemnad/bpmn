@@ -165,7 +165,7 @@
   "END_IN_PAST": "The end date has already passed.",
   "INVALID_QUESTIONNAIRE": "The questionnaire no longer exists.",
   "QUESTIONNAIRE_ARCHIVED": "The questionnaire is archived.",
-  "PROPOSAL_DECIDED": "This proposal has already been decided.",
+  "PROPOSAL_DECIDED": "This proposal was already decided.",
   "OPTIONS_REQUIRED": "A choice question needs at least two options.",
   "CONDITION_ON_LATER_QUESTION": "A question can only depend on an earlier question.",
   "INVALID_LINK": "Rating questions propose a likelihood or impact; single-choice questions an effectiveness.",
@@ -297,5 +297,9 @@
   "NOT_BPMN": "{{file}} is not a BPMN 2.0 document.",
   "NO_DIAGRAMS_FOUND": "No diagrams were found in the files.",
   "NOT_AML": "{{file}} is not an ARIS Markup Language (AML) export.",
-  "NOT_DMN": "{{file}} is not a safe DMN 1.x document."
+  "NOT_DMN": "{{file}} is not a safe DMN 1.x document.",
+  "SPACE_REQUIRED": "Choose the space the pages go to.",
+  "NO_DOCUMENTS_FOUND": "No documents were found in the files.",
+  "PDF_UNREADABLE": "{{file}}: the PDF cannot be read.",
+  "NOTHING_TO_PROPOSE": "Nothing in this selection for the assistant."
 }
