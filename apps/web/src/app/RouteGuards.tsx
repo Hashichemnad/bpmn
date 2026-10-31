@@ -1,4 +1,4 @@
-import { Navigate, Outlet, useLocation } from 'react-router-dom';
+import { Navigate, useLocation } from 'react-router-dom';
 import { Result, Button } from 'antd';
 import { useTranslation } from 'react-i18next';
 import { useEffect } from 'react';
@@ -8,7 +8,13 @@ import { useLocale } from '@/app/LocaleProvider';
 import { usePublicSettings } from '@/api/hooks';
 import { LoadingState } from '@/components/states';
 import { RequirePermission } from '@/components/RequirePermission';
-import { ProcessHousePage } from '@/features/processes/ProcessHousePage';
+import { lazyPage } from '@/app/lazyPage';
+import { SuspenseOutlet } from '@/app/SuspenseOutlet';
+
+const ProcessHousePage = lazyPage(
+  () => import('@/features/processes/ProcessHousePage'),
+  'ProcessHousePage',
+);
 
 /** Route elements of the router in App.tsx: sign-in and workspace guards, home and not-found. */
 
@@ -20,7 +26,7 @@ export function DefaultLocale() {
     if (!explicit && settings.data && settings.data.defaultLocale !== locale)
       setLocale(settings.data.defaultLocale);
   }, [explicit, settings.data, locale, setLocale]);
-  return <Outlet />;
+  return <SuspenseOutlet />;
 }
 
 export function RequireAuth() {
@@ -32,7 +38,7 @@ export function RequireAuth() {
     const state = signedOut ? undefined : { from: location.pathname + location.search };
     return <Navigate to="/login" replace state={state} />;
   }
-  return <Outlet />;
+  return <SuspenseOutlet />;
 }
 
 /** Workspace home; Viewers (portal only) land in the Knowledge Portal. */
@@ -74,7 +80,7 @@ export function WorkspaceOnly() {
       <Navigate to={match ? location.pathname.replace(match[0], match[1]) : '/portal'} replace />
     );
   }
-  return <Outlet />;
+  return <SuspenseOutlet />;
 }
 
 export function NotFound() {

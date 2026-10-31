@@ -1,5 +1,6 @@
 import { Layout } from 'antd';
-import { Outlet, useLocation, useParams } from 'react-router-dom';
+import { SuspenseOutlet } from '@/app/SuspenseOutlet';
+import { useLocation, useParams } from 'react-router-dom';
 import { DIAGRAM_NODE_PREFIX, ProcessTree } from './ProcessTree';
 
 /** Process tree on the inline-start side (left in LTR, right in RTL) with the selected page beside it. */
@@ -19,7 +20,7 @@ export function RepositoryLayout() {
         <ProcessTree selectedId={selected} />
       </Layout.Sider>
       <Layout.Content className="ph-repo-content">
-        <Outlet />
+        <SuspenseOutlet />
       </Layout.Content>
     </Layout>
   );

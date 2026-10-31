@@ -1,103 +1,283 @@
 import { createBrowserRouter, type RouteObject } from 'react-router-dom';
+import { lazyPage } from '@/app/lazyPage';
 import { PERMISSIONS } from '@processhub/shared';
 import { DefaultLocale, Home, NotFound, RequireAuth, WorkspaceOnly } from '@/app/RouteGuards';
 import { RequirePermission } from '@/components/RequirePermission';
-import { AppLayout } from '@/layout/AppLayout';
-import { LoginPage } from '@/features/auth/LoginPage';
-import { InvitationPage } from '@/features/auth/InvitationPage';
-import { ProfilePage } from '@/features/profile/ProfilePage';
-import { UsersPage } from '@/features/admin/UsersPage';
-import { DepartmentsPage } from '@/features/admin/DepartmentsPage';
-import { AuditLogPage } from '@/features/admin/AuditLogPage';
-import { ImportCenterPage } from '@/features/imports/ImportCenterPage';
-import { ImportBatchPage } from '@/features/imports/ImportBatchPage';
-import { AiProposalPage, AiProposalsPage } from '@/features/imports/AiProposalsPage';
-import { MigrationDashboardPage } from '@/features/imports/MigrationDashboardPage';
-import { ReviewQueuePage } from '@/features/imports/ReviewQueuePage';
-import { SettingsPage } from '@/features/settings/SettingsPage';
-import { RepositoryLayout } from '@/features/processes/RepositoryLayout';
-import { ProcessListPage } from '@/features/processes/ProcessListPage';
-import { ProcessDetailPage } from '@/features/processes/ProcessDetailPage';
-import { ModelerWorkspacePage } from '@/features/modeler/ModelerWorkspacePage';
-import { ObjectLibraryPage } from '@/features/objects/ObjectLibraryPage';
-import { DictionaryPage } from '@/features/objects/DictionaryPage';
-import { ObjectDetailPage } from '@/features/objects/ObjectDetailPage';
-import { SpacesPage } from '@/features/docs/SpacesPage';
-import { SpaceLayout } from '@/features/docs/SpaceLayout';
-import { SpaceHomePage } from '@/features/docs/SpaceHomePage';
-import { PageViewPage } from '@/features/docs/PageViewPage';
-import { PageEditorPage } from '@/features/docs/PageEditorPage';
-import { PageHistoryPage } from '@/features/docs/PageHistoryPage';
-import { TrashPage } from '@/features/docs/TrashPage';
-import { TemplatesPage } from '@/features/docs/TemplatesPage';
-import { PrintPage } from '@/features/docs/PrintPage';
-import { SearchPage } from '@/features/search/SearchPage';
-import { SyncStatusPage } from '@/features/settings/SyncStatusPage';
-import { AiUsagePage } from '@/features/settings/AiUsagePage';
-import { ReviewPage } from '@/features/governance/ReviewPage';
-import { MyTasksPage } from '@/features/governance/MyTasksPage';
-import { GovernanceDashboardPage } from '@/features/governance/GovernanceDashboardPage';
-import { WorkflowsSettingsPage } from '@/features/governance/WorkflowsSettingsPage';
-import { NotificationsPage } from '@/features/notifications/NotificationsPage';
-import { PortalLayout } from '@/features/portal/PortalLayout';
-import { PortalHomePage } from '@/features/portal/PortalHomePage';
-import { PortalProcessesPage } from '@/features/portal/PortalProcessesPage';
-import { PortalProcessPage } from '@/features/portal/PortalProcessPage';
-import { PortalDocsPage } from '@/features/portal/PortalDocsPage';
-import { PortalSpacePage } from '@/features/portal/PortalSpacePage';
-import { PortalPagePage } from '@/features/portal/PortalPagePage';
-import { PortalSearchPage } from '@/features/portal/PortalSearchPage';
-import { MyProcessesPage } from '@/features/portal/MyProcessesPage';
-import { MyFeedbackPage } from '@/features/portal/MyFeedbackPage';
-import { PortalSettingsPage } from '@/features/portal/PortalSettingsPage';
-import { ConventionsSettingsPage } from '@/features/settings/ConventionsSettingsPage';
-import { PortalPrintProcess } from '@/features/portal/PortalPrintProcess';
-import { PortalPrintPage } from '@/features/portal/PortalPrintPage';
-import { GrcRegisterPage } from '@/features/grc/GrcRegisterPage';
-import { GrcDetailPage } from '@/features/grc/GrcDetailPage';
-import { GrcSettingsPage } from '@/features/grc/GrcSettingsPage';
-import { GrcDashboardPage } from '@/features/grc/GrcDashboardPage';
-import { ControlTestsPage } from '@/features/assurance/ControlTestsPage';
-import { ControlTestPage } from '@/features/assurance/ControlTestPage';
-import { IssuesPage } from '@/features/assurance/IssuesPage';
-import { IssuePage } from '@/features/assurance/IssuePage';
-import { PortalTasksPage } from '@/features/assurance/PortalTasksPage';
-import { AuditPlanPage } from '@/features/assurance/AuditPlanPage';
-import { EngagementPage } from '@/features/assurance/EngagementPage';
-import { FindingPage } from '@/features/assurance/FindingPage';
-import { SurveysPage } from '@/features/assurance/SurveysPage';
-import { QuestionnaireBuilderPage } from '@/features/assurance/QuestionnaireBuilderPage';
-import { CampaignPage } from '@/features/assurance/CampaignPage';
-import { SurveyResponsePage } from '@/features/assurance/SurveyResponsePage';
-import { AssuranceDashboardPage } from '@/features/assurance/AssuranceDashboardPage';
-import { ApplicationsPage } from '@/features/ea/ApplicationsPage';
-import { ApplicationDetailPage } from '@/features/ea/ApplicationDetailPage';
-import { InterfacesPage } from '@/features/ea/InterfacesPage';
-import { DataObjectsPage } from '@/features/ea/DataObjectsPage';
-import { CapabilitiesPage } from '@/features/ea/CapabilitiesPage';
-import { SystemsLibraryRoute } from '@/features/ea/SystemsLibraryRoute';
-import { LandscapePage } from '@/features/ea/LandscapePage';
-import { TraceabilityPage } from '@/features/ea/TraceabilityPage';
-import { KpisPage } from '@/features/kpi/KpisPage';
-import { KpiDetailPage } from '@/features/kpi/KpiDetailPage';
-import { ObjectivesPage } from '@/features/kpi/ObjectivesPage';
-import { KpiDashboardPage } from '@/features/kpi/KpiDashboardPage';
-import { LogsPage } from '@/features/mining/LogsPage';
-import { MiningLogPage } from '@/features/mining/MiningLogPage';
-import { ImportMappingPage, UploadLogPage } from '@/features/mining/ImportWizard';
-import { SimulationPage, SimulationsPage } from '@/features/mining/SimulationPages';
-import { TaskPage } from '@/features/workflow/TaskPage';
-import { CasePage } from '@/features/workflow/CasePage';
-import { MyRequestsPage } from '@/features/workflow/MyRequestsPage';
-import { ServiceCataloguePage, StartRequestPage } from '@/features/workflow/CataloguePages';
-import { WorkflowDashboardPage, WorkflowMonitorPage } from '@/features/workflow/MonitorPages';
-import { WorkflowSettingsPage } from '@/features/workflow/WorkflowSettingsPage';
-import { SalesforceSettingsPage } from '@/features/settings/SalesforceSettingsPage';
-import { DiagramDetailPage } from '@/features/diagrams/DiagramDetailPage';
-import { DiagramWorkspacePage } from '@/features/diagrams/DiagramWorkspacePage';
-import { PrintDiagramPage } from '@/features/diagrams/PrintDiagramPage';
-import { PortalDiagramsPage } from '@/features/diagrams/PortalDiagramsPage';
-import { PortalDiagramPage } from '@/features/diagrams/PortalDiagramPage';
+
+// Every screen is its own chunk, loaded when first visited (final session, part A). The workspace
+// shell too: the login page and the Knowledge Portal (most users) never load it.
+const AppLayout = lazyPage(() => import('@/layout/AppLayout'), 'AppLayout');
+const LoginPage = lazyPage(() => import('@/features/auth/LoginPage'), 'LoginPage');
+const InvitationPage = lazyPage(() => import('@/features/auth/InvitationPage'), 'InvitationPage');
+const ProfilePage = lazyPage(() => import('@/features/profile/ProfilePage'), 'ProfilePage');
+const UsersPage = lazyPage(() => import('@/features/admin/UsersPage'), 'UsersPage');
+const DepartmentsPage = lazyPage(
+  () => import('@/features/admin/DepartmentsPage'),
+  'DepartmentsPage',
+);
+const AuditLogPage = lazyPage(() => import('@/features/admin/AuditLogPage'), 'AuditLogPage');
+const ImportCenterPage = lazyPage(
+  () => import('@/features/imports/ImportCenterPage'),
+  'ImportCenterPage',
+);
+const ImportBatchPage = lazyPage(
+  () => import('@/features/imports/ImportBatchPage'),
+  'ImportBatchPage',
+);
+const AiProposalPage = lazyPage(
+  () => import('@/features/imports/AiProposalsPage'),
+  'AiProposalPage',
+);
+const AiProposalsPage = lazyPage(
+  () => import('@/features/imports/AiProposalsPage'),
+  'AiProposalsPage',
+);
+const MigrationDashboardPage = lazyPage(
+  () => import('@/features/imports/MigrationDashboardPage'),
+  'MigrationDashboardPage',
+);
+const ReviewQueuePage = lazyPage(
+  () => import('@/features/imports/ReviewQueuePage'),
+  'ReviewQueuePage',
+);
+const SettingsPage = lazyPage(() => import('@/features/settings/SettingsPage'), 'SettingsPage');
+const RepositoryLayout = lazyPage(
+  () => import('@/features/processes/RepositoryLayout'),
+  'RepositoryLayout',
+);
+const ProcessListPage = lazyPage(
+  () => import('@/features/processes/ProcessListPage'),
+  'ProcessListPage',
+);
+const ProcessDetailPage = lazyPage(
+  () => import('@/features/processes/ProcessDetailPage'),
+  'ProcessDetailPage',
+);
+const ModelerWorkspacePage = lazyPage(
+  () => import('@/features/modeler/ModelerWorkspacePage'),
+  'ModelerWorkspacePage',
+);
+const ObjectLibraryPage = lazyPage(
+  () => import('@/features/objects/ObjectLibraryPage'),
+  'ObjectLibraryPage',
+);
+const DictionaryPage = lazyPage(
+  () => import('@/features/objects/DictionaryPage'),
+  'DictionaryPage',
+);
+const ObjectDetailPage = lazyPage(
+  () => import('@/features/objects/ObjectDetailPage'),
+  'ObjectDetailPage',
+);
+const SpacesPage = lazyPage(() => import('@/features/docs/SpacesPage'), 'SpacesPage');
+const SpaceLayout = lazyPage(() => import('@/features/docs/SpaceLayout'), 'SpaceLayout');
+const SpaceHomePage = lazyPage(() => import('@/features/docs/SpaceHomePage'), 'SpaceHomePage');
+const PageViewPage = lazyPage(() => import('@/features/docs/PageViewPage'), 'PageViewPage');
+const PageEditorPage = lazyPage(() => import('@/features/docs/PageEditorPage'), 'PageEditorPage');
+const PageHistoryPage = lazyPage(
+  () => import('@/features/docs/PageHistoryPage'),
+  'PageHistoryPage',
+);
+const TrashPage = lazyPage(() => import('@/features/docs/TrashPage'), 'TrashPage');
+const TemplatesPage = lazyPage(() => import('@/features/docs/TemplatesPage'), 'TemplatesPage');
+const PrintPage = lazyPage(() => import('@/features/docs/PrintPage'), 'PrintPage');
+const SearchPage = lazyPage(() => import('@/features/search/SearchPage'), 'SearchPage');
+const SyncStatusPage = lazyPage(
+  () => import('@/features/settings/SyncStatusPage'),
+  'SyncStatusPage',
+);
+const AiUsagePage = lazyPage(() => import('@/features/settings/AiUsagePage'), 'AiUsagePage');
+const ReviewPage = lazyPage(() => import('@/features/governance/ReviewPage'), 'ReviewPage');
+const MyTasksPage = lazyPage(() => import('@/features/governance/MyTasksPage'), 'MyTasksPage');
+const GovernanceDashboardPage = lazyPage(
+  () => import('@/features/governance/GovernanceDashboardPage'),
+  'GovernanceDashboardPage',
+);
+const WorkflowsSettingsPage = lazyPage(
+  () => import('@/features/governance/WorkflowsSettingsPage'),
+  'WorkflowsSettingsPage',
+);
+const NotificationsPage = lazyPage(
+  () => import('@/features/notifications/NotificationsPage'),
+  'NotificationsPage',
+);
+const PortalLayout = lazyPage(() => import('@/features/portal/PortalLayout'), 'PortalLayout');
+const PortalHomePage = lazyPage(() => import('@/features/portal/PortalHomePage'), 'PortalHomePage');
+const PortalProcessesPage = lazyPage(
+  () => import('@/features/portal/PortalProcessesPage'),
+  'PortalProcessesPage',
+);
+const PortalProcessPage = lazyPage(
+  () => import('@/features/portal/PortalProcessPage'),
+  'PortalProcessPage',
+);
+const PortalDocsPage = lazyPage(() => import('@/features/portal/PortalDocsPage'), 'PortalDocsPage');
+const PortalSpacePage = lazyPage(
+  () => import('@/features/portal/PortalSpacePage'),
+  'PortalSpacePage',
+);
+const PortalPagePage = lazyPage(() => import('@/features/portal/PortalPagePage'), 'PortalPagePage');
+const PortalSearchPage = lazyPage(
+  () => import('@/features/portal/PortalSearchPage'),
+  'PortalSearchPage',
+);
+const MyProcessesPage = lazyPage(
+  () => import('@/features/portal/MyProcessesPage'),
+  'MyProcessesPage',
+);
+const MyFeedbackPage = lazyPage(() => import('@/features/portal/MyFeedbackPage'), 'MyFeedbackPage');
+const PortalSettingsPage = lazyPage(
+  () => import('@/features/portal/PortalSettingsPage'),
+  'PortalSettingsPage',
+);
+const ConventionsSettingsPage = lazyPage(
+  () => import('@/features/settings/ConventionsSettingsPage'),
+  'ConventionsSettingsPage',
+);
+const PortalPrintProcess = lazyPage(
+  () => import('@/features/portal/PortalPrintProcess'),
+  'PortalPrintProcess',
+);
+const PortalPrintPage = lazyPage(
+  () => import('@/features/portal/PortalPrintPage'),
+  'PortalPrintPage',
+);
+const GrcRegisterPage = lazyPage(() => import('@/features/grc/GrcRegisterPage'), 'GrcRegisterPage');
+const GrcDetailPage = lazyPage(() => import('@/features/grc/GrcDetailPage'), 'GrcDetailPage');
+const GrcSettingsPage = lazyPage(() => import('@/features/grc/GrcSettingsPage'), 'GrcSettingsPage');
+const GrcDashboardPage = lazyPage(
+  () => import('@/features/grc/GrcDashboardPage'),
+  'GrcDashboardPage',
+);
+const ControlTestsPage = lazyPage(
+  () => import('@/features/assurance/ControlTestsPage'),
+  'ControlTestsPage',
+);
+const ControlTestPage = lazyPage(
+  () => import('@/features/assurance/ControlTestPage'),
+  'ControlTestPage',
+);
+const IssuesPage = lazyPage(() => import('@/features/assurance/IssuesPage'), 'IssuesPage');
+const IssuePage = lazyPage(() => import('@/features/assurance/IssuePage'), 'IssuePage');
+const PortalTasksPage = lazyPage(
+  () => import('@/features/assurance/PortalTasksPage'),
+  'PortalTasksPage',
+);
+const AuditPlanPage = lazyPage(() => import('@/features/assurance/AuditPlanPage'), 'AuditPlanPage');
+const EngagementPage = lazyPage(
+  () => import('@/features/assurance/EngagementPage'),
+  'EngagementPage',
+);
+const FindingPage = lazyPage(() => import('@/features/assurance/FindingPage'), 'FindingPage');
+const SurveysPage = lazyPage(() => import('@/features/assurance/SurveysPage'), 'SurveysPage');
+const QuestionnaireBuilderPage = lazyPage(
+  () => import('@/features/assurance/QuestionnaireBuilderPage'),
+  'QuestionnaireBuilderPage',
+);
+const CampaignPage = lazyPage(() => import('@/features/assurance/CampaignPage'), 'CampaignPage');
+const SurveyResponsePage = lazyPage(
+  () => import('@/features/assurance/SurveyResponsePage'),
+  'SurveyResponsePage',
+);
+const AssuranceDashboardPage = lazyPage(
+  () => import('@/features/assurance/AssuranceDashboardPage'),
+  'AssuranceDashboardPage',
+);
+const ApplicationsPage = lazyPage(
+  () => import('@/features/ea/ApplicationsPage'),
+  'ApplicationsPage',
+);
+const ApplicationDetailPage = lazyPage(
+  () => import('@/features/ea/ApplicationDetailPage'),
+  'ApplicationDetailPage',
+);
+const InterfacesPage = lazyPage(() => import('@/features/ea/InterfacesPage'), 'InterfacesPage');
+const DataObjectsPage = lazyPage(() => import('@/features/ea/DataObjectsPage'), 'DataObjectsPage');
+const CapabilitiesPage = lazyPage(
+  () => import('@/features/ea/CapabilitiesPage'),
+  'CapabilitiesPage',
+);
+const SystemsLibraryRoute = lazyPage(
+  () => import('@/features/ea/SystemsLibraryRoute'),
+  'SystemsLibraryRoute',
+);
+const LandscapePage = lazyPage(() => import('@/features/ea/LandscapePage'), 'LandscapePage');
+const TraceabilityPage = lazyPage(
+  () => import('@/features/ea/TraceabilityPage'),
+  'TraceabilityPage',
+);
+const KpisPage = lazyPage(() => import('@/features/kpi/KpisPage'), 'KpisPage');
+const KpiDetailPage = lazyPage(() => import('@/features/kpi/KpiDetailPage'), 'KpiDetailPage');
+const ObjectivesPage = lazyPage(() => import('@/features/kpi/ObjectivesPage'), 'ObjectivesPage');
+const KpiDashboardPage = lazyPage(
+  () => import('@/features/kpi/KpiDashboardPage'),
+  'KpiDashboardPage',
+);
+const LogsPage = lazyPage(() => import('@/features/mining/LogsPage'), 'LogsPage');
+const MiningLogPage = lazyPage(() => import('@/features/mining/MiningLogPage'), 'MiningLogPage');
+const ImportMappingPage = lazyPage(
+  () => import('@/features/mining/ImportWizard'),
+  'ImportMappingPage',
+);
+const UploadLogPage = lazyPage(() => import('@/features/mining/ImportWizard'), 'UploadLogPage');
+const SimulationPage = lazyPage(
+  () => import('@/features/mining/SimulationPages'),
+  'SimulationPage',
+);
+const SimulationsPage = lazyPage(
+  () => import('@/features/mining/SimulationPages'),
+  'SimulationsPage',
+);
+const TaskPage = lazyPage(() => import('@/features/workflow/TaskPage'), 'TaskPage');
+const CasePage = lazyPage(() => import('@/features/workflow/CasePage'), 'CasePage');
+const MyRequestsPage = lazyPage(
+  () => import('@/features/workflow/MyRequestsPage'),
+  'MyRequestsPage',
+);
+const ServiceCataloguePage = lazyPage(
+  () => import('@/features/workflow/CataloguePages'),
+  'ServiceCataloguePage',
+);
+const StartRequestPage = lazyPage(
+  () => import('@/features/workflow/CataloguePages'),
+  'StartRequestPage',
+);
+const WorkflowDashboardPage = lazyPage(
+  () => import('@/features/workflow/MonitorPages'),
+  'WorkflowDashboardPage',
+);
+const WorkflowMonitorPage = lazyPage(
+  () => import('@/features/workflow/MonitorPages'),
+  'WorkflowMonitorPage',
+);
+const WorkflowSettingsPage = lazyPage(
+  () => import('@/features/workflow/WorkflowSettingsPage'),
+  'WorkflowSettingsPage',
+);
+const SalesforceSettingsPage = lazyPage(
+  () => import('@/features/settings/SalesforceSettingsPage'),
+  'SalesforceSettingsPage',
+);
+const DiagramDetailPage = lazyPage(
+  () => import('@/features/diagrams/DiagramDetailPage'),
+  'DiagramDetailPage',
+);
+const DiagramWorkspacePage = lazyPage(
+  () => import('@/features/diagrams/DiagramWorkspacePage'),
+  'DiagramWorkspacePage',
+);
+const PrintDiagramPage = lazyPage(
+  () => import('@/features/diagrams/PrintDiagramPage'),
+  'PrintDiagramPage',
+);
+const PortalDiagramsPage = lazyPage(
+  () => import('@/features/diagrams/PortalDiagramsPage'),
+  'PortalDiagramsPage',
+);
+const PortalDiagramPage = lazyPage(
+  () => import('@/features/diagrams/PortalDiagramPage'),
+  'PortalDiagramPage',
+);
 
 const P = PERMISSIONS;
 

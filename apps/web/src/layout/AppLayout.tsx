@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
-import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
+import { SuspenseOutlet } from '@/app/SuspenseOutlet';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
   Avatar,
   Button,
@@ -570,6 +571,9 @@ export function AppLayout() {
 
   return (
     <Layout style={{ minHeight: '100vh' }}>
+      <a className="ph-skip-link" href="#ph-main">
+        {t('skipToContent')}
+      </a>
       <Sider
         width={240}
         collapsed={collapsed}
@@ -629,9 +633,9 @@ export function AppLayout() {
             </Dropdown>
           </Flex>
         </Header>
-        <Content className="ph-content">
+        <Content className="ph-content" id="ph-main" tabIndex={-1}>
           <DiagramThemeNotice />
-          <Outlet />
+          <SuspenseOutlet />
         </Content>
       </Layout>
     </Layout>

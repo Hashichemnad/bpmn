@@ -1,7 +1,8 @@
 /* Global styles. Use CSS logical properties only (margin-inline-start, not margin-left) so RTL works. */
 :root {
   --ph-border: #e2e8f0;
-  --ph-muted: #64748b;
+  /* 5.5:1 on the page background (WCAG 2.1 AA). */
+  --ph-muted: #586577;
   --ph-surface: #ffffff;
   --ph-bg: #f4f6fb;
   --ph-primary: #1d4ed8;
@@ -11,6 +12,36 @@
 
 * {
   box-sizing: border-box;
+}
+
+/* Visible keyboard focus everywhere (WCAG 2.4.7); mouse clicks show no ring (:focus-visible). */
+:focus-visible {
+  outline: 2px solid var(--ph-primary);
+  outline-offset: 2px;
+}
+.ant-btn:focus-visible,
+.ant-menu-item:focus-visible,
+.ant-tree-treenode:focus-visible,
+[role='button']:focus-visible,
+a:focus-visible {
+  outline: 2px solid var(--ph-primary) !important;
+  outline-offset: 2px;
+}
+
+/* "Skip to content" link: hidden until it receives keyboard focus. */
+.ph-skip-link {
+  position: absolute;
+  inset-inline-start: 8px;
+  inset-block-start: -48px;
+  z-index: 2000;
+  padding: 8px 14px;
+  border-radius: 6px;
+  background: var(--ph-primary);
+  color: #fff;
+  font-weight: 600;
+}
+.ph-skip-link:focus {
+  inset-block-start: 8px;
 }
 
 html,
@@ -3018,4 +3049,8 @@ li.ph-diff-removed {
 }
 .ph-wf-timeline .ant-timeline-item-content {
   margin-inline-start: 24px;
+}
+
+#ph-main:focus {
+  outline: none;
 }

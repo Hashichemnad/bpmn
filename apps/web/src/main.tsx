@@ -9,7 +9,7 @@ import '@fontsource/ibm-plex-sans-arabic/400.css';
 import '@fontsource/ibm-plex-sans-arabic/500.css';
 import '@fontsource/ibm-plex-sans-arabic/600.css';
 import '@fontsource/ibm-plex-sans-arabic/700.css';
-import './i18n';
+import { i18nReady } from './i18n';
 import './styles.css';
 import { AppProviders, createQueryClient } from './app/AppProviders';
 import { createRouter } from './App';
@@ -17,10 +17,13 @@ import { createRouter } from './App';
 const queryClient = createQueryClient();
 const router = createRouter();
 
-createRoot(document.getElementById('root')!).render(
-  <StrictMode>
-    <AppProviders client={queryClient}>
-      <RouterProvider router={router} />
-    </AppProviders>
-  </StrictMode>,
-);
+// The first screen renders once the active language's texts are there (no flash of keys).
+void i18nReady.finally(() => {
+  createRoot(document.getElementById('root')!).render(
+    <StrictMode>
+      <AppProviders client={queryClient}>
+        <RouterProvider router={router} />
+      </AppProviders>
+    </StrictMode>,
+  );
+});

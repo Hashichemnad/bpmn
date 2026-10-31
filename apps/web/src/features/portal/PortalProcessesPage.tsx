@@ -14,12 +14,14 @@ import { ErrorState, LoadingState } from '@/components/states';
 import { CATEGORY_COLORS } from '@/components/colors';
 import { useLocalized } from '@/components/i18n-helpers';
 import { ProcessHouse } from './ProcessHouse';
+import { useViewportHeight, virtualTreeHeight } from '@/components/useVirtualTreeHeight';
 
 /** All published processes: the house and the full hierarchy per band. */
 export function PortalProcessesPage() {
   const { t } = useTranslation();
   const loc = useLocalized();
   const navigate = useNavigate();
+  const viewport = useViewportHeight();
   const tree = usePortalProcesses();
   const [filter, setFilter] = useState('');
 
@@ -74,6 +76,7 @@ export function PortalProcessesPage() {
             >
               {data[c].length ? (
                 <Tree
+                  height={virtualTreeHeight(data[c], viewport, 300)}
                   key={filter}
                   defaultExpandAll
                   treeData={data[c]}

@@ -19,6 +19,7 @@ import { useErrorMessage, useLocalized } from '@/components/i18n-helpers';
 import { CATEGORY_COLORS } from '@/components/colors';
 import { LoadingState, ErrorState } from '@/components/states';
 import { categoryNodeKey, computeDrop, parseCategoryKey } from './tree-dnd';
+import { useViewportHeight, virtualTreeHeight } from '@/components/useVirtualTreeHeight';
 
 function ancestorsOf(items: ProcessSummaryDto[], id: string): string[] {
   const byId = new Map(items.map((p) => [p.id, p]));
@@ -75,6 +76,7 @@ export function ProcessTree({ selectedId }: { selectedId?: string }) {
     return { hit, visible };
   }, [items, diagramList, search]);
 
+  const viewport = useViewportHeight();
   const treeData = useMemo<TreeDataNode[]>(() => {
     const roots = buildTree(items);
     const processIds = new Set(items.map((p) => p.id));
@@ -209,6 +211,7 @@ export function ProcessTree({ selectedId }: { selectedId?: string }) {
         <Typography.Text type="secondary">{t('processes:tree.noMatches')}</Typography.Text>
       ) : (
         <Tree
+          height={virtualTreeHeight(treeData, viewport, 200)}
           blockNode
           showLine={{ showLeafIcon: false }}
           draggable={

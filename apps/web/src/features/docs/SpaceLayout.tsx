@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { Link, Outlet, useNavigate, useParams } from 'react-router-dom';
+import { SuspenseOutlet } from '@/app/SuspenseOutlet';
+import { Link, useNavigate, useParams } from 'react-router-dom';
 import { App, Button, Dropdown, Flex, Layout, Space, Tag, Tooltip, Typography } from 'antd';
 import {
   DeleteOutlined,
@@ -152,7 +153,7 @@ export function SpaceLayout() {
         </Layout.Sider>
         <Layout.Content className="ph-repo-content">
           <Space direction="vertical" style={{ inlineSize: '100%' }}>
-            <Outlet />
+            <SuspenseOutlet />
           </Space>
         </Layout.Content>
       </Layout>

@@ -5,9 +5,11 @@ import { useTranslation } from 'react-i18next';
 import { buildTree, type PortalPageNodeDto, type TreeNode } from '@processhub/shared';
 import { usePortalSpacePages } from '@/api/portal';
 import { useLocalized } from '@/components/i18n-helpers';
+import { useViewportHeight, virtualTreeHeight } from '@/components/useVirtualTreeHeight';
 
 /** Tree of the published pages of a space. */
 export function PortalPageTree({ spaceId, selectedId }: { spaceId: string; selectedId?: string }) {
+  const viewport = useViewportHeight();
   const { t } = useTranslation();
   const loc = useLocalized();
   const navigate = useNavigate();
@@ -26,6 +28,7 @@ export function PortalPageTree({ spaceId, selectedId }: { spaceId: string; selec
     <Card size="small" title={t('portal:docs.pages')}>
       {data.length ? (
         <Tree
+          height={virtualTreeHeight(data, viewport, 220)}
           key={spaceId}
           defaultExpandAll
           selectedKeys={selectedId ? [selectedId] : []}
