@@ -64,8 +64,10 @@ Steps (tick as they are committed; a new session continues at the first unticked
       e2e (all 52 suites incl. `seed-volume`, then the changed suites again), `pnpm build`, `pnpm audit
 --audit-level high` (no high / critical; moderate only), the three Docker images built and smoke-tested,
       the full stack with `docker compose up` (migrate → API → web healthy), `backup-drill.sh` passed (backup
-      1 s, restore 20 s on demo data) and the Playwright suite against that stack (result below). PR: see
-      below.
+      1 s, restore 20 s on demo data) and the Playwright suite against that stack (the Arabic modeler test found
+      the bilingual-label regression of the language split, fixed). CI on PR
+      [Hashichemnad/bpmn#22](https://github.com/Hashichemnad/bpmn/pull/22): all three jobs green — 72 Playwright
+      tests passed without retries, backup drill passed (backup 1 s, restore 18 s incl. restart).
 
 ### API timings (final session, part A)
 
