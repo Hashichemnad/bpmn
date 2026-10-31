@@ -251,7 +251,9 @@ describe('Mining — simulation (e2e)', () => {
 
   it('uses the central public holiday list maintained by admins (D-143)', async () => {
     const list = (await analyst.get('/simulations/holidays').expect(200)).body;
-    expect(list.find((h: { nameEn: string }) => h.nameEn === 'Eid al-Fitr')).toMatchObject({ expected: true });
+    expect(list.find((h: { nameEn: string }) => h.nameEn === 'Eid al-Fitr')).toMatchObject({
+      expected: true,
+    });
     // Performance Officers read it; Super Admins and Admins maintain it.
     await analyst.put('/simulations/holidays').send({ holidays: list }).expect(403);
     await createUser(ctx.prisma, 'admin@test.local', ['ADMIN']);
@@ -266,7 +268,12 @@ describe('Mining — simulation (e2e)', () => {
     const own = dto.scenarios[1];
     await analyst
       .patch(`/simulations/${sim.id}/scenarios/${own.id}`)
-      .send({ params: { ...own.params, calendar: { ...own.params.calendar, useCentralHolidays: false, holidays: [] } } })
+      .send({
+        params: {
+          ...own.params,
+          calendar: { ...own.params.calendar, useCentralHolidays: false, holidays: [] },
+        },
+      })
       .expect(200);
     for (const j of (await analyst.post(`/simulations/${sim.id}/run`).send({}).expect(201)).body)
       await waitJob(analyst, j.id);
@@ -276,7 +283,12 @@ describe('Mining — simulation (e2e)', () => {
     const saved = (
       await admin
         .put('/simulations/holidays')
-        .send({ holidays: [...list, { date: '2026-11-30', nameEn: 'Extra day', nameAr: 'يوم إضافي', expected: false }] })
+        .send({
+          holidays: [
+            ...list,
+            { date: '2026-11-30', nameEn: 'Extra day', nameAr: 'يوم إضافي', expected: false },
+          ],
+        })
         .expect(200)
     ).body;
     expect(saved.some((h: { date: string }) => h.date === '2026-11-30')).toBe(true);

@@ -117,7 +117,7 @@ before). **Not verified here:** Docker image builds and the full Playwright suit
 Product owner answers (D-143), implemented afterwards: event log access stays narrow (owner / department / grants
 / Super Admins); retention off by default, set at go-live (suggested 24 months, DEPLOYMENT §6 step 11, SECURITY §7);
 portal "Performance" off until real logs exist; **central public holiday list** (Setting `mining.holidays`,
-`GET|PUT /simulations/holidays`, editor in Simulations → *Public holidays* and Settings, Islamic holidays
+`GET|PUT /simulations/holidays`, editor in Simulations → _Public holidays_ and Settings, Islamic holidays
 "expected (moon sighting)" until confirmed) used by every scenario unless it switches to its own list
 (`calendar.useCentralHolidays`); a change marks results that used it as stale. Tests: shared +2, API +1.
 
