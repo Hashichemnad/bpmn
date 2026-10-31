@@ -94,7 +94,8 @@ export interface Importer {
   readonly kinds: readonly ImportKind[];
   parse(ctx: ParseContext): Promise<ParseOutput>;
   /** `items`: not skipped, no errors, action CREATE / UPDATE; sorted by `order`. */
-  apply(ctx: ApplyContext, items: ParsedItem[]): Promise<ApplyOutput | void>;
+  /** `all`: every preview item (also skipped ones, e.g. matched library objects). */
+  apply(ctx: ApplyContext, items: ParsedItem[], all: ParsedItem[]): Promise<ApplyOutput | void>;
   template?(kind: ImportKind, locale: Locale): Promise<ExcelFile>;
 }
 

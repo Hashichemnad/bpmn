@@ -38,7 +38,15 @@ Steps (tick as they are committed; a new session continues at the first unticked
       `20261031160000_user_invitations` + `users/invitations.service.ts` / `invitations.controller.ts` (public
       set-password page `/invitation/:token`, "Send invitation again" on the Users page, `UserDto.hasPassword`);
       API tests `test/imports-structure.e2e-spec.ts` (6); Playwright: process house flow in `imports.spec.ts`.
-- [ ] 3. Diagrams: BPMN (ZIP / files), Visio `.vsdx`, ARIS AML (EPC, value chains, objects), DMN.
+- [x] 3. Diagrams: BPMN (ZIP / files), Visio `.vsdx`, ARIS AML (EPC, value chains, objects), DMN.
+      Done (D-160): `importers/bpmn-tools.ts` (vendor strip / keep, labels by script, layout when DI is
+      missing), `process-target.ts` (match by code / earlier file / name, draft process creation, library
+      suggestions), `bpmn.importer.ts` (models saved through `ModelsService.createVersion`), `visio-tools.ts` +
+      `visio.importer.ts` (shape mapping table, swimlanes, unmapped report), `aris-tools.ts` +
+      `aris.importer.ts` (roles / systems into the library, EPC and value chain diagrams with links),
+      `dmn.importer.ts`; "Imported" flag (`importOrigin`) on process and diagram pages; Visio mapping card on
+      the batch page; samples `docs/samples/import/` (`generate-samples.mjs`); API tests
+      `test/imports-diagrams.e2e-spec.ts` (7); Playwright: BPMN ZIP and Visio flows in `imports.spec.ts`.
 - [ ] 4. Documents into the wiki: Word, PDF, Confluence HTML export, Markdown folders; links to processes.
 - [ ] 5. AI-assisted migration: SOP → BPMN review queue, risks / controls extraction, bulk translation.
 - [ ] 6. Migration dashboard and review queue (My tasks, bulk actions).

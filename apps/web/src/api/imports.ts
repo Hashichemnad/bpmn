@@ -61,8 +61,12 @@ export const useImportItems = (id: string, q: ImportQuery, enabled = true) =>
 export const useImportRecords = (id: string, q: ImportQuery, enabled = true) =>
   useQuery({
     queryKey: importKeys.records(id, q),
-    queryFn: () => api<Paginated<ImportItemRecordDto>>(`/imports/${id}/records`, { query: q }),
+    queryFn: () =>
+      api<Paginated<ImportItemRecordDto>>(`/imports/${id}/records`, {
+        query: { page: q.page, pageSize: q.pageSize },
+      }),
     placeholderData: keepPreviousData,
+    refetchInterval: q.status === 'APPLYING' ? 1500 : false,
     enabled,
   });
 

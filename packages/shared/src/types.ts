@@ -1,3 +1,4 @@
+import type { ImportOriginDto } from './imports';
 import type { DiagramType } from './diagrams';
 import type { GrcReviewTaskDto } from './grc';
 import type { DiagramTheme } from './diagram-theme';
@@ -163,6 +164,8 @@ export interface ProcessDto extends ProcessSummaryDto {
   ancestors: Pick<ProcessSummaryDto, 'id' | 'code' | 'nameEn' | 'nameAr'>[];
   hasModel: boolean;
   /** The working model was produced by the AI assistant and not yet edited or approved by a person. */
+  /** Set when an Import Center batch created it (M15). */
+  importOrigin?: ImportOriginDto | null;
   aiGenerated: boolean;
   /** Whether the current user may edit this process / its model. */
   canEdit: boolean;

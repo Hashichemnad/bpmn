@@ -18,6 +18,7 @@ import type { AuthUser, RequestMeta } from '../common/auth-user';
 import { orderBy, pageArgs, paginated } from '../common/pagination';
 import { DomainEvents } from '../events/domain-events';
 import { MoveError, nextSortOrder, planMove } from './process-tree';
+import { importOrigin } from '../imports/import-origin';
 import { assertEditable, markEdited, withdrawReviewsOf } from '../governance/edit-guard';
 
 const summarySelect = {
@@ -150,6 +151,7 @@ export class ProcessesService {
       ancestors: await this.ancestors(p.parentId),
       hasModel: !!p.model,
       aiGenerated: p.aiGenerated,
+      importOrigin: await importOrigin(this.prisma, 'PROCESS', p.id, p.importBatchId),
       canEdit: canEditProcess(user, p),
       canEditModel: canEditModel(user, p),
       canDelete: user.permissions.has(PERMISSIONS.PROCESSES_DELETE),

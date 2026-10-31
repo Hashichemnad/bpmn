@@ -11,12 +11,26 @@ import { ProcessHouseImporter } from './importers/process-house.importer';
 import { DepartmentsImporter } from './importers/departments.importer';
 import { UsersImporter } from './importers/users.importer';
 import { UsersModule } from '../users/users.module';
+import { ModelsModule } from '../models/models.module';
+import { BpmnImporter } from './importers/bpmn.importer';
+import { VisioImporter } from './importers/visio.importer';
+import { ArisImporter } from './importers/aris.importer';
+import { DmnImporter } from './importers/dmn.importer';
 
-const IMPORTERS = [ModuleExcelImporter, ProcessHouseImporter, DepartmentsImporter, UsersImporter];
+const IMPORTERS = [
+  ModuleExcelImporter,
+  ProcessHouseImporter,
+  DepartmentsImporter,
+  UsersImporter,
+  BpmnImporter,
+  VisioImporter,
+  ArisImporter,
+  DmnImporter,
+];
 
 /** Import tools / migration (module M15, D-155 – ). */
 @Module({
-  imports: [MiningModule, GrcModule, EaModule, KpiModule, UsersModule],
+  imports: [MiningModule, GrcModule, EaModule, KpiModule, UsersModule, ModelsModule],
   controllers: [ImportsController],
   providers: [
     ...IMPORTERS,

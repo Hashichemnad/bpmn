@@ -10,6 +10,11 @@ where they belong; move items into the plan when that phase starts.
 - **Visio `.vsd`** (old binary format): users save as `.vsdx`.
 - **Antivirus scanning** of uploads (e.g. a ClamAV container): decide in the final security review.
 - **Bizagi `.bpm`** native format (Bizagi's BPMN export works today).
+- **ARIS AML:** organisation charts (`MT_ORG_CHRT`) into the org chart type, function allocation diagrams,
+  other attributes (descriptions, custom attributes) and model hierarchy (assignments) — EPCs, value chains,
+  roles and systems are imported today (D-160).
+- **Visio:** use Visio shape positions as an alternative to the auto-layout; data / document shapes as BPMN
+  data objects.
 
 ## Phase 5.2 — workflow execution follow-ups (noted during the work)
 

@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import ExcelJS from 'exceljs';
 import { expect, test, type Page } from '@playwright/test';
 import { loginAdmin } from './helpers';
@@ -9,6 +11,12 @@ import { loginAdmin } from './helpers';
 test.setTimeout(120_000);
 
 const stamp = Date.now().toString(36).toUpperCase();
+const SAMPLES = join(__dirname, '..', '..', '..', 'docs', 'samples', 'import');
+const sampleFile = (name: string, mimeType = 'application/octet-stream') => ({
+  name,
+  mimeType,
+  buffer: readFileSync(join(SAMPLES, name)),
+});
 
 async function workbook(header: string[], rows: (string | number)[][]) {
   const wb = new ExcelJS.Workbook();
@@ -101,7 +109,7 @@ test('Process house from Excel: preview with validation, apply, process tree bui
   // The orphan row blocks apply until it is excluded.
   await expect(page.getByTestId('import-apply')).toBeDisabled();
   const orphan = page.getByTestId('import-items').locator('tr', { hasText: `${root}.02` });
-  await expect(orphan).toContainText('does not exist');
+  await expect(orphan).toContainText('exists neither in the file nor in ProcessHub');
   await orphan.getByRole('switch').click();
   await expect(page.getByTestId('import-apply')).toBeEnabled();
   await applyImport(page);
@@ -110,4 +118,34 @@ test('Process house from Excel: preview with validation, apply, process tree bui
     .getByRole('link', { name: /Imported child/ })
     .click();
   await expect(page.getByRole('heading', { level: 3 })).toContainText(`Imported child ${stamp}`);
+});
+
+test('BPMN ZIP: Arabic and English diagrams, one without layout; imported flag on the process', async ({
+  page,
+}) => {
+  await loginAdmin(page);
+  await startImport(page, 'BPMN', [sampleFile('bpmn-diagrams.zip', 'application/zip')]);
+  const items = page.getByTestId('import-items');
+  await expect(items).toContainText('تسجيل الطلبات');
+  await expect(items).toContainText('laid out automatically');
+  await applyImport(page);
+  await page
+    .getByTestId('import-records')
+    .getByRole('link', { name: /Supplier onboarding/ })
+    .first()
+    .click();
+  await expect(page.getByTestId('imported-tag')).toBeVisible();
+});
+
+test('Visio flowchart: the shape mapping table lists masters and unmapped shapes', async ({
+  page,
+}) => {
+  await loginAdmin(page);
+  await startImport(page, 'VISIO', [sampleFile('S.03 Leave request flowchart.vsdx')]);
+  const mapping = page.getByTestId('visio-mapping');
+  await expect(mapping).toContainText('swimlane');
+  await expect(mapping).toContainText('document');
+  await expect(page.getByTestId('import-items')).toContainText('not mapped to BPMN');
+  await applyImport(page);
+  await expect(page.getByTestId('import-records')).toContainText('Created');
 });

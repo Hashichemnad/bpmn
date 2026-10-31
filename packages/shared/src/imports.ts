@@ -663,3 +663,79 @@ export interface InvitationInfoDto {
   locale: 'en' | 'ar';
   expiresAt: string;
 }
+
+// ---------- Visio shape mapping (M15 step 3) ----------
+
+/** What a Visio master can become; `startEnd` = start or end event by its connections. */
+export const VISIO_SHAPE_TYPES = [
+  'task',
+  'userTask',
+  'manualTask',
+  'serviceTask',
+  'subProcess',
+  'callActivity',
+  'exclusiveGateway',
+  'parallelGateway',
+  'inclusiveGateway',
+  'startEvent',
+  'endEvent',
+  'intermediateThrowEvent',
+  'startEnd',
+  'flow',
+  'lane',
+  'ignore',
+] as const;
+export type VisioShapeType = (typeof VISIO_SHAPE_TYPES)[number];
+
+/** Default mapping of Visio master names (lower case): basic flowchart, cross-functional and BPMN stencils. */
+export const DEFAULT_VISIO_MAPPING: Record<string, VisioShapeType> = {
+  process: 'task',
+  task: 'task',
+  activity: 'task',
+  'user task': 'userTask',
+  'manual task': 'manualTask',
+  'manual operation': 'manualTask',
+  'service task': 'serviceTask',
+  'predefined process': 'callActivity',
+  subprocess: 'subProcess',
+  'sub-process': 'subProcess',
+  'collapsed sub-process': 'subProcess',
+  'expanded sub-process': 'subProcess',
+  decision: 'exclusiveGateway',
+  gateway: 'exclusiveGateway',
+  'exclusive gateway': 'exclusiveGateway',
+  'parallel gateway': 'parallelGateway',
+  'inclusive gateway': 'inclusiveGateway',
+  'start/end': 'startEnd',
+  terminator: 'startEnd',
+  'start event': 'startEvent',
+  start: 'startEvent',
+  'end event': 'endEvent',
+  end: 'endEvent',
+  'intermediate event': 'intermediateThrowEvent',
+  'dynamic connector': 'flow',
+  connector: 'flow',
+  'sequence flow': 'flow',
+  'line-curve connector': 'flow',
+  'straight connector': 'flow',
+  swimlane: 'lane',
+  'swimlane (vertical)': 'lane',
+  'functional band': 'lane',
+  lane: 'lane',
+  'pool / lane': 'lane',
+  'cff container': 'ignore',
+  'phase list': 'ignore',
+  separator: 'ignore',
+  'vertical separator': 'ignore',
+  title: 'ignore',
+  'text annotation': 'ignore',
+  annotation: 'ignore',
+  text: 'ignore',
+};
+
+/** "Imported" flag of a process, page or diagram: the batch that created it and the source file. */
+export interface ImportOriginDto {
+  batchId: string;
+  number: string;
+  source: string;
+}

@@ -2211,3 +2211,35 @@ the wiki's `sanitizeRichText`, so the TipTap editor receives only its own tags.
   user are left unchanged (warning), roles that require two-factor authentication are flagged (enrolment at
   the first sign-in), roles and job roles are **added, never removed**. Undo deactivates and soft-deletes the
   users of a batch — but not once one of them has signed in.
+
+## D-160 — Diagram imports: BPMN, Visio, ARIS AML, DMN (Import tools step 3, 2026-10-31)
+
+- **BPMN 2.0** (files or a ZIP): parsed safely, vendor extensions **stripped by default** (any element or
+  attribute outside BPMN / DI / DC / XSD / XSI / colour / ProcessHub namespaces — Camunda, Signavio, Bizagi …;
+  "keep" is a batch option), labels without `ph:nameEn/ph:nameAr` are put into the Arabic or English slot **by
+  script** (≥ 30 % Arabic letters). When fewer than 80 % of the flow nodes have a shape (missing DI) or the
+  option says "always", the diagram is rebuilt with the shared layered layout (`readBpmn` → `structureToBpmn`,
+  the AI builder's path): data objects, annotations and message flows are not kept then (warning with the
+  count). Each document is attached to a process by **code in the file name** (e.g. `C.01.02 ….bpmn`), an
+  earlier import of the same file name, or an exact process name — else a new **draft** process is created
+  under the chosen parent (code from the file name when free, otherwise the next child code). The model is
+  saved through `ModelsService.createVersion` (working model + version "Imported from … (IMP-…)"), so lane
+  roles (`ph:roleId`) and label references (`ph:labelRef`) become object links exactly as in the modeler.
+  Lanes are matched to library **roles** and labels to approved dictionary **terms**: exact matches are
+  pre-accepted suggestions, partial matches are offered unaccepted.
+- **Visio .vsdx:** read with JSZip + the safe XML parser (masters, pages, shapes incl. groups, `Connect`
+  elements). A **shape mapping table** (master name → BPMN type, defaults for the basic flowchart,
+  cross-functional flowchart and BPMN stencils; `options.shapeMapping` overrides per batch) turns each page
+  into a process structure; shapes belong to the swimlane that contains their centre; terminators become
+  start or end events by their connections; connector texts become flow labels. Positions are **not** taken
+  from Visio: the shared auto-layout draws the diagram (consistent, readable; Visio coordinates rarely match
+  BPMN shapes). Unmapped masters are counted and listed. `.vsd` is refused with "save as .vsdx".
+- **ARIS AML:** object definitions of role types (`OT_PERS_TYPE`, `OT_POS`, `OT_ORG_UNIT` …) and application
+  systems (`OT_APPL_SYS_TYPE` …) become library **roles / IT systems** (matched by an earlier import's GUID or
+  the exact name — then reused, not duplicated); **EPC models** (`MT_EEPC*`, `MT_EPC*`) become EPC diagrams
+  (events, functions, AND / OR / XOR rules, process interfaces, org units, systems, documents; ARIS
+  positions scaled by 0.4) with diagram links from resource shapes to the library objects; the existing EPC
+  → BPMN conversion is used on the diagram page. **Value-added chain diagrams** become value chains. Names
+  come from `AT_NAME` per LocaleId (Arabic LCIDs → Arabic). Other model types are listed as skipped (BACKLOG:
+  organisation charts, function allocation diagrams).
+- **DMN:** through the diagram editor's server checks (`assertSafeDmnXml`), one DMN diagram per file.

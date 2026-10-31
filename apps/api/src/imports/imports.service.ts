@@ -807,7 +807,7 @@ export class ImportsService implements OnModuleInit {
           }
         },
       };
-      const out = await this.importer(kind).apply(actx, items);
+      const out = await this.importer(kind).apply(actx, items, preview.items);
       if (out?.module) result.module = out.module;
       await this.prisma.importBatch.update({
         where: { id: batchId },

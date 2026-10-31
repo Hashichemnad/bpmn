@@ -40,6 +40,7 @@ import { useTranslation } from 'react-i18next';
 import {
   IMPORT_ITEM_FILTERS,
   IMPORT_KIND_INFO,
+  VISIO_SHAPE_TYPES,
   type ImportBatchDto,
   type ImportItemFilter,
   type ImportItemRecordDto,
@@ -148,6 +149,9 @@ export function ImportBatchPage() {
           <FilesCard b={b} />
           {IMPORT_KIND_INFO[b.kind].tabular && b.columns.length > 0 && (
             <MappingCard b={b} editable={!b.appliedAt && !running} />
+          )}
+          {b.kind === 'VISIO' && b.columns.length > 0 && (
+            <VisioMappingCard b={b} editable={!b.appliedAt && !running} />
           )}
           {IMPORT_KIND_INFO[b.kind].options.length > 0 && (
             <OptionsCard b={b} editable={!b.appliedAt && !running} />
@@ -684,7 +688,13 @@ function SuggestionsPopover({
 function RecordsCard({ b }: { b: ImportBatchDto }) {
   const { t } = useTranslation();
   const [page, setPage] = useState(1);
-  const records = useImportRecords(b.id, { page, pageSize: 50 });
+  // The status is part of the key: the list refreshes while the apply job runs and when it ends.
+  const records = useImportRecords(b.id, {
+    page,
+    pageSize: 50,
+    status: b.status,
+    done: b.result?.created ?? 0,
+  });
   return (
     <Card size="small" title={t('imports:records.title')}>
       <Table<ImportItemRecordDto>
@@ -877,6 +887,78 @@ function MappingCard({ b, editable }: { b: ImportBatchDto; editable: boolean }) 
                 options={b.columns.map((c) => ({
                   value: c.header,
                   label: c.sample ? `${c.header} (${c.sample})` : c.header,
+                }))}
+              />
+            ),
+          },
+        ]}
+      />
+    </Card>
+  );
+}
+
+/** Visio shape mapping: master name → BPMN type (defaults + this batch's overrides). */
+function VisioMappingCard({ b, editable }: { b: ImportBatchDto; editable: boolean }) {
+  const { t } = useTranslation();
+  const { message } = App.useApp();
+  const errorMessage = useErrorMessage();
+  const update = useUpdateImportOptions();
+  const [mapping, setMapping] = useState<Record<string, string>>(() => ({
+    ...Object.fromEntries(b.columns.map((c) => [c.header, c.field ?? ''])),
+  }));
+  return (
+    <Card
+      size="small"
+      title={t('imports:visio.title')}
+      style={{ marginBlockEnd: 16 }}
+      data-testid="visio-mapping"
+      extra={
+        editable && (
+          <Button
+            size="small"
+            icon={<ReloadOutlined />}
+            loading={update.isPending}
+            onClick={() =>
+              update.mutate(
+                {
+                  id: b.id,
+                  options: {
+                    ...b.options,
+                    shapeMapping: Object.fromEntries(Object.entries(mapping).filter(([, v]) => v)),
+                  },
+                },
+                { onError: (e) => message.error(errorMessage(e)) },
+              )
+            }
+          >
+            {t('imports:mapping.rebuild')}
+          </Button>
+        )
+      }
+    >
+      <Table
+        size="small"
+        rowKey="header"
+        pagination={false}
+        dataSource={b.columns}
+        columns={[
+          { title: t('imports:visio.master'), dataIndex: 'header' },
+          { title: t('imports:visio.count'), dataIndex: 'sample', width: 70, align: 'end' },
+          {
+            title: t('imports:visio.type'),
+            render: (_, c) => (
+              <Select
+                size="small"
+                allowClear
+                disabled={!editable}
+                style={{ width: 170 }}
+                status={mapping[c.header] ? undefined : 'warning'}
+                placeholder={t('imports:visio.unmapped')}
+                value={mapping[c.header] || undefined}
+                onChange={(v) => setMapping((m) => ({ ...m, [c.header]: v ?? '' }))}
+                options={VISIO_SHAPE_TYPES.map((v) => ({
+                  value: v,
+                  label: t(`imports:visioType.${v}`),
                 }))}
               />
             ),

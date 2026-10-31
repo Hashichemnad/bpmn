@@ -293,5 +293,9 @@
   "INVITATION_INVALID": "This invitation link is no longer valid.",
   "USER_HAS_PASSWORD": "The user already has a password.",
   "CSV_INVALID": "{{file}}: the CSV file cannot be read.",
-  "COLUMN_MISSING": "The column \"{{column}}\" was not found: map it in the column mapping."
+  "COLUMN_MISSING": "The column \"{{column}}\" was not found: map it in the column mapping.",
+  "NOT_BPMN": "{{file}} is not a BPMN 2.0 document.",
+  "NO_DIAGRAMS_FOUND": "No diagrams were found in the files.",
+  "NOT_AML": "{{file}} is not an ARIS Markup Language (AML) export.",
+  "NOT_DMN": "{{file}} is not a safe DMN 1.x document."
 }

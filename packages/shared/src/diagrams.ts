@@ -1,3 +1,4 @@
+import type { ImportOriginDto } from './imports';
 /**
  * Diagram types beyond BPMN (D-120): value chain, organisation chart, DMN decision tables, EPC and
  * SIPOC. One `Diagram` entity carries them; the content is DMN 1.3 XML for decision tables and
@@ -502,6 +503,8 @@ export interface DiagramDto extends DiagramSummaryDto {
   owner: UserRef | null;
   department: DepartmentRef | null;
   process: { id: string; code: string; nameEn: string; nameAr: string } | null;
+  /** Set when an Import Center batch created it (M15). */
+  importOrigin?: ImportOriginDto | null;
   aiGenerated: boolean;
   latestVersion: number | null;
   canEdit: boolean;

@@ -293,5 +293,9 @@
   "INVITATION_INVALID": "رابط الدعوة هذا لم يعد صالحاً.",
   "USER_HAS_PASSWORD": "لدى المستخدم كلمة مرور بالفعل.",
   "CSV_INVALID": "{{file}}: تعذرت قراءة ملف CSV.",
-  "COLUMN_MISSING": "لم يُعثر على العمود \"{{column}}\": اربطه في ربط الأعمدة."
+  "COLUMN_MISSING": "لم يُعثر على العمود \"{{column}}\": اربطه في ربط الأعمدة.",
+  "NOT_BPMN": "{{file}} ليس مستند BPMN 2.0.",
+  "NO_DIAGRAMS_FOUND": "لم يُعثر على مخططات في الملفات.",
+  "NOT_AML": "{{file}} ليس تصديراً بلغة ARIS ‏(AML).",
+  "NOT_DMN": "{{file}} ليس مستند DMN 1.x آمناً."
 }

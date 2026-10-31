@@ -36,6 +36,7 @@ import { useErrorMessage, useFormatDate, useLocalized } from '@/components/i18n-
 import { ErrorState, LoadingState } from '@/components/states';
 import { PageHeader } from '@/components/PageHeader';
 import { StatusTag } from '@/components/tags';
+import { ImportedTag } from '@/components/ImportedTag';
 import { CommentsPanel } from '@/features/comments/CommentsPanel';
 import { GovernancePanel } from '@/features/governance/GovernancePanel';
 import { DiagramFormModal } from './DiagramFormModal';
@@ -186,6 +187,7 @@ export function DiagramDetailPage() {
               changesRequested={governance.data?.changesRequested}
               rejected={governance.data?.rejected}
             />
+            <ImportedTag origin={d.importOrigin} />
           </Space>
         }
         extra={
