@@ -20,6 +20,7 @@ import { seedAiDemo, seedAiDemoContent } from './seed-ai';
 import { seedDictionaryDemo } from './seed-dictionary';
 import { seedGrcDemo } from './seed-grc';
 import { ensureGrcChangeWorkflow, seedAssuranceDemo } from './seed-assurance';
+import { seedDiagramsDemo } from './seed-diagrams';
 import { seedEaKpiDemo } from './seed-ea-kpi';
 
 const prisma = new PrismaClient();
@@ -432,6 +433,7 @@ export async function main() {
     await seedGrcDemo(prisma, adminId);
     await seedAssuranceDemo(prisma, adminId);
     await seedEaKpiDemo(prisma, adminId);
+    await seedDiagramsDemo(prisma, adminId);
   }
   // After the demo data: the governance demo only seeds into an installation without workflows.
   await ensureGrcChangeWorkflow(prisma, adminId);

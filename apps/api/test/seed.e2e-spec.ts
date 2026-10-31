@@ -135,5 +135,26 @@ describe('Seed (e2e)', () => {
       'Steering committee',
     ]);
     expect(terms.every((t) => t.nameEn && t.nameAr)).toBe(true);
+    // Diagram types (D-126): one of each, value chain / org chart / DMN published, start page set.
+    const diagrams = await ctx.prisma.diagram.findMany({ orderBy: { code: 'asc' } });
+    expect(diagrams.map((d) => `${d.code}:${d.status}`)).toEqual([
+      'DMN-001:PUBLISHED',
+      'EPC-001:DRAFT',
+      'ORG-001:PUBLISHED',
+      'SIPOC-001:DRAFT',
+      'VC-001:PUBLISHED',
+    ]);
+    const portal = await ctx.prisma.setting.findUnique({ where: { key: 'portal' } });
+    expect((portal!.value as { startDiagramId?: string }).startDiagramId).toBe(
+      diagrams.find((d) => d.code === 'VC-001')!.id,
+    );
+    const approval = await ctx.prisma.process.findFirst({
+      where: { code: 'S.01.02' },
+      include: { model: true },
+    });
+    expect(approval!.model!.bpmnXml).toContain(
+      `ph:decisionRef="${diagrams.find((d) => d.code === 'DMN-001')!.id}"`,
+    );
+    expect(await ctx.prisma.process.count({ where: { code: 'S.01.03' } })).toBe(1);
   });
 });

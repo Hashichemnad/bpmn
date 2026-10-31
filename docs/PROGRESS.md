@@ -77,8 +77,12 @@ Steps (tick as they are committed; a new session continues at the first unticked
         or published diagram content —, docx sections EN / AR, shared `readDmnTables`); portal start page
         (Setting `portal.startDiagramId`: a published value chain first on the portal home, with drill-down;
         `PortalDiagramCanvas`), diagrams in "Featured" and in the home counts. Tests: API +1 (handbook sections).
-  - [ ] 7b. Demo seed: value chain (linked, published, portal start page), org chart from demo departments, DMN
-        "approval authority" linked to a business rule task, EPC with its BPMN conversion, SIPOC.
+  - [x] 7b. Demo seed (`prisma/seed-diagrams.ts`, demo installations only, once): VC-001 enterprise value chain
+        (generated from the process house, published, portal start page), ORG-001 generated from the demo
+        departments / roles / people (published), DMN-001 approval authority (`prisma/demo-dmn.ts` = the docs
+        sample, published) linked to the business rule task of the new demo process S.01.02 Purchase approval,
+        EPC-001 purchase request with its conversion S.01.03, SIPOC-001 of S.01.01; demo roles R-02 – R-06 get a
+        department. Asserted in `seed.e2e-spec.ts`.
   - [ ] 7c. Permission tests (authorization matrix / route sweep for `/diagrams`), full test run.
   - [ ] 7d. Screenshots EN / AR (`docs/screenshots/diagram-types/`), sample handbook (`docs/samples/`).
   - [ ] 7e. Docs (README, CLAUDE.md, BACKLOG, DECISIONS, SECURITY route table), audit, build, pull request.
