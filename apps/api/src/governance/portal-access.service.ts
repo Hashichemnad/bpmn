@@ -11,6 +11,7 @@ import {
 import { PrismaService } from '../prisma/prisma.service';
 import { AppException, notFound } from '../common/app-exception';
 import type { AuthUser } from '../common/auth-user';
+import { AUDIT_ENTITY } from './edit-guard';
 
 export const DEFAULT_PORTAL: PortalSettingsDto = {
   nameEn: 'Knowledge Portal',
@@ -20,6 +21,7 @@ export const DEFAULT_PORTAL: PortalSettingsDto = {
   access: { mode: 'ALL', departmentIds: [], roleKeys: [] },
   quickLinks: [],
   featured: [],
+  startDiagramId: null,
 };
 
 type SpaceWithGrants = Prisma.SpaceGetPayload<{ include: { grants: true } }>;
@@ -72,9 +74,10 @@ export class PortalAccessService {
   /** Current publications of live items, limited to what the user may see. */
   async publications(user: AuthUser, where: Prisma.PublicationWhereInput = {}) {
     const spaceIds = (await this.visibleSpaces(user)).map((s) => s.id);
-    const [processIds, pageIds] = await Promise.all([
+    const [processIds, pageIds, diagramIds] = await Promise.all([
       this.liveProcessIds(),
       this.livePageIds(spaceIds),
+      this.liveDiagramIds(),
     ]);
     return this.prisma.publication.findMany({
       where: {
@@ -83,6 +86,7 @@ export class PortalAccessService {
         OR: [
           { entityType: 'PROCESS', entityId: { in: processIds } },
           { entityType: 'PAGE', entityId: { in: pageIds } },
+          { entityType: 'DIAGRAM', entityId: { in: diagramIds } },
         ],
       },
       orderBy: { publishedAt: 'desc' },
@@ -91,6 +95,14 @@ export class PortalAccessService {
 
   async liveProcessIds(): Promise<string[]> {
     const rows = await this.prisma.process.findMany({
+      where: { deletedAt: null, status: { not: 'ARCHIVED' } },
+      select: { id: true },
+    });
+    return rows.map((r) => r.id);
+  }
+
+  async liveDiagramIds(): Promise<string[]> {
+    const rows = await this.prisma.diagram.findMany({
       where: { deletedAt: null, status: { not: 'ARCHIVED' } },
       select: { id: true },
     });
@@ -110,20 +122,27 @@ export class PortalAccessService {
     const pub = await this.prisma.publication.findFirst({
       where: { entityType: type, entityId: id, current: true },
     });
-    const missing = () => notFound(type === 'PROCESS' ? 'Process' : 'Page');
+    const missing = () => notFound(AUDIT_ENTITY[type]);
     if (!pub) throw missing();
     if (type === 'PROCESS') {
       const p = await this.prisma.process.findFirst({
         where: { id, deletedAt: null, status: { not: 'ARCHIVED' } },
       });
       if (!p) throw missing();
-      return { pub, process: p, page: null, space: null };
+      return { pub, process: p, page: null, space: null, diagram: null };
+    }
+    if (type === 'DIAGRAM') {
+      const d = await this.prisma.diagram.findFirst({
+        where: { id, deletedAt: null, status: { not: 'ARCHIVED' } },
+      });
+      if (!d) throw missing();
+      return { pub, process: null, page: null, space: null, diagram: d };
     }
     const page = await this.prisma.page.findFirst({
       where: { id, deletedAt: null, status: { not: 'ARCHIVED' }, space: { deletedAt: null } },
       include: { space: { include: { grants: true } } },
     });
     if (!page || !this.spaceVisible(user, page.space)) throw missing();
-    return { pub, process: null, page, space: page.space };
+    return { pub, process: null, page, space: page.space, diagram: null };
   }
 }

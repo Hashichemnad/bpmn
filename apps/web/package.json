@@ -32,15 +32,20 @@
     "bpmn-moddle": "^10.3.1",
     "dayjs": "^1.11.13",
     "diagram-js": "^15.28.1",
+    "diagram-js-direct-editing": "3.6.0",
     "diagram-js-minimap": "5.6.0",
     "diff": "^9.0.0",
+    "dmn-js": "17.12.3",
     "dompurify": "^3.2.6",
+    "feelin": "8.2.0",
     "i18next": "^25.5.0",
+    "min-dash": "5.1.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-i18next": "^15.7.0",
     "react-router-dom": "^7.18.4",
-    "recharts": "^2.15.4"
+    "recharts": "^2.15.4",
+    "tiny-svg": "4.1.4"
   },
   "devDependencies": {
     "@testing-library/jest-dom": "^6.8.0",

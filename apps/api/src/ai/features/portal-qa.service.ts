@@ -107,7 +107,7 @@ export class PortalQaService {
     const title = [p.code, language === 'ar' ? p.titleAr || p.titleEn : p.titleEn || p.titleAr]
       .filter(Boolean)
       .join(' ');
-    const head = `<source n="${n}" type="${p.entityType === 'PROCESS' ? 'process' : 'document'}" title="${title.replace(/"/g, "'")}"${p.versionLabel ? ` version="${p.versionLabel}"` : ''}>`;
+    const head = `<source n="${n}" type="${p.entityType === 'PROCESS' ? 'process' : p.entityType === 'DIAGRAM' ? 'diagram' : 'document'}" title="${title.replace(/"/g, "'")}"${p.versionLabel ? ` version="${p.versionLabel}"` : ''}>`;
     let body: string;
     if (p.entityType === 'PROCESS') body = await this.publishedProcess(p);
     else {

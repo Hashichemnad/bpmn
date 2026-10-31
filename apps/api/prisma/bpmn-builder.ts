@@ -15,6 +15,7 @@ export type NodeType =
   | 'task'
   | 'userTask'
   | 'serviceTask'
+  | 'businessRuleTask'
   | 'exclusiveGateway'
   | 'callActivity';
 
@@ -26,6 +27,9 @@ export interface DiagramNode {
   x: number;
   y: number;
   linkedProcessId?: string;
+  /** Business rule task → DMN diagram and decision (D-123). */
+  decisionRef?: string;
+  decisionId?: string;
   /** Step description shown in the portal (ph:descriptionEn / ph:descriptionAr). */
   descEn?: string;
   descAr?: string;
@@ -45,6 +49,7 @@ const SIZE: Record<NodeType, [number, number]> = {
   task: [100, 80],
   userTask: [100, 80],
   serviceTask: [100, 80],
+  businessRuleTask: [100, 80],
   callActivity: [100, 80],
   exclusiveGateway: [50, 50],
 };
@@ -68,7 +73,10 @@ export function buildBpmn(processKey: string, nodes: DiagramNode[], flows: Diagr
         ...incoming(n.id).map((f) => `      <bpmn:incoming>${f.id}</bpmn:incoming>`),
         ...outgoing(n.id).map((f) => `      <bpmn:outgoing>${f.id}</bpmn:outgoing>`),
       ].join('\n');
-      const link = n.linkedProcessId ? ` ph:linkedProcessId="${n.linkedProcessId}"` : '';
+      const link =
+        (n.linkedProcessId ? ` ph:linkedProcessId="${n.linkedProcessId}"` : '') +
+        (n.decisionRef ? ` ph:decisionRef="${n.decisionRef}"` : '') +
+        (n.decisionId ? ` ph:decisionId="${n.decisionId}"` : '');
       const desc =
         (n.descEn ? ` ph:descriptionEn="${esc(n.descEn)}"` : '') +
         (n.descAr ? ` ph:descriptionAr="${esc(n.descAr)}"` : '');

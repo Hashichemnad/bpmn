@@ -31,6 +31,10 @@ export function ReportDialog({ kind, process, hasChildren, publishedOnly, onClos
     includeChildren: boolean;
     includeRisks: boolean;
     includeSystems: boolean;
+    includeValueChain: boolean;
+    includeSipoc: boolean;
+    includeDecisions: boolean;
+    includeOrgChart: boolean;
   }>();
   const { can } = useAuth();
   const [submitting, setSubmitting] = useState(false);
@@ -46,6 +50,10 @@ export function ReportDialog({ kind, process, hasChildren, publishedOnly, onClos
             includeChildren: !!v.includeChildren,
             includeRisks: !!v.includeRisks,
             includeSystems: !!v.includeSystems,
+            includeValueChain: !!v.includeValueChain,
+            includeSipoc: !!v.includeSipoc,
+            includeDecisions: !!v.includeDecisions,
+            includeOrgChart: !!v.includeOrgChart,
             source,
             locale: v.locale,
           })
@@ -106,6 +114,14 @@ export function ReportDialog({ kind, process, hasChildren, publishedOnly, onClos
             <Checkbox>{t('processes:reports.includeSystems')}</Checkbox>
           </Form.Item>
         )}
+        {kind === 'handbook' &&
+          (
+            ['includeValueChain', 'includeSipoc', 'includeDecisions', 'includeOrgChart'] as const
+          ).map((name) => (
+            <Form.Item key={name} name={name} valuePropName="checked" style={{ marginBlockEnd: 4 }}>
+              <Checkbox data-testid={`handbook-${name}`}>{t(`diagrams:handbook.${name}`)}</Checkbox>
+            </Form.Item>
+          ))}
       </Form>
     </Modal>
   );

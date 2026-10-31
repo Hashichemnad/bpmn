@@ -3,6 +3,7 @@ import { GovernanceModule } from '../governance/governance.module';
 import { DocsModule } from '../docs/docs.module';
 import { ObjectsModule } from '../objects/objects.module';
 import { GrcModule } from '../grc/grc.module';
+import { DiagramReportService } from '../diagrams/diagram-report.service';
 import { ReportDataService } from './report-data.service';
 import { ReportsController } from './reports.controller';
 import { ReportsService } from './reports.service';
@@ -10,7 +11,7 @@ import { ReportsService } from './reports.service';
 @Module({
   imports: [GovernanceModule, DocsModule, ObjectsModule, GrcModule],
   controllers: [ReportsController],
-  providers: [ReportsService, ReportDataService],
+  providers: [ReportsService, ReportDataService, DiagramReportService],
   exports: [ReportDataService, ReportsService],
 })
 export class ReportsModule {}

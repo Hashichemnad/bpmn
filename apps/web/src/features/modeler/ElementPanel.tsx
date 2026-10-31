@@ -40,6 +40,7 @@ import { useCreateLink, useDeleteLink, useObject, useObjects, useProcessTree } f
 import { useLabelSuggestions } from '@/api/dictionary';
 import { useAuth } from '@/auth/AuthProvider';
 import { useLocale } from '@/app/LocaleProvider';
+import { DecisionLink } from '@/features/diagrams/dmn/DecisionLink';
 import { ObjectFormModal } from '@/features/objects/ObjectFormModal';
 import { useErrorMessage, useLocalized } from '@/components/i18n-helpers';
 import type {
@@ -93,7 +94,7 @@ function useElementVersion(instance: BpmnInstance | null, element: DiagramElemen
   return version;
 }
 
-function ObjectPicker({
+export function ObjectPicker({
   type,
   exclude,
   onPick,
@@ -636,6 +637,23 @@ export function ElementPanel({ instance, element, process, links, canEdit }: Pro
       )}
 
       {laneSection}
+
+      {element.type === 'bpmn:BusinessRuleTask' && (
+        <>
+          <Divider style={{ margin: '12px 0' }} />
+          <DecisionLink
+            canEdit={canEdit}
+            decisionRef={(bo.get('ph:decisionRef') as string | undefined) ?? null}
+            decisionId={(bo.get('ph:decisionId') as string | undefined) ?? null}
+            onChange={(decisionRef, decisionId) =>
+              modeling?.updateModdleProperties(element, bo, {
+                'ph:decisionRef': decisionRef ?? undefined,
+                'ph:decisionId': decisionId ?? undefined,
+              })
+            }
+          />
+        </>
+      )}
 
       {isActivityElement(element) && (
         <>

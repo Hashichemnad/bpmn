@@ -1,9 +1,12 @@
 import { Body, Controller, Get, Param, Put, Query, Res, StreamableFile } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import type { Response } from 'express';
+import { z } from 'zod';
 import {
+  DIAGRAM_TYPES,
   PERMISSIONS,
   portalSearchQuerySchema,
+  type DiagramType,
   portalSettingsSchema,
   type ContentType,
   type PortalSearchQuery,
@@ -60,6 +63,20 @@ export class PortalController {
   @Get('processes/:id')
   process(@Param('id', UuidPipe()) id: string, @CurrentUser() user: AuthUser) {
     return this.portal.process(id, user);
+  }
+
+  @Get('diagrams')
+  diagrams(
+    @Query(new ZodPipe(z.object({ type: z.enum(DIAGRAM_TYPES).optional() })))
+    q: { type?: DiagramType },
+    @CurrentUser() user: AuthUser,
+  ) {
+    return this.portal.diagrams(user, q.type);
+  }
+
+  @Get('diagrams/:id')
+  diagram(@Param('id', UuidPipe()) id: string, @CurrentUser() user: AuthUser) {
+    return this.portal.diagram(id, user);
   }
 
   @Get('spaces')

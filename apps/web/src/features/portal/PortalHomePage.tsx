@@ -1,10 +1,18 @@
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Button, Card, Col, Input, Row, Space, Statistic, Typography } from 'antd';
-import { LinkOutlined, PartitionOutlined, ReadOutlined, StarOutlined } from '@ant-design/icons';
+import {
+  ApartmentOutlined,
+  LinkOutlined,
+  PartitionOutlined,
+  ReadOutlined,
+  StarOutlined,
+} from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
 import { AiButton, AiSuggestionChips } from '@/features/ai/AiParts';
 import { usePortalAssistant } from '@/features/ai/portal-assistant-context';
 import { usePortalHome, usePortalProcesses } from '@/api/portal';
+import { usePortalDiagram } from '@/api/diagrams';
+import { PortalStartValueChain } from '@/features/diagrams/PortalDiagramCanvas';
 import { ErrorState, LoadingState } from '@/components/states';
 import { useLocalized } from '@/components/i18n-helpers';
 import { PortalItemCard } from './PortalItemCard';
@@ -52,6 +60,14 @@ export function PortalHomePage() {
             valueStyle={{ color: '#fff' }}
             prefix={<ReadOutlined />}
           />
+          {h.counts.diagrams > 0 && (
+            <Statistic
+              title={<span style={{ color: '#dbeafe' }}>{t('diagrams:portal.title')}</span>}
+              value={h.counts.diagrams}
+              valueStyle={{ color: '#fff' }}
+              prefix={<ApartmentOutlined />}
+            />
+          )}
         </Space>
       </section>
 
@@ -71,6 +87,8 @@ export function PortalHomePage() {
           ))}
         </Space>
       )}
+
+      {h.startDiagram && <StartValueChain id={h.startDiagram.id} />}
 
       <Typography.Title level={4} className="ph-portal-section-title">
         {t('portal:house')}
@@ -122,5 +140,25 @@ function PortalAskHero() {
       <AiButton onClick={() => assistant.ask()}>{t('ai:portal.askHero')}</AiButton>
       <AiSuggestionChips feature="PORTAL_QA" onPick={(q) => assistant.ask(q)} />
     </div>
+  );
+}
+
+/** The value chain chosen as the portal's start page, with drill-down (D-126). */
+function StartValueChain({ id }: { id: string }) {
+  const { t } = useTranslation();
+  const loc = useLocalized();
+  const diagram = usePortalDiagram(id);
+  if (!diagram.data) return null;
+  return (
+    <section className="ph-portal-start" data-testid="portal-start-value-chain">
+      <Typography.Title level={4} className="ph-portal-section-title">
+        <Link to={`/portal/diagrams/${id}`}>
+          {loc(diagram.data) || t('diagrams:type.VALUE_CHAIN')}
+        </Link>
+      </Typography.Title>
+      <Card size="small">
+        <PortalStartValueChain diagram={diagram.data} />
+      </Card>
+    </section>
   );
 }

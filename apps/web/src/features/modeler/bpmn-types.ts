@@ -92,6 +92,9 @@ export interface BpmnInstance {
   destroy(): void;
 }
 
+/** Any diagram-js based instance (bpmn-js, the graph notations): service lookup only. */
+export type DiagramServices = Pick<BpmnInstance, 'get'>;
+
 /** Shape geometry (diagram coordinates). */
 export interface ShapeElement extends DiagramElement {
   x: number;

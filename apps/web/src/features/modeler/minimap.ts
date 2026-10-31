@@ -1,6 +1,6 @@
 import MinimapModule from 'diagram-js-minimap';
 import 'diagram-js-minimap/assets/diagram-js-minimap.css';
-import type { BpmnInstance } from './bpmn-types';
+import type { DiagramServices } from './bpmn-types';
 
 export { MinimapModule };
 
@@ -10,7 +10,7 @@ interface Minimap {
 }
 
 /** Opens or closes the mini-map of a diagram created with MinimapModule. */
-export function setMinimap(instance: BpmnInstance, open: boolean): void {
+export function setMinimap(instance: DiagramServices, open: boolean): void {
   const minimap = instance.get<Minimap | null>('minimap', false);
   if (minimap && minimap.isOpen() !== open) minimap.toggle(open);
 }

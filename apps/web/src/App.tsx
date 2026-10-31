@@ -77,6 +77,11 @@ import { KpiDetailPage } from '@/features/kpi/KpiDetailPage';
 import { ObjectivesPage } from '@/features/kpi/ObjectivesPage';
 import { KpiDashboardPage } from '@/features/kpi/KpiDashboardPage';
 import { SalesforceSettingsPage } from '@/features/settings/SalesforceSettingsPage';
+import { DiagramDetailPage } from '@/features/diagrams/DiagramDetailPage';
+import { DiagramWorkspacePage } from '@/features/diagrams/DiagramWorkspacePage';
+import { PrintDiagramPage } from '@/features/diagrams/PrintDiagramPage';
+import { PortalDiagramsPage } from '@/features/diagrams/PortalDiagramsPage';
+import { PortalDiagramPage } from '@/features/diagrams/PortalDiagramPage';
 
 const P = PERMISSIONS;
 
@@ -105,6 +110,22 @@ export const routes: RouteObject[] = [
             ),
           },
           {
+            path: 'portal/print/diagrams/:id',
+            element: (
+              <RequirePermission all={[P.PORTAL_READ]}>
+                <PrintDiagramPage portal />
+              </RequirePermission>
+            ),
+          },
+          {
+            path: 'print/diagrams/:id',
+            element: (
+              <RequirePermission all={[P.PROCESSES_READ]}>
+                <PrintDiagramPage />
+              </RequirePermission>
+            ),
+          },
+          {
             path: 'portal/print/pages/:pageId',
             element: (
               <RequirePermission all={[P.PORTAL_READ]}>
@@ -123,6 +144,8 @@ export const routes: RouteObject[] = [
               { index: true, element: <PortalHomePage /> },
               { path: 'processes', element: <PortalProcessesPage /> },
               { path: 'processes/:processId', element: <PortalProcessPage /> },
+              { path: 'diagrams', element: <PortalDiagramsPage /> },
+              { path: 'diagrams/:id', element: <PortalDiagramPage /> },
               { path: 'docs', element: <PortalDocsPage /> },
               { path: 'docs/:spaceId', element: <PortalSpacePage /> },
               { path: 'pages/:pageId', element: <PortalPagePage /> },
@@ -141,6 +164,15 @@ export const routes: RouteObject[] = [
           {
             element: <WorkspaceOnly />,
             children: [
+              {
+                // Full-screen workspace of the other diagram types (D-120).
+                path: 'diagrams/:id/edit',
+                element: (
+                  <RequirePermission all={[P.PROCESSES_READ]}>
+                    <DiagramWorkspacePage />
+                  </RequirePermission>
+                ),
+              },
               {
                 // Full-screen modeler workspace: no app sidebar, process tree or page header.
                 path: 'processes/:id/model',
@@ -358,6 +390,15 @@ export const routes: RouteObject[] = [
                       { index: true, element: <ProcessListPage /> },
                       { path: ':id', element: <ProcessDetailPage /> },
                     ],
+                  },
+                  {
+                    path: 'diagrams',
+                    element: (
+                      <RequirePermission all={[P.PROCESSES_READ]}>
+                        <RepositoryLayout />
+                      </RequirePermission>
+                    ),
+                    children: [{ path: ':id', element: <DiagramDetailPage /> }],
                   },
                   {
                     path: 'ea/applications',

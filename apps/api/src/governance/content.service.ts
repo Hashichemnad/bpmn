@@ -4,12 +4,14 @@ import {
   type ContentRefDto,
   type ContentStatus,
   type ContentType,
+  type DiagramType,
   type ProcessCategory,
   type UserRef,
 } from '@processhub/shared';
 import { PrismaService } from '../prisma/prisma.service';
 import { DocsAccessService } from '../docs/docs-access.service';
 import { canEditModel, canEditProcess } from '../processes/processes.service';
+import { AUDIT_ENTITY } from './edit-guard';
 import { forbidden, notFound } from '../common/app-exception';
 import type { AuthUser } from '../common/auth-user';
 
@@ -23,6 +25,8 @@ export interface ContentItem {
   code?: string;
   spaceId?: string;
   category?: ProcessCategory;
+  /** Diagrams: the notation. */
+  diagramType?: DiagramType;
   departmentId: string | null;
   ownerId: string | null;
   workflowId: string | null;
@@ -41,6 +45,7 @@ export const userRefSelect = { id: true, email: true, nameEn: true, nameAr: true
 
 /** In-app path of an item in the workspace. */
 export function itemLink(item: Pick<ContentItem, 'type' | 'id' | 'spaceId'>, suffix = ''): string {
+  if (item.type === 'DIAGRAM') return `/diagrams/${item.id}${suffix}`;
   return item.type === 'PROCESS'
     ? `/processes/${item.id}${suffix}`
     : `/docs/${item.spaceId}/pages/${item.id}${suffix}`;
@@ -54,6 +59,7 @@ export function toRef(item: ContentItem): ContentRefDto {
     titleAr: item.titleAr,
     ...(item.code ? { code: item.code } : {}),
     ...(item.spaceId ? { spaceId: item.spaceId } : {}),
+    ...(item.diagramType ? { diagramType: item.diagramType } : {}),
   };
 }
 
@@ -74,7 +80,7 @@ export class ContentService {
   /** Loads an active item with the user's rights. Throws NOT_FOUND if it cannot be read. */
   async load(type: ContentType, id: string, user: AuthUser | null): Promise<ContentItem> {
     const item = await this.find(type, id, user);
-    if (!item || (user && !item.canRead)) throw notFound(type === 'PROCESS' ? 'Process' : 'Page');
+    if (!item || (user && !item.canRead)) throw notFound(AUDIT_ENTITY[type]);
     return item;
   }
 
@@ -104,6 +110,38 @@ export class ContentService {
         updatedAt: p.updatedAt,
         canRead: !!user?.permissions.has(PERMISSIONS.PROCESSES_READ),
         canEdit: !!user && (canEditModel(user, p) || canEditProcess(user, p)),
+        canManage: !!user && (manage || owner || user.permissions.has(PERMISSIONS.PROCESSES_EDIT)),
+      };
+    }
+    if (type === 'DIAGRAM') {
+      const d = await this.prisma.diagram.findFirst({
+        where: { id, deletedAt: null },
+        include: { process: { select: { category: true } } },
+      });
+      if (!d) return null;
+      const last = await this.prisma.diagramVersion.aggregate({
+        where: { diagramId: id },
+        _max: { versionNumber: true },
+      });
+      const owner = !!user && d.ownerId === user.id;
+      return {
+        type,
+        id,
+        status: d.status as ContentStatus,
+        titleEn: d.nameEn,
+        titleAr: d.nameAr,
+        code: d.code,
+        diagramType: d.type as DiagramType,
+        // The parent process's category picks the category default workflow (D-120).
+        category: d.process?.category as ProcessCategory | undefined,
+        departmentId: d.departmentId,
+        ownerId: d.ownerId,
+        workflowId: d.workflowId,
+        nextReviewAt: d.nextReviewAt,
+        latestVersion: last._max.versionNumber ?? null,
+        updatedAt: d.updatedAt,
+        canRead: !!user?.permissions.has(PERMISSIONS.PROCESSES_READ),
+        canEdit: !!user && (canEditModel(user, d) || canEditProcess(user, d)),
         canManage: !!user && (manage || owner || user.permissions.has(PERMISSIONS.PROCESSES_EDIT)),
       };
     }
@@ -146,7 +184,7 @@ export class ContentService {
     const ids = (t: ContentType) => [
       ...new Set(keys.filter((k) => k.entityType === t).map((k) => k.entityId)),
     ];
-    const [processes, pages] = await Promise.all([
+    const [processes, pages, diagrams] = await Promise.all([
       this.prisma.process.findMany({
         where: { id: { in: ids('PROCESS') } },
         select: { id: true, code: true, nameEn: true, nameAr: true },
@@ -154,6 +192,10 @@ export class ContentService {
       this.prisma.page.findMany({
         where: { id: { in: ids('PAGE') } },
         select: { id: true, titleEn: true, titleAr: true, spaceId: true },
+      }),
+      this.prisma.diagram.findMany({
+        where: { id: { in: ids('DIAGRAM') } },
+        select: { id: true, code: true, nameEn: true, nameAr: true, type: true },
       }),
     ]);
     const map = new Map<string, ContentRefDto>();
@@ -164,6 +206,16 @@ export class ContentService {
         titleEn: p.nameEn,
         titleAr: p.nameAr,
         code: p.code,
+      });
+    }
+    for (const d of diagrams) {
+      map.set(`DIAGRAM:${d.id}`, {
+        entityType: 'DIAGRAM',
+        entityId: d.id,
+        titleEn: d.nameEn,
+        titleAr: d.nameAr,
+        code: d.code,
+        diagramType: d.type as DiagramType,
       });
     }
     for (const p of pages) {
@@ -186,6 +238,20 @@ export class ContentService {
 
   /** True when the working BPMN model differs from the latest version. */
   async hasUnversionedChanges(item: ContentItem): Promise<boolean> {
+    if (item.type === 'DIAGRAM') {
+      const [d, version] = await Promise.all([
+        this.prisma.diagram.findUnique({ where: { id: item.id }, select: { content: true } }),
+        item.latestVersion
+          ? this.prisma.diagramVersion.findUnique({
+              where: {
+                diagramId_versionNumber: { diagramId: item.id, versionNumber: item.latestVersion },
+              },
+              select: { content: true },
+            })
+          : null,
+      ]);
+      return !!d && (!version || version.content !== d.content);
+    }
     if (item.type !== 'PROCESS') return false;
     const [model, version] = await Promise.all([
       this.prisma.processModel.findUnique({

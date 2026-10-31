@@ -1,11 +1,17 @@
 import { Button, Dropdown, Space, Tooltip } from 'antd';
 import { DownOutlined, ZoomInOutlined, ZoomOutOutlined } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
-import type { BpmnInstance, Canvas } from './bpmn-types';
+import type { Canvas, DiagramServices } from './bpmn-types';
 import { ZOOM_PRESETS, fitPage, fitWidth, zoomBy, zoomTo } from './view';
 
 /** Zoom out / percentage menu (fit width, fit page, presets) / zoom in. */
-export function ZoomControl({ instance, zoom }: { instance: BpmnInstance | null; zoom: number }) {
+export function ZoomControl({
+  instance,
+  zoom,
+}: {
+  instance: DiagramServices | null;
+  zoom: number;
+}) {
   const { t } = useTranslation();
   const canvas = () => instance?.get<Canvas>('canvas');
   const percent = new Intl.NumberFormat(undefined, { style: 'percent' });

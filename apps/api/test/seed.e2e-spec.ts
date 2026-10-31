@@ -135,5 +135,43 @@ describe('Seed (e2e)', () => {
       'Steering committee',
     ]);
     expect(terms.every((t) => t.nameEn && t.nameAr)).toBe(true);
+    // Diagram types (D-126): one of each, value chain / org chart / DMN published, start page set.
+    const diagrams = await ctx.prisma.diagram.findMany({ orderBy: { code: 'asc' } });
+    expect(diagrams.map((d) => `${d.code}:${d.status}`)).toEqual([
+      'DMN-001:PUBLISHED',
+      'EPC-001:DRAFT',
+      'ORG-001:PUBLISHED',
+      'SIPOC-001:DRAFT',
+      'VC-001:PUBLISHED',
+    ]);
+    const portal = await ctx.prisma.setting.findUnique({ where: { key: 'portal' } });
+    expect((portal!.value as { startDiagramId?: string }).startDiagramId).toBe(
+      diagrams.find((d) => d.code === 'VC-001')!.id,
+    );
+    const approval = await ctx.prisma.process.findFirst({
+      where: { code: 'S.01.02' },
+      include: { model: true },
+    });
+    expect(approval!.model!.bpmnXml).toContain(
+      `ph:decisionRef="${diagrams.find((d) => d.code === 'DMN-001')!.id}"`,
+    );
+    expect(await ctx.prisma.process.count({ where: { code: 'S.01.03' } })).toBe(1);
+  });
+
+  it('a production install without demo data has no value chain portal start page', async () => {
+    await resetDb(ctx.prisma);
+    const before = process.env.SEED_DEMO_DATA;
+    process.env.SEED_DEMO_DATA = 'false';
+    try {
+      await runSeed();
+    } finally {
+      process.env.SEED_DEMO_DATA = before;
+    }
+    expect(await ctx.prisma.diagram.count()).toBe(0);
+    // Switched on at go-live once the real value chain is published (DEPLOYMENT.md checklist).
+    const portal = await ctx.prisma.setting.findUnique({ where: { key: 'portal' } });
+    expect(
+      (portal?.value as { startDiagramId?: string | null } | undefined)?.startDiagramId ?? null,
+    ).toBeNull();
   });
 });

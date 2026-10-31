@@ -10,6 +10,9 @@ export interface StepInfo {
   descriptionEn: string;
   descriptionAr: string;
   linkedProcessId: string | null;
+  /** Business rule task → DMN decision table (D-123). */
+  decisionRef: string | null;
+  decisionId: string | null;
 }
 
 export function stepInfo(el: DiagramElement): StepInfo {
@@ -23,6 +26,8 @@ export function stepInfo(el: DiagramElement): StepInfo {
     descriptionEn: (bo.get('ph:descriptionEn') as string | undefined) ?? '',
     descriptionAr: (bo.get('ph:descriptionAr') as string | undefined) ?? '',
     linkedProcessId: linkedProcessOf(bo),
+    decisionRef: (bo.get('ph:decisionRef') as string | undefined) ?? null,
+    decisionId: (bo.get('ph:decisionId') as string | undefined) ?? null,
   };
 }
 

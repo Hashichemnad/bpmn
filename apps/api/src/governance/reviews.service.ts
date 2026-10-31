@@ -35,13 +35,14 @@ import type { AuthUser, RequestMeta } from '../common/auth-user';
 import { ContentService, itemLink, itemParams, toRef, type ContentItem } from './content.service';
 import { WorkflowsService } from './workflows.service';
 import { createPublication, type StepSnapshot } from './publication';
+import { AUDIT_ENTITY } from './edit-guard';
 
 type Tx = Prisma.TransactionClient;
 type ReviewRow = Prisma.ReviewGetPayload<{ include: { tasks: true } }>;
 
 export type { StepSnapshot };
 
-const entityName = (type: ContentType) => (type === 'PROCESS' ? 'Process' : 'Page');
+const entityName = (type: ContentType) => AUDIT_ENTITY[type];
 const dir = (v: string): TextDirection => (v === 'rtl' ? 'rtl' : 'ltr');
 
 export const actorParams = (actor: Pick<AuthUser, 'nameEn' | 'nameAr' | 'email'>) => ({
@@ -51,6 +52,7 @@ export const actorParams = (actor: Pick<AuthUser, 'nameEn' | 'nameAr' | 'email'>
 
 async function setNextReview(tx: Tx, type: ContentType, id: string, nextReviewAt: Date) {
   if (type === 'PROCESS') await tx.process.update({ where: { id }, data: { nextReviewAt } });
+  else if (type === 'DIAGRAM') await tx.diagram.update({ where: { id }, data: { nextReviewAt } });
   else await tx.page.update({ where: { id }, data: { nextReviewAt } });
 }
 
@@ -68,7 +70,9 @@ async function transition(
   const res =
     type === 'PROCESS'
       ? await tx.process.updateMany({ where, data })
-      : await tx.page.updateMany({ where, data });
+      : type === 'DIAGRAM'
+        ? await tx.diagram.updateMany({ where, data })
+        : await tx.page.updateMany({ where, data });
   if (!res.count) throw conflict('INVALID_TRANSITION', 'The item changed in the meantime');
 }
 
@@ -691,12 +695,21 @@ export class ReviewsService {
               select: { label: true },
             })
           )?.label
-        : (
-            await this.prisma.pageVersion.findUnique({
-              where: { pageId_versionNumber: { pageId: id, versionNumber: item.latestVersion } },
-              select: { label: true },
-            })
-          )?.label
+        : type === 'DIAGRAM'
+          ? (
+              await this.prisma.diagramVersion.findUnique({
+                where: {
+                  diagramId_versionNumber: { diagramId: id, versionNumber: item.latestVersion },
+                },
+                select: { label: true },
+              })
+            )?.label
+          : (
+              await this.prisma.pageVersion.findUnique({
+                where: { pageId_versionNumber: { pageId: id, versionNumber: item.latestVersion } },
+                select: { label: true },
+              })
+            )?.label
       : null;
     const [activeDto] = active ? await this.summaries([active], user) : [null];
     const [lastDto] = last ? await this.summaries([last], user) : [null];
@@ -837,6 +850,24 @@ export class ReviewsService {
         baseLabel: base?.versionLabel ?? null,
         baseXml: old?.bpmnXml ?? null,
         newXml: next?.bpmnXml ?? '',
+      };
+    } else if (review.entityType === 'DIAGRAM') {
+      const version = (versionNumber: number) =>
+        this.prisma.diagramVersion.findUnique({
+          where: { diagramId_versionNumber: { diagramId: review.entityId, versionNumber } },
+        });
+      const [next, old] = await Promise.all([
+        version(review.versionNumber),
+        base ? version(base.versionNumber) : null,
+      ]);
+      changeNote = next?.changeNote ?? '';
+      compare = {
+        kind: 'DIAGRAM',
+        diagramType: item.diagramType!,
+        baseVersion: base?.versionNumber ?? null,
+        baseLabel: base?.versionLabel ?? null,
+        baseContent: old?.content ?? null,
+        newContent: next?.content ?? '',
       };
     } else {
       const toContent = (v: Prisma.PageVersionGetPayload<object>): PageContentDto => ({

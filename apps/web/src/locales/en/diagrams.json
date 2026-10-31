@@ -1,0 +1,313 @@
+{
+  "type": {
+    "VALUE_CHAIN": "Value chain",
+    "ORG_CHART": "Organisation chart",
+    "DMN": "Decision table (DMN)",
+    "EPC": "Event-driven process chain (EPC)",
+    "SIPOC": "SIPOC"
+  },
+  "typeHint": {
+    "VALUE_CHAIN": "Process landscape: primary activities as chevrons, management and support as blocks. Elements drill down to processes or other diagrams.",
+    "ORG_CHART": "Organisational units, positions and persons with reporting lines and staff functions.",
+    "DMN": "Decision tables with hit policies, typed inputs and outputs, linked to business rule tasks.",
+    "EPC": "Events, functions and connectors (ARIS notation), convertible to BPMN.",
+    "SIPOC": "Suppliers, inputs, process steps, outputs and customers of one process."
+  },
+  "new": {
+    "button": "New",
+    "PROCESS": "Process (BPMN)"
+  },
+  "newOfType": "New {{type}}",
+  "editDetails": "Edit diagram details",
+  "created": "Diagram {{code}} created",
+  "deleteTitle": "Delete “{{name}}”?",
+  "deleteText": "The diagram is removed from the repository and the portal. Its history stays in the audit log.",
+  "deleted": "Diagram deleted",
+  "fields": {
+    "type": "Diagram type",
+    "process": "Process / process-house node",
+    "processHint": "The diagram is shown under this process in the repository tree."
+  },
+  "tree": {
+    "group": "Diagrams"
+  },
+  "preview": "Diagram",
+  "openEditor": "Open editor",
+  "openViewer": "Open viewer",
+  "whereUsed": {
+    "tab": "Where used",
+    "none": "No other diagram refers to this one.",
+    "relation": {
+      "DRILLDOWN": "Drill-down",
+      "SOURCE": "Process",
+      "DECISION": "Business rule step",
+      "PERFORMS": "Performs",
+      "SUPPORTS": "Supports",
+      "INPUT": "Input",
+      "OUTPUT": "Output",
+      "MITIGATES": "Mitigates",
+      "MEASURES": "Measures",
+      "NAMED": "Named",
+      "REQUIRES": "Requires"
+    }
+  },
+  "links": {
+    "tab": "Links",
+    "forElement": "Library objects linked to “{{name}}”.",
+    "all": "All links of the diagram. Select an element to add links.",
+    "none": "No linked objects"
+  },
+  "export": "Export",
+  "exportPdf": "PDF (print)",
+  "print": "Print / save as PDF",
+  "elements": "Elements",
+  "draft": "Working draft",
+  "compareTitle": "Compare versions",
+  "changeNoteRequired": "Describe what changed",
+  "importFailed": "The diagram could not be loaded",
+  "invalidContent": "The diagram content is not valid",
+  "selectElement": "Select an element to see and edit its properties.",
+  "label": {
+    "en": "Label (English)",
+    "ar": "Label (Arabic)"
+  },
+  "colour": "Colour",
+  "fill": "Fill",
+  "stroke": "Border",
+  "resetColour": "Use the theme colour",
+  "fit": "Fit to screen",
+  "minimap": "Mini-map",
+  "palette": {
+    "shapes": "Shapes",
+    "flow": "Process flow",
+    "connectors": "Connectors",
+    "resources": "Organisation and data"
+  },
+  "tools": {
+    "hand": "Hand tool (H)",
+    "lasso": "Lasso (L)",
+    "connect": "Connect (C)"
+  },
+  "kinds": {
+    "chevron": "Primary activity",
+    "block": "Management / support activity",
+    "frame": "Group",
+    "arrow": "Arrow",
+    "unit": "Organisational unit",
+    "position": "Position",
+    "person": "Person",
+    "reports": "Reporting line",
+    "staff": "Staff line",
+    "event": "Event",
+    "function": "Function",
+    "and": "AND connector",
+    "or": "OR connector",
+    "xor": "XOR connector",
+    "processPath": "Process path",
+    "orgUnit": "Organisational unit",
+    "system": "Information system",
+    "information": "Information object",
+    "document": "Document",
+    "flow": "Control flow",
+    "assignment": "Assignment",
+    "suppliers": "Supplier",
+    "inputs": "Input",
+    "steps": "Process step",
+    "outputs": "Output",
+    "customers": "Customer",
+    "decision": "Decision",
+    "input": "Input",
+    "output": "Output",
+    "inputData": "Input data",
+    "knowledgeSource": "Knowledge source",
+    "businessKnowledgeModel": "Business knowledge model",
+    "annotation": "Rule annotation"
+  },
+  "diff": {
+    "title": "Changes ({{count}})",
+    "added": "Added",
+    "removed": "Removed",
+    "none": "No differences",
+    "noBase": "No earlier version",
+    "aspect": {
+      "label": "Label",
+      "layout": "Position / size",
+      "properties": "Properties"
+    }
+  },
+  "dmn": {
+    "drd": "Decision requirements",
+    "imported": "DMN model imported",
+    "exportXml": "DMN XML (.dmn)",
+    "import": "Import DMN XML",
+    "test": "Test",
+    "validation": "Validation",
+    "translations": "Translations",
+    "translationsHint": "Names in {{language}}: the editor shows the active language.",
+    "lang": {
+      "en": "English",
+      "ar": "Arabic"
+    },
+    "noTable": "The model has no decision table yet.",
+    "testHint": "Enter input values and run: the matching rules are highlighted in the table. FEEL unary tests are evaluated with feelin.",
+    "run": "Run",
+    "result": "Result",
+    "matched": "Matching rules ({{count}})",
+    "errors": {
+      "NO_MATCH": "No rule matches these values.",
+      "UNIQUE_VIOLATION": "Hit policy UNIQUE: more than one rule matches.",
+      "ANY_CONFLICT": "Hit policy ANY: the matching rules give different outputs.",
+      "EVALUATION": "The decision could not be evaluated."
+    },
+    "valid": "No problems found.",
+    "issues": {
+      "NO_TABLE_RULES": "The decision table has no rules.",
+      "MISSING_NAME_EN": "English name missing.",
+      "MISSING_NAME_AR": "Arabic name missing.",
+      "INVALID_INPUT_ENTRY": "Invalid input entry (FEEL unary test).",
+      "INVALID_OUTPUT_ENTRY": "Invalid output entry (FEEL expression).",
+      "EMPTY_OUTPUT": "A rule has an empty output.",
+      "DUPLICATE_RULE": "Two rules have the same input entries."
+    },
+    "linkTitle": "Decision table (DMN)",
+    "linkHint": "The business rule decided by this step.",
+    "chooseTable": "Choose a decision table…",
+    "viewTable": "View table",
+    "openTable": "Open",
+    "stepTitle": "Decision table"
+  },
+  "sipoc": {
+    "columns": {
+      "suppliers": "Suppliers",
+      "inputs": "Inputs",
+      "steps": "Process",
+      "outputs": "Outputs",
+      "customers": "Customers"
+    },
+    "letter": {
+      "suppliers": "S",
+      "inputs": "I",
+      "steps": "P",
+      "outputs": "O",
+      "customers": "C"
+    },
+    "generateTitle": "Generate from the process?",
+    "generateReplace": "The columns are replaced with the steps of the main path, the inputs and outputs of the steps, and the suppliers and customers from the lanes and pools. You can undo or restore a version.",
+    "generateHint": "Fill the SIPOC from the BPMN model of the linked process",
+    "noModel": "The process has no model yet.",
+    "hint": "One item per line; the process column holds 5–7 high-level steps. Edit both languages; the first field is the active language.",
+    "stepsCount": "The process has {{count}} steps; a SIPOC usually shows {{min}}–{{max}} high-level steps.",
+    "up": "Move up",
+    "down": "Move down",
+    "add": "Add",
+    "generateFrom": "Generate from a process (optional):",
+    "chooseProcess": "Choose a process…"
+  },
+  "portal": {
+    "nav": "Diagrams",
+    "title": "Diagrams",
+    "subtitle": "Value chains, organisation charts, decision tables, EPCs and SIPOCs — approved versions.",
+    "all": "All",
+    "none": "No published diagrams yet.",
+    "drillHint": "Click a highlighted element to open the process or diagram behind it.",
+    "startPage": "Start page",
+    "startPageHint": "A published value chain shown first on the portal home; its elements drill down to the processes."
+  },
+  "valueChain": {
+    "generate": "Generate",
+    "generateHint": "Build the value chain from the Management / Core / Support processes of the process house",
+    "generateTitle": "Generate from the process house?",
+    "generateReplace": "The diagram is replaced by frames for Management, Core and Support with their level-1 processes, each linked to its process. You can undo by restoring a version.",
+    "generateFromHouse": "Generate the first version from the process house (level-1 processes)",
+    "includeLevel2": "Include level-2 processes",
+    "row": "Row",
+    "linkedProcess": "Linked process",
+    "linkedDiagram": "Linked value chain",
+    "linkedHint": "Clicking the element drills down to it (in the portal: when it is published).",
+    "openLinked": "Open linked process / diagram"
+  },
+  "colourBy": {
+    "title": "Colour by",
+    "none": "Own colours",
+    "status": "Process status",
+    "kpi": "KPI status",
+    "risk": "Residual risk",
+    "department": "Owner department",
+    "noData": "No data",
+    "legend": "Legend"
+  },
+  "org": {
+    "unitHint": "The department this unit stands for (generated charts keep it in sync).",
+    "user": "Person (user)",
+    "userHint": "Optional: the employee holding the position.",
+    "role": "Role (library)",
+    "roleHint": "The position is the Role used in lanes and steps of the process models.",
+    "performs": "Processes and steps performed (RACI)",
+    "performsNone": "The role performs no step yet.",
+    "viaLane": "via lane",
+    "raci": {
+      "R": "Responsible: performs the step",
+      "A": "Accountable: approval step"
+    },
+    "regenerate": "Regenerate",
+    "regenerateHint": "Update the chart from departments, roles and people; manual edits are kept",
+    "previewTitle": "Regenerate from data — preview",
+    "mergeHint": "Generated units, positions and people are matched by id: they keep their position and colours and take the current names; new ones are added, those whose source no longer exists are removed. Elements and lines you added yourself stay.",
+    "includePersons": "Include people holding the positions",
+    "added": "Added",
+    "renamed": "Renamed",
+    "removed": "Removed",
+    "keptManual": "Manual elements kept",
+    "apply": "Apply",
+    "generateFromData": "Generate from departments and roles",
+    "roleDepartmentHint": "Department of the position in organisation charts."
+  },
+  "epc": {
+    "valid": "No EPC syntax problems.",
+    "resourceHint": "Library object of this resource (lanes, object links after conversion).",
+    "convert": "Convert to BPMN",
+    "convertHint": "Create a new draft BPMN process from this EPC",
+    "convertTitle": "Convert EPC to BPMN",
+    "convertText": "Functions become tasks (in the lane of their organisational unit), connectors gateways, start and end events stay events, events between steps become branch labels after decisions, process paths call activities; systems and documents are linked to the tasks. The EPC is not changed.",
+    "convertWithIssues": "The EPC has {{count}} syntax warning(s); the conversion may need corrections.",
+    "parent": "Parent process",
+    "converted": "Process {{code}} created as a draft.",
+    "openProcess": "Open the BPMN model",
+    "reportEpc": "EPC element",
+    "reportBpmn": "In BPMN",
+    "results": {
+      "TASK": "Task",
+      "USER_TASK": "User task",
+      "SERVICE_TASK": "Service task (system)",
+      "CALL_ACTIVITY": "Call activity",
+      "START_EVENT": "Start event",
+      "END_EVENT": "End event",
+      "FLOW_LABEL": "Branch label after the gateway",
+      "DROPPED_STATE": "State between steps (not drawn in BPMN)",
+      "GATEWAY": "Gateway",
+      "LANE": "Lane",
+      "SYSTEM_LINK": "IT system linked to the task",
+      "DOCUMENT_LINK": "Document / information linked to the task",
+      "NOT_CONVERTED": "Not converted"
+    },
+    "issues": {
+      "NO_START_EVENT": "The chain has no start event (an event without incoming flow).",
+      "NO_END_EVENT": "The chain has no end event (an event without outgoing flow).",
+      "START_NOT_EVENT": "The chain starts with a function or connector instead of an event.",
+      "END_NOT_EVENT": "The chain ends with a function or connector instead of an event.",
+      "EVENT_EVENT": "Two events follow each other: events and functions must alternate.",
+      "FUNCTION_FUNCTION": "Two functions follow each other: events and functions must alternate.",
+      "DECISION_AFTER_EVENT": "An XOR / OR split follows a single event: events cannot decide.",
+      "CONNECTOR_DEGREE": "A connector must split (one in, several out) or join (several in, one out).",
+      "BRANCH_WITHOUT_CONNECTOR": "Branches and joins need a connector.",
+      "RESOURCE_UNASSIGNED": "Organisational unit, system or document is not assigned to a function.",
+      "UNCONNECTED": "Element is not connected."
+    }
+  },
+  "handbook": {
+    "includeValueChain": "Place in the value chain",
+    "includeSipoc": "SIPOC",
+    "includeDecisions": "Linked decision tables (DMN)",
+    "includeOrgChart": "Organisation chart excerpt"
+  }
+}

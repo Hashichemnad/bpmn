@@ -20,6 +20,7 @@ import { seedAiDemo, seedAiDemoContent } from './seed-ai';
 import { seedDictionaryDemo } from './seed-dictionary';
 import { seedGrcDemo } from './seed-grc';
 import { ensureGrcChangeWorkflow, seedAssuranceDemo } from './seed-assurance';
+import { seedDiagramsDemo } from './seed-diagrams';
 import { seedEaKpiDemo } from './seed-ea-kpi';
 
 const prisma = new PrismaClient();
@@ -286,6 +287,7 @@ async function seedDemoData(adminId: string | null): Promise<void> {
     'مدير الإدارة',
     'Approves requests for the department.',
     'يعتمد طلبات الإدارة.',
+    { departmentId: exec },
   );
   const buyer = await obj(
     'ROLE',
@@ -294,6 +296,7 @@ async function seedDemoData(adminId: string | null): Promise<void> {
     'موظف المشتريات',
     'Handles sourcing and purchase orders.',
     'يتولى التوريد وأوامر الشراء.',
+    { departmentId: procurement },
   );
   await obj(
     'ROLE',
@@ -302,6 +305,7 @@ async function seedDemoData(adminId: string | null): Promise<void> {
     'موظف المالية',
     'Processes invoices and payments.',
     'يعالج الفواتير والمدفوعات.',
+    { departmentId: finance },
   );
   const agent = await obj(
     'ROLE',
@@ -310,6 +314,7 @@ async function seedDemoData(adminId: string | null): Promise<void> {
     'موظف خدمة العملاء',
     'First point of contact for customers.',
     'نقطة الاتصال الأولى مع العملاء.',
+    { departmentId: cs },
   );
   const compliance = await obj(
     'ROLE',
@@ -318,6 +323,7 @@ async function seedDemoData(adminId: string | null): Promise<void> {
     'موظف الامتثال',
     'Performs KYC and compliance checks.',
     'يجري فحوصات اعرف عميلك والامتثال.',
+    { departmentId: risk },
   );
   const erp = await obj(
     'SYSTEM',
@@ -427,6 +433,7 @@ export async function main() {
     await seedGrcDemo(prisma, adminId);
     await seedAssuranceDemo(prisma, adminId);
     await seedEaKpiDemo(prisma, adminId);
+    await seedDiagramsDemo(prisma, adminId);
   }
   // After the demo data: the governance demo only seeds into an installation without workflows.
   await ensureGrcChangeWorkflow(prisma, adminId);

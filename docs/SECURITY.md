@@ -248,6 +248,27 @@ zod / UUID pipe; file uploads are checked in the service (allow-list, content sn
 | POST   | `/departments`                               | `departments.manage`                                      | body                                | default    |
 | DELETE | `/departments/:id`                           | `departments.manage`                                      | param `id`                          | default    |
 | PATCH  | `/departments/:id`                           | `departments.manage`                                      | body, param `id`                    | default    |
+| GET    | `/diagrams`                                  | `processes.read`                                          | query                               | default    |
+| POST   | `/diagrams`                                  | `processes.create`                                        | body                                | default    |
+| DELETE | `/diagrams/:id`                              | `processes.delete`                                        | param `id`                          | default    |
+| GET    | `/diagrams/:id`                              | `processes.read`                                          | param `id`                          | default    |
+| PATCH  | `/diagrams/:id`                              | any of `processes.edit`, `processes.edit_own`             | body, param `id`                    | default    |
+| GET    | `/diagrams/:id/content`                      | `processes.read`                                          | param `id`                          | default    |
+| PUT    | `/diagrams/:id/content`                      | any of `models.edit`, `models.edit_own`                   | body, param `id`                    | default    |
+| POST   | `/diagrams/:id/convert-to-bpmn`              | `processes.create`                                        | body, param `id`                    | default    |
+| GET    | `/diagrams/:id/links`                        | `processes.read`                                          | param `id`                          | default    |
+| POST   | `/diagrams/:id/links`                        | any of `models.edit`, `models.edit_own`, `grc.edit`       | body, param `id`                    | default    |
+| DELETE | `/diagrams/:id/links/:linkId`                | any of `models.edit`, `models.edit_own`, `grc.edit`       | param `id`, param `linkId`          | default    |
+| GET    | `/diagrams/:id/versions`                     | `processes.read`                                          | param `id`                          | default    |
+| POST   | `/diagrams/:id/versions`                     | any of `models.edit`, `models.edit_own`                   | body, param `id`                    | default    |
+| GET    | `/diagrams/:id/versions/:versionId`          | `processes.read`                                          | param `id`, param `versionId`       | default    |
+| PATCH  | `/diagrams/:id/versions/:versionId`          | any of `models.edit`, `models.edit_own`                   | body, param `id`, param `versionId` | default    |
+| POST   | `/diagrams/:id/versions/:versionId/restore`  | any of `models.edit`, `models.edit_own`                   | body, param `id`, param `versionId` | default    |
+| GET    | `/diagrams/all`                              | `processes.read`                                          | —                                   | default    |
+| GET    | `/diagrams/org-source`                       | `processes.read`                                          | —                                   | default    |
+| GET    | `/diagrams/process-facts`                    | `processes.read`                                          | query                               | default    |
+| GET    | `/diagrams/role-activities/:roleId`          | `processes.read`                                          | param `roleId`                      | default    |
+| GET    | `/diagrams/where-used`                       | `processes.read`                                          | query                               | default    |
 | POST   | `/dictionary/objects/:id/rename`             | `objects.read` + `processes.read`                         | body, param `id`                    | default    |
 | POST   | `/dictionary/objects/:id/rename-preview`     | `objects.read` + `processes.read`                         | body, param `id`                    | default    |
 | GET    | `/dictionary/suggest`                        | `objects.read`                                            | query                               | default    |
@@ -417,6 +438,8 @@ zod / UUID pipe; file uploads are checked in the service (allow-list, content sn
 | POST   | `/pages/:id/versions/:versionId/restore`     | `docs.read` + `docs.edit`                                 | body, param `id`, param `versionId` | default    |
 | GET    | `/portal/:type/:id/feedback`                 | `portal.read`                                             | param `id`, param `type`            | default    |
 | GET    | `/portal/attachments/:id/content`            | `portal.read`                                             | param `id`                          | default    |
+| GET    | `/portal/diagrams`                           | `portal.read`                                             | query                               | default    |
+| GET    | `/portal/diagrams/:id`                       | `portal.read`                                             | param `id`                          | default    |
 | GET    | `/portal/home`                               | `portal.read`                                             | —                                   | default    |
 | GET    | `/portal/my`                                 | `portal.read`                                             | —                                   | default    |
 | GET    | `/portal/pages/:id`                          | `portal.read`                                             | param `id`                          | default    |
@@ -568,6 +591,9 @@ already the default; check them anyway if you changed the setup.
 - [ ] Daily backups with an off-site copy, and one restore tested (`docs/DEPLOYMENT.md` §7–8).
 - [ ] Settings → Risk & Compliance → Approval of changes **on** for risks and controls with the workflow
       "GRC change approval", and at least two Risk & Compliance Officers (DEPLOYMENT.md §6 step 9, D-106).
+- [ ] Settings → Knowledge Portal → Start page: empty until the real enterprise value chain is approved and
+      published, then set to it (DEPLOYMENT.md §6 step 10, D-127). A production install without demo data starts
+      with it off.
 
 ## 8. External penetration test checklist
 

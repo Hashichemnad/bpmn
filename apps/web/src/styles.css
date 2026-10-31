@@ -2655,3 +2655,303 @@ button.ph-risk-matrix-cell:focus-visible {
   border: 2px solid transparent;
   vertical-align: middle;
 }
+
+/* ---------- Diagram types (value chain, org chart, DMN, EPC, SIPOC — D-120) ---------- */
+
+.ph-graph-canvas {
+  position: relative;
+  inline-size: 100%;
+  background: #fff;
+  border-radius: 8px;
+  overflow: hidden;
+}
+.ph-ws .ph-graph-canvas {
+  border-radius: 0;
+}
+img.ph-palette-icon {
+  inline-size: 24px;
+  block-size: 24px;
+}
+.ph-graph-label {
+  pointer-events: none;
+}
+/* Version compare: added / changed / removed elements. */
+.ph-diff-added .djs-visual > :first-child {
+  stroke: #16a34a !important;
+  stroke-width: 3px !important;
+}
+.ph-diff-changed .djs-visual > :first-child {
+  stroke: #d97706 !important;
+  stroke-width: 3px !important;
+}
+.ph-diff-removed .djs-visual > :first-child {
+  stroke: #dc2626 !important;
+  stroke-width: 3px !important;
+  stroke-dasharray: 6 3;
+}
+li.ph-diff-added {
+  background: #dcfce7;
+}
+li.ph-diff-changed {
+  background: #fef3c7;
+}
+li.ph-diff-removed {
+  background: #fee2e2;
+  text-decoration: line-through;
+}
+/* Portal drill-down: elements that open a published process or diagram. */
+.ph-drill {
+  cursor: pointer;
+}
+.ph-drill .djs-visual > :first-child {
+  stroke-width: 2.5px !important;
+  filter: drop-shadow(0 1px 2px rgba(29, 78, 216, 0.35));
+}
+.ph-drill:hover .djs-visual > :first-child {
+  stroke: #1d4ed8 !important;
+}
+
+/* SIPOC: five columns. */
+.ph-sipoc {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(140px, 1fr));
+  gap: 8px;
+  overflow-x: auto;
+}
+.ph-sipoc-col {
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  background: #fff;
+  min-block-size: 220px;
+}
+.ph-sipoc-head {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  padding: 8px 10px;
+  font-weight: 600;
+  border-block-end: 1px solid #e2e8f0;
+  background: #f8fafc;
+  border-start-start-radius: 8px;
+  border-start-end-radius: 8px;
+}
+.ph-sipoc-steps .ph-sipoc-head {
+  background: #e8f1fb;
+}
+.ph-sipoc-letter {
+  display: inline-grid;
+  place-items: center;
+  inline-size: 26px;
+  block-size: 26px;
+  border-radius: 50%;
+  background: #1f5fa8;
+  color: #fff;
+  font-size: 13px;
+}
+.ph-sipoc-items {
+  list-style: none;
+  margin: 0;
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.ph-sipoc-items li {
+  display: flex;
+  gap: 6px;
+  align-items: flex-start;
+  padding: 6px 8px;
+  border-radius: 6px;
+  background: #f1f5f9;
+}
+.ph-sipoc-num {
+  font-weight: 600;
+  color: #1f5fa8;
+}
+
+/* DMN (dmn-js renders its own UI; the decision table scrolls inside the container). */
+.ph-dmn-view .ant-segmented {
+  margin-block-end: 8px;
+}
+.ph-dmn-container {
+  position: relative;
+  overflow: auto;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+}
+
+/* Print layout of a diagram. */
+.ph-print-diagram .ph-print-header {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  margin-block-end: 12px;
+}
+.ph-print-diagram-canvas .ph-graph-canvas,
+.ph-print-diagram-canvas .ph-dmn-container {
+  border: 1px solid #e2e8f0;
+}
+.ph-print-elements table {
+  inline-size: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+.ph-print-elements th,
+.ph-print-elements td {
+  border: 1px solid #e2e8f0;
+  padding: 4px 6px;
+  text-align: start;
+}
+.ph-print-diagram .ph-print-toolbar {
+  margin-block-end: 12px;
+}
+@media print {
+  .ph-print-diagram .no-print {
+    display: none;
+  }
+  .ph-print-elements {
+    break-before: page;
+  }
+}
+
+/* Value chain: drill-down button, process badges, colour-by legend (D-121). */
+.ph-vc-drill {
+  inline-size: 20px;
+  block-size: 20px;
+  border-radius: 50%;
+  border: 1px solid #1d4ed8;
+  background: #fff;
+  color: #1d4ed8;
+  font-size: 12px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0;
+}
+.ph-vc-drill:hover {
+  background: #1d4ed8;
+  color: #fff;
+}
+.ph-vc-badges {
+  display: flex;
+  gap: 3px;
+  white-space: nowrap;
+}
+.ph-vc-badge {
+  font-size: 10px;
+  line-height: 16px;
+  padding: 0 5px;
+  border-radius: 8px;
+  color: #fff;
+  background: #64748b;
+}
+.ph-vc-badge.is-published {
+  background: #15803d;
+}
+.ph-vc-badge.is-in_review {
+  background: #1d4ed8;
+}
+.ph-vc-badge.is-approved {
+  background: #0e7490;
+}
+.ph-vc-badge.is-archived {
+  background: #374151;
+}
+.ph-vc-badge.is-risk {
+  background: #b42318;
+}
+.ph-vc-legend {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  font-size: 12px;
+  align-items: center;
+}
+.ph-vc-legend i {
+  display: inline-block;
+  inline-size: 14px;
+  block-size: 10px;
+  border: 1.5px solid;
+  border-radius: 3px;
+  margin-inline-end: 4px;
+  vertical-align: middle;
+}
+.ph-ws-canvas-wrap .ph-vc-legend {
+  position: absolute;
+  inset-block-end: 16px;
+  inset-inline-start: 16px;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 8px 12px;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.08);
+  max-inline-size: 60%;
+}
+
+/* Organisation chart: what a position performs (D-122). */
+.ph-org-activities {
+  margin-block-start: 8px;
+}
+.ph-org-steps {
+  list-style: none;
+  margin: 4px 0 0;
+  padding: 0;
+}
+.ph-org-steps li {
+  padding: 2px 0;
+}
+
+/* DMN workspace (D-123): dmn-js fills the canvas; matching rules of "Test decision" are highlighted. */
+.ph-dmn-editor {
+  overflow: auto;
+  background: #fff;
+}
+.ph-dmn-editor .tjs-container,
+.ph-dmn-container .tjs-container {
+  margin: 16px;
+}
+.ph-dmn-hit {
+  background: #fef3c7 !important;
+  box-shadow: inset 0 0 0 1px #d97706;
+}
+
+/* EPC: elements with a syntax warning (D-124). */
+.ph-epc-issue .djs-visual > :first-child {
+  stroke: #d97706 !important;
+  stroke-width: 2.5px !important;
+  stroke-dasharray: 4 3;
+}
+
+/* SIPOC editor (D-125). */
+.ph-sipoc-editor {
+  overflow: auto;
+  padding: 16px;
+  background: #f8fafc;
+}
+.ph-sipoc-editor .ph-sipoc {
+  min-inline-size: 1000px;
+}
+.ph-sipoc-editor .ph-sipoc-items li {
+  align-items: flex-start;
+  cursor: pointer;
+}
+.ph-sipoc-editor .ph-sipoc-items li.is-selected {
+  box-shadow: 0 0 0 2px #1d4ed8;
+}
+.ph-sipoc-fields {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-inline-size: 0;
+}
+.ph-sipoc-actions .ant-btn {
+  block-size: 20px;
+}
+.ph-sipoc-add {
+  margin: 0 8px 8px;
+  inline-size: calc(100% - 16px);
+}
+.ph-portal-start {
+  margin-block-end: 16px;
+}

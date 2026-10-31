@@ -176,12 +176,14 @@ export function onboardingXml(verifyProcessId: string): string {
 
 export interface LinearStep {
   id: string;
-  type?: 'task' | 'userTask' | 'serviceTask' | 'callActivity';
+  type?: 'task' | 'userTask' | 'serviceTask' | 'businessRuleTask' | 'callActivity';
   en: string;
   ar: string;
   descEn?: string;
   descAr?: string;
   linkedProcessId?: string;
+  decisionRef?: string;
+  decisionId?: string;
 }
 
 /** A simple left-to-right process: start → steps → end (used for further demo processes). */

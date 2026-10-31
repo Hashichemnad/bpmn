@@ -33,7 +33,8 @@ import type {
 import { api } from './client';
 
 /** `processes` / `pages` segment of governance and comment URLs. */
-export const typePath = (type: ContentType) => (type === 'PROCESS' ? 'processes' : 'pages');
+export const typePath = (type: ContentType) =>
+  type === 'PROCESS' ? 'processes' : type === 'DIAGRAM' ? 'diagrams' : 'pages';
 
 export const govKeys = {
   info: (type: ContentType, id: string) => ['governance', type, id] as const,
@@ -56,7 +57,16 @@ export const govKeys = {
 
 /** Everything that shows a status, a task or a publication. */
 function invalidateGovernance(qc: ReturnType<typeof useQueryClient>) {
-  for (const key of ['governance', 'reviews', 'tasks', 'processes', 'pages', 'spaces', 'portal']) {
+  for (const key of [
+    'governance',
+    'reviews',
+    'tasks',
+    'processes',
+    'pages',
+    'spaces',
+    'portal',
+    'diagrams',
+  ]) {
     void qc.invalidateQueries({ queryKey: [key] });
   }
 }

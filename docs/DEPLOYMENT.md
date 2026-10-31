@@ -296,7 +296,12 @@ Caddy handles HTTPS. Choose one option with `CADDY_TLS` in `.env`, then run `sud
    From then on changes, retirements and Excel imports of active risks and controls wait for a second Risk &
    Compliance Officer. Nobody approves their own change, so **create at least two Risk & Compliance Officers**
    first — with only one, their changes are refused (`SELF_APPROVAL_NOT_ALLOWED`).
-10. Go through the go-live checklist in [`docs/SECURITY.md`](./SECURITY.md) §7.
+10. **Settings → Knowledge Portal → Start page** (decided for go-live, D-127): a fresh production install
+    (`SEED_DEMO_DATA=false`) starts **without** a value chain start page — the portal home shows the usual
+    lists. Once your enterprise value chain is approved and **published** (Repository → New → Value chain,
+    then the normal review), choose it as the start page and save. Staff then land on it and drill down to the
+    processes. Only demo installations set it automatically (VC-001).
+11. Go through the go-live checklist in [`docs/SECURITY.md`](./SECURITY.md) §7.
 
 ### 6.1 Single sign-on with Microsoft Entra ID (Azure AD)
 

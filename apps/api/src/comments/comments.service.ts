@@ -9,6 +9,8 @@ import {
   type ContentType,
   type CreateCommentInput,
   type UpdateCommentInput,
+  type DiagramType,
+  diagramElements,
 } from '@processhub/shared';
 import { PrismaService } from '../prisma/prisma.service';
 import { AuditService } from '../audit/audit.service';
@@ -39,7 +41,7 @@ export class CommentsService {
   ) {}
 
   private link(item: ContentItem, elementId?: string | null) {
-    if (item.type === 'PROCESS') {
+    if (item.type === 'PROCESS' || item.type === 'DIAGRAM') {
       return itemLink(
         item,
         `?tab=comments${elementId ? `&element=${encodeURIComponent(elementId)}` : ''}`,
@@ -71,6 +73,21 @@ export class CommentsService {
           })
         : null;
     const labels = extractBpmnLabels(model?.bpmnXml ?? '');
+    const diagram =
+      item.type === 'DIAGRAM' && rows.some((r) => r.bpmnElementId)
+        ? await this.prisma.diagram.findUnique({
+            where: { id: item.id },
+            select: { type: true, content: true },
+          })
+        : null;
+    const diagramLabels = new Map(
+      diagram
+        ? diagramElements(diagram.type as DiagramType, diagram.content).map((e) => [
+            e.id,
+            { nameEn: e.nameEn, nameAr: e.nameAr },
+          ])
+        : [],
+    );
     const moderate = this.canModerate(item, user);
     const toDto = (r: Row): CommentDto => ({
       id: r.id,
@@ -78,7 +95,11 @@ export class CommentsService {
       entityId: r.entityId,
       parentId: r.parentId,
       bpmnElementId: r.bpmnElementId,
-      element: r.bpmnElementId ? elementLabel(labels, r.bpmnElementId) : null,
+      element: r.bpmnElementId
+        ? item.type === 'DIAGRAM'
+          ? (diagramLabels.get(r.bpmnElementId) ?? null)
+          : elementLabel(labels, r.bpmnElementId)
+        : null,
       body: r.body,
       author: r.createdById ? (users.get(r.createdById) ?? null) : null,
       createdAt: r.createdAt.toISOString(),
@@ -128,8 +149,7 @@ export class CommentsService {
         parent = await this.prisma.comment.findUniqueOrThrow({ where: { id: parent.parentId } });
       }
     }
-    if (input.bpmnElementId && (type !== 'PROCESS' || parent))
-      throw badRequest('INVALID_ELEMENT_ID');
+    if (input.bpmnElementId && (type === 'PAGE' || parent)) throw badRequest('INVALID_ELEMENT_ID');
     const mentionIds = await this.readableMentions(item, input.body);
     const row = await this.prisma.$transaction(async (tx) => {
       const c = await tx.comment.create({

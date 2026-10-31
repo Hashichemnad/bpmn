@@ -28,6 +28,7 @@ import {
   SwapOutlined,
   UserOutlined,
   CheckSquareOutlined,
+  ApartmentOutlined,
 } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
 import { PERMISSIONS } from '@processhub/shared';
@@ -79,6 +80,11 @@ export function PortalLayout() {
       label: <Link to="/portal/processes">{t('portal:nav.processes')}</Link>,
     },
     {
+      key: '/portal/diagrams',
+      icon: <ApartmentOutlined />,
+      label: <Link to="/portal/diagrams">{t('diagrams:portal.nav')}</Link>,
+    },
+    {
       key: '/portal/docs',
       icon: <ReadOutlined />,
       label: <Link to="/portal/docs">{t('portal:nav.docs')}</Link>,
@@ -106,15 +112,17 @@ export function PortalLayout() {
   const selected =
     p === '/portal'
       ? '/portal'
-      : p.startsWith('/portal/processes')
-        ? '/portal/processes'
-        : p.startsWith('/portal/docs') || p.startsWith('/portal/pages')
-          ? '/portal/docs'
-          : p.startsWith('/portal/my')
-            ? '/portal/my'
-            : p.startsWith('/portal/tasks') || p.startsWith('/portal/issues')
-              ? '/portal/tasks'
-              : '';
+      : p.startsWith('/portal/diagrams')
+        ? '/portal/diagrams'
+        : p.startsWith('/portal/processes')
+          ? '/portal/processes'
+          : p.startsWith('/portal/docs') || p.startsWith('/portal/pages')
+            ? '/portal/docs'
+            : p.startsWith('/portal/my')
+              ? '/portal/my'
+              : p.startsWith('/portal/tasks') || p.startsWith('/portal/issues')
+                ? '/portal/tasks'
+                : '';
 
   const workspace = canAny(PERMISSIONS.PROCESSES_READ, PERMISSIONS.DOCS_READ);
   const userMenu: MenuProps['items'] = [

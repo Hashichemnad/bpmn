@@ -67,12 +67,16 @@ export class FeedbackService {
 
   async create(input: CreateFeedbackInput, user: AuthUser, meta: RequestMeta) {
     await this.portal.assertAccess(user);
-    const { process, page, space } = await this.portal.publicationOf(
+    const { process, page, space, diagram } = await this.portal.publicationOf(
       input.entityType,
       input.entityId,
       user,
     );
-    const assigneeId = process ? process.ownerId : (page?.ownerId ?? space?.ownerId ?? null);
+    const assigneeId = process
+      ? process.ownerId
+      : diagram
+        ? diagram.ownerId
+        : (page?.ownerId ?? space?.ownerId ?? null);
     const row = await this.prisma.$transaction(async (tx) => {
       const f = await tx.feedback.create({
         data: {

@@ -22,6 +22,7 @@ import { badRequest, conflict, forbidden, notFound } from '../common/app-excepti
 import type { AuthUser, RequestMeta } from '../common/auth-user';
 import { DocsAccessService } from '../docs/docs-access.service';
 import type { ContentItem } from './content.service';
+import { AUDIT_ENTITY } from './edit-guard';
 
 export const DEFAULT_GOVERNANCE: GovernanceSettingsDto = {
   reviewIntervalMonths: 12,
@@ -40,7 +41,11 @@ export interface ResolvedStep {
   candidateIds: string[];
 }
 
-const READ_PERMISSION = { PROCESS: PERMISSIONS.PROCESSES_READ, PAGE: PERMISSIONS.DOCS_READ };
+const READ_PERMISSION = {
+  PROCESS: PERMISSIONS.PROCESSES_READ,
+  PAGE: PERMISSIONS.DOCS_READ,
+  DIAGRAM: PERMISSIONS.PROCESSES_READ,
+};
 
 @Injectable()
 export class WorkflowsService {
@@ -322,7 +327,7 @@ export class WorkflowsService {
     const own = await find(item.workflowId);
     if (own) return { source: 'ITEM', workflow: own };
     const settings = await this.settings();
-    if (item.type === 'PROCESS' && item.category) {
+    if ((item.type === 'PROCESS' || item.type === 'DIAGRAM') && item.category) {
       const w = await find(settings.categoryWorkflows[item.category]);
       if (w) return { source: 'CATEGORY', workflow: w };
     }
@@ -419,8 +424,7 @@ export class WorkflowsService {
     meta: RequestMeta,
   ) {
     if (!item.canManage) throw forbidden('You cannot change the governance settings of this item');
-    if (input.ownerId !== undefined && item.type === 'PROCESS')
-      throw badRequest('USE_PROCESS_OWNER');
+    if (input.ownerId !== undefined && item.type !== 'PAGE') throw badRequest('USE_PROCESS_OWNER');
     if (input.ownerId) {
       const u = await this.prisma.user.findFirst({ where: { id: input.ownerId, deletedAt: null } });
       if (!u) throw badRequest('OWNER_NOT_FOUND');
@@ -462,6 +466,7 @@ export class WorkflowsService {
         ...(input.nextReviewAt !== undefined ? { nextReviewAt: input.nextReviewAt } : {}),
       };
       if (item.type === 'PROCESS') await tx.process.update({ where: { id: item.id }, data });
+      else if (item.type === 'DIAGRAM') await tx.diagram.update({ where: { id: item.id }, data });
       else {
         await tx.page.update({
           where: { id: item.id },
@@ -471,7 +476,7 @@ export class WorkflowsService {
       await this.audit.log(
         {
           action: 'UPDATE',
-          entityType: item.type === 'PROCESS' ? 'Process' : 'Page',
+          entityType: AUDIT_ENTITY[item.type],
           entityId: item.id,
           userId: actor.id,
           summary: {

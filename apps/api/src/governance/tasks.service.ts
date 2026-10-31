@@ -6,6 +6,8 @@ import {
   addDays,
   reviewDateState,
   type ContentStatus,
+  type ContentType,
+  type DiagramType,
   type GovernanceDashboardDto,
   type GovernedItemDto,
   type MyTasksDto,
@@ -43,7 +45,20 @@ const pageSelect = {
   space: { select: { ownerId: true } },
 } satisfies Prisma.PageSelect;
 
+const diagramSelect = {
+  id: true,
+  type: true,
+  code: true,
+  nameEn: true,
+  nameAr: true,
+  status: true,
+  ownerId: true,
+  nextReviewAt: true,
+  updatedAt: true,
+} satisfies Prisma.DiagramSelect;
+
 type ProcessRow = Prisma.ProcessGetPayload<{ select: typeof processSelect }>;
+type DiagramRow = Prisma.DiagramGetPayload<{ select: typeof diagramSelect }>;
 type PageRow = Prisma.PageGetPayload<{ select: typeof pageSelect }>;
 
 /** "My tasks" and the governance dashboard. */
@@ -59,12 +74,17 @@ export class TasksService {
     private readonly grcReminders: GrcRemindersService,
   ) {}
 
-  private async items(processes: ProcessRow[], pages: PageRow[]): Promise<GovernedItemDto[]> {
+  private async items(
+    processes: ProcessRow[],
+    pages: PageRow[],
+    diagrams: DiagramRow[] = [],
+  ): Promise<GovernedItemDto[]> {
     const settings = await this.workflows.settings();
     const now = new Date();
     const owners = await this.content.users([
       ...processes.map((p) => p.ownerId),
       ...pages.map((p) => p.ownerId ?? p.space.ownerId),
+      ...diagrams.map((d) => d.ownerId),
     ]);
     const published = await this.prisma.publication.findMany({
       where: {
@@ -72,6 +92,7 @@ export class TasksService {
         OR: [
           { entityType: 'PROCESS', entityId: { in: processes.map((p) => p.id) } },
           { entityType: 'PAGE', entityId: { in: pages.map((p) => p.id) } },
+          { entityType: 'DIAGRAM', entityId: { in: diagrams.map((d) => d.id) } },
         ],
       },
       select: { entityType: true, entityId: true },
@@ -107,6 +128,19 @@ export class TasksService {
           updatedAt: p.updatedAt.toISOString(),
         };
       }),
+      ...diagrams.map((d) => ({
+        entityType: 'DIAGRAM' as const,
+        entityId: d.id,
+        titleEn: d.nameEn,
+        titleAr: d.nameAr,
+        code: d.code,
+        diagramType: d.type as DiagramType,
+        status: d.status as ContentStatus,
+        owner: d.ownerId ? (owners.get(d.ownerId) ?? null) : null,
+        nextReviewAt: d.nextReviewAt?.toISOString() ?? null,
+        reviewState: state(`DIAGRAM:${d.id}`, d.nextReviewAt),
+        updatedAt: d.updatedAt.toISOString(),
+      })),
     ];
   }
 
@@ -116,11 +150,10 @@ export class TasksService {
       where: { current: true },
       select: { entityType: true, entityId: true },
     });
-    const ids = (t: 'PROCESS' | 'PAGE') =>
-      pubs.filter((p) => p.entityType === t).map((p) => p.entityId);
+    const ids = (t: ContentType) => pubs.filter((p) => p.entityType === t).map((p) => p.entityId);
     const date = { lte: until, ...(from ? { gt: from } : {}) };
     const { spaceIds } = await this.content.readablePageFilter(user);
-    const [processes, pages] = await Promise.all([
+    const [processes, pages, diagrams] = await Promise.all([
       this.prisma.process.findMany({
         where: {
           id: { in: ids('PROCESS') },
@@ -146,47 +179,71 @@ export class TasksService {
         select: pageSelect,
         orderBy: { nextReviewAt: 'asc' },
       }),
+      user.permissions.has(PERMISSIONS.PROCESSES_READ)
+        ? this.prisma.diagram.findMany({
+            where: {
+              id: { in: ids('DIAGRAM') },
+              deletedAt: null,
+              status: { not: 'ARCHIVED' },
+              nextReviewAt: date,
+              ...(ownerId ? { ownerId } : {}),
+            },
+            select: diagramSelect,
+            orderBy: { nextReviewAt: 'asc' },
+          })
+        : [],
     ]);
-    return this.items(processes, pages);
+    return this.items(processes, pages, diagrams);
   }
 
   async myTasks(user: AuthUser): Promise<MyTasksDto> {
     const settings = await this.workflows.settings();
     const now = new Date();
-    const [taskRows, approvedProcesses, approvedPages, returnedRows, mentions, feedback] =
-      await Promise.all([
-        this.prisma.review.findMany({
-          where: {
-            status: 'IN_PROGRESS',
-            tasks: { some: { assigneeId: user.id, status: 'PENDING' } },
-          },
-          include: { tasks: true },
-          orderBy: { dueAt: 'asc' },
-        }),
-        this.prisma.process.findMany({
-          where: { status: 'APPROVED', deletedAt: null },
-          select: processSelect,
-        }),
-        this.prisma.page.findMany({
-          where: { status: 'APPROVED', deletedAt: null, space: { deletedAt: null } },
-          select: pageSelect,
-        }),
-        this.prisma.review.findMany({
-          where: {
-            submittedById: user.id,
-            status: { in: ['CHANGES_REQUESTED', 'REJECTED'] },
-            completedAt: { gte: addDays(now, -90) },
-          },
-          include: { tasks: true },
-          orderBy: { completedAt: 'desc' },
-        }),
-        this.prisma.notification.findMany({
-          where: { userId: user.id, type: 'MENTIONED', readAt: null, inApp: true },
-          orderBy: { createdAt: 'desc' },
-          take: 20,
-        }),
-        this.feedback.listAssigned(user),
-      ]);
+    const [
+      taskRows,
+      approvedProcesses,
+      approvedPages,
+      returnedRows,
+      mentions,
+      feedback,
+      approvedDiagrams,
+    ] = await Promise.all([
+      this.prisma.review.findMany({
+        where: {
+          status: 'IN_PROGRESS',
+          tasks: { some: { assigneeId: user.id, status: 'PENDING' } },
+        },
+        include: { tasks: true },
+        orderBy: { dueAt: 'asc' },
+      }),
+      this.prisma.process.findMany({
+        where: { status: 'APPROVED', deletedAt: null },
+        select: processSelect,
+      }),
+      this.prisma.page.findMany({
+        where: { status: 'APPROVED', deletedAt: null, space: { deletedAt: null } },
+        select: pageSelect,
+      }),
+      this.prisma.review.findMany({
+        where: {
+          submittedById: user.id,
+          status: { in: ['CHANGES_REQUESTED', 'REJECTED'] },
+          completedAt: { gte: addDays(now, -90) },
+        },
+        include: { tasks: true },
+        orderBy: { completedAt: 'desc' },
+      }),
+      this.prisma.notification.findMany({
+        where: { userId: user.id, type: 'MENTIONED', readAt: null, inApp: true },
+        orderBy: { createdAt: 'desc' },
+        take: 20,
+      }),
+      this.feedback.listAssigned(user),
+      this.prisma.diagram.findMany({
+        where: { status: 'APPROVED', deletedAt: null },
+        select: diagramSelect,
+      }),
+    ]);
 
     const mine = taskRows.filter((r) =>
       r.tasks.some(
@@ -195,7 +252,11 @@ export class TasksService {
     );
 
     // Approved items the user may publish (editors and managers of the item).
-    const publishable: { process: ProcessRow[]; page: PageRow[] } = { process: [], page: [] };
+    const publishable: { process: ProcessRow[]; page: PageRow[]; diagram: DiagramRow[] } = {
+      process: [],
+      page: [],
+      diagram: [],
+    };
     for (const p of approvedProcesses) {
       const item = await this.content.find('PROCESS', p.id, user);
       if (item && item.canRead && (item.canEdit || item.canManage)) publishable.process.push(p);
@@ -203,6 +264,10 @@ export class TasksService {
     for (const p of approvedPages) {
       const item = await this.content.find('PAGE', p.id, user);
       if (item && item.canRead && (item.canEdit || item.canManage)) publishable.page.push(p);
+    }
+    for (const d of approvedDiagrams) {
+      const item = await this.content.find('DIAGRAM', d.id, user);
+      if (item && item.canRead && (item.canEdit || item.canManage)) publishable.diagram.push(d);
     }
 
     // Returned submissions: only while that review is the item's latest and it is still a draft.
@@ -220,7 +285,7 @@ export class TasksService {
 
     return {
       reviews: await this.reviews.summaries(mine, user),
-      toPublish: await this.items(publishable.process, publishable.page),
+      toPublish: await this.items(publishable.process, publishable.page, publishable.diagram),
       returned: await this.reviews.summaries(returned, user),
       dueReviews: await this.reviewDue(addDays(now, settings.reminderDays), null, user, user.id),
       mentions: await this.notifications.toDtos(mentions),
@@ -235,34 +300,41 @@ export class TasksService {
     const settings = await this.workflows.settings();
     const now = new Date();
     const { spaceIds } = await this.content.readablePageFilter(user);
-    const [processCounts, pageCounts, inReview, recent, openFeedback] = await Promise.all([
-      this.prisma.process.groupBy({
-        by: ['status'],
-        where: { deletedAt: null },
-        _count: { _all: true },
-      }),
-      this.prisma.page.groupBy({
-        by: ['status'],
-        where: { deletedAt: null, space: { deletedAt: null } },
-        _count: { _all: true },
-      }),
-      this.prisma.review.findMany({
-        where: { status: 'IN_PROGRESS' },
-        include: { tasks: true },
-        orderBy: { submittedAt: 'asc' },
-      }),
-      this.prisma.publication.findMany({
-        where: { current: true },
-        orderBy: { publishedAt: 'desc' },
-        take: 30,
-      }),
-      this.prisma.feedback.count({ where: { status: { in: ['OPEN', 'IN_PROGRESS'] } } }),
-    ]);
+    const [processCounts, pageCounts, inReview, recent, openFeedback, diagramCounts] =
+      await Promise.all([
+        this.prisma.process.groupBy({
+          by: ['status'],
+          where: { deletedAt: null },
+          _count: { _all: true },
+        }),
+        this.prisma.page.groupBy({
+          by: ['status'],
+          where: { deletedAt: null, space: { deletedAt: null } },
+          _count: { _all: true },
+        }),
+        this.prisma.review.findMany({
+          where: { status: 'IN_PROGRESS' },
+          include: { tasks: true },
+          orderBy: { submittedAt: 'asc' },
+        }),
+        this.prisma.publication.findMany({
+          where: { current: true },
+          orderBy: { publishedAt: 'desc' },
+          take: 30,
+        }),
+        this.prisma.feedback.count({ where: { status: { in: ['OPEN', 'IN_PROGRESS'] } } }),
+        this.prisma.diagram.groupBy({
+          by: ['status'],
+          where: { deletedAt: null },
+          _count: { _all: true },
+        }),
+      ]);
     const empty = () =>
       Object.fromEntries(CONTENT_STATUSES.map((s) => [s, 0])) as Record<ContentStatus, number>;
-    const counts = { PROCESS: empty(), PAGE: empty() };
+    const counts = { PROCESS: empty(), PAGE: empty(), DIAGRAM: empty() };
     for (const c of processCounts) counts.PROCESS[c.status as ContentStatus] = c._count._all;
     for (const c of pageCounts) counts.PAGE[c.status as ContentStatus] = c._count._all;
+    for (const c of diagramCounts) counts.DIAGRAM[c.status as ContentStatus] = c._count._all;
 
     const visibleSpaces = new Set(spaceIds);
     const pageSpace = new Map(
@@ -295,10 +367,27 @@ export class TasksService {
         })
       ).map((p) => p.id),
     );
+    const liveDiagrams = new Set(
+      (
+        await this.prisma.diagram.findMany({
+          where: {
+            id: {
+              in: [...inReview, ...recent]
+                .filter((r) => r.entityType === 'DIAGRAM')
+                .map((r) => r.entityId),
+            },
+            deletedAt: null,
+          },
+          select: { id: true },
+        })
+      ).map((d) => d.id),
+    );
     const readable = (r: { entityType: string; entityId: string }) =>
       r.entityType === 'PROCESS'
         ? liveProcesses.has(r.entityId)
-        : visibleSpaces.has(pageSpace.get(r.entityId) ?? '');
+        : r.entityType === 'DIAGRAM'
+          ? liveDiagrams.has(r.entityId)
+          : visibleSpaces.has(pageSpace.get(r.entityId) ?? '');
 
     const reviews = await this.reviews.summaries(inReview.filter(readable));
     const recentItems = recent.filter(readable).slice(0, 10);
@@ -314,6 +403,12 @@ export class TasksService {
           id: { in: recentItems.filter((r) => r.entityType === 'PAGE').map((r) => r.entityId) },
         },
         select: pageSelect,
+      }),
+      await this.prisma.diagram.findMany({
+        where: {
+          id: { in: recentItems.filter((r) => r.entityType === 'DIAGRAM').map((r) => r.entityId) },
+        },
+        select: diagramSelect,
       }),
     );
     const byKey = new Map(recentDtos.map((d) => [`${d.entityType}:${d.entityId}`, d]));

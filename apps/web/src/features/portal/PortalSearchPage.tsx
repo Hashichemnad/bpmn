@@ -25,6 +25,7 @@ import { PageHeader } from '@/components/PageHeader';
 import { ErrorState, LoadingState } from '@/components/states';
 import { CategoryTag } from '@/components/tags';
 import { useFormatDate, useLocalized } from '@/components/i18n-helpers';
+import { DiagramTypeIcon } from '@/features/diagrams/DiagramTypeIcon';
 import { Highlight } from '@/features/search/Highlight';
 import { portalItemLink } from './portal-links';
 
@@ -133,7 +134,13 @@ export function PortalSearchPage() {
               renderItem={(r) => (
                 <List.Item key={`${r.type}-${r.id}`}>
                   <Space size={6} wrap>
-                    {r.type === 'PROCESS' ? <PartitionOutlined /> : <FileTextOutlined />}
+                    {r.type === 'PROCESS' ? (
+                      <PartitionOutlined />
+                    ) : r.type === 'DIAGRAM' ? (
+                      <DiagramTypeIcon type={r.diagramType} />
+                    ) : (
+                      <FileTextOutlined />
+                    )}
                     <Link to={portalItemLink(r)} style={{ fontSize: 16, fontWeight: 600 }}>
                       {r.code && (
                         <span dir="ltr" className="ph-title-code" style={{ marginInlineEnd: 6 }}>

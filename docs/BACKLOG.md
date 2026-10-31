@@ -3,11 +3,31 @@
 Ideas and follow-ups noted during development, outside the current phase scope. Group by the phase
 where they belong; move items into the plan when that phase starts.
 
+## Diagram types — follow-ups (noted during the work)
+
+- UML, ERM / data-model diagrams and customer journey maps (not in this part).
+- Real-time co-editing of diagrams (today: autosave per user, last save wins like the BPMN modeler).
+- Value chain: badges and "colour by" in the portal (today workspace only, portal shows drill-down); swim-lane
+  value chains; arrange chevrons right to left in Arabic.
+- Organisation chart: positions with several holders as one node with a count; vacancies; reporting lines from
+  `Department.managerId`; automatic regeneration when departments change.
+- DMN: evaluate input expressions against a context (today values are entered per input), PRIORITY with output
+  value lists, decision services and boxed expressions in the test panel, DMN in the AI assistant.
+- EPC: round trip BPMN → EPC; process paths that call other EPCs; object links of information objects.
+- SIPOC: link items to library objects (documents, roles) by default; SIPOC from a value chain element.
+- Diagram-level AI translate EN↔AR of all labels (DMN: Translations panel; graph notations: labels per element).
+- Mandatory EPC / DMN checks (product owner, D-127): let Admins mark selected EPC syntax rules and DMN checks as
+  **mandatory before "Submit for review"**, reusing the Modeling conventions gate (D-088: Setting
+  `modeling.conventions` with `{ enabled, mandatory }` per rule, Administration → Modeling conventions,
+  `400 CONVENTIONS_NOT_MET` on submit, "Required" tag in the Validation panel). Today they are warnings only.
+
 ## Phase 4.4 — Integration & export (next)
 
 - Oracle Fusion Risk Management overlay (risks / controls from Oracle, read-only first) and other connectors.
 - Public API keys and outgoing webhooks (process published, KPI turned red, sync failed).
-- Word / HTML / XPDL export of processes; other diagram types (EPC, value chain, org chart, DMN).
+- Word / HTML / XPDL export of processes and diagrams; Git sync of the diagram types (value chain, org chart, DMN,
+  EPC, SIPOC).
+- Salesforce risk link and other external connectors (KPIs and risks are managed in ProcessHub for now).
 - Process mining and simulation stay in Phase 5.
 
 ## Phase 4.3 follow-ups (noted during the work)

@@ -1505,3 +1505,182 @@ Supersedes the "act as the Super Admin" rule of D-116.
 - The schedule does not depend on that admin: it keeps running when they leave or are deactivated.
 - Portal KPIs (D-113, agreed): only KPIs on steps of the published diagram, each value with its period and
   last-updated date.
+
+## D-120 — Diagram entity: one framework for the non-BPMN notations (Diagram types, 2026-10-31)
+
+- New table **`Diagram`**: `type` (`VALUE_CHAIN` | `ORG_CHART` | `DMN` | `EPC` | `SIPOC`), generated `code`
+  (`VC-001`, `ORG-001`, `DMN-001`, `EPC-001`, `SIPOC-001`), bilingual name / description, owner, department, optional
+  parent **process / process-house node** (`processId`), `status` (the process lifecycle), `workflowId`,
+  `nextReviewAt`, `aiGenerated`, the usual audit columns and soft delete. The working **content** is a column on the
+  diagram (`content` text): **DMN 1.3 XML** for decision tables, **versioned JSON** for the other notations
+  (`{ "schema": 1, … }`). The JSON schemas live in `packages/shared/src/diagrams.ts` (zod) and the server validates
+  every save with them (size limit, ids, references are UUIDs, no markup in labels); DMN XML goes through the same
+  unsafe-XML checks as BPMN plus a DMN-specific sanitiser.
+- **`DiagramVersion`** (number, content, change note, label, restored from) mirrors `ProcessVersion` /
+  `PageVersion` — one version table per content kind is the existing pattern; the versions API, compare and restore
+  behave exactly like the process ones.
+- **`DiagramLink`** (diagram, element id, library object, relation) mirrors `ObjectLink` for diagram elements. A
+  separate table keeps the existing `ObjectLink.processId` non-null (dozens of queries, GRC coverage, KPIs and
+  reports rely on it); "where used" of a library object unions both tables. Published diagram links reuse
+  `PublishedLink` (it is keyed by publication, not by process).
+- **Governance is reused, not copied**: `ContentType` gains `DIAGRAM`, so reviews, workflows, publications, comments
+  on elements (`Comment.bpmnElementId` holds the diagram element id), feedback, notifications, the governance
+  dashboard, "My tasks" and the portal search work for diagrams through the existing services (`/governance/diagrams/:id`,
+  `/comments/diagrams/:id`). Diagrams use the process workflow defaults (item → category default → global).
+- **Permissions are the process ones**: read `processes.read`; create `processes.create`; metadata
+  `processes.edit` / `processes.edit_own` (owner); content and links `models.edit` / `models.edit_own` (owner);
+  delete `processes.delete`. The portal shows published diagrams to `portal.read` like processes.
+- References from content (value-chain element → process / diagram, org-chart person → user, position → role,
+  DMN ↔ BPMN business rule task `ph:decisionRef`) are ids inside the content; "where used" looks them up by
+  content search (fine for the target size, D-001), so no extra reference tables.
+- **Editors**: value chain, organisation chart and EPC are diagram-js editors built from one shared kit
+  (`apps/web/src/features/diagrams/kit/`: generic shape / connection model, bilingual label editing as a command,
+  palette, context pad, rules, renderer with theme colours, snapping, align / distribute, zoom / mini-map, undo,
+  keyboard, export SVG / PNG / PDF via the print page). DMN uses dmn-js (bpmn.io, same licence as bpmn-js). SIPOC is
+  a table-style diagram (an editable grid rendered as SVG for export), not a diagram-js canvas.
+- The process repository tree shows diagrams under their parent process (or under "Diagrams" when they have none)
+  with a type icon; the "New" menu offers each type. Git sync of diagrams is not part of this phase (BACKLOG).
+
+## D-121 — Value chain: drill-down, process facts, colour by, generation (Diagram types, 2026-10-31)
+
+- Notation: **chevrons** (primary activities), **blocks** (management / support, with a row `category`), **group
+  frames** (other shapes can be dropped inside; frames are never nested) and **arrows**. Colours follow
+  `branding.diagramTheme` (chevrons = human task colours, management blocks = approval colours, support blocks = system
+  colours, frames = lane colours) unless an element has its own colour.
+- Each element can link to **one process (process-house node) or one other value chain** (`processId` / `diagramId`
+  in the content). Workspace: a ↗ button on linked elements opens the target. Portal: linked elements whose target is
+  **published** are highlighted and clicking drills down (value chain → value chain → BPMN process page); links to
+  unpublished items are not shown as drill targets (the portal never reveals unpublished content).
+- **Process facts** (`GET /diagrams/process-facts?ids=…`, `processes.read`): status, owner department, worst KPI status
+  (only with `kpi.read`) and the highest residual risk on the process's steps (only with `grc.read`). Badges on linked
+  elements show them; **Colour by** (process status, KPI status, residual risk band colours from Settings → Risk &
+  Compliance, owner department) recolours linked elements in the view only (never stored) with a legend. Badges and
+  Colour by are workspace features; the portal shows the diagram with its own colours (KPI / risk visibility in the
+  portal stays governed by the existing portal settings).
+- **Generate from the process house** (shared `generateValueChain`, in "New → Value chain" and as a workspace tool
+  that replaces the content after confirmation): one frame per category (Management above, Core in the middle,
+  Support below), level-1 processes as chevrons (Core) or blocks, optionally their level-2 sub-processes stacked
+  below; element ids derive from the process ids, every element is linked to its process. The created diagram gets
+  version 1 "Generated from the process house".
+- diagram-js cancels a create / move on any `elements.changed` that it did not cause, so view refreshes (language,
+  theme, Colour by) redraw graphics directly instead of firing that event.
+
+## D-122 — Organisation chart: generation from data, merge by id, what a position performs (Diagram types, 2026-10-31)
+
+- Notation: **organisational units** (linked to a `Department`), **positions** (linked to a Role library object),
+  **persons** (optionally linked to a user), **reporting lines** (orthogonal) and **staff lines** (dashed, from the
+  context pad "Staff line"). Theme colours: units = system colours, positions = human-task colours, persons = start
+  colours.
+- **Source data** (`GET /diagrams/org-source`, `processes.read`): departments (hierarchy), positions = Role objects
+  placed in a department by the new Role attribute **`departmentId`** (a "Department" field on the Role form in the
+  library), or — when it is not set — in the departments of the users holding the job role; people = active users
+  holding the role (only for users with `users.read`, which every workspace role has).
+- **Generation** (shared `generateOrgChart`): top-down tree of units, each with its positions (and optionally the
+  people holding them) in a column below it, "comb" reporting lines along the column so no line crosses a shape.
+  Generated elements have **deterministic ids** (`GU_<department>`, `GP_<hash>_<role>`, `GM_<hash>_<user>`,
+  `GR_<hash>` for lines); manual elements never use these prefixes.
+- **Regeneration merges by id** (shared `mergeOrgChart`) after a **preview** (counts of added / renamed / removed /
+  manual elements kept, list of removals and renames, and the merged chart): generated elements keep their position,
+  size, colours and description and take the current names and references; new sources are added; generated elements
+  whose source is gone are removed (with their lines); manual elements and lines stay. Applying replaces the content
+  as one change (autosaved; undo by restoring a version).
+- **What a position does** (`GET /diagrams/role-activities/:roleId`): the steps of the process models the Role performs
+  — steps in a lane linked to the role (`ph:roleId`, D-081) and steps with a PERFORMS link — with the RACI letter of
+  the B2 report (A for approval steps, R otherwise), shown in the position's side panel with links to the steps.
+- The organisation chart is an optional handbook section (step 7).
+
+## D-123 — DMN decision tables: dmn-js, bilingual names, FEEL testing, business rule task link (Diagram types, 2026-10-31)
+
+- Editor: **dmn-js 17.12.3** (bpmn.io, same licence as bpmn-js) — decision requirements diagram (DRD), decision table
+  editor (hit policies, aggregation, input expressions with type, output names / types, rule annotations) and
+  literal expressions — inside the shared diagram workspace (autosave, versions, compare, export, comments). dmn-js
+  stays in its own lazily loaded chunk.
+- **Bilingual names**: DMN `name` / `label` / rule `description` hold **English** (so other DMN tools read the file);
+  `ph:nameEn` / `ph:nameAr` (decisions, input data, knowledge sources, inputs, outputs) and `ph:annotationEn` /
+  `ph:annotationAr` (rules) hold both languages (the `ph` namespace of the BPMN extension). The editor shows the
+  active language (the XML is switched before import and switched back on every change); the other language is
+  edited in the **Translations** panel. Output variable names and FEEL expressions are never translated.
+- **Test decision**: evaluation in the browser with **feelin 8.2.0** (MIT, the FEEL interpreter from bpmn.io): every
+  input entry is a FEEL unary test against the typed input value (number / boolean / string), output entries are
+  FEEL expressions; all hit policies (UNIQUE with violation, FIRST, PRIORITY treated as FIRST, ANY with conflict
+  check, COLLECT with SUM / MIN / MAX / COUNT, RULE ORDER, OUTPUT ORDER). Matching rules are highlighted in the table.
+  Inputs are entered as values (input expressions are not evaluated against a context); PRIORITY does not use output
+  value lists (documented limits).
+- **Validation panel** (warnings, never blocking): missing English / Arabic names, tables without rules, invalid FEEL
+  in input / output entries (feelin parser), empty outputs, duplicate input rows.
+- **Import / export**: DMN XML import in the workspace (size and DMN checks in the browser, dmn-js parse) and export
+  as `.dmn`. The server validates every save (`assertSafeDmnXml`: no DTD / entities, no processing instructions after
+  the prolog, only local `#id` references, no script / iframe / object / embed elements, a DMN 1.x definitions root).
+- **Business rule task link**: `ph:decisionRef` (DMN diagram id) and `ph:decisionId` (decision) on BPMN tasks, chosen
+  in the modeler side panel ("Decision table (DMN)", with "View table"); the portal step details show the table
+  read-only when it is published; "where used" of a DMN diagram lists the business rule tasks (`relation: DECISION`,
+  found by content search and parsing). Sample: `docs/samples/approval-authority.dmn`.
+
+## D-124 — EPC: ARIS notation, syntax rules as warnings, conversion to BPMN (Diagram types, 2026-10-31)
+
+- Notation: **events** (hexagons), **functions** (rounded), **AND / OR / XOR connectors**, **process paths**,
+  **organisational units**, **information systems**, **information objects** and **documents**; **control flow**
+  (arrows) between events / functions / connectors / process paths, dotted **assignments** between a function and its
+  resources (the rules allow nothing else). Classic ARIS colours that follow the theme: functions = start colours
+  (green), connectors = gateway colours, org units = approval colours (yellow), systems = system colours,
+  information objects = intermediate-event colours; events keep the ARIS magenta (the theme has no such kind).
+- **Validation panel** (warnings, never blocking; elements are outlined on the canvas, clicking selects them): start /
+  end events present, chains start and end with events, events and functions alternate (connectors are transparent),
+  no XOR / OR split right after a single event ("events cannot decide"), a connector either splits (1 in, n out) or
+  joins (n in, 1 out), branches / joins only through connectors, resources assigned to a function, no unconnected
+  elements (shared `epcIssues`).
+- **Convert to BPMN** (`POST /diagrams/:id/convert-to-bpmn`, `processes.create` + model rights): shared `epcToBpmn`
+  maps functions → tasks (user task with an org unit, service task with only a system), process paths → call
+  activities (linked process kept), events without incoming / outgoing flow → start / end events, events between
+  steps are states and are dropped — after an XOR / OR split their name labels the branch —, connectors → exclusive /
+  parallel / inclusive gateways, org units → lanes (linked roles become `ph:roleId`, hence PERFORMS links), systems /
+  documents with a library object → SUPPORTS / INPUT links of the task. The API builds the BPMN XML with the AI
+  builder's `structureToBpmn` (shared layered layout, theme colours) and creates a **new draft process** owned by the
+  EPC's owner; the EPC is unchanged; the **mapping report** (every EPC element and what it became) is shown and the
+  conversion is audited (`EXPORT` on the diagram). This is the path for ARIS users moving to BPMN.
+
+## D-125 — SIPOC: table diagram generated from a process (Diagram types, 2026-10-31)
+
+- A SIPOC is a **table-style diagram**, not a diagram-js canvas: five columns (Suppliers, Inputs, Process, Outputs,
+  Customers) of bilingual items, edited in the shared workspace (add, reorder, delete, both languages per item — the
+  active language first —, undo / redo, autosave, versions, compare with added / changed / removed items, comments
+  and object links per item). Export SVG / PNG renders the columns as an image (Arabic: right to left); PDF via the
+  print page. The process column should hold 5–7 high-level steps (a warning, not a rule).
+- **Generate from process** (shared `generateSipoc`, in "New → SIPOC" and as a workspace tool for the linked
+  process): process steps from the **main path** (longest start → end path, at most 7 steps, evenly sampled),
+  inputs / outputs from the B2 step attributes of all steps (`ph:inputsEn/Ar`, `ph:outputsEn/Ar`, split on new
+  lines, `;`, `؛`, `,` and `،`), suppliers from the lane of the start event and the pools sending messages into the
+  process, customers from the lane of the end event and the pools receiving messages. The source process is stored
+  in the content (`processId`); everything stays editable.
+- SIPOC is an optional section of the process handbook (step 7).
+
+## D-126 — Diagram types in reports, portal and demo data (Diagram types, 2026-10-31)
+
+- **Process handbook** (Word, B2): four optional sections per process — _Place in the value chain_ (the path
+  "value chain › frame › element (› process-house levels)" for every value chain linking the process or one of its
+  ancestors), _SIPOC_ (the SIPOCs generated from / attached to the process, as a five-column table), _Decision
+  tables_ (the DMN tables of its business rule tasks: inputs, outputs, rules and annotations) and _Organisation_
+  (positions of the organisation charts that perform its steps — lane roles and PERFORMS links — with their unit
+  and superior). The working source uses the current diagram content, the published source only published diagram
+  versions. Built server-side (`DiagramReportService` in the reports module; DMN read with regular expressions,
+  `readDmnTables`, since dmn-js is browser-only).
+- **Knowledge Portal**: _Diagrams_ menu (browse published diagrams by type), diagram page with drill-down to
+  published processes / value chains, print / PDF, feedback; Setting **portal.startDiagramId** (Portal settings →
+  _Start page_): a published value chain shown first on the portal home with drill-down. Diagrams can be featured.
+- **Demo seed** (demo installations only, once): VC-001 (from the process house, published, start page), ORG-001
+  (from departments, roles with departments and job-role holders, published), DMN-001 approval authority
+  (published) used by the business rule task of the new demo process S.01.02, EPC-001 with its conversion S.01.03,
+  SIPOC-001 of S.01.01.
+
+## D-127 — Product owner answers on diagram types (Diagram types, 2026-10-31)
+
+- **Permissions**: diagrams use the **process permissions** (D-120) — confirmed. Diagrams are process
+  documentation, so one permission model; no separate diagram roles.
+- **EPC and DMN checks stay warnings** (D-123, D-124) — confirmed; they never block saving, submitting or
+  publishing. Follow-up in BACKLOG: Admins can make selected EPC / DMN checks mandatory before "Submit for review"
+  through the existing Modeling conventions gate (D-088).
+- **Value chain portal start page off by default in production**: Setting `portal.startDiagramId` defaults to
+  `null` and only the demo seed (`SEED_DEMO_DATA=true`) sets it to VC-001; the production stack ships
+  `SEED_DEMO_DATA=false`. It is switched on at go-live once the real enterprise value chain is approved and
+  published (DEPLOYMENT.md §6 step 10, SECURITY.md §7 checklist). Asserted in `seed.e2e-spec.ts` (a seed without
+  demo data creates no diagrams and no start page).

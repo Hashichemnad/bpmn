@@ -2,6 +2,7 @@ import { z } from 'zod';
 import {
   LOCALES,
   SYSTEM_ROLE_KEYS,
+  type ContentType,
   type Locale,
   type ObjectType,
   type SystemRoleKey,
@@ -395,7 +396,7 @@ export interface AiAnalysisDto {
 export interface AiSourceDto {
   /** The number the answer cites, e.g. 2 for "[2]". */
   ref: number;
-  type: 'PROCESS' | 'PAGE';
+  type: ContentType;
   id: string;
   code: string | null;
   titleEn: string;

@@ -13,6 +13,7 @@ import { PageHeader } from '@/components/PageHeader';
 import { ErrorState, LoadingState } from '@/components/states';
 import { ReviewStateTag, StatusTag } from '@/components/tags';
 import { useFormatDate, useLocalized } from '@/components/i18n-helpers';
+import { workspaceLink } from './links';
 import { NotificationItem } from '@/features/notifications/NotificationBell';
 import { useOpenNotification } from '@/features/notifications/use-open-notification';
 import { ItemTitle } from './ItemTitle';
@@ -162,13 +163,7 @@ export function MyTasksPage() {
       key: 'open',
       width: 110,
       render: (_: unknown, r: GovernedItemDto) => (
-        <Link
-          to={
-            r.entityType === 'PROCESS'
-              ? `/processes/${r.entityId}`
-              : `/docs/${r.spaceId}/pages/${r.entityId}`
-          }
-        >
+        <Link to={workspaceLink(r)}>
           <Button size="small" type={kind === 'toPublish' ? 'primary' : 'default'}>
             {kind === 'toPublish' ? t('governance:actions.publish') : t('governance:tasks.open')}
           </Button>

@@ -1,3 +1,4 @@
+import type { ContentType } from '@processhub/shared';
 import { Global, Injectable, Logger, Module } from '@nestjs/common';
 
 /** Events other modules (e.g. the Git integration) react to. Payloads carry ids only. */
@@ -8,11 +9,11 @@ export type DomainEvent =
   | { type: 'page.removed'; pageIds: string[]; actorId: string }
   | { type: 'page.restored'; pageIds: string[]; actorId: string }
   /** A new version became the published one (governance). */
-  | { type: 'content.published'; entityType: 'PROCESS' | 'PAGE'; entityId: string; actorId: string }
+  | { type: 'content.published'; entityType: ContentType; entityId: string; actorId: string }
   /** The item was archived: no published version any more. */
   | {
       type: 'content.unpublished';
-      entityType: 'PROCESS' | 'PAGE';
+      entityType: ContentType;
       entityId: string;
       actorId: string;
     };
