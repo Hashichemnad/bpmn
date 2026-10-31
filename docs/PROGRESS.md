@@ -2,7 +2,7 @@
 
 Read this together with `CLAUDE.md` at the start of every session.
 
-## Current state — 2026-10-30 (Phase 4 — Part 3: EA, KPIs and the Salesforce KPI link, branch `phase-4-3-ea-kpi`, done — awaiting review)
+## Current state — 2026-10-31 (Phase 4 — Part 3: EA, KPIs and the Salesforce KPI link, branch `phase-4-3-ea-kpi`, done — awaiting review)
 
 Everything up to Phase 4.2 (GRC core and assurance) is merged into `main`. This branch builds module M11 (enterprise
 architecture: application catalogue, interfaces, data objects, capability map, traceability) and M12 (KPIs,
@@ -64,8 +64,25 @@ Steps (tick as they are committed; a new session continues at the first unticked
       `SCREENSHOTS=1`); e2e helper `loginAdmin` (stored TOTP secret, waits for a fresh code); README tour, CLAUDE.md
       (roles, data model, phase table), BACKLOG (4.3 follow-ups, Phase 4.4), DEPLOYMENT.md §6.4; Recharts in its own
       chunk.
+- [x] 7. Product owner answers (D-117 – D-119): Salesforce mapping per the documented PMS model —
+      `Org_Kpi_Measure__c` yearly targets (target of the year's last period; annual KPIs also the value),
+      `Org_Kpi_Process__c` results only with `Approved__c = true` (Setting `includeUnapproved`, off), causality and
+      corrective actions in the comment, half years (`SEMI_ANNUAL`, `2026-H1`), picklist values linkable to existing
+      objectives, process mapping removed; role **Performance Officer** (`PERFORMANCE_OFFICER`, permission
+      `kpi.sync`: settings read-only, preview, sync, log; demo user `performance@processhub.local`; Admins do not
+      get `kpi.sync`); scheduled syncs by the system actor "Salesforce sync" (no user id on runs / records / audit
+      entries) with **configured by** on the run and in the audit summaries, independent of that admin being active;
+      failure notices to Super Admins + `kpi.sync` holders; portal KPI values show period and last-updated date.
+      Migration `20261031011406_kpi_owner_answers`. DEPLOYMENT §6.4 (read access to the three objects, field names
+      to be confirmed with IT). Tests: shared +1 (half years), API +2 (`salesforce.e2e-spec.ts` unapproved / value
+      links / half years / system actor / Performance Officer; `kpi.e2e-spec.ts` Performance Officer permissions),
+      Playwright `salesforce.spec.ts` now runs the second sync as the Performance Officer.
 
-Verification on 2026-10-31: shared 151, web 82, API 377 tests pass (56 suites); Playwright 44 tests — full run 36
+Verification of step 7 on 2026-10-31: shared 151, web 82, API 379 tests pass (56 suites); Playwright
+`salesforce.spec.ts` and `kpi.spec.ts` pass locally; lint, format, type-check clean; `docs/SECURITY.md` route table
+regenerated (`any of settings.manage, kpi.sync` on the sync routes).
+
+Verification on 2026-10-31 (steps 0–6): shared 151, web 82, API 377 tests pass (56 suites); Playwright 44 tests — full run 36
 passed / 4 skipped (screenshot specs) / 4 failed on the 30 s budget and on the admin's language left in Arabic by
 the screenshot run (fixed: 90 s budget for the multi-sign-in specs, screenshots reset the language, `loginAdmin`
 waits for a fresh TOTP window); the affected specs (auth, ea, kpi, salesforce) then pass. Lint, format and
@@ -79,8 +96,8 @@ in this sandbox; CI builds them). Local e2e: `E2E_SALESFORCE_MOCK_HOST=localhost
 
 1. Review and merge the pull request `phase-4-3-ea-kpi` → `main` (CI builds the images and runs the e2e suite with
    the mock Salesforce on `host.docker.internal`).
-2. Product owner decisions listed in the pull request (Salesforce object meanings / mapping defaults D-115, who
-   holds `kpi.edit`, live portal KPIs, scheduled-sync actor).
+2. When IT sets up the Salesforce integration user: confirm the field names of the three PMS objects against the
+   default mapping (D-117, DEPLOYMENT §6.4).
 3. Then Phase 4.4 (Integration & export — BACKLOG).
 
 ## Previous state — 2026-10-30 (Phase 4 — Part 2: GRC assurance, branch `phase-4-2-grc-assurance`, done — awaiting review)

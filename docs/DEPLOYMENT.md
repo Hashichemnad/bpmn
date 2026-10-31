@@ -435,8 +435,8 @@ emergency switch below.
 
 ProcessHub can import the corporate KPI catalogue and its results from the Salesforce PMS app (objects
 `Org_Kpi_Goal__c`, `Org_Kpi_Measure__c`, `Org_Kpi_Process__c`). The link is **off by default**, only a **Super
-Admin** configures it, and ProcessHub **only reads** from Salesforce (SOQL queries; it never creates, changes or
-deletes Salesforce records). A Salesforce administrator and the ProcessHub Super Admin do this together, about
+Admin** configures it (Performance Officers can preview and run the sync and read its log), and ProcessHub **only
+reads** from Salesforce (SOQL queries; it never creates, changes or deletes Salesforce records). A Salesforce administrator and the ProcessHub Super Admin do this together, about
 30 minutes:
 
 1. **Integration user** (Salesforce Setup → Users → New User): licence _Salesforce Integration_ (or a normal
@@ -444,9 +444,17 @@ deletes Salesforce records). A Salesforce administrator and the ProcessHub Super
    _Minimum Access – Salesforce_), e-mail of a team mailbox, e.g. `processhub-integration@yourcompany.com`. It is
    not a person's account.
 2. **Read-only permission set** (Setup → Permission Sets → New, e.g. `ProcessHub KPI read`): _API Enabled_;
-   **Object settings → Read** (no Create / Edit / Delete, no View All / Modify All) on `Org_Kpi_Goal__c`,
-   `Org_Kpi_Measure__c`, `Org_Kpi_Process__c` and, if you map them, `Department__c` and the process-mapping
-   object; **Read** field access on the fields of the mapping. Assign it to the integration user.
+   **Object settings → Read** (no Create / Edit / Delete, no View All / Modify All) on the three KPI objects:
+   - `Org_Kpi_Goal__c` (KPI description card = the KPI definition and its _Department Goal_ picklist),
+   - `Org_Kpi_Measure__c` (yearly target and achieved value per KPI),
+   - `Org_Kpi_Process__c` (period results Q1–Q4, half year, full year, with causality, corrective actions and
+     the _Approved_ checkbox);
+
+   and **Read** field access on the fields of the mapping. Assign it to the integration user. The field names
+   in ProcessHub's default mapping follow the documented PMS model; **confirm them when IT sets up the
+   integration user** (step 6) — they could not be checked against the production org beforehand. Salesforce
+   holds no KPI ↔ process mapping: links between KPIs and process steps are made in ProcessHub.
+
 3. **Connected app** (Setup → App Manager → New Connected App, or an _External Client App_ in newer orgs):
    name `ProcessHub KPI link`, _Enable OAuth Settings_, scopes **Manage user data via APIs (api)** only.
    - **Client credentials** (simplest): tick _Enable Client Credentials Flow_; in _Manage → Edit Policies_ set
@@ -464,15 +472,20 @@ processhub-sf.key -out processhub-sf.crt -days 730 -subj "/CN=ProcessHub"`), tic
    and secret (or integration username, login URL and the private key), API version → **Save** → **Test
    connection** (shows the organisation id and whether the mapped objects are readable).
 6. **Field mapping**: the defaults follow the documented PMS data model (KPIs from `Org_Kpi_Goal__c`, objectives
-   from its _Department Goal_ picklist, actual values from `Org_Kpi_Process__c` with year and quarter through
-   `Org_Kpi_Measure__r`). If your sandbox uses other names, use **Load fields** next to each object and pick the
-   fields; adjust the value lists (e.g. `Increase = HIGHER_IS_BETTER`, `Full Year = YEAR`). **Save**.
+   from its _Department Goal_ picklist, yearly targets from `Org_Kpi_Measure__c`, period results from
+   `Org_Kpi_Process__c` with year and period through `Org_Kpi_Measure__r`, only results with `Approved__c` set).
+   If your org uses other names, use **Load fields** next to each object and pick the fields; adjust the value
+   lists (e.g. `Increase = HIGHER_IS_BETTER`, `First Half = H1`, `Full Year = YEAR`). Under **Objectives**, link
+   picklist values to objectives that already exist in ProcessHub; the other values become new objectives.
+   **Include results not yet approved** is off by default. **Save**.
 7. **Preview changes** shows what would be created or updated (nothing is written yet); then **Sync now**.
    Imported KPIs show "Source: Salesforce" with the last sync time and a link to the record; the fields that come
    from Salesforce and their values are read-only in ProcessHub (thresholds, owner, links to processes stay
    editable). Choose the **schedule** (default daily at 02:00 UTC).
-8. **Check** the **sync log** on the same page after the first scheduled run. Failed runs are also notified to
-   every Super Admin (in-app and e-mail) and recorded in the audit log (_Sync_).
+8. **Check** the **sync log** on the same page after the first scheduled run. Scheduled runs act as the system
+   actor **"Salesforce sync"** (not as a person) and record the Super Admin who configured the link ("configured
+   by"); they keep running if that admin leaves or is deactivated. Failed runs are notified to every Super Admin
+   and Performance Officer (in-app and e-mail) and recorded in the audit log (_Sync_).
 
 To stop the link: switch **Enabled** off (nothing is deleted; imported KPIs stay with their history). To revoke
 access on the Salesforce side: deactivate the integration user or the connected app.

@@ -341,13 +341,13 @@ zod / UUID pipe; file uploads are checked in the service (allow-list, content sn
 | GET    | `/integrations/git/status`                   | `settings.manage`                                         | —                                   | default    |
 | POST   | `/integrations/git/sync`                     | `settings.manage`                                         | body                                | default    |
 | POST   | `/integrations/git/test`                     | `settings.manage`                                         | body                                | default    |
-| GET    | `/integrations/salesforce`                   | `settings.manage`                                         | —                                   | default    |
+| GET    | `/integrations/salesforce`                   | any of `settings.manage`, `kpi.sync`                      | —                                   | default    |
 | PUT    | `/integrations/salesforce`                   | `settings.manage`                                         | body                                | default    |
 | GET    | `/integrations/salesforce/describe/:object`  | `settings.manage`                                         | param `object`                      | default    |
-| POST   | `/integrations/salesforce/preview`           | `settings.manage`                                         | —                                   | default    |
-| GET    | `/integrations/salesforce/runs`              | `settings.manage`                                         | —                                   | default    |
-| GET    | `/integrations/salesforce/runs/:id/warnings` | `settings.manage`                                         | param `id`                          | default    |
-| POST   | `/integrations/salesforce/sync`              | `settings.manage`                                         | —                                   | default    |
+| POST   | `/integrations/salesforce/preview`           | any of `settings.manage`, `kpi.sync`                      | —                                   | default    |
+| GET    | `/integrations/salesforce/runs`              | any of `settings.manage`, `kpi.sync`                      | —                                   | default    |
+| GET    | `/integrations/salesforce/runs/:id/warnings` | any of `settings.manage`, `kpi.sync`                      | param `id`                          | default    |
+| POST   | `/integrations/salesforce/sync`              | any of `settings.manage`, `kpi.sync`                      | —                                   | default    |
 | POST   | `/integrations/salesforce/test`              | `settings.manage`                                         | —                                   | default    |
 | GET    | `/issues`                                    | any of `grc.read`, `issues.manage`                        | query                               | default    |
 | POST   | `/issues`                                    | `issues.manage`                                           | body                                | default    |

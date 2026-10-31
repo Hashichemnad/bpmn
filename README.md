@@ -68,6 +68,7 @@ content in every lifecycle state, comments, notifications and portal feedback.
 | `risk@processhub.local` | Risk & Compliance Officer (Rana) | Risk & Compliance — registers, dashboard, settings; rest of the workspace read-only |
 | `audit@processhub.local` | Internal Audit (Iman) | Audits — audit plan, engagements, findings; tests and reviews controls; rest read-only |
 | `architect@processhub.local` | Enterprise Architect (Ali) | Architecture — applications, interfaces, data objects, capability map; rest read-only |
+| `performance@processhub.local` | Performance Officer (Perla) | KPIs — defines KPIs, objectives and targets, enters any value, runs the Salesforce sync; rest read-only |
 
 Demo users are only created on a demo installation (`SEED_DEMO_DATA=true`, the default). **Emails** sent by
 the demo installation go to the bundled **Mailpit** at **http://localhost:8025** — nothing leaves the machine.
@@ -89,7 +90,9 @@ the demo installation go to the bundled **Mailpit** at **http://localhost:8025**
   and *View → Colour by → KPI status / Application lifecycle* colours the diagram.
 - As the Super Admin: **Administration → Salesforce KPI link** — connect a Salesforce org with a read-only
   integration user (DEPLOYMENT.md §6.4), map the PMS objects (defaults included), preview the differences, sync
-  now or on a schedule; imported KPIs show "Source: Salesforce" and stay read-only. In the KPI settings (KPI
+  now or on a schedule; imported KPIs show "Source: Salesforce" and stay read-only. Scheduled syncs run as the
+  system actor "Salesforce sync". As `performance@processhub.local` (Performance Officer): **Performance →
+  Salesforce KPI link** previews and runs the sync (settings read-only). In the KPI settings (KPI
   catalogue → *KPI settings*) **Show KPIs in the portal** adds the KPIs to the portal page of a process.
 
 ### A short tour of Phase 4.2 — assurance (control testing, issues, audits, questionnaires)

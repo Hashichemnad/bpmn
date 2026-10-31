@@ -1453,3 +1453,52 @@ HIGHER_IS_BETTER`, `Quarterly = QUARTERLY`).
 - **Tests** never call Salesforce: the API tests replace the transport with `FakeSalesforce` serving recorded
   fixtures (`apps/api/test/fixtures/salesforce`, invented ids and values); the Playwright test runs a mock HTTP
   server with the same fixtures, reached from the API through `host.docker.internal` (CI) / `localhost` (local).
+
+## D-117 — Salesforce mapping confirmed by the product owner (Phase 4.3, 2026-10-31)
+
+Answers to the open questions of D-115; supersedes its process mapping and adds what the PMS model holds.
+
+- **Objects** (documented PMS model is the default): `Org_Kpi_Goal__c` (KPI description card) = the KPI
+  definition; its strategic objective picklist `Department_Goal__c` → ProcessHub strategic objectives;
+  `Org_Kpi_Measure__c` = yearly target and achieved value per KPI; `Org_Kpi_Process__c` = period results (Q1–Q4,
+  half year, full year) imported as measurements.
+- **Objectives**: a picklist value not yet mapped becomes an objective (matched by `<field>:<value>` as before); the
+  mapping screen can link a value to an **existing** objective (`mapping.objectives.valueLinks`: value → objective
+  id; a deleted objective falls back to the import).
+- **Results**: only `Approved__c = true` (a `WHERE` on the validated field name); Setting
+  `includeUnapproved` (off by default) imports the others too. **Causality** and **corrective actions** are added to
+  the measurement comment (`Causality: …` / `Corrective actions: …`).
+- **Half years**: new KPI frequency `SEMI_ANNUAL` with periods `2026-H1` / `2026-H2` (shared period helpers,
+  value lists `Semi-Annual`, `First Half`, `Second Half`).
+- **Yearly measures**: the yearly target becomes the target of the year's last period (Q4, H2, December or the
+  year) unless a period result gives one; for annual KPIs the achieved value is the year's value when no result
+  exists.
+- **No KPI ↔ process mapping from Salesforce** (it has none): the `processMap` group and the preview's process
+  links are removed; links are made in ProcessHub.
+- Field names are to be confirmed when IT sets up the integration user (DEPLOYMENT §6.4); everything stays
+  editable on the mapping screen.
+
+## D-118 — Performance Officer role (Phase 4.3, 2026-10-31)
+
+- New system role **Performance Officer** (Strategy Office, `PERFORMANCE_OFFICER`): `kpi.read`, `kpi.edit`,
+  `kpi.measure` and the new **`kpi.sync`**, plus read access to the repository, users, governance dashboard, GRC
+  and architecture. It creates and edits all KPIs, objectives and targets and enters values for any KPI.
+- **`kpi.sync`**: read the Salesforce settings (never the secrets), preview, run the sync and read the sync log.
+  Changing the connection, mapping, test and describe stay `settings.manage` (Super Admin). Admins keep their
+  rights (`kpi.edit`) but do not get `kpi.sync` — the Salesforce link stays with Super Admins and Performance
+  Officers. Process Owners still enter values only for the KPIs they own.
+- Failed syncs notify Super Admins and holders of `kpi.sync`. Demo user `performance@processhub.local`.
+
+## D-119 — Scheduled Salesforce syncs run as a system actor (Phase 4.3, 2026-10-31)
+
+Supersedes the "act as the Super Admin" rule of D-116.
+
+- Scheduled runs use the system actor **"Salesforce sync"**: no user id on the run, on the records it creates
+  (`createdById` / `updatedById` empty) or on the audit entries, so automatic changes are not attributed to a
+  person. Manual runs keep the user who started them.
+- Every run stores **configured by** (`SalesforceSyncRun.configuredById` = the user who last saved the Salesforce
+  settings); audit entries of a sync carry `actor: "Salesforce sync"` (scheduled) and `configuredBy` (id, e-mail,
+  name) in their summary. The sync log shows both.
+- The schedule does not depend on that admin: it keeps running when they leave or are deactivated.
+- Portal KPIs (D-113, agreed): only KPIs on steps of the published diagram, each value with its period and
+  last-updated date.
