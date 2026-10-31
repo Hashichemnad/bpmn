@@ -5,6 +5,9 @@ import { DEMO, apiCall, login, loginAdmin } from './helpers';
  * KPIs (Phase 4.3, M12): the owner of a seeded KPI sees the due value in My tasks, enters it with a
  * comment, and the status follows the thresholds on the KPI page and in the catalogue.
  */
+// Several sign-ins per test: a longer budget than the 30 s default.
+test.setTimeout(90_000);
+
 test('enter a KPI measurement: status and catalogue update', async ({ page }) => {
   await login(page, DEMO.owner);
   const list = await apiCall<{ items: { id: string; code: string; duePeriod: string }[] }>(

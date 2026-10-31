@@ -5,6 +5,9 @@ import { DEMO, apiCall, createSampleProcess, login } from './helpers';
  * Enterprise architecture (Phase 4.3, M11): an architect records an application, relates it to a
  * capability and a data object; the step link made in the modeler shows on the application.
  */
+// Several sign-ins per test: a longer budget than the 30 s default.
+test.setTimeout(90_000);
+
 const stamp = Date.now().toString(36).toUpperCase();
 
 async function pickOption(page: Page, field: string, text: string) {
