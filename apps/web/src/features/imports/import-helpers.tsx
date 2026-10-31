@@ -30,14 +30,17 @@ interface TreeNode {
   value: string;
   title: string;
   children: TreeNode[];
+  disabled?: boolean;
 }
 
 function buildTree<T extends { id: string; parentId: string | null }>(
   rows: T[],
   label: (r: T) => string,
+  disabled?: (r: T) => boolean,
 ): TreeNode[] {
   const nodes = new Map<string, TreeNode>();
-  for (const r of rows) nodes.set(r.id, { value: r.id, title: label(r), children: [] });
+  for (const r of rows)
+    nodes.set(r.id, { value: r.id, title: label(r), children: [], disabled: disabled?.(r) });
   const roots: TreeNode[] = [];
   for (const r of rows) {
     const n = nodes.get(r.id)!;
@@ -53,17 +56,25 @@ export function ProcessTreeSelect({
   onChange,
   id,
   placeholder,
+  ownerId,
 }: {
   value?: string | null;
   onChange?: (v: string | null) => void;
   id?: string;
   placeholder?: string;
+  /** Only processes of this owner can be picked (Process Owner imports, D-164). */
+  ownerId?: string;
 }) {
   const loc = useLocalized();
   const tree = useProcessTree();
   const data = useMemo(
-    () => buildTree<ProcessSummaryDto>(tree.data ?? [], (p) => `${p.code} ${loc(p)}`),
-    [tree.data, loc],
+    () =>
+      buildTree<ProcessSummaryDto>(
+        tree.data ?? [],
+        (p) => `${p.code} ${loc(p)}`,
+        ownerId ? (p) => p.ownerId !== ownerId : undefined,
+      ),
+    [tree.data, loc, ownerId],
   );
   return (
     <TreeSelect

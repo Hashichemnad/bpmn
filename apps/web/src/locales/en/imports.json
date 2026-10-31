@@ -144,7 +144,8 @@
     "parentPageId": "Parent page",
     "pageTemplate": "Page template",
     "splitByHeading": "One page per Heading 1",
-    "linkProcesses": "Suggest process links"
+    "linkProcesses": "Suggest process links",
+    "visioLayout": "Layout"
   },
   "optionHelp": {
     "defaultOwnerId": "Owner of imported items when the file does not name one.",
@@ -152,7 +153,9 @@
     "sendInvitations": "New users receive a link to set their password (not with single sign-on).",
     "parentProcessId": "New processes are created below this process.",
     "splitByHeading": "Otherwise one page per document.",
-    "linkProcesses": "Process codes and names in the file name, title or text become link suggestions."
+    "linkProcesses": "Process codes and names in the file name, title or text become link suggestions.",
+    "visioLayout": "Automatic layout gives a clean BPMN diagram; \"Keep Visio positions\" places the shapes where they were in Visio.",
+    "parentProcessIdOwn": "New processes are created under one of your processes and owned by you."
   },
   "spaceRequired": "Choose a space",
   "center": {
@@ -164,7 +167,8 @@
     "empty": "No imports yet",
     "resultLine": "{{created}} created · {{updated}} updated · {{failed}} failed",
     "summaryLine": "{{create}} new · {{update}} updates · {{errors}} errors",
-    "fullExport": "Full export (ZIP)"
+    "fullExport": "Full export (ZIP)",
+    "ownerNotice": "As a Process Owner you import diagrams and documents for the processes you own and the wiki spaces you can edit. You see and undo only your own batches."
   },
   "fields": {
     "kind": "Kind",
@@ -375,7 +379,11 @@
     "PACKAGE_INFO": "Package of {{organisation}} from {{date}}.",
     "NOT_A_PACKAGE": "{{file}} is not a ProcessHub export package.",
     "PACKAGE_VERSION": "The package was made by a newer ProcessHub (format {{version}}).",
-    "PACKAGE_CHECKSUM": "The package is damaged or was changed ({{path}})."
+    "PACKAGE_CHECKSUM": "The package is damaged or was changed ({{path}}).",
+    "NOT_OWN_PROCESS": "{{code}} belongs to another owner: Process Owners import only into their own processes.",
+    "OWN_PARENT_REQUIRED": "No matching process: choose one of your processes as the parent to create it under.",
+    "USERS_SSO_WELCOME": "Single sign-on is on and password sign-in is off: new users get a welcome e-mail with the sign-in link (no password invitation).",
+    "VISIO_KEEP_VERTICAL_LANES": "The swimlanes are vertical: Visio positions cannot be kept, the diagram is laid out automatically."
   },
   "field": {
     "code": "Code",
@@ -463,7 +471,10 @@
       "SOP_TO_BPMN": "Draft BPMN from SOP pages",
       "EXTRACT_GRC": "Find risks and controls",
       "TRANSLATE": "Translate missing language"
-    }
+    },
+    "confirmTitle": "Send the text to the AI provider?",
+    "confirmText": "The text of the imported items in this batch is sent to the external AI provider, outside the UAE. The results come back as proposals for review; nothing changes until a person accepts them.",
+    "confirmOk": "Send and run"
   },
   "dashboard": {
     "title": "Migration dashboard",
@@ -531,5 +542,17 @@
   },
   "tasks": {
     "tab": "Imported drafts"
+  },
+  "visioLayout": {
+    "AUTO": "Automatic layout",
+    "KEEP": "Keep Visio positions"
+  },
+  "settings": {
+    "title": "Import settings",
+    "saved": "Import settings saved",
+    "ssoWelcomeEmail": "Welcome e-mail for imported users (SSO)",
+    "ssoWelcomeEmailHelp": "When single sign-on is live and password sign-in is off, imported users get an e-mail with the \"Sign in with Microsoft\" link. Off: no e-mail. Password invitations are only sent while password sign-in is allowed.",
+    "allowAi": "Allow AI on imported documents",
+    "allowAiHelp": "Off by default. Turn on only after DOF approval: the text of imported documents is sent to the external AI provider, outside the UAE. Independent of the general AI switch; each run asks for confirmation."
   }
 }

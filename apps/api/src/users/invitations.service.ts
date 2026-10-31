@@ -14,7 +14,8 @@ import { PasswordService } from '../auth/password.service';
 import { AuthSettingsService } from '../auth/auth-settings.service';
 import { EmailSettingsService } from '../notifications/email-settings.service';
 import { MailTransport } from '../notifications/mail-transport';
-import { renderInvitationEmail } from '../notifications/email-templates';
+import { renderInvitationEmail, renderSsoWelcomeEmail } from '../notifications/email-templates';
+import { readImportSettings } from '../imports/import-settings';
 import { badRequest, notFound } from '../common/app-exception';
 import type { AuthUser, RequestMeta } from '../common/auth-user';
 
@@ -39,12 +40,43 @@ export class InvitationsService {
     @Inject(APP_CONFIG) private readonly config: AppConfig,
   ) {}
 
-  /** How new users will sign in: invitation e-mail, SSO, or neither (no e-mail configured). */
-  async mode(): Promise<'INVITE' | 'SSO' | 'NO_EMAIL'> {
+  /**
+   * How new users will sign in (D-164): a set-password invitation while password sign-in is on;
+   * once SSO is live and password sign-in is off, a welcome e-mail with the sign-in link
+   * (`SSO_WELCOME`, Setting `imports.ssoWelcomeEmail`) or no e-mail at all (`SSO`).
+   */
+  async mode(): Promise<'INVITE' | 'SSO' | 'SSO_WELCOME' | 'NO_EMAIL'> {
     const s = await this.authSettings.getPublic();
-    if (s.ssoEnabled && !s.localLoginEnabled) return 'SSO';
-    if (!(await this.email.smtp())) return s.ssoEnabled ? 'SSO' : 'NO_EMAIL';
+    const smtp = !!(await this.email.smtp());
+    if (s.ssoEnabled && !s.localLoginEnabled)
+      return smtp && (await readImportSettings(this.prisma)).ssoWelcomeEmail
+        ? 'SSO_WELCOME'
+        : 'SSO';
+    if (!smtp) return s.ssoEnabled ? 'SSO' : 'NO_EMAIL';
     return 'INVITE';
+  }
+
+  /** Welcome e-mail with the single sign-on link (no password, nothing to set). */
+  async sendWelcome(userId: string): Promise<boolean> {
+    const smtp = await this.email.smtp();
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+    if (!smtp || !user) return false;
+    const auth = await this.authSettings.getPublic();
+    const locale = (user.locale === 'ar' ? 'ar' : 'en') as Locale;
+    const name =
+      (locale === 'ar' ? user.nameAr || user.nameEn : user.nameEn || user.nameAr) || user.email;
+    const label = (locale === 'ar' ? auth.ssoButtonLabelAr : auth.ssoButtonLabelEn) || '';
+    const url = `${this.config.APP_URL.replace(/\/$/, '')}/login`;
+    try {
+      await this.transport.send(smtp, {
+        to: user.email,
+        ...renderSsoWelcomeEmail(locale, name, url, label),
+      });
+      return true;
+    } catch (e) {
+      this.logger.warn(`Welcome e-mail to user ${userId} not sent: ${(e as Error).message}`);
+      return false;
+    }
   }
 
   /** Creates an invitation (older open ones are withdrawn) and returns the token. */
@@ -95,15 +127,18 @@ export class InvitationsService {
     const user = await this.prisma.user.findFirst({ where: { id: userId, deletedAt: null } });
     if (!user) throw notFound('User');
     if (user.passwordHash) throw badRequest('USER_HAS_PASSWORD');
-    if ((await this.mode()) !== 'INVITE') throw badRequest('EMAIL_NOT_CONFIGURED');
-    const token = await this.create(userId, actor.id);
-    const sent = await this.send(userId, token);
+    const mode = await this.mode();
+    if (mode !== 'INVITE' && mode !== 'SSO_WELCOME') throw badRequest('EMAIL_NOT_CONFIGURED');
+    const sent =
+      mode === 'SSO_WELCOME'
+        ? await this.sendWelcome(userId)
+        : await this.send(userId, await this.create(userId, actor.id));
     await this.audit.log({
       action: 'UPDATE',
       entityType: 'User',
       entityId: userId,
       userId: actor.id,
-      summary: { invitation: sent ? 'sent' : 'failed' },
+      summary: { invitation: sent ? 'sent' : 'failed', mode },
       meta,
     });
     return { sent };

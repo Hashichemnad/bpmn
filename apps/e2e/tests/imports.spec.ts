@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import ExcelJS from 'exceljs';
 import { expect, test, type Page } from '@playwright/test';
-import { loginAdmin } from './helpers';
+import { DEMO, login, loginAdmin } from './helpers';
 
 /**
  * Import Center (M15): batches upload → preview → apply → result, and the main migration flows
@@ -234,4 +234,32 @@ test('Full export: the Super Admin downloads the repository package with its man
   const path = await download.path();
   const head = readFileSync(path).subarray(0, 2).toString('latin1');
   expect(head).toBe('PK');
+});
+
+test('Process Owner: the Import Center offers only diagrams and documents (D-164)', async ({
+  page,
+}) => {
+  await login(page, DEMO.owner);
+  await page.goto('/admin/imports');
+  await expect(page.getByTestId('import-owner-notice')).toBeVisible();
+  await expect(page.getByTestId('import-kind-BPMN')).toBeVisible();
+  await expect(page.getByTestId('import-kind-WORD')).toBeVisible();
+  await expect(page.getByTestId('import-kind-PROCESS_HOUSE')).toHaveCount(0);
+  await expect(page.getByTestId('import-kind-USERS')).toHaveCount(0);
+  await expect(page.getByTestId('full-export')).toHaveCount(0);
+  await expect(page.getByTestId('import-settings')).toHaveCount(0);
+  // The Visio import offers "Keep Visio positions" next to the automatic layout (the default).
+  await page.getByTestId('import-kind-VISIO').click();
+  const dialog = page.getByRole('dialog');
+  await expect(dialog.getByLabel('Automatic layout')).toBeChecked();
+  await expect(dialog.getByLabel('Keep Visio positions')).not.toBeChecked();
+});
+
+test('Import settings: AI on imported documents is off by default (Super Admin)', async ({
+  page,
+}) => {
+  await loginAdmin(page);
+  await page.goto('/admin/imports');
+  await expect(page.getByTestId('import-settings')).toContainText('Allow AI on imported documents');
+  await expect(page.getByTestId('import-settings-ai')).not.toBeChecked();
 });

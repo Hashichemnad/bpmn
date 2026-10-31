@@ -6,6 +6,7 @@ import {
   type VisioShapeType,
 } from '@processhub/shared';
 import type { ProcessStructure, StructureNode } from '../../ai/bpmn/process-structure';
+import { JSDOM } from 'jsdom';
 import { checkOfficePackage, parseSafeXml, type SafeZip } from '../safe-upload';
 import { issue } from './tabular';
 
@@ -31,6 +32,16 @@ export interface VisioPage {
   unmapped: Map<string, number>;
   issues: ImportIssue[];
   shapes: number;
+  /** Visio positions in px (top-left origin) of nodes and lanes, for "keep Visio positions". */
+  positions: Map<string, Box>;
+  verticalLanes: boolean;
+}
+
+export interface Box {
+  x: number;
+  y: number;
+  w: number;
+  h: number;
 }
 
 const el = (doc: Document | Element, name: string) =>
@@ -237,9 +248,24 @@ function readPage(
     );
   for (const [m, n] of unmapped)
     issues.push(issue('WARNING', 'VISIO_UNMAPPED', { shape: m, count: n }));
+  // Visio: inches, pin = centre, y upwards → px, top-left origin (96 px per inch, 40 px margin).
+  const placed = [...nodes.values()].map((n) => n.s).concat(usedLanes);
+  const pageTop = Math.max(0, ...placed.map((p) => p.y + p.h / 2));
+  const left = Math.min(Infinity, ...placed.map((p) => p.x - p.w / 2));
+  const box = (v: VShape): Box => ({
+    x: Math.round((v.x - v.w / 2 - (Number.isFinite(left) ? left : 0)) * 96) + 70,
+    y: Math.round((pageTop - (v.y + v.h / 2)) * 96) + 40,
+    w: Math.max(20, Math.round(v.w * 96)),
+    h: Math.max(20, Math.round(v.h * 96)),
+  });
+  const positions = new Map<string, Box>();
+  for (const { s: v } of nodes.values()) positions.set(`Shape_${v.id}`, box(v));
+  for (const l of usedLanes) positions.set(`Lane_${l.id}`, box(l));
   const title = labelByScript(name);
   return {
     name,
+    positions,
+    verticalLanes: vertical,
     shapes: [...shapes.values()].filter((s) => s.top === s.id).length,
     masters: counts,
     unmapped,
@@ -256,3 +282,116 @@ function readPage(
     },
   };
 }
+
+const XMLNS_DI = 'http://www.omg.org/spec/DD/20100524/DI';
+const XMLNS_DC = 'http://www.omg.org/spec/DD/20100524/DC';
+const XMLNS_BPMNDI = 'http://www.omg.org/spec/BPMN/20100524/DI';
+const XMLNS_BPMN = 'http://www.omg.org/spec/BPMN/20100524/MODEL';
+
+/**
+ * "Keep Visio positions": moves the shapes of a generated BPMN diagram to their Visio places (events
+ * 36 px and gateways 50 px around the Visio centre), lanes to the swimlane bands inside the pool,
+ * and draws flows as orthogonal connectors between the shapes.
+ */
+export function applyVisioPositions(xml: string, positions: Map<string, Box>): string {
+  const doc = parseSafeXml(xml);
+  const all = Array.from(doc.getElementsByTagNameNS(XMLNS_BPMN, '*'));
+  const kindOf = new Map(all.map((e) => [e.getAttribute('id') ?? '', e.localName]));
+  const final = new Map<string, Box>();
+  for (const [id, b] of positions) {
+    const k = kindOf.get(id) ?? '';
+    const size = k.endsWith('Event') ? 36 : k.endsWith('Gateway') ? 50 : 0;
+    final.set(
+      id,
+      size
+        ? {
+            x: Math.round(b.x + b.w / 2 - size / 2),
+            y: Math.round(b.y + b.h / 2 - size / 2),
+            w: size,
+            h: size,
+          }
+        : { ...b, w: Math.max(b.w, 80), h: Math.max(b.h, 60) },
+    );
+  }
+  const nodeBoxes = [...final].filter(([id]) => !id.startsWith('Lane_')).map(([, b]) => b);
+  const laneBoxes = [...final].filter(([id]) => id.startsWith('Lane_')).map(([, b]) => b);
+  const extent = [...nodeBoxes, ...laneBoxes];
+  const minX = Math.min(...extent.map((b) => b.x)) - 40;
+  const maxX = Math.max(...extent.map((b) => b.x + b.w)) + 20;
+  const minY = Math.min(...extent.map((b) => b.y));
+  const maxY = Math.max(...extent.map((b) => b.y + b.h));
+  const set = (shape: Element, b: Box) => {
+    const bounds = Array.from(shape.children).find((c) => c.localName === 'Bounds');
+    if (!bounds) return;
+    bounds.setAttribute('x', String(b.x));
+    bounds.setAttribute('y', String(b.y));
+    bounds.setAttribute('width', String(b.w));
+    bounds.setAttribute('height', String(b.h));
+    for (const l of Array.from(shape.children).filter((c) => c.localName === 'BPMNLabel'))
+      l.remove();
+  };
+  for (const shape of Array.from(doc.getElementsByTagNameNS(XMLNS_BPMNDI, 'BPMNShape'))) {
+    const id = shape.getAttribute('bpmnElement') ?? '';
+    const k = kindOf.get(id);
+    if (k === 'participant')
+      set(shape, { x: minX - 30, y: minY, w: maxX - minX + 30, h: maxY - minY });
+    else if (k === 'lane') {
+      const b = final.get(id);
+      if (b) set(shape, { x: minX, y: b.y, w: maxX - minX, h: b.h });
+    } else {
+      const b = final.get(id);
+      if (b) set(shape, b);
+    }
+  }
+  const flows = new Map(
+    all
+      .filter((e) => e.localName === 'sequenceFlow')
+      .map((e) => [
+        e.getAttribute('id') ?? '',
+        [e.getAttribute('sourceRef') ?? '', e.getAttribute('targetRef') ?? ''],
+      ]),
+  );
+  for (const edge of Array.from(doc.getElementsByTagNameNS(XMLNS_BPMNDI, 'BPMNEdge'))) {
+    const [from, to] = flows.get(edge.getAttribute('bpmnElement') ?? '') ?? [];
+    const a = final.get(from ?? '');
+    const b = final.get(to ?? '');
+    if (!a || !b) continue;
+    for (const c of Array.from(edge.children)) c.remove();
+    const ac = { x: a.x + a.w / 2, y: a.y + a.h / 2 };
+    const bc = { x: b.x + b.w / 2, y: b.y + b.h / 2 };
+    const horizontal = Math.abs(bc.x - ac.x) >= Math.abs(bc.y - ac.y);
+    const pts = horizontal
+      ? (() => {
+          const sx = bc.x >= ac.x ? a.x + a.w : a.x;
+          const tx = bc.x >= ac.x ? b.x : b.x + b.w;
+          const mx = Math.round((sx + tx) / 2);
+          return [
+            [sx, ac.y],
+            [mx, ac.y],
+            [mx, bc.y],
+            [tx, bc.y],
+          ];
+        })()
+      : (() => {
+          const sy = bc.y >= ac.y ? a.y + a.h : a.y;
+          const ty = bc.y >= ac.y ? b.y : b.y + b.h;
+          const my = Math.round((sy + ty) / 2);
+          return [
+            [ac.x, sy],
+            [ac.x, my],
+            [bc.x, my],
+            [bc.x, ty],
+          ];
+        })();
+    for (const [x, y] of pts) {
+      const wp = doc.createElementNS(XMLNS_DI, 'di:waypoint');
+      wp.setAttribute('x', String(Math.round(x)));
+      wp.setAttribute('y', String(Math.round(y)));
+      edge.appendChild(wp);
+    }
+  }
+  void XMLNS_DC;
+  return new (dom ??= new JSDOM('')).window.XMLSerializer().serializeToString(doc);
+}
+
+let dom: JSDOM | null = null;

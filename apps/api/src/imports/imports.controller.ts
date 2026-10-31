@@ -27,6 +27,8 @@ import {
   importItemsQuerySchema,
   importListQuerySchema,
   importOptionsSchema,
+  importSettingsSchema,
+  type ImportSettings,
   type ImportDecisionInput,
   type ImportItemsQuery,
   type ImportKind,
@@ -34,7 +36,12 @@ import {
   type ImportOptions,
   type Locale,
 } from '@processhub/shared';
-import { CurrentUser, ReqMeta, RequirePermissions } from '../common/decorators';
+import {
+  CurrentUser,
+  ReqMeta,
+  RequireAnyPermission,
+  RequirePermissions,
+} from '../common/decorators';
 import type { AuthUser, RequestMeta } from '../common/auth-user';
 import { UuidPipe, ZodPipe } from '../common/zod.pipe';
 import { badRequest } from '../common/app-exception';
@@ -42,6 +49,7 @@ import { download } from '../ea/ea.controller';
 import { ImportsService } from './imports.service';
 
 const MANAGE = PERMISSIONS.IMPORT_MANAGE;
+const OWN = PERMISSIONS.IMPORT_OWN;
 
 /** Multipart fields: kind, options (JSON string), note. */
 const uploadFields = z.object({
@@ -76,13 +84,30 @@ export class ImportsController {
   constructor(private readonly imports: ImportsService) {}
 
   @Get('kinds')
-  @RequirePermissions(MANAGE)
+  @RequireAnyPermission(MANAGE, OWN)
   kinds(@CurrentUser() user: AuthUser) {
     return this.imports.kinds(user);
   }
 
+  /** Import settings (D-164): readable by importers, changed by Super Admins (settings.manage). */
+  @Get('settings')
+  @RequireAnyPermission(MANAGE, OWN, PERMISSIONS.SETTINGS_MANAGE)
+  settings() {
+    return this.imports.getSettings();
+  }
+
+  @Put('settings')
+  @RequirePermissions(PERMISSIONS.SETTINGS_MANAGE)
+  saveSettings(
+    @Body(new ZodPipe(importSettingsSchema)) body: ImportSettings,
+    @CurrentUser() user: AuthUser,
+    @ReqMeta() meta: RequestMeta,
+  ) {
+    return this.imports.saveSettings(body, user, meta);
+  }
+
   @Get('templates/:kind')
-  @RequirePermissions(MANAGE)
+  @RequireAnyPermission(MANAGE, OWN)
   async template(
     @Param('kind', new ZodPipe(z.enum(IMPORT_KINDS))) kind: ImportKind,
     @Query(new ZodPipe(localeQuery)) q: { locale: Locale },
@@ -93,13 +118,16 @@ export class ImportsController {
   }
 
   @Get()
-  @RequirePermissions(MANAGE)
-  list(@Query(new ZodPipe(importListQuerySchema)) q: ImportListQuery) {
-    return this.imports.list(q);
+  @RequireAnyPermission(MANAGE, OWN)
+  list(
+    @Query(new ZodPipe(importListQuerySchema)) q: ImportListQuery,
+    @CurrentUser() user: AuthUser,
+  ) {
+    return this.imports.list(q, user);
   }
 
   @Post()
-  @RequirePermissions(MANAGE)
+  @RequireAnyPermission(MANAGE, OWN)
   @UseInterceptors(
     FilesInterceptor('files', IMPORT_LIMITS.files, {
       limits: { fileSize: IMPORT_LIMITS.fileBytes, files: IMPORT_LIMITS.files, fields: 10 },
@@ -128,13 +156,13 @@ export class ImportsController {
   }
 
   @Get(':id')
-  @RequirePermissions(MANAGE)
+  @RequireAnyPermission(MANAGE, OWN)
   get(@Param('id', UuidPipe()) id: string, @CurrentUser() user: AuthUser) {
     return this.imports.get(id, user);
   }
 
   @Get(':id/items')
-  @RequirePermissions(MANAGE)
+  @RequireAnyPermission(MANAGE, OWN)
   items(
     @Param('id', UuidPipe()) id: string,
     @Query(new ZodPipe(importItemsQuerySchema)) q: ImportItemsQuery,
@@ -144,7 +172,7 @@ export class ImportsController {
   }
 
   @Get(':id/records')
-  @RequirePermissions(MANAGE)
+  @RequireAnyPermission(MANAGE, OWN)
   records(
     @Param('id', UuidPipe()) id: string,
     @Query(new ZodPipe(pageQuery)) q: z.infer<typeof pageQuery>,
@@ -154,7 +182,7 @@ export class ImportsController {
   }
 
   @Put(':id/options')
-  @RequirePermissions(MANAGE)
+  @RequireAnyPermission(MANAGE, OWN)
   options(
     @Param('id', UuidPipe()) id: string,
     @Body(new ZodPipe(importOptionsSchema)) body: ImportOptions,
@@ -165,7 +193,7 @@ export class ImportsController {
   }
 
   @Put(':id/items/:ref')
-  @RequirePermissions(MANAGE)
+  @RequireAnyPermission(MANAGE, OWN)
   decide(
     @Param('id', UuidPipe()) id: string,
     @Param('ref', new ZodPipe(z.string().min(1).max(500))) ref: string,
@@ -176,7 +204,7 @@ export class ImportsController {
   }
 
   @Put(':id/suggestions')
-  @RequirePermissions(MANAGE)
+  @RequireAnyPermission(MANAGE, OWN)
   decideAll(
     @Param('id', UuidPipe()) id: string,
     @Body(new ZodPipe(allSuggestions)) body: { accepted: boolean },
@@ -187,7 +215,7 @@ export class ImportsController {
 
   @Post(':id/apply')
   @HttpCode(200)
-  @RequirePermissions(MANAGE)
+  @RequireAnyPermission(MANAGE, OWN)
   apply(
     @Param('id', UuidPipe()) id: string,
     @CurrentUser() user: AuthUser,
@@ -198,20 +226,20 @@ export class ImportsController {
 
   @Post(':id/cancel')
   @HttpCode(200)
-  @RequirePermissions(MANAGE)
+  @RequireAnyPermission(MANAGE, OWN)
   cancel(@Param('id', UuidPipe()) id: string, @CurrentUser() user: AuthUser) {
     return this.imports.cancel(id, user);
   }
 
   @Get(':id/undo')
-  @RequirePermissions(MANAGE)
+  @RequireAnyPermission(MANAGE, OWN)
   undoCheck(@Param('id', UuidPipe()) id: string, @CurrentUser() user: AuthUser) {
     return this.imports.undoCheck(id, user);
   }
 
   @Post(':id/undo')
   @HttpCode(200)
-  @RequirePermissions(MANAGE)
+  @RequireAnyPermission(MANAGE, OWN)
   undo(
     @Param('id', UuidPipe()) id: string,
     @CurrentUser() user: AuthUser,
@@ -222,7 +250,7 @@ export class ImportsController {
 
   @Delete(':id')
   @HttpCode(204)
-  @RequirePermissions(MANAGE)
+  @RequireAnyPermission(MANAGE, OWN)
   async discard(
     @Param('id', UuidPipe()) id: string,
     @CurrentUser() user: AuthUser,
@@ -232,7 +260,7 @@ export class ImportsController {
   }
 
   @Get(':id/report')
-  @RequirePermissions(MANAGE)
+  @RequireAnyPermission(MANAGE, OWN)
   async report(
     @Param('id', UuidPipe()) id: string,
     @Query(new ZodPipe(localeQuery)) q: { locale: Locale },
@@ -245,7 +273,7 @@ export class ImportsController {
 
   /** The original uploaded file (download only, never rendered inline). */
   @Get(':id/files/:fileId')
-  @RequirePermissions(MANAGE)
+  @RequireAnyPermission(MANAGE, OWN)
   async file(
     @Param('id', UuidPipe()) id: string,
     @Param('fileId', UuidPipe()) fileId: string,

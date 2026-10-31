@@ -155,6 +155,36 @@ describe('Import Center — diagrams (e2e)', () => {
     expect((p.model!.bpmnXml.match(/<bpmn:lane /g) ?? []).length).toBe(3);
   });
 
+  it('keeps the Visio positions when asked (automatic layout stays the default)', async () => {
+    const auto = await upload(admin, 'VISIO', [sample('S.03 Leave request flowchart.vsdx')], {
+      attachTo: 'CREATE',
+    });
+    const keep = await upload(admin, 'VISIO', [sample('S.03 Leave request flowchart.vsdx')], {
+      attachTo: 'CREATE',
+      visioLayout: 'KEEP',
+    });
+    await applyBatch(admin, auto.id);
+    await applyBatch(admin, keep.id);
+    const xmlOf = async (batchId: string) =>
+      (
+        await ctx.prisma.process.findFirstOrThrow({
+          where: { importBatchId: batchId },
+          include: { model: true },
+        })
+      ).model!.bpmnXml;
+    const bounds = (xml: string) =>
+      [...xml.matchAll(/bpmnElement="(Shape_[^"]+)"[^>]*>\s*<dc:Bounds x="(\d+)" y="(\d+)"/g)].map(
+        (m) => `${m[1]}:${m[2]},${m[3]}`,
+      );
+    const a = bounds(await xmlOf(auto.id));
+    const k = bounds(await xmlOf(keep.id));
+    expect(k.length).toBeGreaterThan(3);
+    expect(k).not.toEqual(a);
+    const kept = await xmlOf(keep.id);
+    expect((kept.match(/<bpmn:lane /g) ?? []).length).toBe(3);
+    expect(kept).toContain('di:waypoint');
+  });
+
   it('refuses old binary Visio files with a clear message', async () => {
     const ole = Buffer.from([0xd0, 0xcf, 0x11, 0xe0, 0xa1, 0xb1, 0x1a, 0xe1, 0, 0, 0, 0]);
     const res = await upload(admin, 'VISIO', [{ name: 'old.vsd', data: ole }], {}, 400);

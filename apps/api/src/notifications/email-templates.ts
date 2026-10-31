@@ -674,3 +674,19 @@ export function renderInvitationEmail(
     : `Hello ${name},\nan account was created for you in ProcessHub. Open the link to set your password. The link is valid for ${days} days and can be used once.`;
   return { subject, html: layout(locale, subject, body, url), text: `${body}\n\n${url}` };
 }
+
+/** Welcome e-mail of a user imported while sign-in is only through SSO (no password, D-164). */
+export function renderSsoWelcomeEmail(
+  locale: Locale,
+  name: string,
+  url: string,
+  buttonLabel: string,
+): { subject: string; html: string; text: string } {
+  const ar = locale === 'ar';
+  const label = buttonLabel || (ar ? 'تسجيل الدخول عبر Microsoft' : 'Sign in with Microsoft');
+  const subject = ar ? 'مرحباً بك في بروسس هب' : 'Welcome to ProcessHub';
+  const body = ar
+    ? `مرحباً ${name}،\nأصبح لديك حساب في بروسس هب. افتح الرابط واختر «${label}» لتسجيل الدخول بحساب المؤسسة — لا حاجة إلى كلمة مرور.`
+    : `Hello ${name},\nyou now have an account in ProcessHub. Open the link and choose "${label}" to sign in with your organisation account — no password is needed.`;
+  return { subject, html: layout(locale, subject, body, url), text: `${body}\n\n${url}` };
+}

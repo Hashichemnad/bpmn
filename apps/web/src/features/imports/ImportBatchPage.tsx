@@ -60,6 +60,7 @@ import {
   useImportItems,
   useImportRecords,
   useRunMigrationAi,
+  useImportSettings,
   useUndoCheck,
   useUndoImport,
   useUpdateImportOptions,
@@ -172,14 +173,37 @@ export function ImportBatchPage() {
 /** AI-assisted migration of the batch's items (proposals for review, never applied directly). */
 function AiActionsCard({ b }: { b: ImportBatchDto }) {
   const { t } = useTranslation();
-  const { message } = App.useApp();
+  const { message, modal } = App.useApp();
   const errorMessage = useErrorMessage();
   const { can } = useAuth();
   const status = useAiStatus();
+  const manager = can(PERMISSIONS.IMPORT_MANAGE);
+  const settings = useImportSettings(manager);
   const run = useRunMigrationAi();
   const group = IMPORT_KIND_INFO[b.kind].group;
-  if (!status.data?.available || !['DOCUMENTS', 'DIAGRAMS', 'STRUCTURE'].includes(group))
+  // D-164: a separate setting (DOF approval: the text leaves the UAE), off by default.
+  if (
+    !manager ||
+    !status.data?.available ||
+    !settings.data?.allowAiOnImportedDocuments ||
+    !['DOCUMENTS', 'DIAGRAMS', 'STRUCTURE'].includes(group)
+  )
     return null;
+  const start = (k: MigrationProposalKind) =>
+    modal.confirm({
+      title: t('imports:ai.confirmTitle'),
+      content: t('imports:ai.confirmText'),
+      okText: t('imports:ai.confirmOk'),
+      okButtonProps: { 'data-testid': 'import-ai-confirm' } as never,
+      onOk: () =>
+        run.mutate(
+          { kind: k, batchId: b.id, language: 'en', confirmExternal: true },
+          {
+            onSuccess: (r) => message.success(t('imports:ai.started', { count: r.items })),
+            onError: (e) => message.error(errorMessage(e)),
+          },
+        ),
+    });
   const kinds: MigrationProposalKind[] =
     group === 'DOCUMENTS'
       ? [
@@ -207,15 +231,7 @@ function AiActionsCard({ b }: { b: ImportBatchDto }) {
           <Button
             key={k}
             loading={run.isPending && run.variables?.kind === k}
-            onClick={() =>
-              run.mutate(
-                { kind: k, batchId: b.id, language: 'en' },
-                {
-                  onSuccess: (r) => message.success(t('imports:ai.started', { count: r.items })),
-                  onError: (e) => message.error(errorMessage(e)),
-                },
-              )
-            }
+            onClick={() => start(k)}
           >
             {t(`imports:ai.run.${k}`)}
           </Button>

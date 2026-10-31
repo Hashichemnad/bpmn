@@ -9,7 +9,7 @@ import { applyBpmnSuggestions } from './bpmn-tools';
 import { applyDiagramItems, type DiagramPayload } from './bpmn.importer';
 import { baseName, librarySuggestions, loadProcessRefs, matchProcess } from './process-target';
 import { issue } from './tabular';
-import { readVisio, resolveMapping } from './visio-tools';
+import { applyVisioPositions, readVisio, resolveMapping } from './visio-tools';
 
 /**
  * Visio .vsdx (M15 step 3): every page with mapped shapes becomes a BPMN draft (lanes, flows,
@@ -77,7 +77,12 @@ export class VisioImporter implements Importer {
         if (!s.nodes.some((x) => x.type === 'startEvent'))
           issues.push(issue('WARNING', 'NO_START_EVENT'));
         if (!s.flows.length) issues.push(issue('WARNING', 'VISIO_NO_FLOWS'));
-        const xml = structureToBpmn(s, { key: `v${n + 1}p${i + 1}` });
+        let xml = structureToBpmn(s, { key: `v${n + 1}p${i + 1}` });
+        if (ctx.options.visioLayout === 'KEEP') {
+          // Visio's vertical swimlanes do not map onto BPMN's horizontal lanes: auto-layout then.
+          if (page.verticalLanes) issues.push(issue('WARNING', 'VISIO_KEEP_VERTICAL_LANES'));
+          else xml = applyVisioPositions(xml, page.positions);
+        }
         const target = await matchProcess(
           ctx,
           processes,

@@ -51,7 +51,7 @@ with no per-user licensing. Target: 50–500 users on a single server.
 | Design B1 | Modeler design — Part B1: full-screen workspace and modeling productivity (palette, ready-made steps, zoom/mini-map, align, auto-layout, lane roles, badges, portal diagram, print layout) | ✅ Done (merged into `main`, D-074 – D-081); Part B2 in BACKLOG |
 | Design B2 | Modeler design — Part B2: smarter modeling and reports (Playwright e2e in CI, Dictionary with label autocomplete, Quick Model, step attributes and "colour by", handbook / RACI / object reports, modeling conventions) | ✅ Done (merged into `main`, D-083 – D-088) |
 | Deps | zod 3 → 4 (high advisory GHSA-mrhx-c7xc-m3w5, D-082) | ✅ Done (merged into `main`) |
-| Import | M15 Import tools / migration: Import Center (batches, preview, dry run, undo, re-import, upload security), process house / departments / users from Excel, BPMN / Visio / ARIS / DMN diagrams, Word / PDF / Confluence / Markdown into the wiki, AI-assisted migration, migration tracker and review queue, full export package and round-trip | ✅ Done on branch `import-tools` (D-155 – D-163), awaiting review / merge into `main` |
+| Import | M15 Import tools / migration: Import Center (batches, preview, dry run, undo, re-import, upload security), process house / departments / users from Excel, BPMN / Visio / ARIS / DMN diagrams, Word / PDF / Confluence / Markdown into the wiki, AI-assisted migration, migration tracker and review queue, full export package and round-trip | ✅ Done on branch `import-tools` (D-155 – D-164), awaiting review / merge into `main` |
 | 6 | Hardening: SSO, performance, security review fixes, deployment guide | 🟡 Parts 1–4 merged into `main` (security review `docs/SECURITY.md`, production stack and backups `docs/DEPLOYMENT.md`, SSO with Entra ID / OIDC and TOTP 2FA, product owner decisions: 2FA for admins, break-glass, roles in ProcessHub, 24 h sessions, Node 22). Remaining: final performance / polish session — moved to the end of the roadmap |
 
 Update this table and `docs/PROGRESS.md` at the end of every session.
@@ -267,7 +267,7 @@ Phase 5.2 additions (DECISIONS D-144 – D-153):
 - Shared `packages/shared/src/workflow/` (S-FEEL, server DMN, forms, model reader, executable check, pure engine,
   business calendar, templates); API module `workflow`; admin guide `docs/WORKFLOWS.md`
 
-Import tools additions (M15, DECISIONS D-155 – D-163):
+Import tools additions (M15, DECISIONS D-155 – D-164):
 
 - `ImportBatch` (number IMP-0001, kind, status, options, preview / summary / result JSON, job), `ImportFile`
   (S3, SHA-256), `ImportItem` (entity written by a batch: outcome, external key, before / after — undo, re-import
@@ -278,6 +278,9 @@ Import tools additions (M15, DECISIONS D-155 – D-163):
 - API module `imports` (importers per kind in `importers/`, upload security `safe-upload.ts`, migration
   dashboard, AI migration, full export / restore); shared `packages/shared/src/imports.ts`; guide
   `docs/MIGRATION.md`
+- Product owner answers (D-164): permission `import.own` (Process Owner: diagrams / documents for own processes
+  and editable spaces, own batches only); Setting `imports` (`ssoWelcomeEmail`, `allowAiOnImportedDocuments`
+  off by default — DOF approval, `confirmExternal` per run); option `visioLayout` (`AUTO` | `KEEP`)
 
 ## 10. Definition of Done (every phase)
 

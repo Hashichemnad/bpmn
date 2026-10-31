@@ -7,7 +7,7 @@ review the result. Nothing is published automatically.
 ## 1. How an import works
 
 Every import is a **batch** (Administration → **Import Center**, permission `import.manage`: Admins and Super
-Admins):
+Admins; Process Owners with `import.own`, see below):
 
 1. **Upload** one or more files of one kind (the kind decides what the files may contain).
 2. **Read** — a background job checks and reads the files (progress bar, _Cancel_).
@@ -28,6 +28,14 @@ Running the same import again is safe: items are matched by **code** (processes,
 name code), **e-mail** (users), **external id** (ARIS GUIDs, Confluence page ids) or **file name** of an earlier
 batch, and **updated** instead of duplicated — but only while they are Drafts (published content is skipped
 with a warning).
+
+**Process Owners** (D-164) can import **diagrams** (BPMN, Visio) and **documents** (Word, PDF, Confluence,
+Markdown) themselves, so departments move their own content in parallel: into processes they own (a file that
+matches another owner's process is an error), new processes only under one of their own processes (choose it as
+_Parent process_; they are owned by the importing owner), pages only into wiki spaces they can edit. Owners see,
+apply and undo only their own batches. Structure (process house, departments, users), library objects, GRC and
+KPI registers, ARIS / DMN, AI migration and the review queue's bulk actions stay with Admins; the full export and
+restore with Super Admins.
 
 ## 2. Recommended order
 
@@ -54,8 +62,11 @@ CSV: UTF-8, separator `,` `;` tab or `|`.
   are not moved by an import (move them in the tree).
 - _Departments_: code, names, parent code, head e-mail.
 - _Users_: e-mail, names, department, roles (`;`-separated keys or names), job roles (Roles library), language.
-  **No passwords**: new users get a single-use _set password_ link by e-mail (7 days; _Send invitation again_ on
-  the Users page) or sign in with SSO when password sign-in is off. Imports never create Super Admins and never
+  **No passwords**: while password sign-in is allowed, new users get a single-use _set password_ link by e-mail
+  (7 days; _Send invitation again_ on the Users page). Once SSO is live and password sign-in is off, no
+  invitation is sent: users get a **welcome e-mail with the "Sign in with Microsoft" link** — or no e-mail, when
+  _Import settings → Welcome e-mail for imported users_ is off — and sign in with SSO. Password invitations
+  remain only for accounts allowed to use passwords (break-glass and exceptions). Imports never create Super Admins and never
   change the break-glass account; Admin roles must enrol in two-step verification at the first sign-in.
 
 **Diagrams**
@@ -67,7 +78,9 @@ CSV: UTF-8, separator `,` `;` tab or `|`.
   automatically (data objects and annotations are then not kept).
 - _Visio_ (`.vsdx` only — open old `.vsd` files in Visio and _Save as_ `.vsdx`): basic flowchart, cross-functional
   (swimlanes) and BPMN stencil shapes. Check the **shape mapping** (master → BPMN type) and fix unmapped shapes.
-  One process per page; the layout is generated.
+  One process per page. _Layout_: **Automatic layout** (default, a clean BPMN diagram) or **Keep Visio
+  positions** (shapes stay where they were in Visio, lanes become the swimlane bands, flows are drawn as
+  right-angled connectors; pages with vertical swimlanes are laid out automatically with a warning).
 - _ARIS_: export the models as **AML (XML)**. EPCs become EPC diagrams (convert them to BPMN on the diagram page
   when ready), value-added chain diagrams become value chains, roles / org units and application systems go to
   the library (existing ones with the same name are reused). Other model types are listed and skipped.
@@ -98,7 +111,11 @@ unsafe paths, encryption or extreme compression, XML with DTDs, and macro files 
 
 ## 5. AI-assisted migration (optional)
 
-When the AI assistant is enabled for your role, an applied batch offers _AI assistant for this batch_:
+**Needs DOF approval first:** the text of imported documents is sent to the external AI provider, outside the
+UAE. It is therefore a separate setting, _Import Center → Import settings → **Allow AI on imported
+documents**_ (Super Admin), **off by default** and independent of the general AI switch. When it is on and the
+AI assistant is enabled for your role, an applied batch offers _AI assistant for this batch_; every run first
+asks you to confirm that the text is sent to the AI provider:
 
 - **Draft BPMN from SOP pages** — a BPMN draft per imported SOP, shown side by side with the document.
 - **Find risks and controls** — risks and controls mentioned in policies / SOPs (with the quoted sentence), for
@@ -120,7 +137,10 @@ fills the missing language, marked for a check); _Reject_ discards. AI usage lim
 
 ## 7. Go-live content checklist
 
-- [ ] Departments, users (invitations sent or SSO tested) and the process house imported and checked.
+- [ ] Departments, users (invitations sent, or SSO tested and welcome e-mails sent) and the process house
+      imported and checked.
+- [ ] _Import settings → Allow AI on imported documents_ is **off**, unless DOF approved sending imported
+      document text outside the UAE (D-164).
 - [ ] Every imported process has an owner and a diagram; no item without Arabic or English names.
 - [ ] Mandatory modeling conventions pass (dashboard column _Failing conventions_ is 0).
 - [ ] Documents imported into the right spaces, linked to their processes; scanned PDFs re-typed or attached.
@@ -131,6 +151,10 @@ fills the missing language, marked for a check); _Reject_ discards. AI usage lim
       go-live baseline.
 
 ## 8. Full export and moving servers
+
+The full export is for **moving servers and avoiding lock-in**, not for disaster recovery: backups and
+disaster recovery use `scripts/backup.sh` / `scripts/restore.sh` (database + files + the keys in `.env`, see
+`docs/DEPLOYMENT.md` §7–8).
 
 _Full export (ZIP)_ (Super Admin) downloads the whole repository: JSON per table (for a restore), BPMN / DMN /
 diagram files per item and version, pages as HTML and Markdown with attachments, Excel lists and a manifest with

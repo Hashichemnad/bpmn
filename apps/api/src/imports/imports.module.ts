@@ -12,6 +12,7 @@ import { GovernanceModule } from '../governance/governance.module';
 import { ConventionsModule } from '../conventions/conventions.module';
 import { MigrationAiService } from './migration-ai.service';
 import { AiModule } from '../ai/ai.module';
+import { DocsModule } from '../docs/docs.module';
 import { IMPORTER, type Importer } from './importer';
 import { ModuleExcelImporter } from './importers/module-excel.importer';
 import { ProcessHouseImporter } from './importers/process-house.importer';
@@ -53,6 +54,7 @@ const IMPORTERS = [
     AiModule,
     GovernanceModule,
     ConventionsModule,
+    DocsModule,
   ],
   controllers: [
     ImportsController,

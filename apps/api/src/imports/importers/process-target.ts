@@ -1,5 +1,6 @@
 import type { Prisma, ProcessCategory } from '@prisma/client';
 import {
+  PERMISSIONS,
   findProcessCodes,
   type ImportChange,
   type ImportIssue,
@@ -20,6 +21,7 @@ export interface ProcessRef {
   nameEn: string;
   nameAr: string;
   status: string;
+  ownerId: string | null;
   hasModel: boolean;
 }
 
@@ -43,6 +45,7 @@ export async function loadProcessRefs(prisma: PrismaService): Promise<ProcessRef
       nameEn: true,
       nameAr: true,
       status: true,
+      ownerId: true,
       model: { select: { processId: true } },
     },
   });
@@ -90,8 +93,21 @@ export async function matchProcess(
     }
   }
   const freeCode = codes.find((c) => !byCode.has(norm(c))) ?? null;
-  if (!match)
+  // Process Owners (import.own, D-164): only their own processes, new ones under their own parent.
+  const owner = !ctx.actor.permissions.has(PERMISSIONS.IMPORT_MANAGE);
+  if (owner && match && match.ownerId !== ctx.actor.id)
+    return {
+      action: 'SKIP',
+      matchId: match.id,
+      matchBy,
+      code: null,
+      issues: [...issues, issue('ERROR', 'NOT_OWN_PROCESS', { code: match.code })],
+      changes: [],
+    };
+  if (!match) {
+    if (owner && !ctx.options.parentProcessId) issues.push(issue('ERROR', 'OWN_PARENT_REQUIRED'));
     return { action: 'CREATE', matchId: null, matchBy: null, code: freeCode, issues, changes: [] };
+  }
   let action: ParsedItem['action'] = 'UPDATE';
   if (ctx.options.updateExisting === false) action = 'SKIP';
   else if (match.status !== 'DRAFT') {

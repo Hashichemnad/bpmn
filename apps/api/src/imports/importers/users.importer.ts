@@ -149,6 +149,7 @@ export class UsersImporter implements Importer {
     const update = ctx.options.updateExisting !== false;
     const batchIssues: ImportIssue[] = [...table.issues];
     if (mode === 'SSO') batchIssues.push(issue('WARNING', 'USERS_SIGN_IN_WITH_SSO'));
+    else if (mode === 'SSO_WELCOME') batchIssues.push(issue('WARNING', 'USERS_SSO_WELCOME'));
     else if (mode === 'NO_EMAIL' && ctx.options.sendInvitations !== false)
       batchIssues.push(issue('WARNING', 'NO_EMAIL_FOR_INVITATIONS'));
 
@@ -269,8 +270,9 @@ export class UsersImporter implements Importer {
       ]),
     );
     const settings = await this.authSettings.get();
-    const invite =
-      ctx.options.sendInvitations !== false && (await this.invitations.mode()) === 'INVITE';
+    const mode = await this.invitations.mode();
+    const invite = ctx.options.sendInvitations !== false && mode === 'INVITE';
+    const welcome = ctx.options.sendInvitations !== false && mode === 'SSO_WELCOME';
     for (const item of items) {
       const d = item.data as UserRow;
       let token: string | null = null;
@@ -336,6 +338,7 @@ export class UsersImporter implements Importer {
       });
       const createdId = res?.[0]?.outcome === 'CREATED' ? res[0].entityId : null;
       if (token && createdId) await this.invitations.send(createdId, token);
+      else if (welcome && createdId) await this.invitations.sendWelcome(createdId);
     }
   }
 }

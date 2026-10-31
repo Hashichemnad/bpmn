@@ -697,7 +697,7 @@ export const routes: RouteObject[] = [
                   {
                     path: 'admin/imports',
                     element: (
-                      <RequirePermission all={[P.IMPORT_MANAGE]}>
+                      <RequirePermission any={[P.IMPORT_MANAGE, P.IMPORT_OWN]}>
                         <ImportCenterPage />
                       </RequirePermission>
                     ),
@@ -737,7 +737,7 @@ export const routes: RouteObject[] = [
                   {
                     path: 'admin/imports/:id',
                     element: (
-                      <RequirePermission all={[P.IMPORT_MANAGE]}>
+                      <RequirePermission any={[P.IMPORT_MANAGE, P.IMPORT_OWN]}>
                         <ImportBatchPage />
                       </RequirePermission>
                     ),

@@ -3,6 +3,9 @@ import { Inject, Injectable, Logger, type OnModuleInit } from '@nestjs/common';
 import { Prisma, type ImportBatch, type ImportFile } from '@prisma/client';
 import ExcelJS from 'exceljs';
 import {
+  PERMISSIONS,
+  SETTING_KEYS,
+  type ImportSettings,
   IMPORT_KIND_INFO,
   IMPORT_LIMITS,
   canImportKind,
@@ -41,6 +44,7 @@ import { XLSX_TYPE, addSheet, type ExcelFile } from '../common/excel';
 import { MiningJobsService, type JobContext } from '../mining/jobs/mining-jobs.service';
 import { MiningAbortError } from '../mining/jobs/worker-runner';
 import { safeFileName } from '../docs/attachment-type';
+import { DocsAccessService } from '../docs/docs-access.service';
 import {
   IMPORTER,
   type ApplyContext,
@@ -50,6 +54,7 @@ import {
   type ParsedItem,
 } from './importer';
 import { ImportFileError, checkUpload, sha256, sniffType } from './safe-upload';
+import { readImportSettings } from './import-settings';
 
 export const batchNumber = (n: number) => `IMP-${String(n).padStart(4, '0')}`;
 
@@ -103,6 +108,7 @@ export class ImportsService implements OnModuleInit {
     private readonly storage: StorageService,
     private readonly jobs: MiningJobsService,
     private readonly users: AuthUserLoader,
+    private readonly docsAccess: DocsAccessService,
     @Inject(IMPORTER) importers: Importer[],
   ) {
     for (const imp of importers) for (const k of imp.kinds) this.registry.set(k, imp);
@@ -124,10 +130,39 @@ export class ImportsService implements OnModuleInit {
     return imp;
   }
 
+  getSettings() {
+    return readImportSettings(this.prisma);
+  }
+
+  async saveSettings(input: ImportSettings, actor: AuthUser, meta: RequestMeta) {
+    const before = await this.getSettings();
+    await this.prisma.setting.upsert({
+      where: { key: SETTING_KEYS.IMPORTS },
+      create: { key: SETTING_KEYS.IMPORTS, value: input, updatedById: actor.id },
+      update: { value: input, updatedById: actor.id },
+    });
+    await this.audit.log({
+      action: 'UPDATE',
+      entityType: 'Setting',
+      entityId: SETTING_KEYS.IMPORTS,
+      userId: actor.id,
+      summary: { before, after: input },
+      meta,
+    });
+    return this.getSettings();
+  }
+
   kinds(actor: AuthUser): ImportKindDto[] {
     return [...this.registry.keys()]
       .filter((k) => canImportKind(k, actor.permissions, actor.roles))
       .map((kind) => ({ kind, info: IMPORT_KIND_INFO[kind] }));
+  }
+
+  /** Managers see every batch; Process Owners only their own (others answer 404). */
+  private assertBatch(b: ImportBatch, actor: AuthUser) {
+    if (!ImportsService.isManager(actor) && b.createdById !== actor.id)
+      throw notFound('Import batch');
+    this.assertKind(b.kind as ImportKind, actor);
   }
 
   private assertKind(kind: ImportKind, actor: AuthUser) {
@@ -148,6 +183,7 @@ export class ImportsService implements OnModuleInit {
   ): Promise<ImportBatchDto> {
     this.assertKind(kind, actor);
     const info = IMPORT_KIND_INFO[kind];
+    if (!ImportsService.isManager(actor)) options = { ...options, defaultOwnerId: actor.id };
     if (!files.length) throw badRequest('FILE_REQUIRED');
     if (files.length > (info.multiple ? IMPORT_LIMITS.files : 1))
       throw badRequest('TOO_MANY_FILES');
@@ -163,7 +199,7 @@ export class ImportsService implements OnModuleInit {
         throw e;
       }
     });
-    await this.assertOptions(options);
+    await this.assertOptions(options, actor);
     const batch = await this.prisma.importBatch.create({
       data: {
         kind,
@@ -200,7 +236,23 @@ export class ImportsService implements OnModuleInit {
     return this.get(batch.id, actor);
   }
 
-  private async assertOptions(o: ImportOptions) {
+  /** Process Owners (`import.own`) import only into what they own or may edit (D-164). */
+  static isManager(actor: AuthUser) {
+    return actor.permissions.has(PERMISSIONS.IMPORT_MANAGE);
+  }
+
+  private async assertOptions(o: ImportOptions, actor: AuthUser) {
+    if (!ImportsService.isManager(actor)) {
+      if (o.defaultOwnerId && o.defaultOwnerId !== actor.id)
+        throw forbidden('Owners import for themselves');
+      if (o.parentProcessId) {
+        const parent = await this.prisma.process.findFirst({
+          where: { id: o.parentProcessId, deletedAt: null },
+        });
+        if (parent && parent.ownerId !== actor.id) throw forbidden('You do not own this process');
+      }
+      if (o.spaceId) await this.docsAccess.space(o.spaceId, actor, 'edit');
+    }
     if (o.defaultOwnerId) {
       const u = await this.prisma.user.findFirst({
         where: { id: o.defaultOwnerId, deletedAt: null },
@@ -246,8 +298,12 @@ export class ImportsService implements OnModuleInit {
     return b;
   }
 
-  async list(q: ImportListQuery): Promise<Paginated<ImportBatchSummaryDto>> {
-    const where: Prisma.ImportBatchWhereInput = { kind: q.kind, status: q.status };
+  async list(q: ImportListQuery, actor: AuthUser): Promise<Paginated<ImportBatchSummaryDto>> {
+    const where: Prisma.ImportBatchWhereInput = {
+      kind: q.kind,
+      status: q.status,
+      ...(ImportsService.isManager(actor) ? {} : { createdById: actor.id }),
+    };
     const [rows, total] = await this.prisma.$transaction([
       this.prisma.importBatch.findMany({
         where,
@@ -303,7 +359,7 @@ export class ImportsService implements OnModuleInit {
 
   async get(id: string, actor?: AuthUser): Promise<ImportBatchDto> {
     const b = await this.find(id);
-    if (actor) this.assertKind(b.kind as ImportKind, actor);
+    if (actor) this.assertBatch(b, actor);
     const preview = (b.preview as StoredPreview | null) ?? emptyPreview();
     const people = await this.people([b.createdById]);
     const canUndo = await this.canUndoQuick(b);
@@ -352,7 +408,7 @@ export class ImportsService implements OnModuleInit {
     actor: AuthUser,
   ): Promise<Paginated<ImportPreviewItem>> {
     const b = await this.find(id);
-    this.assertKind(b.kind as ImportKind, actor);
+    this.assertBatch(b, actor);
     const preview = (b.preview as StoredPreview | null) ?? emptyPreview();
     const needle = q.q?.toLowerCase();
     const list = preview.items.filter(
@@ -373,7 +429,7 @@ export class ImportsService implements OnModuleInit {
   /** Records written by the applied batch (result list with links and before / after). */
   async records(id: string, actor: AuthUser, page = 1, pageSize = 50) {
     const b = await this.find(id);
-    this.assertKind(b.kind as ImportKind, actor);
+    this.assertBatch(b, actor);
     const [rows, total] = await this.prisma.$transaction([
       this.prisma.importItem.findMany({
         where: { batchId: id },
@@ -428,10 +484,12 @@ export class ImportsService implements OnModuleInit {
   /** New options / column mapping: the preview is built again. */
   async updateOptions(id: string, options: ImportOptions, actor: AuthUser, meta: RequestMeta) {
     const b = await this.find(id);
-    this.assertKind(b.kind as ImportKind, actor);
+    this.assertBatch(b, actor);
     if (!['READY', 'FAILED', 'CANCELLED', 'UPLOADED'].includes(b.status) || b.appliedAt)
       throw conflict('IMPORT_NOT_EDITABLE');
-    await this.assertOptions(options);
+    // Process Owners (D-164): what they import is always theirs.
+    if (!ImportsService.isManager(actor)) options = { ...options, defaultOwnerId: actor.id };
+    await this.assertOptions(options, actor);
     await this.prisma.importBatch.update({
       where: { id },
       data: { options: options as Prisma.InputJsonValue },
@@ -451,7 +509,7 @@ export class ImportsService implements OnModuleInit {
   /** Skip / include an item, accept / reject its suggestions. */
   async decide(id: string, ref: string, input: ImportDecisionInput, actor: AuthUser) {
     const b = await this.find(id);
-    this.assertKind(b.kind as ImportKind, actor);
+    this.assertBatch(b, actor);
     if (b.status !== 'READY') throw conflict('IMPORT_NOT_EDITABLE');
     const preview = (b.preview as StoredPreview | null) ?? emptyPreview();
     const item = preview.items.find((i) => i.ref === ref);
@@ -474,7 +532,7 @@ export class ImportsService implements OnModuleInit {
   /** Accept or reject every suggestion of the batch at once. */
   async decideAll(id: string, accepted: boolean, actor: AuthUser) {
     const b = await this.find(id);
-    this.assertKind(b.kind as ImportKind, actor);
+    this.assertBatch(b, actor);
     if (b.status !== 'READY') throw conflict('IMPORT_NOT_EDITABLE');
     const preview = (b.preview as StoredPreview | null) ?? emptyPreview();
     for (const i of preview.items) for (const s of i.suggestions) s.accepted = accepted;
@@ -489,7 +547,7 @@ export class ImportsService implements OnModuleInit {
 
   async apply(id: string, actor: AuthUser, meta: RequestMeta) {
     const b = await this.find(id);
-    this.assertKind(b.kind as ImportKind, actor);
+    this.assertBatch(b, actor);
     if (b.status !== 'READY') throw conflict('IMPORT_NOT_READY');
     const preview = (b.preview as StoredPreview | null) ?? emptyPreview();
     const summary = summariseImport(preview.items);
@@ -521,7 +579,7 @@ export class ImportsService implements OnModuleInit {
 
   async cancel(id: string, actor: AuthUser) {
     const b = await this.find(id);
-    this.assertKind(b.kind as ImportKind, actor);
+    this.assertBatch(b, actor);
     if (!['PARSING', 'APPLYING'].includes(b.status) || !b.jobId)
       throw conflict('IMPORT_NOT_RUNNING');
     await this.jobs.cancel(b.jobId);
@@ -538,7 +596,7 @@ export class ImportsService implements OnModuleInit {
   /** Discards a batch that was never applied (files removed from storage). */
   async discard(id: string, actor: AuthUser, meta: RequestMeta) {
     const b = await this.find(id);
-    this.assertKind(b.kind as ImportKind, actor);
+    this.assertBatch(b, actor);
     if (b.appliedAt || ['PARSING', 'APPLYING'].includes(b.status))
       throw conflict('IMPORT_NOT_EDITABLE');
     if (await this.prisma.importItem.count({ where: { batchId: id } }))
@@ -834,7 +892,7 @@ export class ImportsService implements OnModuleInit {
 
   async undoCheck(id: string, actor: AuthUser): Promise<ImportUndoCheckDto> {
     const b = await this.find(id);
-    this.assertKind(b.kind as ImportKind, actor);
+    this.assertBatch(b, actor);
     return this.checkUndo(b);
   }
 
@@ -898,7 +956,7 @@ export class ImportsService implements OnModuleInit {
 
   async undo(id: string, actor: AuthUser, meta: RequestMeta) {
     const b = await this.find(id);
-    this.assertKind(b.kind as ImportKind, actor);
+    this.assertBatch(b, actor);
     if (['PARSING', 'APPLYING'].includes(b.status)) throw conflict('IMPORT_RUNNING');
     const check = await this.checkUndo(b);
     if (!check.canUndo) throw conflict('IMPORT_UNDO_BLOCKED', undefined);
@@ -1007,7 +1065,7 @@ export class ImportsService implements OnModuleInit {
 
   async file(id: string, fileId: string, actor: AuthUser) {
     const b = await this.find(id);
-    this.assertKind(b.kind as ImportKind, actor);
+    this.assertBatch(b, actor);
     const f = b.files.find((x) => x.id === fileId);
     if (!f) throw notFound('File');
     return { file: f, stream: await this.storage.get(f.storageKey) };
@@ -1016,7 +1074,7 @@ export class ImportsService implements OnModuleInit {
   /** Dry-run / result report: one row per preview item, with the outcome once applied. */
   async report(id: string, locale: Locale, actor: AuthUser, meta: RequestMeta): Promise<ExcelFile> {
     const b = await this.find(id);
-    this.assertKind(b.kind as ImportKind, actor);
+    this.assertBatch(b, actor);
     const preview = (b.preview as StoredPreview | null) ?? emptyPreview();
     const records = await this.prisma.importItem.findMany({
       where: { batchId: id },

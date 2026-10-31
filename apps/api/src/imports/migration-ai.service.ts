@@ -1,4 +1,4 @@
-import { Injectable, type OnModuleInit } from '@nestjs/common';
+import { HttpStatus, Injectable, type OnModuleInit } from '@nestjs/common';
 import type { Prisma } from '@prisma/client';
 import { z } from 'zod';
 import {
@@ -34,7 +34,8 @@ import { GrcSettingsService } from '../grc/grc-settings.service';
 import { ModelsService } from '../models/models.service';
 import { htmlToText, sanitizeRichText } from '../docs/rich-text';
 import { preparePageContent } from '../docs/pages.service';
-import { badRequest, conflict, forbidden, notFound } from '../common/app-exception';
+import { AppException, badRequest, conflict, forbidden, notFound } from '../common/app-exception';
+import { readImportSettings } from './import-settings';
 import type { AuthUser, RequestMeta } from '../common/auth-user';
 import { MiningJobsService, type JobContext } from '../mining/jobs/mining-jobs.service';
 import { MiningAbortError } from '../mining/jobs/worker-runner';
@@ -222,6 +223,14 @@ export class MigrationAiService implements OnModuleInit {
     actor: AuthUser,
     meta: RequestMeta,
   ): Promise<MigrationAiRunDto> {
+    // Imported documents leave the country with the AI provider: a separate setting, off until
+    // DOF approves it, independent of the general AI switch (D-164).
+    if (!(await readImportSettings(this.prisma)).allowAiOnImportedDocuments)
+      throw new AppException(
+        HttpStatus.FORBIDDEN,
+        'AI_IMPORTS_DISABLED',
+        'AI on imported documents is off',
+      );
     if (input.kind === 'EXTRACT_GRC' && !actor.permissions.has(PERMISSIONS.GRC_PROPOSE))
       throw forbidden('You cannot propose risks and controls');
     await this.gateway.begin(actor, meta); // availability and limits, before anything runs
@@ -237,7 +246,7 @@ export class MigrationAiService implements OnModuleInit {
       entityType: 'ImportBatch',
       entityId: input.batchId ?? null,
       userId: actor.id,
-      summary: { migration: input.kind, items: sources.length },
+      summary: { migration: input.kind, items: sources.length, confirmedExternal: true },
       meta,
     });
     return { jobId: job.id, items: sources.length };
@@ -254,6 +263,11 @@ export class MigrationAiService implements OnModuleInit {
     let failed = 0;
     for (const [n, s] of p.sources.entries()) {
       await ctx.progress(n / p.sources.length, s.id);
+      if (!(await readImportSettings(this.prisma)).allowAiOnImportedDocuments) {
+        await this.failRest(p, n, actor, 'AI_IMPORTS_DISABLED');
+        failed += p.sources.length - n;
+        break;
+      }
       let session: AiSession;
       try {
         session = await this.gateway.begin(actor, JOB_META);

@@ -1,6 +1,7 @@
 import { Form, Radio, Select, Switch } from 'antd';
 import { useTranslation } from 'react-i18next';
-import { PAGE_TEMPLATE_KEYS, type ImportKindInfo } from '@processhub/shared';
+import { PAGE_TEMPLATE_KEYS, PERMISSIONS, type ImportKindInfo } from '@processhub/shared';
+import { useAuth } from '@/auth/AuthProvider';
 import { useSpaces } from '@/api/docs';
 import { useLocalized } from '@/components/i18n-helpers';
 import { UserSelect } from '@/features/governance/UserSelect';
@@ -14,12 +15,15 @@ export function ImportOptionFields({ info }: { info: ImportKindInfo }) {
   const form = Form.useFormInstance();
   const spaceId = Form.useWatch('spaceId', form) as string | null | undefined;
   const has = (k: string) => (info.options as readonly string[]).includes(k);
+  const { can, user } = useAuth();
+  // Process Owners (D-164) import for themselves, under their own processes.
+  const owner = !can(PERMISSIONS.IMPORT_MANAGE);
   const label = (k: string) => t(`imports:option.${k}`);
   const help = (k: string) => t(`imports:optionHelp.${k}`);
 
   return (
     <>
-      {has('defaultOwnerId') && (
+      {has('defaultOwnerId') && !owner && (
         <Form.Item
           name="defaultOwnerId"
           label={label('defaultOwnerId')}
@@ -40,9 +44,9 @@ export function ImportOptionFields({ info }: { info: ImportKindInfo }) {
         <Form.Item
           name="parentProcessId"
           label={label('parentProcessId')}
-          extra={help('parentProcessId')}
+          extra={help(owner ? 'parentProcessIdOwn' : 'parentProcessId')}
         >
-          <ProcessTreeSelect />
+          <ProcessTreeSelect ownerId={owner ? user?.id : undefined} />
         </Form.Item>
       )}
       {has('processCategory') && (
@@ -71,6 +75,19 @@ export function ImportOptionFields({ info }: { info: ImportKindInfo }) {
           </Radio.Group>
         </Form.Item>
       )}
+      {has('visioLayout') && (
+        <Form.Item
+          name="visioLayout"
+          label={label('visioLayout')}
+          initialValue="AUTO"
+          extra={help('visioLayout')}
+        >
+          <Radio.Group>
+            <Radio value="AUTO">{t('imports:visioLayout.AUTO')}</Radio>
+            <Radio value="KEEP">{t('imports:visioLayout.KEEP')}</Radio>
+          </Radio.Group>
+        </Form.Item>
+      )}
       {has('spaceId') && (
         <Form.Item
           name="spaceId"
@@ -82,10 +99,12 @@ export function ImportOptionFields({ info }: { info: ImportKindInfo }) {
             optionFilterProp="label"
             loading={spaces.isLoading}
             onChange={() => form.setFieldValue('parentPageId', null)}
-            options={(spaces.data ?? []).map((s) => ({
-              value: s.id,
-              label: `${s.key} · ${loc(s)}`,
-            }))}
+            options={(spaces.data ?? [])
+              .filter((s) => s.canEdit)
+              .map((s) => ({
+                value: s.id,
+                label: `${s.key} · ${loc(s)}`,
+              }))}
           />
         </Form.Item>
       )}

@@ -82,8 +82,17 @@ diagrams, documents, AI, migration, package round trip) and `safe-upload.spec.ts
 Playwright `imports.spec.ts` (7 flows) and the screenshot spec against API + Vite dev server + an in-memory S3
 stand-in (no Docker daemon in this sandbox — CI runs the Docker images and the full Playwright suite).
 
-Next: product owner review (open questions in the PR description); then the final performance / polish session
-(Phase 6 remainder) and Phase 4.4 integrations.
+- [x] 9. Product owner answers (D-164): Process Owner imports (`import.own`: BPMN / Visio / documents for own
+      processes and editable spaces, own batches only; API tests `test/imports-owner.e2e-spec.ts`, 8); SSO
+      welcome e-mail instead of invitations once password sign-in is off (Setting `imports.ssoWelcomeEmail`);
+      separate Setting "Allow AI on imported documents" (off by default, confirmation per run,
+      `confirmExternal`); Visio option "Keep Visio positions" (`visioLayout`, automatic layout default); Import
+      settings card in the Import Center (Super Admin); SECURITY / DEPLOYMENT (disaster recovery = backup.sh /
+      restore.sh, export package = moving servers / lock-in) / MIGRATION / BACKLOG (ARIS org charts and function
+      allocation, antivirus to the final security review).
+
+Next: merge review of PR #21; then the final performance / polish session (Phase 6 remainder) and Phase 4.4
+integrations.
 
 ## Previous state — 2026-10-31 (Phase 5 — Part 2: Workflow execution, branch `phase-5-2-workflow-execution`, merged into `main`)
 

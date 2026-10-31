@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
-import { App, Button, Card, Col, Flex, Row, Select, Space, Table, Typography } from 'antd';
+import { Alert, App, Button, Card, Col, Flex, Row, Select, Space, Table, Typography } from 'antd';
 import {
   ApartmentOutlined,
   CloudUploadOutlined,
@@ -37,6 +37,7 @@ import {
 import { downloadBlob } from '@/features/modeler/export';
 import { ImportStatusTag } from './import-helpers';
 import { NewImportModal } from './NewImportModal';
+import { ImportSettingsCard } from './ImportSettingsCard';
 
 const GROUP_ICONS: Record<ImportGroup, React.ReactNode> = {
   STRUCTURE: <ApartmentOutlined />,
@@ -104,12 +105,16 @@ export function ImportCenterPage() {
         subtitle={t('imports:center.subtitle')}
         extra={
           <>
-            <Link to="/admin/imports/dashboard">
-              <Button icon={<DashboardOutlined />}>{t('imports:dashboard.title')}</Button>
-            </Link>
-            <Link to="/admin/imports/ai">
-              <Button icon={<RobotOutlined />}>{t('imports:ai.queue')}</Button>
-            </Link>
+            {(can(PERMISSIONS.IMPORT_MANAGE) || can(PERMISSIONS.GOVERNANCE_DASHBOARD)) && (
+              <Link to="/admin/imports/dashboard">
+                <Button icon={<DashboardOutlined />}>{t('imports:dashboard.title')}</Button>
+              </Link>
+            )}
+            {can(PERMISSIONS.IMPORT_MANAGE) && (
+              <Link to="/admin/imports/ai">
+                <Button icon={<RobotOutlined />}>{t('imports:ai.queue')}</Button>
+              </Link>
+            )}
             {can(PERMISSIONS.EXPORT_FULL) && (
               <Button
                 icon={<ExportOutlined />}
@@ -123,6 +128,16 @@ export function ImportCenterPage() {
           </>
         }
       />
+      {!can(PERMISSIONS.IMPORT_MANAGE) && (
+        <Alert
+          type="info"
+          showIcon
+          style={{ marginBlockEnd: 16 }}
+          message={t('imports:center.ownerNotice')}
+          data-testid="import-owner-notice"
+        />
+      )}
+      {can(PERMISSIONS.SETTINGS_MANAGE) && <ImportSettingsCard />}
       <Row gutter={[16, 16]} style={{ marginBlockEnd: 16 }}>
         {IMPORT_GROUPS.map((g) => {
           const items = available.filter((k) => k.info.group === g);

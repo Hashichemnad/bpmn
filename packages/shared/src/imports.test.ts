@@ -72,5 +72,12 @@ describe('import helpers', () => {
     expect(canImportKind('GRC_RISKS', ['import.manage', 'grc.edit'], ['ADMIN'])).toBe(true);
     expect(canImportKind('PACKAGE', ['import.manage'], ['ADMIN'])).toBe(false);
     expect(canImportKind('PACKAGE', ['import.manage'], ['SUPER_ADMIN'])).toBe(true);
+    // Process Owners (D-164): diagrams and documents only.
+    expect(canImportKind('BPMN', ['import.own'], ['PROCESS_OWNER'])).toBe(true);
+    expect(canImportKind('WORD', ['import.own'], ['PROCESS_OWNER'])).toBe(true);
+    expect(canImportKind('PROCESS_HOUSE', ['import.own'], ['PROCESS_OWNER'])).toBe(false);
+    expect(canImportKind('USERS', ['import.own'], ['PROCESS_OWNER'])).toBe(false);
+    expect(canImportKind('GRC_RISKS', ['import.own', 'grc.edit'], ['PROCESS_OWNER'])).toBe(false);
+    expect(canImportKind('PACKAGE', ['import.own'], ['PROCESS_OWNER'])).toBe(false);
   });
 });

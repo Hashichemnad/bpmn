@@ -52,6 +52,11 @@ describe('Import Center — AI-assisted migration (e2e)', () => {
         noticeAr: '',
       })
       .expect(200);
+    // D-164: AI on imported documents is a separate setting, off by default (DOF approval).
+    await superAdmin
+      .put('/imports/settings')
+      .send({ ssoWelcomeEmail: true, allowAiOnImportedDocuments: true })
+      .expect(200);
     admin = await loggedIn(ctx.app, 'admin@test.local');
     modeler = await loggedIn(ctx.app, 'modeler@test.local');
     spaceId = (await ctx.prisma.space.create({ data: { key: 'QM', nameEn: 'Quality' } })).id;
@@ -63,7 +68,12 @@ describe('Import Center — AI-assisted migration (e2e)', () => {
   });
 
   const run = async (kind: string) => {
-    const res = (await admin.post('/migration-ai/run').send({ kind, batchId }).expect(202)).body;
+    const res = (
+      await admin
+        .post('/migration-ai/run')
+        .send({ kind, batchId, confirmExternal: true })
+        .expect(202)
+    ).body;
     const job = await waitJob(admin, res.jobId);
     expect(job.status).toBe('DONE');
     return (await admin.get(`/migration-ai/proposals?kind=${kind}&status=PENDING`).expect(200)).body
@@ -159,7 +169,10 @@ describe('Import Center — AI-assisted migration (e2e)', () => {
   });
 
   it('respects permissions, AI settings and usage limits', async () => {
-    await modeler.post('/migration-ai/run').send({ kind: 'TRANSLATE', batchId }).expect(403);
+    await modeler
+      .post('/migration-ai/run')
+      .send({ kind: 'TRANSLATE', batchId, confirmExternal: true })
+      .expect(403);
     await modeler.get('/migration-ai/proposals').expect(403);
     await ctx.prisma.setting.update({
       where: { key: 'ai' },
@@ -173,12 +186,56 @@ describe('Import Center — AI-assisted migration (e2e)', () => {
     });
     ctx.ai.queue.push({ items: [] });
     const first = (
-      await admin.post('/migration-ai/run').send({ kind: 'TRANSLATE', batchId }).expect(202)
+      await admin
+        .post('/migration-ai/run')
+        .send({ kind: 'TRANSLATE', batchId, confirmExternal: true })
+        .expect(202)
     ).body;
     await waitJob(admin, first.jobId);
     expect(
-      (await admin.post('/migration-ai/run').send({ kind: 'TRANSLATE', batchId }).expect(429)).body
-        .code,
+      (
+        await admin
+          .post('/migration-ai/run')
+          .send({ kind: 'TRANSLATE', batchId, confirmExternal: true })
+          .expect(429)
+      ).body.code,
     ).toBe('AI_USER_LIMIT');
+  });
+
+  it('needs the separate "Allow AI on imported documents" setting and an explicit confirmation', async () => {
+    const superAdmin = await loggedIn(ctx.app, 'super@test.local');
+    await admin.put('/imports/settings').send({ ssoWelcomeEmail: true }).expect(403);
+    await superAdmin
+      .put('/imports/settings')
+      .send({ ssoWelcomeEmail: true, allowAiOnImportedDocuments: false })
+      .expect(200);
+    expect((await admin.get('/imports/settings').expect(200)).body).toEqual({
+      ssoWelcomeEmail: true,
+      allowAiOnImportedDocuments: false,
+    });
+    expect(
+      (
+        await admin
+          .post('/migration-ai/run')
+          .send({ kind: 'TRANSLATE', batchId, confirmExternal: true })
+          .expect(403)
+      ).body.code,
+    ).toBe('AI_IMPORTS_DISABLED');
+    expect(ctx.ai.requests).toHaveLength(0);
+    // Default for a new installation: off.
+    await ctx.prisma.setting.delete({ where: { key: 'imports' } });
+    expect((await admin.get('/imports/settings').expect(200)).body.allowAiOnImportedDocuments).toBe(
+      false,
+    );
+    await superAdmin
+      .put('/imports/settings')
+      .send({ ssoWelcomeEmail: true, allowAiOnImportedDocuments: true })
+      .expect(200);
+    // Each run must confirm that the text is sent to the external AI provider.
+    await admin.post('/migration-ai/run').send({ kind: 'TRANSLATE', batchId }).expect(400);
+    const audit = await ctx.prisma.auditLog.findFirst({
+      where: { entityType: 'Setting', entityId: 'imports' },
+    });
+    expect(audit).not.toBeNull();
   });
 });

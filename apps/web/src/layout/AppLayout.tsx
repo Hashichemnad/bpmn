@@ -419,7 +419,7 @@ export function AppLayout() {
         label: <Link to="/admin/departments">{t('nav.departments')}</Link>,
       });
     }
-    if (can(PERMISSIONS.IMPORT_MANAGE)) {
+    if (can(PERMISSIONS.IMPORT_MANAGE) || can(PERMISSIONS.IMPORT_OWN)) {
       admin.push({
         key: '/admin/imports',
         icon: <CloudUploadOutlined />,

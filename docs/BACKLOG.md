@@ -8,17 +8,21 @@ where they belong; move items into the plan when that phase starts.
 - **Live connectors** (Salesforce, SharePoint, Oracle): integrations phase (4.4); imports are file based.
 - **OCR** for scanned PDFs (they are flagged "needs manual work").
 - **Visio `.vsd`** (old binary format): users save as `.vsdx`.
-- **Antivirus scanning** of uploads (e.g. a ClamAV container): decide in the final security review.
+- **Antivirus scanning** of uploads (e.g. a ClamAV container): agreed by the product owner to go to the final
+  security review (D-164).
 - **Bizagi `.bpm`** native format (Bizagi's BPMN export works today).
-- **ARIS AML:** organisation charts (`MT_ORG_CHRT`) into the org chart type, function allocation diagrams,
-  other attributes (descriptions, custom attributes) and model hierarchy (assignments) — EPCs, value chains,
+- **ARIS AML:** organisation charts (`MT_ORG_CHRT`) into the org chart type and function allocation diagrams
+  — not needed now (DOF does not use ARIS today, product owner D-164); other attributes (descriptions, custom attributes) and model hierarchy (assignments) — EPCs, value chains,
   roles and systems are imported today (D-160).
 - **Full export** of very large installations as a background job with a download link (today the ZIP is
   built in the request — fine for 50–500 users); restore into a non-empty installation (merge) is out of scope.
 - **Import Center:** column mapping templates per organisation (like the mining mapping templates); scheduled
   re-imports from a shared folder (needs a connector).
-- **Visio:** use Visio shape positions as an alternative to the auto-layout; data / document shapes as BPMN
-  data objects.
+- **Visio:** data / document shapes as BPMN data objects; "Keep Visio positions" for vertical swimlanes
+  (today such pages fall back to the automatic layout). Keeping positions for horizontal swimlanes is done
+  (D-164).
+- **Process Owner imports** (D-164): ARIS / DMN imports for owners, and owner access to the AI migration once
+  "Allow AI on imported documents" is approved.
 
 ## Phase 5.2 — workflow execution follow-ups (noted during the work)
 

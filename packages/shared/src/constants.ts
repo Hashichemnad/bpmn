@@ -101,6 +101,8 @@ export const PERMISSIONS = {
   WORKFLOW_ADMIN: 'workflow.admin',
   /** Import Center (M15): upload, preview, apply and undo import batches. */
   IMPORT_MANAGE: 'import.manage',
+  /** Process Owners: import diagrams and documents for their own processes / editable spaces. */
+  IMPORT_OWN: 'import.own',
   /** Full export package of the whole repository (Super Admin). */
   EXPORT_FULL: 'export.full',
 } as const;
@@ -163,6 +165,7 @@ export const SYSTEM_ROLES: Record<
       P.PROCESSES_EDIT_OWN,
       P.MODELS_EDIT_OWN,
       P.DOCS_EDIT,
+      P.IMPORT_OWN,
       P.GOVERNANCE_DASHBOARD,
       P.DICTIONARY_PROPOSE,
       P.DICTIONARY_APPROVE,
@@ -506,6 +509,8 @@ export const AUDIT_ENTITY_TYPES = [
 export type AuditEntityType = (typeof AUDIT_ENTITY_TYPES)[number];
 
 export const SETTING_KEYS = {
+  /** Import tools settings (welcome e-mail, AI on imported documents). */
+  IMPORTS: 'imports',
   ORG_NAME_EN: 'org.nameEn',
   ORG_NAME_AR: 'org.nameAr',
   DEFAULT_LOCALE: 'org.defaultLocale',

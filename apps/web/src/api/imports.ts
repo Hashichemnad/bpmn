@@ -16,6 +16,7 @@ import type {
   ImportKindDto,
   ImportOptions,
   ImportPreviewItem,
+  ImportSettings,
   ImportUndoCheckDto,
   Paginated,
 } from '@processhub/shared';
@@ -225,5 +226,22 @@ export function useMigrationBulk() {
     mutationFn: (input: MigrationBulkInput) =>
       api<MigrationBulkResultDto>('/migration/bulk', { method: 'POST', body: input }),
     onSuccess: () => void qc.invalidateQueries({ queryKey: importKeys.all }),
+  });
+}
+
+/** Import settings (D-164): SSO welcome e-mail, AI on imported documents. */
+export const useImportSettings = (enabled = true) =>
+  useQuery({
+    queryKey: ['imports', 'settings'],
+    queryFn: () => api<ImportSettings>('/imports/settings'),
+    enabled,
+  });
+
+export function useSaveImportSettings() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (body: ImportSettings) =>
+      api<ImportSettings>('/imports/settings', { method: 'PUT', body }),
+    onSuccess: () => void qc.invalidateQueries({ queryKey: ['imports', 'settings'] }),
   });
 }

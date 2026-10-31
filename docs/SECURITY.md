@@ -160,21 +160,34 @@ in the environment); the file storage and the database come from the environment
   (`sanitizeRichText`); SVG through the existing SVG sanitiser; images only as attachments with sniffed types.
 - **Storage:** uploads are stored in S3 storage under `imports/<batch>/<file>` with their SHA-256 (checked when
   the job reads them again), served back only as `application/octet-stream` downloads with `nosniff`, and never
-  executed. Antivirus scanning is a go-live decision (BACKLOG).
-- **Imported users have no password:** they get a set-password **invitation** (random 256-bit token, only its
-  SHA-256 stored, single use, 7 days, public endpoints `/auth/invitations/*` with the login rate limit and the
-  password policy) or sign in with SSO (linked by e-mail). An import never creates or changes Super Admins,
+  executed. Antivirus scanning (ClamAV) is part of the final security review (BACKLOG, D-164).
+- **Imported users have no password:** while password sign-in is allowed they get a set-password
+  **invitation** (random 256-bit token, only its SHA-256 stored, single use, 7 days, public endpoints
+  `/auth/invitations/*` with the login rate limit and the password policy). Once SSO is live and password
+  sign-in is off (D-164) no invitation is sent: users get a **welcome e-mail with the "Sign in with Microsoft"
+  link** (no token, nothing to set) or no e-mail at all (Import settings → "Welcome e-mail"); they sign in with
+  SSO (linked by e-mail). Password invitations remain only for accounts allowed to use passwords (break-glass
+  and exceptions, while password sign-in is on). An import never creates or changes Super Admins,
   the break-glass account or the importing user's own account; roles that require 2FA are flagged and enrol
   at the first sign-in; roles are only added, never removed.
 - **PDF** text is extracted by pdf.js in a separate worker thread (memory limit, 30 s timeout, `eval` off).
 - **Full export package** (`/repository-export`, `export.full` — Super Admin only) contains no password hashes,
   2FA secrets, SSO links or integration / e-mail / AI secrets; a **restore** checks the SHA-256 of every data
   file against the manifest and only runs into an empty installation; restored users have no password.
-- **AI migration** sends imported document text to the configured AI provider only when an admin starts a run
-  (role, daily and monthly limits of the AI settings apply; usage and audit logged, prompts not stored); results
-  are proposals that a person accepts.
+- **AI on imported documents** (D-164) is a **separate setting, "Allow AI on imported documents", off by
+  default and independent of the general AI switch**: the text of imported documents leaves the UAE (external
+  AI provider), so it needs **DOF approval** before it is turned on (Super Admin, `settings.manage`, audited).
+  When it is on, each run asks the admin to confirm that the text is sent to the external provider
+  (`confirmExternal`, refused without it; the audit entry records the confirmation); the server checks the
+  setting again before every item. Role, daily and monthly limits of the AI settings apply; usage and audit
+  logged, prompts not stored; results are proposals that a person accepts.
 - **Access:** `import.manage` (Admins, Super Admins); module register kinds also need the module's own edit
-  permission; the full export package is Super Admin only (`export.full`). Every batch step is audited
+  permission; the full export package and restore are Super Admin only (`export.full`). **Process Owners**
+  (`import.own`, D-164) import only diagrams (BPMN, Visio) and documents (Word, PDF, Confluence, Markdown):
+  into processes they own (another owner's process is an error), new processes only under one of their own
+  processes and owned by them, pages only into spaces they can edit; they see, apply and undo only their own
+  batches (others' batches answer 404). Structure, users, library objects, GRC and KPI imports, AI migration
+  and the migration bulk actions stay with Admins. Every batch step is audited
   (`CREATE`, `IMPORT`, `UNDO`, `EXPORT`, and each created / updated entity with the batch number).
 
 ## 4. Rate limits
@@ -398,23 +411,25 @@ zod / UUID pipe; file uploads are checked in the service (allow-list, content sn
 | PUT    | `/grc/settings`                                   | `grc.admin`                                                    | body                                 | default    |
 | GET    | `/grc/template/:kind`                             | `grc.edit`                                                     | param `kind`, query                  | default    |
 | GET    | `/health`                                         | **public**                                                     | —                                    | skip       |
-| GET    | `/imports`                                        | `import.manage`                                                | query                                | default    |
-| POST   | `/imports`                                        | `import.manage`                                                | body                                 | default    |
-| DELETE | `/imports/:id`                                    | `import.manage`                                                | param `id`                           | default    |
-| GET    | `/imports/:id`                                    | `import.manage`                                                | param `id`                           | default    |
-| POST   | `/imports/:id/apply`                              | `import.manage`                                                | param `id`                           | default    |
-| POST   | `/imports/:id/cancel`                             | `import.manage`                                                | param `id`                           | default    |
-| GET    | `/imports/:id/files/:fileId`                      | `import.manage`                                                | param `fileId`, param `id`           | default    |
-| GET    | `/imports/:id/items`                              | `import.manage`                                                | param `id`, query                    | default    |
-| PUT    | `/imports/:id/items/:ref`                         | `import.manage`                                                | body, param `id`, param `ref`        | default    |
-| PUT    | `/imports/:id/options`                            | `import.manage`                                                | body, param `id`                     | default    |
-| GET    | `/imports/:id/records`                            | `import.manage`                                                | param `id`, query                    | default    |
-| GET    | `/imports/:id/report`                             | `import.manage`                                                | param `id`, query                    | default    |
-| PUT    | `/imports/:id/suggestions`                        | `import.manage`                                                | body, param `id`                     | default    |
-| GET    | `/imports/:id/undo`                               | `import.manage`                                                | param `id`                           | default    |
-| POST   | `/imports/:id/undo`                               | `import.manage`                                                | param `id`                           | default    |
-| GET    | `/imports/kinds`                                  | `import.manage`                                                | —                                    | default    |
-| GET    | `/imports/templates/:kind`                        | `import.manage`                                                | param `kind`, query                  | default    |
+| GET    | `/imports`                                        | any of `import.manage`, `import.own`                           | query                                | default    |
+| POST   | `/imports`                                        | any of `import.manage`, `import.own`                           | body                                 | default    |
+| DELETE | `/imports/:id`                                    | any of `import.manage`, `import.own`                           | param `id`                           | default    |
+| GET    | `/imports/:id`                                    | any of `import.manage`, `import.own`                           | param `id`                           | default    |
+| POST   | `/imports/:id/apply`                              | any of `import.manage`, `import.own`                           | param `id`                           | default    |
+| POST   | `/imports/:id/cancel`                             | any of `import.manage`, `import.own`                           | param `id`                           | default    |
+| GET    | `/imports/:id/files/:fileId`                      | any of `import.manage`, `import.own`                           | param `fileId`, param `id`           | default    |
+| GET    | `/imports/:id/items`                              | any of `import.manage`, `import.own`                           | param `id`, query                    | default    |
+| PUT    | `/imports/:id/items/:ref`                         | any of `import.manage`, `import.own`                           | body, param `id`, param `ref`        | default    |
+| PUT    | `/imports/:id/options`                            | any of `import.manage`, `import.own`                           | body, param `id`                     | default    |
+| GET    | `/imports/:id/records`                            | any of `import.manage`, `import.own`                           | param `id`, query                    | default    |
+| GET    | `/imports/:id/report`                             | any of `import.manage`, `import.own`                           | param `id`, query                    | default    |
+| PUT    | `/imports/:id/suggestions`                        | any of `import.manage`, `import.own`                           | body, param `id`                     | default    |
+| GET    | `/imports/:id/undo`                               | any of `import.manage`, `import.own`                           | param `id`                           | default    |
+| POST   | `/imports/:id/undo`                               | any of `import.manage`, `import.own`                           | param `id`                           | default    |
+| GET    | `/imports/kinds`                                  | any of `import.manage`, `import.own`                           | —                                    | default    |
+| GET    | `/imports/settings`                               | any of `import.manage`, `import.own`, `settings.manage`        | —                                    | default    |
+| PUT    | `/imports/settings`                               | `settings.manage`                                              | body                                 | default    |
+| GET    | `/imports/templates/:kind`                        | any of `import.manage`, `import.own`                           | param `kind`, query                  | default    |
 | GET    | `/integrations/git`                               | `settings.manage`                                              | —                                    | default    |
 | PUT    | `/integrations/git`                               | `settings.manage`                                              | body                                 | default    |
 | POST   | `/integrations/git/items/:id/retry`               | `settings.manage`                                              | param `id`                           | default    |
@@ -732,6 +747,9 @@ already the default; check them anyway if you changed the setup.
 - [ ] `ENABLE_SWAGGER=false`.
 - [ ] `OUTBOUND_ALLOWED_HOSTS` lists only the internal Git / SMTP servers that are really needed.
 - [ ] Review Settings → AI (enabled roles, limits, data notice) before enabling the assistant.
+- [ ] Import Center → Import settings: **"Allow AI on imported documents" off** (the default) unless DOF has
+      approved sending imported document text outside the UAE (D-164); "Welcome e-mail for imported users"
+      as agreed for the SSO roll-out.
 - [ ] Settings → Authentication: two-step verification required for **Super Admin and Admin** (the default —
       check it if the settings were saved before part 4); allowed domains limited to company domains; **Update
       roles at every sign-in off** (roles managed in ProcessHub); after the SSO roll-out password sign-in

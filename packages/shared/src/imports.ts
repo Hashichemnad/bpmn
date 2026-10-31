@@ -49,6 +49,7 @@ export const IMPORT_OPTION_KEYS = [
   'parentProcessId',
   'processCategory',
   'attachTo',
+  'visioLayout',
   'vendorExtensions',
   'autoLayout',
   'spaceId',
@@ -76,6 +77,8 @@ export interface ImportKindInfo {
   permission?: string;
   /** Super Admin only (full package). */
   superAdmin?: boolean;
+  /** Process Owners (`import.own`) may run it for their own processes / editable spaces. */
+  ownerAllowed?: boolean;
 }
 
 const EXCEL = ['xlsx'] as const;
@@ -120,6 +123,7 @@ export const IMPORT_KIND_INFO: Record<ImportKind, ImportKindInfo> = {
     options: ['updateExisting', 'sendInvitations'],
   },
   BPMN: {
+    ownerAllowed: true,
     group: 'DIAGRAMS',
     extensions: ['bpmn', 'xml', 'zip'],
     multiple: true,
@@ -137,13 +141,21 @@ export const IMPORT_KIND_INFO: Record<ImportKind, ImportKindInfo> = {
     ],
   },
   VISIO: {
+    ownerAllowed: true,
     group: 'DIAGRAMS',
     extensions: ['vsdx', 'vsd'],
     multiple: true,
     template: false,
     tabular: false,
     undo: true,
-    options: ['defaultOwnerId', 'attachTo', 'parentProcessId', 'processCategory', 'updateExisting'],
+    options: [
+      'defaultOwnerId',
+      'attachTo',
+      'parentProcessId',
+      'processCategory',
+      'visioLayout',
+      'updateExisting',
+    ],
   },
   ARIS: {
     group: 'DIAGRAMS',
@@ -164,6 +176,7 @@ export const IMPORT_KIND_INFO: Record<ImportKind, ImportKindInfo> = {
     options: ['defaultOwnerId', 'parentProcessId', 'updateExisting'],
   },
   WORD: {
+    ownerAllowed: true,
     group: 'DOCUMENTS',
     extensions: ['docx', 'docm', 'zip'],
     multiple: true,
@@ -181,6 +194,7 @@ export const IMPORT_KIND_INFO: Record<ImportKind, ImportKindInfo> = {
     ],
   },
   PDF: {
+    ownerAllowed: true,
     group: 'DOCUMENTS',
     extensions: ['pdf', 'zip'],
     multiple: true,
@@ -190,6 +204,7 @@ export const IMPORT_KIND_INFO: Record<ImportKind, ImportKindInfo> = {
     options: ['defaultOwnerId', 'spaceId', 'parentPageId', 'linkProcesses', 'updateExisting'],
   },
   CONFLUENCE: {
+    ownerAllowed: true,
     group: 'DOCUMENTS',
     extensions: ['zip'],
     multiple: false,
@@ -199,6 +214,7 @@ export const IMPORT_KIND_INFO: Record<ImportKind, ImportKindInfo> = {
     options: ['defaultOwnerId', 'spaceId', 'parentPageId', 'linkProcesses', 'updateExisting'],
   },
   MARKDOWN: {
+    ownerAllowed: true,
     group: 'DOCUMENTS',
     extensions: ['md', 'markdown', 'zip'],
     multiple: true,
@@ -239,8 +255,8 @@ export function canImportKind(
     Array.isArray(permissions)
       ? permissions.includes(p)
       : (permissions as ReadonlySet<string>).has(p);
-  if (!has('import.manage')) return false;
   const info = IMPORT_KIND_INFO[kind];
+  if (!has('import.manage')) return !!info.ownerAllowed && has('import.own');
   if (info.superAdmin && !roles.includes('SUPER_ADMIN')) return false;
   return !info.permission || has(info.permission);
 }
@@ -319,6 +335,8 @@ export const importOptionsSchema = z.object({
   processCategory: z.enum(['MANAGEMENT', 'CORE', 'SUPPORT']).optional(),
   /** BPMN / Visio: attach to an existing process by code or file name, or always create new ones. */
   attachTo: z.enum(['MATCH_OR_CREATE', 'CREATE']).optional(),
+  /** Visio: draw with the shared auto-layout (default) or keep the Visio shape positions. */
+  visioLayout: z.enum(['AUTO', 'KEEP']).optional(),
   vendorExtensions: z.enum(['STRIP', 'KEEP']).optional(),
   autoLayout: z.enum(['MISSING', 'ALWAYS']).optional(),
   spaceId: z.uuid().nullable().optional(),
@@ -762,6 +780,8 @@ export const migrationAiRunSchema = z
       .max(MIGRATION_AI_MAX_ITEMS)
       .optional(),
     language: z.enum(['en', 'ar']).default('en'),
+    /** The user confirmed that the text is sent to the external AI provider (D-164). */
+    confirmExternal: z.literal(true),
   })
   .refine((v) => !!v.batchId || !!v.sources?.length, { message: 'SOURCES_REQUIRED' });
 export type MigrationAiRunInput = z.infer<typeof migrationAiRunSchema>;
@@ -961,3 +981,20 @@ export interface MigrationBulkResultDto {
   /** VALIDATE: the checks each item fails. */
   issues: { type: MigrationItemType; id: string; problems: string[] }[];
 }
+
+// ---------- Import settings (Setting `imports`, product owner answers D-164) ----------
+
+export const importSettingsSchema = z.object({
+  /** SSO-only sign-in: e-mail imported users a welcome message with the sign-in link (else no e-mail). */
+  ssoWelcomeEmail: z.boolean(),
+  /**
+   * AI on imported documents (SOP → BPMN, risks / controls, translation): the text leaves the
+   * country with the AI provider — off until DOF approves it, independent of the general AI switch.
+   */
+  allowAiOnImportedDocuments: z.boolean(),
+});
+export type ImportSettings = z.infer<typeof importSettingsSchema>;
+export const DEFAULT_IMPORT_SETTINGS: ImportSettings = {
+  ssoWelcomeEmail: true,
+  allowAiOnImportedDocuments: false,
+};

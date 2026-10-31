@@ -4,6 +4,7 @@ import { Injectable } from '@nestjs/common';
 import mammoth from 'mammoth';
 import { marked } from 'marked';
 import {
+  PERMISSIONS,
   attachmentUrl,
   type ImportIssue,
   type ImportKind,
@@ -149,7 +150,11 @@ export class DocumentsImporter implements Importer {
         }
       }
       const matchId = prev.get(p.externalKey) ?? null;
-      const match = matched.find((m) => m.id === matchId);
+      // Process Owners update only pages of the (editable) target space (D-164).
+      const manager = ctx.actor.permissions.has(PERMISSIONS.IMPORT_MANAGE);
+      const match = matched.find(
+        (m) => m.id === matchId && (manager || m.spaceId === ctx.options.spaceId),
+      );
       let action: ParsedItem['action'] = match ? 'UPDATE' : 'CREATE';
       if (match) {
         if (ctx.options.updateExisting === false) action = 'SKIP';

@@ -356,4 +356,62 @@ describe('Import Center — structure (e2e)', () => {
     const check = (await admin.get(`/imports/${b.id}/undo`).expect(200)).body;
     expect(check.blockers).toEqual([expect.objectContaining({ reason: 'USER_SIGNED_IN' })]);
   });
+
+  it('sends a "Sign in with Microsoft" welcome e-mail instead of an invitation once password sign-in is off', async () => {
+    await superAdmin
+      .put('/settings/email')
+      .send({
+        enabled: true,
+        host: 'mailpit',
+        port: 1025,
+        fromAddress: 'hub@test.local',
+        fromName: 'Hub',
+      })
+      .expect(200);
+    const sup = await ctx.prisma.user.findFirstOrThrow({ where: { email: 'super@test.local' } });
+    const auth = await ctx.prisma.setting.findUniqueOrThrow({ where: { key: 'auth' } });
+    // SSO live, password sign-in off (only the break-glass Super Admin keeps a password).
+    await ctx.prisma.setting.update({
+      where: { key: 'auth' },
+      data: {
+        value: {
+          ...(auth.value as object),
+          ssoEnabled: true,
+          clientId: 'client',
+          clientSecretSealed: 'v1.sealed',
+          localLoginEnabled: false,
+          breakGlassUserId: sup.id,
+        },
+      },
+    });
+    const users = (rows: string[][]) =>
+      xlsx(['E-mail', 'Name (English)', 'Roles (separated by ;)', 'Language (en / ar)'], rows);
+    const b = await upload(superAdmin, 'USERS', [
+      { name: 'users.xlsx', data: await users([['lina@test.local', 'Lina', 'Viewer', 'en']]) },
+    ]);
+    expect(b.issues.map((i: { code: string }) => i.code)).toContain('USERS_SSO_WELCOME');
+    ctx.mail.sent = [];
+    await applyBatch(superAdmin, b.id);
+    expect(ctx.mail.sent).toHaveLength(1);
+    const mail = ctx.mail.sent[0];
+    expect(mail).toMatchObject({ to: 'lina@test.local' });
+    expect(mail.text).toContain('Sign in with Microsoft');
+    expect(mail.text).toContain('/login');
+    expect(mail.text).not.toContain('/invitation/');
+    expect(await ctx.prisma.userInvitation.count()).toBe(0);
+
+    // Setting "welcome e-mail" off: no e-mail at all.
+    await superAdmin
+      .put('/imports/settings')
+      .send({ ssoWelcomeEmail: false, allowAiOnImportedDocuments: false })
+      .expect(200);
+    const c = await upload(superAdmin, 'USERS', [
+      { name: 'more.xlsx', data: await users([['omar@test.local', 'Omar', 'Viewer', 'ar']]) },
+    ]);
+    expect(c.issues.map((i: { code: string }) => i.code)).toContain('USERS_SIGN_IN_WITH_SSO');
+    ctx.mail.sent = [];
+    await applyBatch(superAdmin, c.id);
+    expect(ctx.mail.sent).toHaveLength(0);
+    expect(await ctx.prisma.userInvitation.count()).toBe(0);
+  });
 });

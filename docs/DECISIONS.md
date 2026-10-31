@@ -2306,3 +2306,32 @@ source document:
   are not exported (event logs, reviews) are cleared, attachments go back to storage. A restore has no undo
   (it is a whole installation). The round trip (export → empty database → restore → identical content) is an
   API test in CI (`test/imports-package.e2e-spec.ts`).
+
+## D-164 — Product owner answers on the import tools (2026-10-31)
+
+- **Who can import:** Process Owners get `import.own`: diagrams (BPMN, Visio) and documents (Word, PDF,
+  Confluence, Markdown) for processes they own and wiki spaces they can edit, so departments migrate their
+  own content in parallel. A file matching another owner's process is an error (`NOT_OWN_PROCESS`); new
+  processes need one of the owner's processes as parent (`OWN_PARENT_REQUIRED`) and are owned by the
+  importer (the batch's default owner is forced); spaces need edit rights (403). Owners list, open, apply and
+  undo only their own batches (others' answer 404). Structure, users, library objects, GRC, KPI, ARIS / DMN,
+  AI migration and migration bulk actions stay with `import.manage` (Admins); full export / restore with
+  `export.full` (Super Admins). API tests: `test/imports-owner.e2e-spec.ts`.
+- **Invitations:** 7 days stays. Once SSO is live and password sign-in is off, no set-password invitation is
+  sent: a welcome e-mail with the "Sign in with Microsoft" link (the SSO button label) — or no e-mail when
+  Setting `imports.ssoWelcomeEmail` is off (default on). Password invitations only while password sign-in is
+  allowed (break-glass and exceptions).
+- **AI on imported documents:** needs DOF approval (the text leaves the UAE). Separate Setting
+  `imports.allowAiOnImportedDocuments`, **off by default**, independent of the general AI switch, changed by
+  `settings.manage` (audited). When on, every run must carry `confirmExternal: true` (confirmation dialog in
+  the batch page); the server re-checks the setting before each item (`AI_IMPORTS_DISABLED`). Noted in
+  SECURITY.md (§3 and the go-live checklist) and MIGRATION.md.
+- **Visio layout:** option `visioLayout` = `AUTO` (default) | `KEEP` — a small effort: shapes keep their Visio
+  positions (96 px per inch, events / gateways centred at BPMN sizes), lanes become the swimlane bands,
+  flows orthogonal connectors. Vertical swimlanes fall back to the automatic layout with a warning (BACKLOG).
+- **ARIS organisation charts and function allocation diagrams:** not needed now (DOF does not use ARIS) —
+  BACKLOG.
+- **Restore** only into an empty installation is enough. DEPLOYMENT.md §8 states that disaster recovery uses
+  `scripts/backup.sh` / `restore.sh` (database + files + keys) and the export package is for moving servers
+  and avoiding lock-in.
+- **Antivirus** scanning goes to the final security review (BACKLOG).
