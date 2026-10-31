@@ -7,6 +7,8 @@ import {
   diagramElementIds,
   diagramElements,
   emptyDiagramContent,
+  extractBpmnLabels,
+  extractDecisionRefs,
   emptyDmnXml,
   isGrcObjectType,
   parseDiagramContent,
@@ -753,6 +755,29 @@ export class DiagramsService {
       for (const d of children)
         out.push({ diagram: pick(d), elementId: null, element: null, relation: 'SOURCE' });
     }
+    if (target.diagramId) {
+      // Decision tables: BPMN business rule tasks with ph:decisionRef (D-123).
+      const models = await this.prisma.processModel.findMany({
+        where: { bpmnXml: { contains: id }, process: { deletedAt: null } },
+        include: {
+          process: { select: { id: true, code: true, nameEn: true, nameAr: true, status: true } },
+        },
+      });
+      for (const m of models) {
+        const labels = extractBpmnLabels(m.bpmnXml);
+        for (const [elementId, ref] of extractDecisionRefs(m.bpmnXml)) {
+          if (ref.diagramId !== id) continue;
+          const l = labels.get(elementId);
+          out.push({
+            diagram: null,
+            process: { ...m.process, status: m.process.status as ProcessStatus },
+            elementId,
+            element: l ? { nameEn: l.nameEn || l.name, nameAr: l.nameAr } : null,
+            relation: 'DECISION',
+          });
+        }
+      }
+    }
     const candidates = await this.prisma.diagram.findMany({
       where: { deletedAt: null, content: { contains: id } },
       select: { ...summarySelect, content: true },
@@ -763,7 +788,7 @@ export class DiagramsService {
       if (!parsed.ok || !parsed.content) continue;
       const c = parsed.content;
       if (c.type === 'SIPOC') {
-        if (c.processId === id && !out.some((u) => u.diagram.id === d.id))
+        if (c.processId === id && !out.some((u) => u.diagram?.id === d.id))
           out.push({ diagram: pick(d), elementId: null, element: null, relation: 'SOURCE' });
         continue;
       }

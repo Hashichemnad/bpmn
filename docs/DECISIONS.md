@@ -1588,3 +1588,30 @@ Supersedes the "act as the Super Admin" rule of D-116.
   — steps in a lane linked to the role (`ph:roleId`, D-081) and steps with a PERFORMS link — with the RACI letter of
   the B2 report (A for approval steps, R otherwise), shown in the position's side panel with links to the steps.
 - The organisation chart is an optional handbook section (step 7).
+
+## D-123 — DMN decision tables: dmn-js, bilingual names, FEEL testing, business rule task link (Diagram types, 2026-10-31)
+
+- Editor: **dmn-js 17.12.3** (bpmn.io, same licence as bpmn-js) — decision requirements diagram (DRD), decision table
+  editor (hit policies, aggregation, input expressions with type, output names / types, rule annotations) and
+  literal expressions — inside the shared diagram workspace (autosave, versions, compare, export, comments). dmn-js
+  stays in its own lazily loaded chunk.
+- **Bilingual names**: DMN `name` / `label` / rule `description` hold **English** (so other DMN tools read the file);
+  `ph:nameEn` / `ph:nameAr` (decisions, input data, knowledge sources, inputs, outputs) and `ph:annotationEn` /
+  `ph:annotationAr` (rules) hold both languages (the `ph` namespace of the BPMN extension). The editor shows the
+  active language (the XML is switched before import and switched back on every change); the other language is
+  edited in the **Translations** panel. Output variable names and FEEL expressions are never translated.
+- **Test decision**: evaluation in the browser with **feelin 8.2.0** (MIT, the FEEL interpreter from bpmn.io): every
+  input entry is a FEEL unary test against the typed input value (number / boolean / string), output entries are
+  FEEL expressions; all hit policies (UNIQUE with violation, FIRST, PRIORITY treated as FIRST, ANY with conflict
+  check, COLLECT with SUM / MIN / MAX / COUNT, RULE ORDER, OUTPUT ORDER). Matching rules are highlighted in the table.
+  Inputs are entered as values (input expressions are not evaluated against a context); PRIORITY does not use output
+  value lists (documented limits).
+- **Validation panel** (warnings, never blocking): missing English / Arabic names, tables without rules, invalid FEEL
+  in input / output entries (feelin parser), empty outputs, duplicate input rows.
+- **Import / export**: DMN XML import in the workspace (size and DMN checks in the browser, dmn-js parse) and export
+  as `.dmn`. The server validates every save (`assertSafeDmnXml`: no DTD / entities, no processing instructions after
+  the prolog, only local `#id` references, no script / iframe / object / embed elements, a DMN 1.x definitions root).
+- **Business rule task link**: `ph:decisionRef` (DMN diagram id) and `ph:decisionId` (decision) on BPMN tasks, chosen
+  in the modeler side panel ("Decision table (DMN)", with "View table"); the portal step details show the table
+  read-only when it is published; "where used" of a DMN diagram lists the business rule tasks (`relation: DECISION`,
+  found by content search and parsing). Sample: `docs/samples/approval-authority.dmn`.

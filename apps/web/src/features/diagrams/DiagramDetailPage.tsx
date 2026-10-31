@@ -274,13 +274,27 @@ export function DiagramDetailPage() {
                   renderItem={(u) => (
                     <List.Item>
                       <Space wrap>
-                        <DiagramTypeIcon type={u.diagram.type} />
-                        <Link to={`/diagrams/${u.diagram.id}`}>
-                          <span dir="ltr">{u.diagram.code}</span> {loc(u.diagram)}
-                        </Link>
+                        {u.diagram ? (
+                          <>
+                            <DiagramTypeIcon type={u.diagram.type} />
+                            <Link to={`/diagrams/${u.diagram.id}`}>
+                              <span dir="ltr">{u.diagram.code}</span> {loc(u.diagram)}
+                            </Link>
+                          </>
+                        ) : u.process ? (
+                          <>
+                            <DiagramTypeIcon type={null} />
+                            <Link
+                              to={`/processes/${u.process.id}/model?element=${encodeURIComponent(u.elementId ?? '')}&view=1`}
+                            >
+                              <span dir="ltr">{u.process.code}</span> {loc(u.process)}
+                            </Link>
+                          </>
+                        ) : null}
                         {u.element && (
                           <Typography.Text type="secondary">· {loc(u.element)}</Typography.Text>
                         )}
+                        <Tag bordered={false}>{t(`diagrams:whereUsed.relation.${u.relation}`)}</Tag>
                       </Space>
                     </List.Item>
                   )}

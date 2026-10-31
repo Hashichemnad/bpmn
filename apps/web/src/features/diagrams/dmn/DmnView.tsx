@@ -5,6 +5,7 @@ import DmnViewer from 'dmn-js/lib/NavigatedViewer';
 import { useLocale } from '@/app/LocaleProvider';
 import './dmn-assets';
 import { dmnName, type DmnInstance, type DmnView as View } from './dmn-types';
+import { dmnForLocale } from './dmn-model';
 
 /** Read-only DMN model: the decision requirements diagram and each decision table. */
 export default function DmnView({
@@ -31,7 +32,7 @@ export default function DmnView({
     viewerRef.current = viewer;
     let cancelled = false;
     viewer
-      .importXML(xml)
+      .importXML(dmnForLocale(xml, locale))
       .then(async () => {
         if (cancelled) return;
         const all = viewer.getViews();
@@ -50,7 +51,7 @@ export default function DmnView({
       cancelled = true;
       viewer.destroy();
     };
-  }, [xml, decisionId]);
+  }, [xml, decisionId, locale]);
 
   if (error)
     return (

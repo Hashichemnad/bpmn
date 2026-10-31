@@ -36,7 +36,20 @@
   "openViewer": "فتح العارض",
   "whereUsed": {
     "tab": "أماكن الاستخدام",
-    "none": "لا يوجد مخطط آخر يشير إلى هذا المخطط."
+    "none": "لا يوجد مخطط آخر يشير إلى هذا المخطط.",
+    "relation": {
+      "DRILLDOWN": "انتقال",
+      "SOURCE": "العملية",
+      "DECISION": "خطوة قاعدة عمل",
+      "PERFORMS": "ينفذ",
+      "SUPPORTS": "يدعم",
+      "INPUT": "مدخل",
+      "OUTPUT": "مخرج",
+      "MITIGATES": "يخفف",
+      "MEASURES": "يقيس",
+      "NAMED": "مسمى",
+      "REQUIRES": "يتطلب"
+    }
   },
   "links": {
     "tab": "الروابط",
@@ -107,7 +120,8 @@
     "output": "مخرج",
     "inputData": "بيانات الإدخال",
     "knowledgeSource": "مصدر المعرفة",
-    "businessKnowledgeModel": "نموذج معرفة الأعمال"
+    "businessKnowledgeModel": "نموذج معرفة الأعمال",
+    "annotation": "ملاحظة القاعدة"
   },
   "diff": {
     "title": "التغييرات ({{count}})",
@@ -122,7 +136,45 @@
     }
   },
   "dmn": {
-    "drd": "متطلبات القرار"
+    "drd": "متطلبات القرار",
+    "imported": "تم استيراد نموذج DMN",
+    "exportXml": "ملف DMN XML (.dmn)",
+    "import": "استيراد DMN XML",
+    "test": "اختبار",
+    "validation": "التحقق",
+    "translations": "الترجمات",
+    "translationsHint": "الأسماء بـ{{language}}: يعرض المحرر اللغة النشطة.",
+    "lang": {
+      "en": "الإنجليزية",
+      "ar": "العربية"
+    },
+    "noTable": "لا يحتوي النموذج على جدول قرار بعد.",
+    "testHint": "أدخل قيم المدخلات وشغّل: تُميَّز القواعد المطابقة في الجدول. تُقيَّم اختبارات FEEL الأحادية باستخدام feelin.",
+    "run": "تشغيل",
+    "result": "النتيجة",
+    "matched": "القواعد المطابقة ({{count}})",
+    "errors": {
+      "NO_MATCH": "لا توجد قاعدة تطابق هذه القيم.",
+      "UNIQUE_VIOLATION": "سياسة المطابقة UNIQUE: أكثر من قاعدة تطابق.",
+      "ANY_CONFLICT": "سياسة المطابقة ANY: القواعد المطابقة تعطي مخرجات مختلفة.",
+      "EVALUATION": "تعذر تقييم القرار."
+    },
+    "valid": "لم يتم العثور على مشكلات.",
+    "issues": {
+      "NO_TABLE_RULES": "جدول القرار لا يحتوي على قواعد.",
+      "MISSING_NAME_EN": "الاسم بالإنجليزية مفقود.",
+      "MISSING_NAME_AR": "الاسم بالعربية مفقود.",
+      "INVALID_INPUT_ENTRY": "إدخال غير صالح (اختبار FEEL أحادي).",
+      "INVALID_OUTPUT_ENTRY": "مخرج غير صالح (تعبير FEEL).",
+      "EMPTY_OUTPUT": "إحدى القواعد لها مخرج فارغ.",
+      "DUPLICATE_RULE": "قاعدتان لهما نفس إدخالات المدخلات."
+    },
+    "linkTitle": "جدول القرار (DMN)",
+    "linkHint": "قاعدة العمل التي تحددها هذه الخطوة.",
+    "chooseTable": "اختر جدول قرار…",
+    "viewTable": "عرض الجدول",
+    "openTable": "فتح",
+    "stepTitle": "جدول القرار"
   },
   "sipoc": {
     "columns": {

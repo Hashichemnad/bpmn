@@ -50,8 +50,15 @@ Steps (tick as they are committed; a new session continues at the first unticked
       person → user fields; Role form "Department" field; demo roles get departments. Tests: shared +2, API +1,
       Playwright `diagrams-org-chart.spec.ts` (generate → position RACI → edit → regenerate → version → publish via
       API → portal). Handbook section: step 7.
-- [ ] 4. DMN decision tables (dmn-js DRD + decision table, `ph:decisionRef` on business rule tasks, test decision,
-      import / export).
+- [x] 4. DMN decision tables (D-123): dmn-js 17.12.3 editor in the shared workspace (DRD + decision tables, view
+      switcher, import / export `.dmn`), bilingual names (`ph:nameEn` / `ph:nameAr`, annotations
+      `ph:annotationEn` / `ar`; active language in the editor, other language in the Translations panel), Test panel
+      (feelin 8.2.0, all hit policies, matching rows highlighted), Validation panel, read-only `DmnView` in the active
+      language; BPMN business rule task → `ph:decisionRef` / `ph:decisionId` (modeler panel with "View table"),
+      portal step shows the published table, where used lists the steps (`DECISION`); sample
+      `docs/samples/approval-authority.dmn`. ph namespace aligned with the BPMN extension
+      (`http://processhub.io/schema/bpmn`). Tests: web +4 (`dmn-model.test.ts`), API +1, Playwright
+      `diagrams-dmn.spec.ts` (import → test decision → version → link from a business rule task → publish → portal).
 - [ ] 5. EPC (notation, syntax rules, EPC → BPMN conversion with mapping report).
 - [ ] 6. SIPOC (table diagram, generate from process, handbook section).
 - [ ] 7. Reports, portal (browse by type, value chain start page, drill-down), handbook sections, demo seed,

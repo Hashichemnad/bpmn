@@ -3,6 +3,8 @@ import {
   stringifyDiagramContent,
   type GraphContent,
 } from '@processhub/shared';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import {
   createApp,
   createUser,
@@ -313,6 +315,38 @@ describe('Diagrams (e2e)', () => {
       },
     ]);
     await viewer.get(`/diagrams/role-activities/${role.id}`).expect(403);
+  });
+
+  it('validates DMN and lists the business rule tasks using a decision table', async () => {
+    const xml = readFileSync(
+      join(__dirname, '../../../docs/samples/approval-authority.dmn'),
+      'utf8',
+    );
+    const dmn = (
+      await modeler
+        .post('/diagrams')
+        .send({ type: 'DMN', nameEn: 'Authority', content: xml })
+        .expect(201)
+    ).body;
+    // External references, scripts and DTDs are refused.
+    for (const bad of [
+      xml.replace('href="#InputData_Request"', 'href="http://evil.example/x"'),
+      xml.replace('<inputData', '<script>alert(1)</script><inputData'),
+      `<!DOCTYPE d [<!ENTITY x "y">]>${xml}`,
+    ])
+      expect(
+        (await modeler.put(`/diagrams/${dmn.id}/content`).send({ content: bad }).expect(400)).body
+          .code,
+      ).toBe('INVALID_DMN');
+    const bpmn = sampleBpmn(['Task_1']).replace(
+      '<bpmn:task id="Task_1" name="Task_1" />',
+      `<bpmn:businessRuleTask id="Rule_1" name="Approver" xmlns:ph="http://processhub.io/schema/bpmn" ph:decisionRef="${dmn.id}" ph:decisionId="Decision_ApprovalAuthority" />`,
+    );
+    await admin.put(`/processes/${processId}/model`).send({ bpmnXml: bpmn }).expect(200);
+    const used = (await modeler.get(`/diagrams/where-used?diagramId=${dmn.id}`).expect(200)).body;
+    expect(used).toMatchObject([
+      { diagram: null, process: { id: processId }, elementId: 'Rule_1', relation: 'DECISION' },
+    ]);
   });
 
   it('applies owner-only rights for Process Owners', async () => {

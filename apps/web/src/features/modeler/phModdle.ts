@@ -34,6 +34,9 @@ export const phModdleDescriptor = {
         { name: 'stepKind', isAttr: true, type: 'String' },
         { name: 'roleId', isAttr: true, type: 'String' },
         { name: 'labelRef', isAttr: true, type: 'String' },
+        // Business rule task → DMN decision (D-123): the DMN diagram and the decision in it.
+        { name: 'decisionRef', isAttr: true, type: 'String' },
+        { name: 'decisionId', isAttr: true, type: 'String' },
         // Step attributes: numbers kept as strings in the XML, validated by the shared reader.
         ...[...STEP_NUMBER_ATTRIBUTES, ...STEP_TEXT_ATTRIBUTES].map((name) => ({
           name,

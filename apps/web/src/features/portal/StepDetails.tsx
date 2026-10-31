@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom';
 import { Button, Card, Empty, Flex, Space, Tag, Typography } from 'antd';
 import { ArrowRightOutlined, CloseOutlined } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
+import { PortalDecision } from '@/features/diagrams/dmn/PortalDecision';
 import { localized, type ObjectType, type PortalProcessDto } from '@processhub/shared';
 import { useLocale } from '@/app/LocaleProvider';
 import { useLocalized } from '@/components/i18n-helpers';
@@ -110,6 +111,9 @@ export function StepDetails({
             {t('portal:process.openSub', { name: `${drill.code} ${loc(drill)}` })}
           </Button>
         </Link>
+      )}
+      {step.decisionRef && (
+        <PortalDecision diagramId={step.decisionRef} decisionId={step.decisionId} />
       )}
     </Card>
   );

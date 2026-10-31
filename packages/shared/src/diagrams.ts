@@ -255,7 +255,7 @@ export function emptyDmnXml(id: string, nameEn: string, nameAr: string): string 
     s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;').replace(/>/g, '&gt;');
   const name = esc(nameEn || nameAr || 'Decision');
   return `<?xml version="1.0" encoding="UTF-8"?>
-<definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/" xmlns:dmndi="https://www.omg.org/spec/DMN/20191111/DMNDI/" xmlns:dc="http://www.omg.org/spec/DMN/20180521/DC/" xmlns:ph="http://processhub.local/schema/1.0" id="Definitions_${id}" name="${name}" namespace="http://processhub.local/dmn">
+<definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/" xmlns:dmndi="https://www.omg.org/spec/DMN/20191111/DMNDI/" xmlns:dc="http://www.omg.org/spec/DMN/20180521/DC/" xmlns:ph="http://processhub.io/schema/bpmn" id="Definitions_${id}" name="${name}" namespace="http://processhub.local/dmn">
   <decision id="Decision_1" name="${name}" ph:nameEn="${esc(nameEn)}" ph:nameAr="${esc(nameAr)}">
     <decisionTable id="DecisionTable_1" hitPolicy="UNIQUE">
       <input id="Input_1" label="Input">
@@ -521,9 +521,28 @@ export interface DiagramLinkDto {
   repoObject: { id: string; type: string; code: string | null; nameEn: string; nameAr: string };
 }
 
-/** A diagram that refers to a process, another diagram or a library object. */
+/** BPMN business rule tasks linked to a decision: `ph:decisionRef` (+ `ph:decisionId`) by element id. */
+export function extractDecisionRefs(
+  bpmnXml: string,
+): Map<string, { diagramId: string; decisionId: string | null }> {
+  const out = new Map<string, { diagramId: string; decisionId: string | null }>();
+  const tagRe = /<[\w:-]+\s([^>]*ph:decisionRef="[^"]*"[^>]*?)\/?>/g;
+  const attr = (attrs: string, name: string) =>
+    new RegExp(`(?:^|\\s)${name}="([^"]*)"`).exec(attrs)?.[1] ?? null;
+  let m: RegExpExecArray | null;
+  while ((m = tagRe.exec(bpmnXml))) {
+    const id = attr(m[1], 'id');
+    const diagramId = attr(m[1], 'ph:decisionRef');
+    if (id && diagramId) out.set(id, { diagramId, decisionId: attr(m[1], 'ph:decisionId') });
+  }
+  return out;
+}
+
+/** A diagram (or, for decision tables, a process step) that refers to a process, diagram or object. */
 export interface DiagramUsageDto {
-  diagram: Pick<DiagramSummaryDto, 'id' | 'type' | 'code' | 'nameEn' | 'nameAr' | 'status'>;
+  diagram: Pick<DiagramSummaryDto, 'id' | 'type' | 'code' | 'nameEn' | 'nameAr' | 'status'> | null;
+  /** BPMN business rule task linked to the decision table (DECISION). */
+  process?: { id: string; code: string; nameEn: string; nameAr: string; status: ProcessStatus };
   elementId: string | null;
   element: { nameEn: string; nameAr: string } | null;
   relation: LinkRelation | 'DRILLDOWN' | 'SOURCE' | 'DECISION';

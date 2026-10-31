@@ -36,7 +36,20 @@
   "openViewer": "Open viewer",
   "whereUsed": {
     "tab": "Where used",
-    "none": "No other diagram refers to this one."
+    "none": "No other diagram refers to this one.",
+    "relation": {
+      "DRILLDOWN": "Drill-down",
+      "SOURCE": "Process",
+      "DECISION": "Business rule step",
+      "PERFORMS": "Performs",
+      "SUPPORTS": "Supports",
+      "INPUT": "Input",
+      "OUTPUT": "Output",
+      "MITIGATES": "Mitigates",
+      "MEASURES": "Measures",
+      "NAMED": "Named",
+      "REQUIRES": "Requires"
+    }
   },
   "links": {
     "tab": "Links",
@@ -107,7 +120,8 @@
     "output": "Output",
     "inputData": "Input data",
     "knowledgeSource": "Knowledge source",
-    "businessKnowledgeModel": "Business knowledge model"
+    "businessKnowledgeModel": "Business knowledge model",
+    "annotation": "Rule annotation"
   },
   "diff": {
     "title": "Changes ({{count}})",
@@ -122,7 +136,45 @@
     }
   },
   "dmn": {
-    "drd": "Decision requirements"
+    "drd": "Decision requirements",
+    "imported": "DMN model imported",
+    "exportXml": "DMN XML (.dmn)",
+    "import": "Import DMN XML",
+    "test": "Test",
+    "validation": "Validation",
+    "translations": "Translations",
+    "translationsHint": "Names in {{language}}: the editor shows the active language.",
+    "lang": {
+      "en": "English",
+      "ar": "Arabic"
+    },
+    "noTable": "The model has no decision table yet.",
+    "testHint": "Enter input values and run: the matching rules are highlighted in the table. FEEL unary tests are evaluated with feelin.",
+    "run": "Run",
+    "result": "Result",
+    "matched": "Matching rules ({{count}})",
+    "errors": {
+      "NO_MATCH": "No rule matches these values.",
+      "UNIQUE_VIOLATION": "Hit policy UNIQUE: more than one rule matches.",
+      "ANY_CONFLICT": "Hit policy ANY: the matching rules give different outputs.",
+      "EVALUATION": "The decision could not be evaluated."
+    },
+    "valid": "No problems found.",
+    "issues": {
+      "NO_TABLE_RULES": "The decision table has no rules.",
+      "MISSING_NAME_EN": "English name missing.",
+      "MISSING_NAME_AR": "Arabic name missing.",
+      "INVALID_INPUT_ENTRY": "Invalid input entry (FEEL unary test).",
+      "INVALID_OUTPUT_ENTRY": "Invalid output entry (FEEL expression).",
+      "EMPTY_OUTPUT": "A rule has an empty output.",
+      "DUPLICATE_RULE": "Two rules have the same input entries."
+    },
+    "linkTitle": "Decision table (DMN)",
+    "linkHint": "The business rule decided by this step.",
+    "chooseTable": "Choose a decision table…",
+    "viewTable": "View table",
+    "openTable": "Open",
+    "stepTitle": "Decision table"
   },
   "sipoc": {
     "columns": {

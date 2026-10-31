@@ -2900,3 +2900,17 @@ li.ph-diff-removed {
 .ph-org-steps li {
   padding: 2px 0;
 }
+
+/* DMN workspace (D-123): dmn-js fills the canvas; matching rules of "Test decision" are highlighted. */
+.ph-dmn-editor {
+  overflow: auto;
+  background: #fff;
+}
+.ph-dmn-editor .tjs-container,
+.ph-dmn-container .tjs-container {
+  margin: 16px;
+}
+.ph-dmn-hit {
+  background: #fef3c7 !important;
+  box-shadow: inset 0 0 0 1px #d97706;
+}
