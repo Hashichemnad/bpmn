@@ -2,7 +2,55 @@
 
 Read this together with `CLAUDE.md` at the start of every session.
 
-## Current state — 2026-10-31 (Phase 5 — Part 1: Process mining and simulation, branch `phase-5-1-mining-simulation`, done — awaiting review)
+## Current state — 2026-10-31 (Phase 5 — Part 2: Workflow execution, branch `phase-5-2-workflow-execution`, in progress)
+
+Everything up to Phase 5.1 (process mining and simulation) is merged into `main`. This branch builds module M14:
+run approved processes as task flows with forms, assignments, approvals, SLAs and monitoring. The session works on
+`claude/bold-carson-w7ahi4` (the harness branch name) and pushes the same commits to
+`phase-5-2-workflow-execution`.
+
+Technical approach (D-144 – D-150): own TypeScript engine (pure `step(model, state, vars, command)`) in
+`packages/shared/src/workflow/` with an S-FEEL evaluator and a server-side DMN evaluator; schema-driven Ant Design
+forms (no form-js); execution settings in the BPMN XML (`ph:exec` JSON + standard conditions / timers) and
+operational settings in `WorkflowProcessConfig`; deployments pin the published version; cases, tasks, jobs (timers)
+and the timeline in PostgreSQL with optimistic locking; business calendar = central holidays + central working week.
+
+Local setup: PostgreSQL 16 (`service postgresql start`; create role `processhub` / `devpassword` and databases
+`processhub`, `processhub_test` if missing); API suites `npx jest --runInBand test/<file> --selectProjects e2e`
+(build the shared package first: `cd packages/shared && npx tsc -p tsconfig.build.json`).
+
+Steps (tick as they are committed; a new session continues at the first unticked one):
+
+- [x] 0. CLAUDE.md phase table (5.1 merged, 5.2 in progress), this plan, DECISIONS D-144 – D-150.
+- [x] Backend for steps 1–5 (one commit; the web UI follows step by step): shared `packages/shared/src/workflow/`
+      (`feel.ts` S-FEEL, `dmn.ts` server DMN, `forms.ts`, `model.ts` reader + `ph:exec` schemas, `check.ts`
+      executable check, `engine.ts` pure engine, `calendar.ts`, `templates.ts`, `api.ts` DTOs; 26 unit tests in
+      `workflow.test.ts`); migration `*_workflow_execution` (WorkflowProcessConfig, WorkflowDefinition,
+      WorkflowCase, WorkflowTask (+Candidate), WorkflowJob, WorkflowEvent, WorkflowFile, WorkflowCaseComment,
+      WorkflowCaseCounter, User out-of-office, EventLogSource WORKFLOW); permissions
+      `workflow.design|start|monitor|admin` (role bundles in D-149); notification type `WORKFLOW` (EN / AR e-mail
+      templates); API module `apps/api/src/workflow/` (config / check / deploy, runner with optimistic locking,
+      assignment, cases, tasks, jobs + timers + reminders / escalation + retention, monitor / dashboard / Excel, live
+      event log, Word documents); `WORKFLOW_POLL_SECONDS`; demo model builders `prisma/workflow-bpmn.ts`,
+      `prisma/workflow-demo.ts`; API tests `test/workflow.e2e-spec.ts` (20) + authorization matrix / route security
+      updated, SECURITY.md route table regenerated.
+- [ ] 1. Executable processes (web): modeler Execution tab (process settings, deploy, element settings, form
+      editor, conditions, approval outcomes, timers, notification / document templates) and the executable check in
+      the Validation panel; Playwright.
+- [ ] 2. Assignment, tasks and inbox (web): workflow tasks in "My tasks" (filters, due colouring, claim, complete
+      with form, approve / reject / return, delegate), out of office in the profile, workflow settings (calendar,
+      reminders, escalation); Playwright.
+- [ ] 3. Starting and following cases (web): service catalogue in the portal, start form, case page (diagram with
+      current / completed steps, timeline, step data, files, comments, documents, withdraw), "My requests";
+      Playwright.
+- [ ] 4. Monitoring (web): workflow monitor (retry, cancel, reassign), dashboard + Excel; live event log link;
+      Playwright.
+- [ ] 5. Security and data: review of permissions / visibility tests, retention setting in the UI, template
+      sanitising notes, audit.
+- [ ] 6. Demo data (PMS-01 executable + leave request, demo cases), performance measurement, screenshots EN / AR,
+      `docs/WORKFLOWS.md`, README, docs; PR and CI.
+
+## Previous state — 2026-10-31 (Phase 5 — Part 1: Process mining and simulation, branch `phase-5-1-mining-simulation`, done — awaiting review)
 
 Everything up to the diagram types is merged into `main`. This branch builds module M13 (process mining) and
 simulation — Signavio Process Intelligence / ARIS Process Mining parity, DOF RFP analysis items. Workflow execution
