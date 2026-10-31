@@ -1488,6 +1488,9 @@ Answers to the open questions of D-115; supersedes its process mapping and adds 
   rights (`kpi.edit`) but do not get `kpi.sync` — the Salesforce link stays with Super Admins and Performance
   Officers. Process Owners still enter values only for the KPIs they own.
 - Failed syncs notify Super Admins and holders of `kpi.sync`. Demo user `performance@processhub.local`.
+- Confirmed by the product owner (2026-10-31): Admins stay without `kpi.sync`; Performance Officers keep the KPI
+  settings (show KPIs in the portal, reminders — part of `kpi.edit`). Every change of those settings is audited
+  (action `UPDATE`, entity `Setting` `kpi`, the user, before / after).
 
 ## D-119 — Scheduled Salesforce syncs run as a system actor (Phase 4.3, 2026-10-31)
 
