@@ -12,6 +12,7 @@ export const DEMO = {
   risk: 'risk@processhub.local',
   audit: 'audit@processhub.local',
   architect: 'architect@processhub.local',
+  performance: 'performance@processhub.local',
 };
 const PASSWORD = process.env.E2E_DEMO_PASSWORD ?? 'Demo-Password1';
 

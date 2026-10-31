@@ -85,6 +85,8 @@ export const PERMISSIONS = {
   KPI_EDIT: 'kpi.edit',
   /** Enter the measurements of the KPIs one owns. */
   KPI_MEASURE: 'kpi.measure',
+  /** Preview and run the Salesforce KPI sync and read its log (credentials stay with Super Admins). */
+  KPI_SYNC: 'kpi.sync',
 } as const;
 export type Permission = (typeof PERMISSIONS)[keyof typeof PERMISSIONS];
 export const ALL_PERMISSIONS: Permission[] = Object.values(PERMISSIONS);
@@ -99,6 +101,7 @@ export const SYSTEM_ROLE_KEYS = [
   'RISK_OFFICER',
   'INTERNAL_AUDIT',
   'ENTERPRISE_ARCHITECT',
+  'PERFORMANCE_OFFICER',
   'VIEWER',
 ] as const;
 export type SystemRoleKey = (typeof SYSTEM_ROLE_KEYS)[number];
@@ -130,7 +133,8 @@ export const SYSTEM_ROLES: Record<
   ADMIN: {
     nameEn: 'Admin',
     nameAr: 'مسؤول',
-    permissions: ALL_PERMISSIONS.filter((p) => p !== P.SETTINGS_MANAGE),
+    // The Salesforce link stays with Super Admins and Performance Officers (D-118).
+    permissions: ALL_PERMISSIONS.filter((p) => p !== P.SETTINGS_MANAGE && p !== P.KPI_SYNC),
   },
   PROCESS_OWNER: {
     nameEn: 'Process Owner',
@@ -258,6 +262,24 @@ export const SYSTEM_ROLES: Record<
       P.EA_EDIT,
       P.EA_ADMIN,
       P.KPI_READ,
+    ],
+  },
+  PERFORMANCE_OFFICER: {
+    nameEn: 'Performance Officer',
+    nameAr: 'مسؤول الأداء',
+    // Strategy Office: all KPIs, objectives, targets and values; runs and reviews the Salesforce
+    // sync; the rest of the workspace read-only (D-118).
+    permissions: [
+      ...READ_REPOSITORY,
+      P.USERS_READ,
+      P.GOVERNANCE_DASHBOARD,
+      P.GRC_READ,
+      P.EA_READ,
+      P.SURVEYS_RESPOND,
+      P.KPI_READ,
+      P.KPI_EDIT,
+      P.KPI_MEASURE,
+      P.KPI_SYNC,
     ],
   },
   VIEWER: {

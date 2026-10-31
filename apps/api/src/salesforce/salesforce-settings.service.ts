@@ -60,7 +60,7 @@ export class SalesforceSettingsService {
         objectives: { ...DEFAULTS.mapping.objectives, ...stored.mapping?.objectives },
         kpis: { ...DEFAULTS.mapping.kpis, ...stored.mapping?.kpis },
         results: { ...DEFAULTS.mapping.results, ...stored.mapping?.results },
-        processMap: { ...DEFAULTS.mapping.processMap, ...stored.mapping?.processMap },
+        measures: { ...DEFAULTS.mapping.measures, ...stored.mapping?.measures },
       },
     };
   }
@@ -93,10 +93,12 @@ export class SalesforceSettingsService {
       warnings: unknown;
       error: string | null;
       userId: string | null;
+      configuredById: string | null;
     }[],
   ): Promise<SalesforceRunDto[]> {
+    const ids = rows.flatMap((r) => [r.userId, r.configuredById]);
     const users = await this.prisma.user.findMany({
-      where: { id: { in: rows.map((r) => r.userId).filter((v): v is string => !!v) } },
+      where: { id: { in: ids.filter((v): v is string => !!v) } },
       select: userRef,
     });
     const byId = new Map(users.map((u) => [u.id, u]));
@@ -110,6 +112,7 @@ export class SalesforceSettingsService {
       error: r.error,
       warnings: Array.isArray(r.warnings) ? r.warnings.length : 0,
       user: (r.userId && byId.get(r.userId)) || null,
+      configuredBy: (r.configuredById && byId.get(r.configuredById)) || null,
     }));
   }
 
@@ -183,6 +186,16 @@ export class SalesforceSettingsService {
       );
     });
     return this.toDto(await this.get());
+  }
+
+  /** The Super Admin who saved the settings last ("configured by", D-119); may have left since. */
+  async configuredBy() {
+    const row = await this.prisma.setting.findUnique({
+      where: { key: SETTING_KEYS.SALESFORCE },
+      select: { updatedById: true },
+    });
+    if (!row?.updatedById) return null;
+    return this.prisma.user.findUnique({ where: { id: row.updatedById }, select: userRef });
   }
 
   async markScheduled(at: Date) {

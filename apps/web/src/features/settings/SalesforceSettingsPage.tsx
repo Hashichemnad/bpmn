@@ -20,10 +20,18 @@ import {
   Tag,
   Typography,
 } from 'antd';
-import { ApiOutlined, CloudSyncOutlined, EyeOutlined, SaveOutlined } from '@ant-design/icons';
+import {
+  ApiOutlined,
+  CloudSyncOutlined,
+  DeleteOutlined,
+  EyeOutlined,
+  PlusOutlined,
+  SaveOutlined,
+} from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
 import {
   OBJECTIVE_SOURCES,
+  PERMISSIONS,
   SALESFORCE_SCHEDULES,
   type SalesforceChange,
   type SalesforceFieldDto,
@@ -41,6 +49,8 @@ import {
   useSaveSalesforce,
   useTestSalesforce,
 } from '@/api/salesforce';
+import { useObjectives } from '@/api/kpi';
+import { useAuth } from '@/auth/AuthProvider';
 import { PageHeader } from '@/components/PageHeader';
 import { ErrorState, LoadingState } from '@/components/states';
 import { useErrorMessage, useFormatDate, useLocalized } from '@/components/i18n-helpers';
@@ -62,8 +72,18 @@ const GROUPS: Record<Group, string[]> = {
     'status',
     'objective',
   ],
-  results: ['kpi', 'year', 'period', 'value', 'target', 'comment'],
-  processMap: ['kpi', 'processCode'],
+  measures: ['kpi', 'year', 'target', 'value'],
+  results: [
+    'kpi',
+    'year',
+    'period',
+    'value',
+    'target',
+    'comment',
+    'causality',
+    'correctiveActions',
+    'approved',
+  ],
 };
 const VALUE_MAPS: Record<string, string[]> = {
   kpis: ['directionValues', 'frequencyValues', 'statusValues'],
@@ -85,6 +105,7 @@ const fromText = (s: string | undefined) =>
 /**
  * Settings → Integrations → Salesforce (Super Admin): connection with a read-only integration
  * user, field mapping of the PMS KPI objects, preview of the differences, sync and sync log.
+ * Performance Officers (`kpi.sync`, D-118) see the settings read-only, preview and run the sync.
  */
 export function SalesforceSettingsPage() {
   const { t } = useTranslation();
@@ -92,6 +113,9 @@ export function SalesforceSettingsPage() {
   const errorMessage = useErrorMessage();
   const formatDate = useFormatDate();
   const loc = useLocalized();
+  const { can } = useAuth();
+  const canConfigure = can(PERMISSIONS.SETTINGS_MANAGE);
+  const objectives = useObjectives(can(PERMISSIONS.KPI_READ));
   const settings = useSalesforceSettings();
   const runs = useSalesforceRuns();
   const save = useSaveSalesforce();
@@ -121,7 +145,17 @@ export function SalesforceSettingsPage() {
         maps[`${g}.${k}`] = toText(
           (mapping[g as Group] as unknown as Record<string, Record<string, string>>)[k],
         );
-    form.setFieldsValue({ ...rest, mapping, maps, clientSecret: '', privateKey: '' });
+    const valueLinks = Object.entries(mapping.objectives.valueLinks ?? {}).map(
+      ([value, objectiveId]) => ({ value, objectiveId }),
+    );
+    form.setFieldsValue({
+      ...rest,
+      mapping,
+      maps,
+      valueLinks,
+      clientSecret: '',
+      privateKey: '',
+    });
   }, [settings.data, form]);
 
   if (settings.isLoading) return <LoadingState />;
@@ -137,9 +171,15 @@ export function SalesforceSettingsPage() {
         (mapping[g as Group] as unknown as Record<string, Record<string, string>>)[k] = fromText(
           v.maps?.[`${g}.${k}`],
         );
+    mapping.objectives.valueLinks = Object.fromEntries(
+      ((v.valueLinks ?? []) as { value?: string; objectiveId?: string }[])
+        .filter((l) => l.value?.trim() && l.objectiveId)
+        .map((l) => [l.value!.trim(), l.objectiveId!]),
+    );
     return {
       ...v,
       maps: undefined,
+      valueLinks: undefined,
       mapping,
       clientSecret: v.clientSecret?.trim() || undefined,
       privateKey: v.privateKey?.trim() || undefined,
@@ -180,7 +220,7 @@ export function SalesforceSettingsPage() {
                     <Typography.Link
                       onClick={() => loadFields(form.getFieldValue(['mapping', group, 'object']))}
                     >
-                      {t('admin:salesforce.loadFields')}
+                      {canConfigure ? t('admin:salesforce.loadFields') : null}
                     </Typography.Link>
                   }
                 />
@@ -223,6 +263,52 @@ export function SalesforceSettingsPage() {
     );
   };
 
+  // Picklist values linked to existing ProcessHub objectives; other values become objectives.
+  const valueLinksEditor = (
+    <Form.Item
+      label={t('admin:salesforce.valueLinks')}
+      extra={t('admin:salesforce.valueLinksHint')}
+    >
+      <Form.List name="valueLinks">
+        {(items, { add, remove }) => (
+          <>
+            {items.map((item) => (
+              <Space key={item.key} align="baseline" wrap>
+                <Form.Item name={[item.name, 'value']} rules={[{ required: true, message: '' }]}>
+                  <Input dir="ltr" placeholder={t('admin:salesforce.picklistValue')} />
+                </Form.Item>
+                <Form.Item
+                  name={[item.name, 'objectiveId']}
+                  rules={[{ required: true, message: '' }]}
+                >
+                  <Select
+                    showSearch
+                    optionFilterProp="label"
+                    style={{ minWidth: 260 }}
+                    placeholder={t('admin:salesforce.objective')}
+                    options={(objectives.data ?? []).map((o) => ({
+                      value: o.id,
+                      label: [o.code, loc(o)].filter(Boolean).join(' · '),
+                    }))}
+                  />
+                </Form.Item>
+                <Button
+                  type="text"
+                  icon={<DeleteOutlined />}
+                  aria-label={t('delete')}
+                  onClick={() => remove(item.name)}
+                />
+              </Space>
+            ))}
+            <Button icon={<PlusOutlined />} onClick={() => add()}>
+              {t('admin:salesforce.addValueLink')}
+            </Button>
+          </>
+        )}
+      </Form.List>
+    </Form.Item>
+  );
+
   const changeList = (list: SalesforceChange[]) =>
     list.length ? (
       <ul style={{ margin: 0, paddingInlineStart: 18 }}>
@@ -253,16 +339,27 @@ export function SalesforceSettingsPage() {
         title={t('admin:salesforce.title')}
         subtitle={t('admin:salesforce.subtitle')}
         extra={
-          <Button
-            type="primary"
-            icon={<SaveOutlined />}
-            loading={save.isPending}
-            onClick={() => void submit()}
-          >
-            {t('save')}
-          </Button>
+          canConfigure ? (
+            <Button
+              type="primary"
+              icon={<SaveOutlined />}
+              loading={save.isPending}
+              onClick={() => void submit()}
+            >
+              {t('save')}
+            </Button>
+          ) : null
         }
       />
+      {!canConfigure && (
+        <Alert
+          type="info"
+          showIcon
+          style={{ marginBlockEnd: 16 }}
+          message={t('admin:salesforce.syncOnly')}
+          data-testid="salesforce-sync-only"
+        />
+      )}
       {!s.encryptionReady && (
         <Alert
           type="warning"
@@ -271,7 +368,7 @@ export function SalesforceSettingsPage() {
           message={t('admin:salesforce.noKey')}
         />
       )}
-      <Form form={form} layout="vertical" data-testid="salesforce-form">
+      <Form form={form} layout="vertical" data-testid="salesforce-form" disabled={!canConfigure}>
         <Row gutter={[16, 16]}>
           <Col xs={24} xl={12}>
             <Card title={t('admin:salesforce.connection')}>
@@ -334,21 +431,23 @@ export function SalesforceSettingsPage() {
                 <Input dir="ltr" style={{ width: 120 }} />
               </Form.Item>
               <Space wrap>
-                <Button
-                  icon={<ApiOutlined />}
-                  loading={test.isPending}
-                  onClick={() =>
-                    test.mutate(undefined, {
-                      onSuccess: (r) =>
-                        r.ok
-                          ? message.success(t('admin:salesforce.testOk'))
-                          : message.error(r.error ?? ''),
-                      onError: (err) => message.error(errorMessage(err)),
-                    })
-                  }
-                >
-                  {t('admin:salesforce.test')}
-                </Button>
+                {canConfigure && (
+                  <Button
+                    icon={<ApiOutlined />}
+                    loading={test.isPending}
+                    onClick={() =>
+                      test.mutate(undefined, {
+                        onSuccess: (r) =>
+                          r.ok
+                            ? message.success(t('admin:salesforce.testOk'))
+                            : message.error(r.error ?? ''),
+                        onError: (err) => message.error(errorMessage(err)),
+                      })
+                    }
+                  >
+                    {t('admin:salesforce.test')}
+                  </Button>
+                )}
                 {test.data?.ok && (
                   <Typography.Text type="secondary" data-testid="salesforce-test">
                     {test.data.userName} · {test.data.organizationId}{' '}
@@ -384,6 +483,14 @@ export function SalesforceSettingsPage() {
               <Form.Item
                 name="syncValues"
                 label={t('admin:salesforce.syncValues')}
+                valuePropName="checked"
+              >
+                <Switch />
+              </Form.Item>
+              <Form.Item
+                name="includeUnapproved"
+                label={t('admin:salesforce.includeUnapproved')}
+                extra={t('admin:salesforce.includeUnapprovedHint')}
                 valuePropName="checked"
               >
                 <Switch />
@@ -445,16 +552,6 @@ export function SalesforceSettingsPage() {
                     {t('admin:salesforce.counts', p.measurements)}
                     {changeList(p.measurements.samples)}
                   </Descriptions.Item>
-                  <Descriptions.Item label={t('admin:salesforce.links')}>
-                    {p.processLinks.create}
-                    {p.processLinks.unknownProcesses.length > 0 && (
-                      <Typography.Text type="warning" style={{ display: 'block' }}>
-                        {t('admin:salesforce.unknownProcesses', {
-                          codes: p.processLinks.unknownProcesses.join(', '),
-                        })}
-                      </Typography.Text>
-                    )}
-                  </Descriptions.Item>
                   <Descriptions.Item label={t('admin:salesforce.warnings')}>
                     {p.warnings.length
                       ? p.warnings.slice(0, 10).map((w) => (
@@ -503,6 +600,7 @@ export function SalesforceSettingsPage() {
                           </Radio.Group>
                         </Form.Item>
                         {mappingGroup('objectives')}
+                        {objectiveSource === 'KPI_FIELD' && valueLinksEditor}
                       </>
                     ),
                   },
@@ -513,16 +611,16 @@ export function SalesforceSettingsPage() {
                     children: mappingGroup('kpis'),
                   },
                   {
+                    key: 'measures',
+                    label: t('admin:salesforce.measures'),
+                    forceRender: true,
+                    children: mappingGroup('measures'),
+                  },
+                  {
                     key: 'results',
                     label: t('admin:salesforce.values'),
                     forceRender: true,
                     children: mappingGroup('results'),
-                  },
-                  {
-                    key: 'processMap',
-                    label: t('admin:salesforce.links'),
-                    forceRender: true,
-                    children: mappingGroup('processMap'),
                   },
                 ]}
               />
@@ -579,7 +677,14 @@ export function SalesforceSettingsPage() {
                   {
                     title: t('admin:salesforce.by'),
                     key: 'u',
-                    render: (_, r) => (r.user ? loc(r.user) || r.user.email : '—'),
+                    render: (_, r) =>
+                      r.user ? loc(r.user) || r.user.email : t('admin:salesforce.systemActor'),
+                  },
+                  {
+                    title: t('admin:salesforce.configuredBy'),
+                    key: 'cb',
+                    render: (_, r) =>
+                      r.configuredBy ? loc(r.configuredBy) || r.configuredBy.email : '—',
                   },
                 ]}
               />

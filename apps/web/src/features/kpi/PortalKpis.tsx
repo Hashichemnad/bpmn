@@ -2,7 +2,7 @@ import { Card, List, Space, Typography } from 'antd';
 import { LineChartOutlined } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
 import { PROCESS_ELEMENT_ID, type PortalKpiDto } from '@processhub/shared';
-import { useLocalized } from '@/components/i18n-helpers';
+import { useFormatDate, useLocalized } from '@/components/i18n-helpers';
 import { RagTag, Sparkline } from './kpi-components';
 import { useFormatPeriod, useFormatValue } from './kpi-helpers';
 
@@ -18,6 +18,7 @@ export function PortalKpis({
   const loc = useLocalized();
   const formatValue = useFormatValue();
   const formatPeriod = useFormatPeriod();
+  const formatDate = useFormatDate();
   return (
     <Card
       size="small"
@@ -41,7 +42,7 @@ export function PortalKpis({
               </Space>
               <Typography.Text type="secondary" style={{ fontSize: 12 }}>
                 {k.latest
-                  ? `${formatValue(k.latest.value, k.unit)}${k.latest.target !== null ? ` / ${formatValue(k.latest.target, k.unit)}` : ''} · ${formatPeriod(k.latest.period)}`
+                  ? `${formatValue(k.latest.value, k.unit)}${k.latest.target !== null ? ` / ${formatValue(k.latest.target, k.unit)}` : ''} · ${formatPeriod(k.latest.period)} · ${t('kpi:portal.updated', { date: formatDate(k.latest.updatedAt, false) })}`
                   : t('kpi:rag.none')}
                 {' · '}
                 {k.bpmnElementId === PROCESS_ELEMENT_ID

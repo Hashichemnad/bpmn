@@ -73,6 +73,7 @@
   "frequency": {
     "MONTHLY": "Monthly",
     "QUARTERLY": "Quarterly",
+    "SEMI_ANNUAL": "Semi-annual",
     "ANNUAL": "Annual"
   },
   "dataSource": {
@@ -153,7 +154,8 @@
     "allObjectives": "All objectives"
   },
   "period": {
-    "quarter": "Q{{q}} {{year}}"
+    "quarter": "Q{{q}} {{year}}",
+    "half": "H{{h}} {{year}}"
   },
   "process": {
     "title": "Performance",
@@ -164,7 +166,8 @@
     "link": "Link a KPI…"
   },
   "portal": {
-    "title": "Performance indicators"
+    "title": "Performance indicators",
+    "updated": "updated {{date}}"
   },
   "dashboard": {
     "title": "KPI dashboard",

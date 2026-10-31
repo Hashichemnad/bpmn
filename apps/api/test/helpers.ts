@@ -149,15 +149,26 @@ export class FakeSalesforce {
   requests: { method: string; url: string }[] = [];
   failToken = false;
   records: Record<string, Record<string, unknown>> = {};
+  /** Checkbox of the last query's `WHERE <field> = true` (applied to its next page too). */
+  private where: string | null = null;
 
   reset() {
     this.requests = [];
+    this.where = null;
     this.failToken = false;
     this.records = {
       Org_Kpi_Goal__c: sfFixture('Org_Kpi_Goal__c'),
+      Org_Kpi_Measure__c: sfFixture('Org_Kpi_Measure__c'),
       Org_Kpi_Process__c: sfFixture('Org_Kpi_Process__c'),
       'Org_Kpi_Process__c.page2': sfFixture('Org_Kpi_Process__c.page2'),
     };
+  }
+
+  private filtered(body: Record<string, unknown>) {
+    const where = this.where;
+    if (!where) return body;
+    const records = (body.records as Record<string, unknown>[]).filter((r) => r[where] === true);
+    return { ...body, records };
   }
 
   async token(url: string) {
@@ -178,13 +189,14 @@ export class FakeSalesforce {
       const object = /FROM\s+(\w+)/i.exec(soql)?.[1] ?? '';
       if (object === 'Organization')
         return { status: 200, body: { records: [{ Id: '00DFAKE0000000000' }] } };
+      this.where = /WHERE\s+(\w+)\s*=\s*true/i.exec(soql)?.[1] ?? null;
       const body = this.records[object];
       return body
-        ? { status: 200, body }
+        ? { status: 200, body: this.filtered(body) }
         : { status: 400, body: [{ message: `sObject type '${object}' is not supported.` }] };
     }
     if (/\/query\/01gFAKE/.test(u.pathname))
-      return { status: 200, body: this.records['Org_Kpi_Process__c.page2'] };
+      return { status: 200, body: this.filtered(this.records['Org_Kpi_Process__c.page2']) };
     const describe = /\/sobjects\/(\w+)\/describe$/.exec(u.pathname);
     if (describe) {
       try {

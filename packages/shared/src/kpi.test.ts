@@ -27,6 +27,13 @@ describe('KPI periods', () => {
     expect(isPeriod('2026-13', 'MONTHLY')).toBe(false);
     expect(isPeriod('2026-Q1', 'MONTHLY')).toBe(false);
     expect(isPeriod('2026-Q4', 'QUARTERLY')).toBe(true);
+    // Half years (Salesforce "First Half" / "Second Half" results).
+    expect(periodOf(d, 'SEMI_ANNUAL')).toBe('2026-H2');
+    expect(duePeriod(d, 'SEMI_ANNUAL')).toBe('2026-H1');
+    expect(shiftPeriod('2026-H1', 'SEMI_ANNUAL', -1)).toBe('2025-H2');
+    expect(periodStart('2026-H2').toISOString()).toBe('2026-07-01T00:00:00.000Z');
+    expect(isPeriod('2026-H2', 'SEMI_ANNUAL')).toBe(true);
+    expect(isPeriod('2026-H2', 'QUARTERLY')).toBe(false);
   });
 });
 

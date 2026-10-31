@@ -256,6 +256,16 @@ export function AppLayout() {
             icon: <AimOutlined />,
             label: <Link to="/kpis/objectives">{t('kpi:nav.objectives')}</Link>,
           },
+          // Performance Officers run and review the Salesforce sync (D-118).
+          ...(can(PERMISSIONS.KPI_SYNC) && !can(PERMISSIONS.SETTINGS_MANAGE)
+            ? [
+                {
+                  key: '/settings/salesforce',
+                  icon: <CloudSyncOutlined />,
+                  label: <Link to="/settings/salesforce">{t('admin:salesforce.card')}</Link>,
+                },
+              ]
+            : []),
         ],
       });
     }

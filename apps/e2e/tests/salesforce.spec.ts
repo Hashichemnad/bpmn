@@ -4,8 +4,8 @@ import { SalesforceMock } from './salesforce-mock';
 
 /**
  * Salesforce KPI link (Phase 4.3) against the mock API: a Super Admin configures the link, tests
- * the connection, previews and applies the import; a changed value in Salesforce is updated by
- * the next sync. Mock host: E2E_SALESFORCE_MOCK_HOST (default host.docker.internal for the
+ * the connection, previews and applies the import; a Performance Officer runs the next sync,
+ * which updates a value changed in Salesforce (D-117 – D-119). Mock host: E2E_SALESFORCE_MOCK_HOST (default host.docker.internal for the
  * Docker stack; `localhost` for an API started on the host).
  */
 const mock = new SalesforceMock(
@@ -20,6 +20,8 @@ test('configure, test, preview and sync; a re-sync updates the values', async ({
   await loginAdmin(page);
   await page.goto('/settings/salesforce');
   const form = page.getByTestId('salesforce-form');
+  // Wait until the stored settings fill the form before reading the switch.
+  await expect(form.locator('#apiVersion')).toHaveValue(/\d/);
   const enabled = form.getByRole('switch').first();
   if (!(await enabled.isChecked())) await enabled.click();
   await form.locator('#instanceUrl').fill(mock.url);
@@ -56,15 +58,21 @@ test('configure, test, preview and sync; a re-sync updates the values', async ({
   await expect(page.getByTestId('kpi-salesforce')).toContainText('Source: Salesforce');
   await expect(page.getByTestId('kpi-measurements')).toContainText(`${value}%`);
 
-  // Changed in Salesforce → the next sync updates the value.
+  // Changed in Salesforce → the next sync, run by a Performance Officer, updates the value. The
+  // settings are read-only for them; the log names who configured the link.
   results.records[1].Achieve_Value__c = value + 1;
+  await login(page, DEMO.performance);
   await page.goto('/settings/salesforce');
+  await expect(page.getByTestId('salesforce-sync-only')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Test connection' })).toBeHidden();
   await page.getByRole('button', { name: 'Preview changes' }).click();
   await expect(page.getByTestId('salesforce-preview')).toContainText('1 changed');
   await page.getByRole('button', { name: 'Sync now' }).click();
-  await expect(page.getByTestId('salesforce-runs').locator('tbody tr').first()).toContainText(
-    'Succeeded',
-  );
+  const latest = page.getByTestId('salesforce-runs').locator('tbody tr').first();
+  await expect(latest).toContainText('Succeeded');
+  await expect(latest).toContainText('Perla Performance');
+  const updateDenied = await apiCall(page, 'PUT', '/integrations/salesforce', {});
+  expect(updateDenied.status).toBe(403);
   await page.goto(`/kpis/${kpi.id}`);
   await expect(page.getByTestId('kpi-measurements')).toContainText(`${value + 1}%`);
 

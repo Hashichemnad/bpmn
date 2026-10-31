@@ -4,8 +4,9 @@ import {
   KPI_FREQUENCIES,
   KPI_STATUSES,
   PERMISSIONS,
-  PROCESS_ELEMENT_ID,
+  SALESFORCE_SYSTEM_ACTOR,
   isPeriod,
+  periodOf,
   periodStart,
   type KpiDirection,
   type KpiFrequency,
@@ -79,12 +80,20 @@ const mapValue = <T extends string>(
   const up = mapped.toUpperCase().replace(/[\s-]+/g, '_');
   return (allowed as readonly string[]).includes(up) ? (up as T) : undefined;
 };
+/** Prefix of an objective reference that is a ProcessHub objective id (a linked picklist value). */
+const LOCAL = 'local:';
+/** Writer of scheduled syncs: no user id, so no change is attributed to a person (D-119). */
+const SYSTEM_ACTOR = {
+  id: null,
+  email: SALESFORCE_SYSTEM_ACTOR,
+  permissions: new Set<string>([PERMISSIONS.KPI_EDIT, PERMISSIONS.KPI_MEASURE]),
+} as unknown as AuthUser;
 const fields = (...names: string[]) => [...new Set(['Id', ...names.filter(Boolean)])].join(', ');
 
 /**
  * Read-only Salesforce KPI import (Phase 4.3, D-115 / D-116): definitions (objectives, KPIs),
- * actual values and the KPI ↔ process mapping, matched by the Salesforce Id stored on the
- * objective / KPI. Preview shows the differences; apply writes them, audited, in a sync run.
+ * yearly targets and period results, matched by the Salesforce Id stored on the objective / KPI.
+ * KPI ↔ process links are made in ProcessHub (Salesforce has none, D-117). Preview shows the differences; apply writes them, audited, in a sync run.
  */
 @Injectable()
 export class SalesforceSyncService implements OnModuleInit {
@@ -123,8 +132,8 @@ export class SalesforceSyncService implements OnModuleInit {
       for (const o of [
         m.kpis.object,
         m.results.object,
+        m.measures.object,
         m.objectives.source === 'OBJECT' ? m.objectives.object : '',
-        m.processMap.object,
       ].filter(Boolean))
         objects[o] = await client
           .describe(o)
@@ -179,9 +188,25 @@ export class SalesforceSyncService implements OnModuleInit {
         if (ref && objectives.has(ref)) objectiveOf.set(r.Id, ref);
       }
     } else if (m.objectives.source === 'KPI_FIELD' && k.objective) {
+      // Values linked on the mapping screen use that ProcessHub objective; the others become
+      // objectives of their own (matched by "<field>:<value>", D-117).
+      const linked = Object.entries(m.objectives.valueLinks ?? {});
+      const existing = new Set(
+        (
+          await this.prisma.strategicObjective.findMany({
+            where: { id: { in: linked.map(([, id]) => id) }, deletedAt: null },
+            select: { id: true },
+          })
+        ).map((o) => o.id),
+      );
       for (const r of kpiRecords) {
         const value = str(fieldValue(r, k.objective));
         if (!value) continue;
+        const link = linked.find(([v]) => v === value)?.[1];
+        if (link && existing.has(link)) {
+          objectiveOf.set(r.Id, `${LOCAL}${link}`);
+          continue;
+        }
         const sfId = `${k.objective}:${value}`.slice(0, 190);
         if (!objectives.has(sfId))
           objectives.set(sfId, {
@@ -247,8 +272,11 @@ export class SalesforceSyncService implements OnModuleInit {
           })
         ).map((x) => [x.salesforceId!, x.frequency as KpiFrequency]),
       );
+      // Only approved results unless the setting says otherwise (D-117); the field name is a
+      // validated API name, so the WHERE clause is not free text.
+      const where = !s.includeUnapproved && res.approved ? ` WHERE ${res.approved} = true` : '';
       for (const r of await client.query(
-        `SELECT ${fields(res.kpi, res.year, res.period, res.value, res.target, res.comment)} FROM ${res.object}`,
+        `SELECT ${fields(res.kpi, res.year, res.period, res.value, res.target, res.comment, res.causality, res.correctiveActions)} FROM ${res.object}${where}`,
       )) {
         const kpiSfId = str(fieldValue(r, res.kpi));
         const kpi = kpis.get(kpiSfId);
@@ -275,23 +303,48 @@ export class SalesforceSyncService implements OnModuleInit {
           period,
           value,
           target: res.target ? num(fieldValue(r, res.target)) : null,
-          comment: res.comment ? str(fieldValue(r, res.comment)).slice(0, 2000) : '',
+          comment: [
+            res.comment ? str(fieldValue(r, res.comment)) : '',
+            res.causality && str(fieldValue(r, res.causality))
+              ? `Causality: ${str(fieldValue(r, res.causality))}`
+              : '',
+            res.correctiveActions && str(fieldValue(r, res.correctiveActions))
+              ? `Corrective actions: ${str(fieldValue(r, res.correctiveActions))}`
+              : '',
+          ]
+            .filter(Boolean)
+            .join('\n')
+            .slice(0, 2000),
         });
       }
     }
 
-    // KPI ↔ process mapping (process code).
-    const links: { kpiSfId: string; processCode: string }[] = [];
-    const pm = m.processMap;
-    if (pm.object && pm.kpi && pm.processCode)
+    // Yearly target and achieved value (one row per KPI and year): the target of the year's last
+    // period without a target of its own; for annual KPIs also the year's value (results win).
+    const yearly: { kpiSfId: string; year: string; target: number | null }[] = [];
+    const ms = m.measures;
+    if (s.syncValues && ms.object && ms.kpi && ms.year) {
       for (const r of await client.query(
-        `SELECT ${fields(pm.kpi, pm.processCode)} FROM ${pm.object}`,
+        `SELECT ${fields(ms.kpi, ms.year, ms.target, ms.value)} FROM ${ms.object}`,
       )) {
-        const kpiSfId = str(fieldValue(r, pm.kpi));
-        const processCode = str(fieldValue(r, pm.processCode));
-        if (kpis.has(kpiSfId) && processCode) links.push({ kpiSfId, processCode });
+        const kpiSfId = str(fieldValue(r, ms.kpi));
+        const kpi = kpis.get(kpiSfId);
+        const year = str(fieldValue(r, ms.year)).slice(0, 4);
+        if (!kpi || !/^\d{4}$/.test(year)) continue;
+        const target = ms.target ? num(fieldValue(r, ms.target)) : null;
+        yearly.push({ kpiSfId, year, target });
+        const value = ms.value ? num(fieldValue(r, ms.value)) : null;
+        if (
+          value !== null &&
+          (kpi.frequency ?? 'ANNUAL') === 'ANNUAL' &&
+          periodStart(year).getTime() <= Date.now() &&
+          !values.some((v) => v.kpiSfId === kpiSfId && v.period === year)
+        )
+          values.push({ sfId: r.Id, kpiSfId, period: year, value, target, comment: '' });
       }
-    return { objectives, kpis, values, links, warnings };
+    }
+
+    return { objectives, kpis, values, yearly, warnings };
   }
 
   private period(
@@ -304,6 +357,7 @@ export class SalesforceSyncService implements OnModuleInit {
     const raw = str(fieldValue(r, res.period));
     const mapped = (res.periodValues[raw] ?? raw).toUpperCase();
     if (/^Q[1-4]$/.test(mapped)) return `${year}-${mapped}`;
+    if (/^H[12]$/.test(mapped)) return `${year}-${mapped}`;
     const month = /^M(0[1-9]|1[0-2])$/.exec(mapped);
     if (month) return `${year}-${month[1]}`;
     if (mapped === 'YEAR' || (!raw && frequency === 'ANNUAL')) return year;
@@ -314,7 +368,7 @@ export class SalesforceSyncService implements OnModuleInit {
 
   private async diff(s: StoredSalesforceSettings) {
     const d = await this.load(s);
-    const [localObjectives, localKpis, processes] = await Promise.all([
+    const [localObjectives, localKpis, allObjectives] = await Promise.all([
       this.prisma.strategicObjective.findMany({
         where: { salesforceId: { in: [...d.objectives.keys()] }, deletedAt: null },
       }),
@@ -322,20 +376,21 @@ export class SalesforceSyncService implements OnModuleInit {
         where: { salesforceId: { in: [...d.kpis.keys()] }, object: { deletedAt: null } },
         include: {
           object: true,
-          objectives: { include: { objective: { select: { salesforceId: true } } } },
+          objectives: { where: { objective: { deletedAt: null } } },
           measurements: true,
+          periodTargets: true,
         },
       }),
-      this.prisma.process.findMany({
+      this.prisma.strategicObjective.findMany({
         where: { deletedAt: null },
-        select: { id: true, code: true },
+        select: { id: true, nameEn: true },
       }),
     ]);
+    const objectiveName = new Map(allObjectives.map((o) => [o.id, o.nameEn]));
     const preview: SalesforcePreviewDto = {
       objectives: { create: [], update: [], unchanged: 0 },
       kpis: { create: [], update: [], unchanged: 0 },
       measurements: { create: 0, update: 0, unchanged: 0, samples: [] },
-      processLinks: { create: 0, unknownProcesses: [] },
       warnings: d.warnings,
     };
     const changesOf = (before: Record<string, unknown>, after: Record<string, unknown>) => {
@@ -372,6 +427,13 @@ export class SalesforceSyncService implements OnModuleInit {
     }
 
     const kpiByS = new Map(localKpis.map((k) => [k.salesforceId!, k]));
+    /** Objective of a KPI as a name: a linked ProcessHub objective or one of the import. */
+    const desiredObjective = (ref: string | null) =>
+      !ref
+        ? null
+        : ref.startsWith(LOCAL)
+          ? (objectiveName.get(ref.slice(LOCAL.length)) ?? null)
+          : (d.objectives.get(ref)?.nameEn ?? null);
     const kpiChanges = new Map<string, Record<string, { from: unknown; to: unknown }>>();
     for (const k of d.kpis.values()) {
       const local = kpiByS.get(k.sfId);
@@ -383,7 +445,9 @@ export class SalesforceSyncService implements OnModuleInit {
         {
           ...local.object,
           ...local,
-          objective: local.objectives[0]?.objective.salesforceId ?? null,
+          objective: local.objectives[0]
+            ? (objectiveName.get(local.objectives[0].objectiveId) ?? null)
+            : null,
         },
         {
           code: k.code,
@@ -396,7 +460,8 @@ export class SalesforceSyncService implements OnModuleInit {
           frequency: k.frequency,
           target: k.target,
           status: k.status,
-          objective: s.mapping.objectives.source !== 'NONE' ? k.objectiveSfId : undefined,
+          objective:
+            s.mapping.objectives.source !== 'NONE' ? desiredObjective(k.objectiveSfId) : undefined,
         },
       );
       kpiChanges.set(k.sfId, changes);
@@ -428,33 +493,7 @@ export class SalesforceSyncService implements OnModuleInit {
       } else preview.measurements.unchanged++;
     }
 
-    const processByCode = new Map(processes.map((p) => [p.code, p.id]));
-    const existingLinks = new Set(
-      (
-        await this.prisma.objectLink.findMany({
-          where: {
-            relation: 'MEASURES',
-            bpmnElementId: PROCESS_ELEMENT_ID,
-            repoObjectId: { in: localKpis.map((k) => k.objectId) },
-          },
-          select: { processId: true, repoObjectId: true },
-        })
-      ).map((l) => `${l.repoObjectId}|${l.processId}`),
-    );
-    const linksToCreate: { kpiSfId: string; processId: string }[] = [];
-    for (const l of d.links) {
-      const processId = processByCode.get(l.processCode);
-      if (!processId) {
-        if (!preview.processLinks.unknownProcesses.includes(l.processCode))
-          preview.processLinks.unknownProcesses.push(l.processCode);
-        continue;
-      }
-      const local = kpiByS.get(l.kpiSfId);
-      if (local && existingLinks.has(`${local.objectId}|${processId}`)) continue;
-      linksToCreate.push({ kpiSfId: l.kpiSfId, processId });
-    }
-    preview.processLinks.create = linksToCreate.length;
-    return { d, preview, objByS, kpiByS, linksToCreate };
+    return { d, preview, objByS, kpiByS };
   }
 
   async preview(): Promise<SalesforcePreviewDto> {
@@ -469,8 +508,13 @@ export class SalesforceSyncService implements OnModuleInit {
 
   // ---------- Apply ----------
 
+  /**
+   * Manual runs are started by a user; scheduled runs by the system actor "Salesforce sync"
+   * (D-119). Both record the Super Admin who configured the link ("configured by") in the sync
+   * log and the audit entries; the configuring admin does not need to be active.
+   */
   async sync(
-    actor: AuthUser,
+    actor: AuthUser | null,
     meta: RequestMeta,
     trigger: 'MANUAL' | 'SCHEDULED' = 'MANUAL',
   ): Promise<SalesforceRunDto> {
@@ -480,11 +524,20 @@ export class SalesforceSyncService implements OnModuleInit {
       where: { status: 'RUNNING', startedAt: { gt: new Date(Date.now() - 30 * 60_000) } },
     });
     if (running) throw conflict('SYNC_RUNNING');
+    const configuredBy = await this.settings.configuredBy();
+    const userId = trigger === 'MANUAL' && actor ? actor.id : null;
+    const writer = userId ? actor! : SYSTEM_ACTOR;
+    const note = {
+      actor: userId ? undefined : SALESFORCE_SYSTEM_ACTOR,
+      configuredBy: configuredBy
+        ? { id: configuredBy.id, email: configuredBy.email, name: configuredBy.nameEn }
+        : null,
+    };
     const run = await this.prisma.salesforceSyncRun.create({
-      data: { trigger, userId: trigger === 'MANUAL' ? actor.id : null },
+      data: { trigger, userId, configuredById: configuredBy?.id ?? null },
     });
     try {
-      const counts = await this.apply(s, actor, meta);
+      const counts = await this.apply(s, writer, meta, note);
       await this.prisma.salesforceSyncRun.update({
         where: { id: run.id },
         data: {
@@ -498,8 +551,9 @@ export class SalesforceSyncService implements OnModuleInit {
         action: 'SYNC',
         entityType: 'Integration',
         entityId: 'salesforce',
-        userId: trigger === 'MANUAL' ? actor.id : null,
+        userId,
         summary: {
+          ...note,
           runId: run.id,
           trigger,
           status: 'SUCCESS',
@@ -518,8 +572,8 @@ export class SalesforceSyncService implements OnModuleInit {
         action: 'SYNC',
         entityType: 'Integration',
         entityId: 'salesforce',
-        userId: trigger === 'MANUAL' ? actor.id : null,
-        summary: { runId: run.id, trigger, status: 'FAILED', error: message },
+        userId,
+        summary: { ...note, runId: run.id, trigger, status: 'FAILED', error: message },
         meta,
       });
       await this.notifyFailure(message);
@@ -528,8 +582,13 @@ export class SalesforceSyncService implements OnModuleInit {
     return (await this.settings.toRunDtos([row]))[0];
   }
 
-  private async apply(s: StoredSalesforceSettings, actor: AuthUser, meta: RequestMeta) {
-    const { d, preview, objByS, kpiByS, linksToCreate } = await this.diff(s);
+  private async apply(
+    s: StoredSalesforceSettings,
+    actor: AuthUser,
+    meta: RequestMeta,
+    auditNote: Record<string, unknown>,
+  ) {
+    const { d, preview, objByS, kpiByS } = await this.diff(s);
     const counts = {
       objectivesCreated: 0,
       objectivesUpdated: 0,
@@ -537,7 +596,7 @@ export class SalesforceSyncService implements OnModuleInit {
       kpisUpdated: 0,
       valuesCreated: 0,
       valuesUpdated: 0,
-      linksCreated: 0,
+      targetsSet: 0,
     };
     const now = new Date();
 
@@ -555,11 +614,12 @@ export class SalesforceSyncService implements OnModuleInit {
       if (!local) {
         const created = await this.kpis.createObjective(input, actor, meta, {
           salesforceId: o.sfId,
+          auditNote,
         });
         objectiveIds.set(o.sfId, created.id);
         counts.objectivesCreated++;
       } else if (preview.objectives.update.some((u) => u.salesforceId === o.sfId)) {
-        await this.kpis.updateObjective(local.id, input, actor, meta, { sync: true });
+        await this.kpis.updateObjective(local.id, input, actor, meta, { sync: true, auditNote });
         counts.objectivesUpdated++;
       }
     }
@@ -574,7 +634,11 @@ export class SalesforceSyncService implements OnModuleInit {
       ]),
     );
     for (const x of d.kpis.values()) {
-      const objective = x.objectiveSfId ? objectiveIds.get(x.objectiveSfId) : undefined;
+      const objective = x.objectiveSfId?.startsWith(LOCAL)
+        ? x.objectiveSfId.slice(LOCAL.length)
+        : x.objectiveSfId
+          ? objectiveIds.get(x.objectiveSfId)
+          : undefined;
       const input = {
         code: x.code,
         nameEn: x.nameEn,
@@ -601,6 +665,7 @@ export class SalesforceSyncService implements OnModuleInit {
             },
             actor,
             meta,
+            { auditNote },
           )
         ).item.id;
         counts.kpisCreated++;
@@ -615,7 +680,10 @@ export class SalesforceSyncService implements OnModuleInit {
         if (x.frequency && x.frequency !== local.frequency && local.measurements.length)
           d.warnings.push({ record: x.sfId, code: 'FREQUENCY_HAS_VALUES' });
         if (changed) {
-          await this.kpis.update(id, { ...input, ...frequency }, actor, meta, { sync: true });
+          await this.kpis.update(id, { ...input, ...frequency }, actor, meta, {
+            sync: true,
+            auditNote,
+          });
           counts.kpisUpdated++;
         }
       }
@@ -633,6 +701,19 @@ export class SalesforceSyncService implements OnModuleInit {
     }
 
     // Actual values (and their per-period targets).
+    const withTarget = new Set<string>();
+    const setTarget = async (kpiId: string, period: string, target: number) => {
+      const before = await this.prisma.kpiPeriodTarget.findUnique({
+        where: { kpiId_period: { kpiId, period } },
+      });
+      if (before?.target === target) return;
+      await this.prisma.kpiPeriodTarget.upsert({
+        where: { kpiId_period: { kpiId, period } },
+        create: { kpiId, period, target },
+        update: { target },
+      });
+      counts.targetsSet++;
+    };
     for (const v of d.values) {
       const kpi = kpiIds.get(v.kpiSfId);
       if (!kpi || !isPeriod(v.period, kpi.frequency)) continue;
@@ -645,55 +726,50 @@ export class SalesforceSyncService implements OnModuleInit {
           { period: v.period, value: v.value, comment: v.comment },
           actor,
           meta,
-          {
-            source: 'SALESFORCE',
-            salesforceId: v.sfId,
-          },
+          { source: 'SALESFORCE', salesforceId: v.sfId, auditNote },
         );
         if (existing) counts.valuesUpdated++;
         else counts.valuesCreated++;
       }
-      if (v.target !== null)
-        await this.prisma.kpiPeriodTarget.upsert({
-          where: { kpiId_period: { kpiId: kpi.id, period: v.period } },
-          create: { kpiId: kpi.id, period: v.period, target: v.target },
-          update: { target: v.target },
-        });
+      if (v.target !== null) {
+        await setTarget(kpi.id, v.period, v.target);
+        withTarget.add(`${kpi.id}|${v.period}`);
+      }
     }
 
-    // KPI ↔ process links (whole process).
-    for (const l of linksToCreate) {
-      const kpi = kpiIds.get(l.kpiSfId);
-      if (!kpi) continue;
-      const created = await this.prisma.objectLink.createMany({
-        data: [
-          {
-            processId: l.processId,
-            bpmnElementId: PROCESS_ELEMENT_ID,
-            repoObjectId: kpi.id,
-            relation: 'MEASURES',
-            createdById: actor.id,
-          },
-        ],
-        skipDuplicates: true,
-      });
-      counts.linksCreated += created.count;
+    // Yearly targets: the target of the year's last period (Q4, H2, December or the year)
+    // unless a period result gives one.
+    for (const y of d.yearly) {
+      const kpi = kpiIds.get(y.kpiSfId);
+      if (!kpi || y.target === null) continue;
+      const last = periodOf(new Date(Date.UTC(Number(y.year), 11, 31)), kpi.frequency);
+      if (!withTarget.has(`${kpi.id}|${last}`)) await setTarget(kpi.id, last, y.target);
     }
     return { counts, warnings: d.warnings };
   }
 
+  /** Super Admins and the holders of kpi.sync (Performance Officers, D-118). */
   private async notifyFailure(message: string) {
-    const admins = await this.prisma.user.findMany({
+    const users = await this.prisma.user.findMany({
       where: {
         deletedAt: null,
         status: 'ACTIVE',
-        roles: { some: { role: { key: 'SUPER_ADMIN' } } },
+        roles: {
+          some: {
+            role: {
+              OR: [
+                { key: 'SUPER_ADMIN' },
+                { permissions: { some: { permission: { key: PERMISSIONS.KPI_SYNC } } } },
+              ],
+            },
+          },
+        },
       },
       select: { id: true },
     });
     await this.notifications.notify({
       type: 'KPI',
-      userIds: admins.map((a) => a.id),
+      userIds: users.map((a) => a.id),
       params: {
         kind: 'syncFailed',
         titleEn: 'Salesforce',
@@ -743,26 +819,9 @@ export class SalesforceSyncService implements OnModuleInit {
     const slot = SalesforceSyncService.slot(now, s.schedule, s.scheduleHour);
     if (!slot || (s.lastScheduledAt && new Date(s.lastScheduledAt) >= slot)) return null;
     await this.settings.markScheduled(now);
-    // Runs as the Super Admin who configured the link (audit trail of the written records).
-    const owner = await this.prisma.setting.findUnique({
-      where: { key: 'integrations.salesforce' },
-    });
-    const admin =
-      owner?.updatedById ??
-      (
-        await this.prisma.user.findFirst({
-          where: { deletedAt: null, roles: { some: { role: { key: 'SUPER_ADMIN' } } } },
-          select: { id: true },
-        })
-      )?.id;
-    if (!admin) return null;
-    const actor = {
-      id: admin,
-      email: 'salesforce-sync',
-      permissions: new Set([PERMISSIONS.KPI_EDIT]),
-    } as unknown as AuthUser;
+    // System actor "Salesforce sync", not a person (D-119).
     try {
-      return await this.sync(actor, { ip: null, userAgent: null }, 'SCHEDULED');
+      return await this.sync(null, { ip: null, userAgent: null }, 'SCHEDULED');
     } catch (err) {
       this.logger.error(`Scheduled Salesforce sync: ${(err as Error).message}`);
       return null;

@@ -1,24 +1,40 @@
 {
-  "totalSize": 4,
+  "totalSize": 5,
   "done": true,
   "records": [
     {
-      "attributes": { "type": "Org_Kpi_Process__c" },
+      "attributes": {
+        "type": "Org_Kpi_Process__c"
+      },
       "Id": "a0YFAKE000000003",
-      "Org_Kpi_Measure__r": { "Org_Kpi_Goal__c": "a0XFAKE000000002", "Measuring_Year__c": "2025" },
+      "Org_Kpi_Measure__r": {
+        "Org_Kpi_Goal__c": "a0XFAKE000000002",
+        "Measuring_Year__c": "2025"
+      },
       "Quarter__c": "Full Year",
       "Achieve_Value__c": 21,
       "Target_Value__c": 15,
-      "Notes__c": ""
+      "Notes__c": "",
+      "Approved__c": true,
+      "Causality__c": null,
+      "Corrective_Actions__c": null
     },
     {
-      "attributes": { "type": "Org_Kpi_Process__c" },
+      "attributes": {
+        "type": "Org_Kpi_Process__c"
+      },
       "Id": "a0YFAKE000000004",
-      "Org_Kpi_Measure__r": { "Org_Kpi_Goal__c": "a0XFAKE000000002", "Measuring_Year__c": "2025" },
+      "Org_Kpi_Measure__r": {
+        "Org_Kpi_Goal__c": "a0XFAKE000000002",
+        "Measuring_Year__c": "2025"
+      },
       "Quarter__c": "Q3",
       "Achieve_Value__c": 30,
       "Target_Value__c": 15,
-      "Notes__c": ""
+      "Notes__c": "",
+      "Approved__c": true,
+      "Causality__c": null,
+      "Corrective_Actions__c": null
     }
   ]
 }

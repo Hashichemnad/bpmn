@@ -41,6 +41,11 @@ export const salesforceMappingSchema = z.object({
     nameAr: apiName.default(''),
     descriptionEn: apiName.default(''),
     descriptionAr: apiName.default(''),
+    /**
+     * KPI_FIELD source: picklist value → an existing ProcessHub objective id (D-117). Values not
+     * linked here become new objectives on the next sync.
+     */
+    valueLinks: z.record(z.string().trim().max(200), z.guid()).default({}),
   }),
   kpis: z.object({
     object: objectName.default('Org_Kpi_Goal__c'),
@@ -60,6 +65,15 @@ export const salesforceMappingSchema = z.object({
     frequencyValues: valueMap,
     statusValues: valueMap,
   }),
+  /** Yearly target and achieved value per KPI (one row per KPI and measuring year). */
+  measures: z.object({
+    /** Empty: no yearly values. */
+    object: objectName.default('Org_Kpi_Measure__c'),
+    kpi: apiName.default('Org_Kpi_Goal__c'),
+    year: apiName.default('Measuring_Year__c'),
+    target: apiName.default('Total_Target_Value__c'),
+    value: apiName.default('Total_Achieve_Value__c'),
+  }),
   results: z.object({
     /** Empty: definitions only, no actual values. */
     object: objectName.default('Org_Kpi_Process__c'),
@@ -70,15 +84,13 @@ export const salesforceMappingSchema = z.object({
     value: apiName.default('Achieve_Value__c'),
     target: apiName.default('Target_Value__c'),
     comment: apiName.default('Notes__c'),
-    /** Salesforce period value → Q1…Q4, M01…M12 or YEAR. */
+    /** Causality and corrective actions become part of the measurement comment. */
+    causality: apiName.default('Causality__c'),
+    correctiveActions: apiName.default('Corrective_Actions__c'),
+    /** Only results with this checkbox set are imported (unless "include unapproved results"). */
+    approved: apiName.default('Approved__c'),
+    /** Salesforce period value → Q1…Q4, H1 / H2, M01…M12 or YEAR. */
     periodValues: valueMap,
-  }),
-  processMap: z.object({
-    /** Empty: no KPI ↔ process mapping. */
-    object: objectName.default(''),
-    kpi: apiName.default(''),
-    /** Field holding the ProcessHub process code (e.g. S.01.01). */
-    processCode: apiName.default(''),
   }),
 });
 export type SalesforceMapping = z.infer<typeof salesforceMappingSchema>;
@@ -95,15 +107,26 @@ export const DEFAULT_SALESFORCE_MAPPING: SalesforceMapping = salesforceMappingSc
     frequencyValues: {
       Monthly: 'MONTHLY',
       Quarterly: 'QUARTERLY',
+      'Semi-Annual': 'SEMI_ANNUAL',
+      'Half Year': 'SEMI_ANNUAL',
       Annual: 'ANNUAL',
       Yearly: 'ANNUAL',
     },
     statusValues: { Active: 'ACTIVE', Inactive: 'RETIRED' },
   },
   results: {
-    periodValues: { Q1: 'Q1', Q2: 'Q2', Q3: 'Q3', Q4: 'Q4', 'Full Year': 'YEAR', Annual: 'YEAR' },
+    periodValues: {
+      Q1: 'Q1',
+      Q2: 'Q2',
+      Q3: 'Q3',
+      Q4: 'Q4',
+      'First Half': 'H1',
+      'Second Half': 'H2',
+      'Full Year': 'YEAR',
+      Annual: 'YEAR',
+    },
   },
-  processMap: {},
+  measures: {},
 });
 
 /** https (plain http only reaches hosts in OUTBOUND_ALLOWED_HOSTS — test mocks — see SalesforceHttp). */
@@ -137,6 +160,8 @@ export const salesforceSettingsSchema = z.object({
   scheduleHour: z.number().int().min(0).max(23).default(2),
   /** Import actual values (results) as well as the definitions. */
   syncValues: z.boolean().default(true),
+  /** Also import period results not yet approved in Salesforce (off by default, D-117). */
+  includeUnapproved: z.boolean().default(false),
   mapping: salesforceMappingSchema.default(DEFAULT_SALESFORCE_MAPPING),
 });
 export type SalesforceSettingsInput = z.infer<typeof salesforceSettingsSchema>;
@@ -182,7 +207,6 @@ export interface SalesforcePreviewDto {
   objectives: { create: SalesforceChange[]; update: SalesforceChange[]; unchanged: number };
   kpis: { create: SalesforceChange[]; update: SalesforceChange[]; unchanged: number };
   measurements: { create: number; update: number; unchanged: number; samples: SalesforceChange[] };
-  processLinks: { create: number; unknownProcesses: string[] };
   /** Records that could not be mapped (unknown period, KPI not found, …). */
   warnings: { record: string; code: string; detail?: string }[];
 }
@@ -199,5 +223,11 @@ export interface SalesforceRunDto {
   counts: Record<string, number>;
   error: string | null;
   warnings: number;
+  /** Who started a manual run; null for scheduled runs (system actor "Salesforce sync", D-119). */
   user: UserRef | null;
+  /** The Super Admin who configured the link (settings saved last) at the time of the run. */
+  configuredBy: UserRef | null;
 }
+
+/** Name of the system actor of scheduled Salesforce syncs in the sync log and audit entries. */
+export const SALESFORCE_SYSTEM_ACTOR = 'Salesforce sync';

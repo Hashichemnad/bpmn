@@ -73,6 +73,7 @@
   "frequency": {
     "MONTHLY": "شهري",
     "QUARTERLY": "ربع سنوي",
+    "SEMI_ANNUAL": "نصف سنوي",
     "ANNUAL": "سنوي"
   },
   "dataSource": {
@@ -153,7 +154,8 @@
     "allObjectives": "كل الأهداف"
   },
   "period": {
-    "quarter": "الربع {{q}} {{year}}"
+    "quarter": "الربع {{q}} {{year}}",
+    "half": "النصف {{h}} {{year}}"
   },
   "process": {
     "title": "الأداء",
@@ -164,7 +166,8 @@
     "link": "ربط مؤشر…"
   },
   "portal": {
-    "title": "مؤشرات الأداء"
+    "title": "مؤشرات الأداء",
+    "updated": "آخر تحديث {{date}}"
   },
   "dashboard": {
     "title": "لوحة مؤشرات الأداء",

@@ -64,6 +64,8 @@ export function useFormatPeriod() {
         }).format(new Date(Date.UTC(Number(m[1]), Number(m[2]) - 1, 1)));
       const q = /^(\d{4})-Q([1-4])$/.exec(period);
       if (q) return t('kpi:period.quarter', { q: q[2], year: q[1] });
+      const h = /^(\d{4})-H([12])$/.exec(period);
+      if (h) return t('kpi:period.half', { h: h[2], year: h[1] });
       return period;
     },
     [locale, t],

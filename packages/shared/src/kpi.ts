@@ -12,7 +12,7 @@ import type { EaRef } from './ea';
 export const KPI_DIRECTIONS = ['HIGHER_IS_BETTER', 'LOWER_IS_BETTER'] as const;
 export type KpiDirection = (typeof KPI_DIRECTIONS)[number];
 
-export const KPI_FREQUENCIES = ['MONTHLY', 'QUARTERLY', 'ANNUAL'] as const;
+export const KPI_FREQUENCIES = ['MONTHLY', 'QUARTERLY', 'SEMI_ANNUAL', 'ANNUAL'] as const;
 export type KpiFrequency = (typeof KPI_FREQUENCIES)[number];
 
 export const KPI_DATA_SOURCES = ['MANUAL', 'EXCEL', 'SALESFORCE', 'CALCULATED'] as const;
@@ -50,21 +50,24 @@ export type KpiImportKind = (typeof KPI_IMPORT_KINDS)[number];
 
 const MONTH = /^(\d{4})-(0[1-9]|1[0-2])$/;
 const QUARTER = /^(\d{4})-Q([1-4])$/;
+const HALF = /^(\d{4})-H([12])$/;
 const YEAR = /^(\d{4})$/;
 
-/** Period key of a date: `2026-03` (monthly), `2026-Q1` (quarterly), `2026` (annual). */
+/** Period key of a date: `2026-03` (monthly), `2026-Q1` (quarterly), `2026-H1` (half year), `2026` (annual). */
 export function periodOf(date: Date, frequency: KpiFrequency): string {
   const y = date.getUTCFullYear();
   const m = date.getUTCMonth() + 1;
   if (frequency === 'MONTHLY') return `${y}-${String(m).padStart(2, '0')}`;
   if (frequency === 'QUARTERLY') return `${y}-Q${Math.ceil(m / 3)}`;
+  if (frequency === 'SEMI_ANNUAL') return `${y}-H${m <= 6 ? 1 : 2}`;
   return String(y);
 }
 
 export function isPeriod(period: string, frequency: KpiFrequency): boolean {
-  return (frequency === 'MONTHLY' ? MONTH : frequency === 'QUARTERLY' ? QUARTER : YEAR).test(
-    period,
-  );
+  const pattern = { MONTHLY: MONTH, QUARTERLY: QUARTER, SEMI_ANNUAL: HALF, ANNUAL: YEAR }[
+    frequency
+  ];
+  return pattern.test(period);
 }
 
 /** First day (UTC) of a period. */
@@ -73,6 +76,8 @@ export function periodStart(period: string): Date {
   if (m) return new Date(Date.UTC(Number(m[1]), Number(m[2]) - 1, 1));
   m = QUARTER.exec(period);
   if (m) return new Date(Date.UTC(Number(m[1]), (Number(m[2]) - 1) * 3, 1));
+  m = HALF.exec(period);
+  if (m) return new Date(Date.UTC(Number(m[1]), (Number(m[2]) - 1) * 6, 1));
   m = YEAR.exec(period);
   if (m) return new Date(Date.UTC(Number(m[1]), 0, 1));
   throw new Error(`Invalid period ${period}`);
@@ -81,7 +86,7 @@ export function periodStart(period: string): Date {
 /** The period `offset` periods after (negative: before) the given one. */
 export function shiftPeriod(period: string, frequency: KpiFrequency, offset: number): string {
   const d = periodStart(period);
-  const months = frequency === 'MONTHLY' ? 1 : frequency === 'QUARTERLY' ? 3 : 12;
+  const months = { MONTHLY: 1, QUARTERLY: 3, SEMI_ANNUAL: 6, ANNUAL: 12 }[frequency];
   return periodOf(
     new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth() + offset * months, 1)),
     frequency,
@@ -217,7 +222,7 @@ const num = z.number().finite().min(-1e12).max(1e12);
 const periodKey = z
   .string()
   .trim()
-  .regex(/^\d{4}(-(0[1-9]|1[0-2]|Q[1-4]))?$/, 'INVALID_PERIOD');
+  .regex(/^\d{4}(-(0[1-9]|1[0-2]|Q[1-4]|H[12]))?$/, 'INVALID_PERIOD');
 
 function requireName(v: { nameEn?: string; nameAr?: string }, ctx: z.RefinementCtx) {
   if (!v.nameEn && !v.nameAr)
@@ -413,7 +418,14 @@ export interface KpiDto extends KpiRef {
   capabilities: EaRef[];
   risks: EaRef[];
   /** Latest measurement (or the one of the `period` asked for) and its status. */
-  latest: { period: string; value: number; rag: KpiRag | null; target: number | null } | null;
+  latest: {
+    period: string;
+    value: number;
+    rag: KpiRag | null;
+    target: number | null;
+    /** When the value was last entered or synced. */
+    updatedAt: string;
+  } | null;
   /** Last up to 12 values, oldest first (sparklines). */
   trend: { period: string; value: number; rag: KpiRag | null }[];
   /** The last completed period has no value yet (manual / Excel KPIs). */

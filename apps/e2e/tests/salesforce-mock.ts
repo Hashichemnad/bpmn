@@ -14,8 +14,11 @@ const fixture = (name: string) =>
 
 export class SalesforceMock {
   private server?: Server;
+  /** Checkbox of the last query's `WHERE <field> = true` (applied to its next page too). */
+  private where: string | null = null;
   records: Record<string, Record<string, unknown>> = {
     Org_Kpi_Goal__c: fixture('Org_Kpi_Goal__c'),
+    Org_Kpi_Measure__c: fixture('Org_Kpi_Measure__c'),
     Org_Kpi_Process__c: fixture('Org_Kpi_Process__c'),
     page2: fixture('Org_Kpi_Process__c.page2'),
   };
@@ -41,13 +44,16 @@ export class SalesforceMock {
         return send(200, { ...fixture('token'), instance_url: this.url });
       if (req.method !== 'GET') return send(405, [{ message: 'read-only mock' }]);
       if (url.pathname.endsWith('/query')) {
-        const object = /FROM\s+(\w+)/i.exec(url.searchParams.get('q') ?? '')?.[1] ?? '';
+        const soql = url.searchParams.get('q') ?? '';
+        const object = /FROM\s+(\w+)/i.exec(soql)?.[1] ?? '';
         if (object === 'Organization') return send(200, { records: [{ Id: '00DFAKE0000000000' }] });
+        this.where = /WHERE\s+(\w+)\s*=\s*true/i.exec(soql)?.[1] ?? null;
         return this.records[object]
-          ? send(200, this.records[object])
+          ? send(200, this.filtered(this.records[object]))
           : send(400, [{ message: 'unknown object' }]);
       }
-      if (/\/query\/01gFAKE/.test(url.pathname)) return send(200, this.records.page2);
+      if (/\/query\/01gFAKE/.test(url.pathname))
+        return send(200, this.filtered(this.records.page2));
       if (url.pathname.endsWith('/describe'))
         return send(
           200,
@@ -60,6 +66,13 @@ export class SalesforceMock {
       return send(404, [{ message: 'not found' }]);
     });
     return new Promise<void>((resolve) => this.server!.listen(this.port, '0.0.0.0', resolve));
+  }
+
+  private filtered(body: Record<string, unknown>) {
+    const where = this.where;
+    if (!where) return body;
+    const records = (body.records as Record<string, unknown>[]).filter((r) => r[where] === true);
+    return { ...body, records };
   }
 
   stop() {

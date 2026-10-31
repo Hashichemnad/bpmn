@@ -183,7 +183,7 @@ export const routes: RouteObject[] = [
                   {
                     path: 'settings/salesforce',
                     element: (
-                      <RequirePermission all={[P.SETTINGS_MANAGE]}>
+                      <RequirePermission any={[P.SETTINGS_MANAGE, P.KPI_SYNC]}>
                         <SalesforceSettingsPage />
                       </RequirePermission>
                     ),

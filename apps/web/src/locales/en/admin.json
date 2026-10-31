@@ -9,7 +9,8 @@
     "VIEWER": "Viewer",
     "RISK_OFFICER": "Risk & Compliance Officer",
     "INTERNAL_AUDIT": "Internal Audit",
-    "ENTERPRISE_ARCHITECT": "Enterprise Architect"
+    "ENTERPRISE_ARCHITECT": "Enterprise Architect",
+    "PERFORMANCE_OFFICER": "Performance Officer"
   },
   "status": {
     "ACTIVE": "Active",
@@ -434,9 +435,7 @@
     "objectives": "Objectives",
     "kpis": "KPIs",
     "values": "Actual values",
-    "links": "KPI ↔ process mapping",
     "warnings": "Warnings",
-    "unknownProcesses": "Unknown process codes: {{codes}}",
     "mapping": "Field mapping",
     "mappingHint": "Salesforce API names; use “Load fields” to pick from the object.",
     "object": "Salesforce object",
@@ -452,7 +451,7 @@
       "directionValues": "Direction values",
       "frequencyValues": "Frequency values",
       "statusValues": "Status values",
-      "periodValues": "Period values (Q1…Q4, M01…M12, YEAR)"
+      "periodValues": "Period values (Q1…Q4, H1 / H2, M01…M12, YEAR)"
     },
     "fields": {
       "objectives": {
@@ -481,11 +480,16 @@
         "period": "Period",
         "value": "Actual value",
         "target": "Target",
-        "comment": "Comment"
+        "comment": "Comment",
+        "causality": "Causality",
+        "correctiveActions": "Corrective actions",
+        "approved": "Approved (checkbox)"
       },
-      "processMap": {
+      "measures": {
         "kpi": "KPI (record id path)",
-        "processCode": "Process code"
+        "year": "Year",
+        "target": "Yearly target",
+        "value": "Achieved value"
       }
     },
     "log": "Sync log",
@@ -502,6 +506,17 @@
       "FAILED": "Failed"
     },
     "result": "Result",
-    "by": "By"
+    "by": "By",
+    "measures": "Yearly target and achieved value",
+    "includeUnapproved": "Include results not yet approved",
+    "includeUnapprovedHint": "Off: only period results with the approval checkbox set are imported.",
+    "syncOnly": "Only a Super Admin changes the connection and mapping. You can preview and run the sync and review the sync log.",
+    "valueLinks": "Link picklist values to existing objectives",
+    "valueLinksHint": "Values not linked here become new objectives on the next sync.",
+    "picklistValue": "Salesforce value",
+    "objective": "Objective",
+    "addValueLink": "Link a value",
+    "systemActor": "Salesforce sync (system)",
+    "configuredBy": "Configured by"
   }
 }

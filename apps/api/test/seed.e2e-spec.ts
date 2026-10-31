@@ -63,6 +63,7 @@ describe('Seed (e2e)', () => {
       ['auditor@processhub.local', 'AUDITOR'],
       ['modeler@processhub.local', 'MODELER'],
       ['owner@processhub.local', 'PROCESS_OWNER'],
+      ['performance@processhub.local', 'PERFORMANCE_OFFICER'],
       ['reviewer@processhub.local', 'REVIEWER'],
       ['risk@processhub.local', 'RISK_OFFICER'],
       ['viewer@processhub.local', 'VIEWER'],

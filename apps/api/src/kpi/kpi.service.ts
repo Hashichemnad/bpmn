@@ -173,6 +173,7 @@ export function toKpiDto(o: KpiRow, now = new Date(), asOf?: string): KpiDto {
           value: latestRow.value,
           rag: rag(latestRow.period, latestRow.value),
           target: thresholdsFor(thresholds, latestRow.period, k.periodTargets).target,
+          updatedAt: latestRow.updatedAt.toISOString(),
         }
       : null,
     trend: measured.map((m) => ({ period: m.period, value: m.value, rag: rag(m.period, m.value) })),
@@ -570,7 +571,12 @@ export class KpiService {
     }
   }
 
-  async create(input: CreateKpiInput, actor: AuthUser, meta: RequestMeta) {
+  async create(
+    input: CreateKpiInput,
+    actor: AuthUser,
+    meta: RequestMeta,
+    opts: { auditNote?: Record<string, unknown> } = {},
+  ) {
     this.assertPeriods(input.frequency ?? 'MONTHLY', input);
     const id = await this.prisma.$transaction(async (tx) => {
       await this.assertRefs(tx, input);
@@ -591,11 +597,12 @@ export class KpiService {
       await this.replaceRelations(tx, o.id, input, actor.id);
       await this.audit.log(
         {
-          action: 'CREATE',
+          action: opts.auditNote ? 'SYNC' : 'CREATE',
           entityType: 'Kpi',
           entityId: o.id,
           userId: actor.id,
           summary: {
+            ...opts.auditNote,
             after: {
               code: o.code,
               nameEn: o.nameEn,
@@ -617,7 +624,7 @@ export class KpiService {
     input: UpdateKpiInput,
     actor: AuthUser,
     meta: RequestMeta,
-    opts: { sync?: boolean } = {},
+    opts: { sync?: boolean; auditNote?: Record<string, unknown> } = {},
   ) {
     const before = await this.find(id);
     if (!opts.sync)
@@ -666,6 +673,7 @@ export class KpiService {
           entityId: id,
           userId: actor.id,
           summary: {
+            ...opts.auditNote,
             changes: {
               ...diffFields(before, o, NAME_FIELDS),
               ...diffFields(before.kpi, k, KPI_FIELDS),
@@ -717,6 +725,7 @@ export class KpiService {
     opts: {
       source?: 'MANUAL' | 'EXCEL' | 'SALESFORCE' | 'CALCULATED';
       salesforceId?: string | null;
+      auditNote?: Record<string, unknown>;
     } = {},
   ) {
     const o = await this.find(id);
@@ -758,6 +767,7 @@ export class KpiService {
           entityId: m.id,
           userId: actor.id,
           summary: {
+            ...opts.auditNote,
             kpiId: id,
             code: o.code,
             period: input.period,
@@ -1074,7 +1084,7 @@ export class KpiService {
     input: CreateObjectiveInput,
     actor: AuthUser,
     meta: RequestMeta,
-    extra: { salesforceId?: string } = {},
+    extra: { salesforceId?: string; auditNote?: Record<string, unknown> } = {},
   ) {
     const created = await this.prisma.$transaction(async (tx) => {
       await this.assertObjectiveParent(tx, input.parentId);
@@ -1100,7 +1110,10 @@ export class KpiService {
           entityType: 'StrategicObjective',
           entityId: o.id,
           userId: actor.id,
-          summary: { after: { code: o.code, nameEn: o.nameEn, nameAr: o.nameAr } },
+          summary: {
+            ...extra.auditNote,
+            after: { code: o.code, nameEn: o.nameEn, nameAr: o.nameAr },
+          },
           meta,
         },
         tx,
@@ -1115,7 +1128,7 @@ export class KpiService {
     input: UpdateObjectiveInput,
     actor: AuthUser,
     meta: RequestMeta,
-    opts: { sync?: boolean } = {},
+    opts: { sync?: boolean; auditNote?: Record<string, unknown> } = {},
   ) {
     const before = await this.findObjective(id);
     return this.prisma.$transaction(async (tx) => {
@@ -1142,6 +1155,7 @@ export class KpiService {
           entityId: id,
           userId: actor.id,
           summary: {
+            ...opts.auditNote,
             changes: diffFields(before, after, [...NAME_FIELDS, 'parentId', 'sortOrder']),
           },
           meta,

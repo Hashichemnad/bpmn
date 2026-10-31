@@ -380,6 +380,66 @@ describe('KPIs (e2e)', () => {
         .sort(),
     ).toEqual(['CREATE', 'DELETE', 'EXPORT', 'EXPORT', 'EXPORT']);
   });
+  it('Performance Officer: defines all KPIs, objectives and targets and enters any value (D-118)', async () => {
+    await createUser(ctx.prisma, 'performance@test.local', ['PERFORMANCE_OFFICER']);
+    const po = await loggedIn(ctx.app, 'performance@test.local');
+    // A KPI defined by an Admin and owned by a Process Owner.
+    const id = (await kpi(admin).expect(201)).body.item.id;
+    const obj = (await po.post('/kpis/objectives').send({ nameEn: 'Strategy goal' }).expect(201))
+      .body;
+    await po.patch(`/kpis/objectives/${obj.id}`).send({ nameEn: 'Strategy goal 2030' }).expect(200);
+    const own = (
+      await kpi(po, {
+        code: 'KPI-PO',
+        ownerId: null,
+        objectiveIds: [obj.id],
+        periodTargets: [{ period: prev(1), target: 75 }],
+      }).expect(201)
+    ).body.item.id;
+    await po
+      .patch(`/kpis/${id}`)
+      .send({
+        target: 95,
+        objectiveIds: [obj.id],
+        periodTargets: [{ period: prev(2), target: 85 }],
+      })
+      .expect(200);
+    // Values of any KPI, not only their own.
+    await po
+      .put(`/kpis/${id}/measurements`)
+      .send({ period: prev(1), value: 91 })
+      .expect(200);
+    await po
+      .put(`/kpis/${own}/measurements`)
+      .send({ period: prev(1), value: 70 })
+      .expect(200);
+    await po.get('/kpis/template/measurements').expect(200);
+    // Process Owners still enter values only for the KPIs they own.
+    await owner
+      .put(`/kpis/${id}/measurements`)
+      .send({ period: prev(2), value: 80 })
+      .expect(200);
+    await owner
+      .put(`/kpis/${own}/measurements`)
+      .send({ period: prev(2), value: 1 })
+      .expect(403);
+    await owner.post('/kpis').send({ nameEn: 'x' }).expect(403);
+    const detail = (await po.get(`/kpis/${id}`).expect(200)).body.item;
+    expect(detail).toMatchObject({
+      target: 95,
+      objectives: [expect.objectContaining({ id: obj.id })],
+    });
+    // Nothing beyond performance management: no settings, users, architecture or GRC changes.
+    await po.patch('/settings').send({}).expect(403);
+    await po
+      .post('/users')
+      .send({ email: 'x@test.local', nameEn: 'X', roles: ['VIEWER'] })
+      .expect(403);
+    await po.post('/ea/applications').send({ code: 'A', nameEn: 'A' }).expect(403);
+    await po.post('/grc/risks').send({ nameEn: 'R' }).expect(403);
+    await po.post('/processes').send({ code: 'X.1', nameEn: 'X', category: 'CORE' }).expect(403);
+  });
+
   it('scorecard by objective with filters and as-of month, Excel; portal KPIs follow the setting', async () => {
     const so = (
       await admin.post('/kpis/objectives').send({ code: 'SO-1', nameEn: 'Top' }).expect(201)

@@ -18,7 +18,16 @@ import { createPublication, type StepSnapshot } from '../src/governance/publicat
 import { linearXml } from './demo-diagrams';
 
 const DEMO_USERS: {
-  key: 'viewer' | 'reviewer' | 'owner' | 'modeler' | 'auditor' | 'risk' | 'audit' | 'architect';
+  key:
+    | 'viewer'
+    | 'reviewer'
+    | 'owner'
+    | 'modeler'
+    | 'auditor'
+    | 'risk'
+    | 'audit'
+    | 'architect'
+    | 'performance';
   role: SystemRoleKey;
   nameEn: string;
   nameAr: string;
@@ -79,6 +88,13 @@ const DEMO_USERS: {
     nameEn: 'Ali Architect',
     nameAr: 'علي مهندس المؤسسة',
     department: 'IT',
+  },
+  {
+    key: 'performance',
+    role: 'PERFORMANCE_OFFICER',
+    nameEn: 'Perla Performance',
+    nameAr: 'بيرلا مسؤولة الأداء',
+    department: 'EXE',
   },
 ];
 
