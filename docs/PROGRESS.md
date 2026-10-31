@@ -104,9 +104,11 @@ this sandbox; CI runs both).
 ### Next (continue here)
 
 1. Review and merge the pull request `diagram-types` → `main`.
-2. Product owner confirmations (defaults chosen, see the pull request): diagrams use the process permissions (no
-   separate diagram roles, D-120); EPC and DMN checks are warnings, never blocking (D-123, D-124); whether the
-   enterprise value chain becomes the portal start page in production (Setting `portal.startDiagramId`, D-126).
+2. Product owner answers recorded (D-127): process permissions for diagrams and warning-only EPC / DMN checks
+   confirmed (mandatory checks via the conventions gate in BACKLOG); the value chain portal start page stays off in
+   production until the real value chain is published (DEPLOYMENT.md §6 step 10). CI fix after the first PR run:
+   the value chain / EPC e2e specs clicked the canvas within diagram-js's 400 ms ghost-click trap after a palette
+   create (fast CI runner) — they now end label editing with Enter.
 3. Then Phase 4.4 (Integration & export — BACKLOG), M15 migration, Phase 5; final performance / polish session last.
 
 ## Previous state — 2026-10-31 (Phase 4 — Part 3: EA, KPIs and the Salesforce KPI link, branch `phase-4-3-ea-kpi`, merged into `main`)

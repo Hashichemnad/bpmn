@@ -16,6 +16,10 @@ where they belong; move items into the plan when that phase starts.
 - EPC: round trip BPMN → EPC; process paths that call other EPCs; object links of information objects.
 - SIPOC: link items to library objects (documents, roles) by default; SIPOC from a value chain element.
 - Diagram-level AI translate EN↔AR of all labels (DMN: Translations panel; graph notations: labels per element).
+- Mandatory EPC / DMN checks (product owner, D-127): let Admins mark selected EPC syntax rules and DMN checks as
+  **mandatory before "Submit for review"**, reusing the Modeling conventions gate (D-088: Setting
+  `modeling.conventions` with `{ enabled, mandatory }` per rule, Administration → Modeling conventions,
+  `400 CONVENTIONS_NOT_MET` on submit, "Required" tag in the Validation panel). Today they are warnings only.
 
 ## Phase 4.4 — Integration & export (next)
 

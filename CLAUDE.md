@@ -43,7 +43,7 @@ with no per-user licensing. Target: 50–500 users on a single server.
 | 4.1 | M10 GRC core: risks, controls, requirements linked to process steps; heat maps, coverage dashboard, RCM export, reminders, AI control-gap check | ✅ Done (merged into `main`, D-089 – D-097) |
 | 4.2 | M10 assurance: approval of GRC changes, control testing, issues and actions, audits, questionnaires, assurance dashboard | ✅ Done (merged into `main`, D-098 – D-106) |
 | 4.3 | M11 EA (application catalogue, interfaces, data objects, capability map, traceability); M12 KPIs, dashboards + Salesforce KPI link | ✅ Done (merged into `main`, D-107 – D-119); the Salesforce KPI sync stays in the code but is not used (KPIs and risks are managed in ProcessHub) |
-| Diagrams | More diagram types (ARIS / GBTEC / Signavio parity, DOF RFP modeling items): shared diagram framework (Diagram entity, versions, governance, portal, links), value chain, organisation chart, DMN decision tables, EPC (+ conversion to BPMN), SIPOC | ✅ Done on branch `diagram-types` (D-120 – D-126), awaiting review / merge into `main` |
+| Diagrams | More diagram types (ARIS / GBTEC / Signavio parity, DOF RFP modeling items): shared diagram framework (Diagram entity, versions, governance, portal, links), value chain, organisation chart, DMN decision tables, EPC (+ conversion to BPMN), SIPOC | ✅ Done on branch `diagram-types` (D-120 – D-127), awaiting review / merge into `main` |
 | 4.4 | Integration & export: Oracle Fusion Risk Management overlay, Salesforce risk / other connectors, API keys, webhooks, Word/HTML/XPDL export | ⬜ (later phase, see BACKLOG) |
 | 5 | M13 Mining, M14 Execution, simulation | ⬜ |
 | Design A | Modeler design upgrade — Part A: look and feel (colour theme as BPMN-in-Color, renderer, colour picker, fonts/RTL, apply theme) | ✅ Done (merged into `main`, D-067 – D-073) |
@@ -229,7 +229,7 @@ Phase 4.3 additions (DECISIONS D-107 – D-119):
   `PERFORMANCE_OFFICER` with permission `kpi.sync`; scheduled syncs by the system actor "Salesforce sync" with
   `SalesforceSyncRun.configuredById`
 
-Diagram types additions (DECISIONS D-120 – D-126):
+Diagram types additions (DECISIONS D-120 – D-127):
 
 - `Diagram` (type `VALUE_CHAIN` | `ORG_CHART` | `DMN` | `EPC` | `SIPOC`, generated code, bilingual name /
   description, owner, department, optional parent `processId`, status + workflow + next review like processes,

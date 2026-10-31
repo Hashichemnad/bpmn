@@ -591,6 +591,9 @@ already the default; check them anyway if you changed the setup.
 - [ ] Daily backups with an off-site copy, and one restore tested (`docs/DEPLOYMENT.md` §7–8).
 - [ ] Settings → Risk & Compliance → Approval of changes **on** for risks and controls with the workflow
       "GRC change approval", and at least two Risk & Compliance Officers (DEPLOYMENT.md §6 step 9, D-106).
+- [ ] Settings → Knowledge Portal → Start page: empty until the real enterprise value chain is approved and
+      published, then set to it (DEPLOYMENT.md §6 step 10, D-127). A production install without demo data starts
+      with it off.
 
 ## 8. External penetration test checklist
 

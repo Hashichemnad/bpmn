@@ -157,4 +157,21 @@ describe('Seed (e2e)', () => {
     );
     expect(await ctx.prisma.process.count({ where: { code: 'S.01.03' } })).toBe(1);
   });
+
+  it('a production install without demo data has no value chain portal start page', async () => {
+    await resetDb(ctx.prisma);
+    const before = process.env.SEED_DEMO_DATA;
+    process.env.SEED_DEMO_DATA = 'false';
+    try {
+      await runSeed();
+    } finally {
+      process.env.SEED_DEMO_DATA = before;
+    }
+    expect(await ctx.prisma.diagram.count()).toBe(0);
+    // Switched on at go-live once the real value chain is published (DEPLOYMENT.md checklist).
+    const portal = await ctx.prisma.setting.findUnique({ where: { key: 'portal' } });
+    expect(
+      (portal?.value as { startDiagramId?: string | null } | undefined)?.startDiagramId ?? null,
+    ).toBeNull();
+  });
 });

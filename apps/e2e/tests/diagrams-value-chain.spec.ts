@@ -48,8 +48,6 @@ test('modeler creates a value chain generated from the process house', async ({ 
 });
 
 test('modeler edits the value chain and saves a version', async ({ page }) => {
-  // Stepped drags on the canvas are slow on a loaded CI runner.
-  test.setTimeout(60_000);
   await login(page, DEMO.modeler);
   await page.goto(`/diagrams/${diagramId}/edit`);
   const canvas = page.locator('.ph-ws-canvas');
@@ -62,9 +60,14 @@ test('modeler edits the value chain and saves a version', async ({ page }) => {
   await page.mouse.move(box.x + box.width - 160, box.y + box.height - 120, { steps: 5 });
   await page.mouse.click(box.x + box.width - 160, box.y + box.height - 120);
   await page.keyboard.type('Customer feedback');
-  await page.mouse.click(box.x + 20, box.y + 20);
+  // Enter ends the label editing; the new shape stays selected. (A click right after the drop
+  // would be swallowed by diagram-js's 400 ms ghost-click trap, and a click on the selected shape
+  // deselects it.)
+  await page.keyboard.press('Enter');
+  await expect(
+    canvas.locator('.djs-shape.selected', { hasText: 'Customer feedback' }),
+  ).toBeVisible();
   // Arabic label in the properties panel.
-  await canvas.locator('.djs-shape', { hasText: 'Customer feedback' }).click();
   await page.locator('input[data-field="nameAr"]').fill('ملاحظات العملاء');
   await page.locator('input[data-field="nameAr"]').press('Enter');
   await expect(page.getByText('Saved', { exact: true })).toBeVisible({ timeout: 15_000 });

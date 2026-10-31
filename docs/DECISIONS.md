@@ -1671,3 +1671,16 @@ Supersedes the "act as the Super Admin" rule of D-116.
   (from departments, roles with departments and job-role holders, published), DMN-001 approval authority
   (published) used by the business rule task of the new demo process S.01.02, EPC-001 with its conversion S.01.03,
   SIPOC-001 of S.01.01.
+
+## D-127 — Product owner answers on diagram types (Diagram types, 2026-10-31)
+
+- **Permissions**: diagrams use the **process permissions** (D-120) — confirmed. Diagrams are process
+  documentation, so one permission model; no separate diagram roles.
+- **EPC and DMN checks stay warnings** (D-123, D-124) — confirmed; they never block saving, submitting or
+  publishing. Follow-up in BACKLOG: Admins can make selected EPC / DMN checks mandatory before "Submit for review"
+  through the existing Modeling conventions gate (D-088).
+- **Value chain portal start page off by default in production**: Setting `portal.startDiagramId` defaults to
+  `null` and only the demo seed (`SEED_DEMO_DATA=true`) sets it to VC-001; the production stack ships
+  `SEED_DEMO_DATA=false`. It is switched on at go-live once the real enterprise value chain is approved and
+  published (DEPLOYMENT.md §6 step 10, SECURITY.md §7 checklist). Asserted in `seed.e2e-spec.ts` (a seed without
+  demo data creates no diagrams and no start page).

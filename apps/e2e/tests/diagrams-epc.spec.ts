@@ -77,7 +77,8 @@ test('modeler sees EPC syntax warnings and saves a valid version', async ({ page
   await page.mouse.move(box.x + box.width - 120, box.y + 80, { steps: 5 });
   await page.mouse.click(box.x + box.width - 120, box.y + 80);
   await page.keyboard.type('Loose step');
-  await page.mouse.click(box.x + 10, box.y + box.height - 10);
+  // Enter ends the label editing (a click right after the drop hits diagram-js's ghost-click trap).
+  await page.keyboard.press('Enter');
   await expect(page.getByTestId('epc-issues').locator('[data-code="UNCONNECTED"]')).toBeVisible();
   await page.getByTestId('epc-issues').locator('[data-code="UNCONNECTED"]').click();
   await page.keyboard.press('Delete');
