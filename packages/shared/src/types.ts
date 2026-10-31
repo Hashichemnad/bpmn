@@ -1,3 +1,4 @@
+import type { DiagramType } from './diagrams';
 import type { GrcReviewTaskDto } from './grc';
 import type { DiagramTheme } from './diagram-theme';
 import type {
@@ -523,6 +524,8 @@ export interface ContentRefDto {
   code?: string;
   /** Pages: the space, for links. */
   spaceId?: string;
+  /** Diagrams: the notation (value chain, org chart, DMN, EPC, SIPOC). */
+  diagramType?: DiagramType;
 }
 
 export interface GovernedItemDto extends ContentRefDto {
@@ -647,6 +650,14 @@ export type ReviewCompareDto =
       baseLabel: string | null;
       base: PageContentDto | null;
       next: PageContentDto;
+    }
+  | {
+      kind: 'DIAGRAM';
+      diagramType: DiagramType;
+      baseVersion: number | null;
+      baseLabel: string | null;
+      baseContent: string | null;
+      newContent: string;
     };
 
 export interface ReviewDetailDto extends ReviewSummaryDto {
@@ -829,6 +840,8 @@ export interface PortalItemDto {
   code?: string;
   category?: ProcessCategory;
   space?: { id: string; key: string; nameEn: string; nameAr: string; icon: SpaceIcon };
+  /** Diagrams: the notation. */
+  diagramType?: DiagramType;
   versionLabel: string | null;
   versionNumber: number;
   publishedAt: string;
@@ -842,7 +855,7 @@ export interface PortalHomeDto {
   quickLinks: PortalQuickLink[];
   featured: PortalItemDto[];
   recent: PortalItemDto[];
-  counts: { processes: number; pages: number };
+  counts: { processes: number; pages: number; diagrams: number };
   canManage: boolean;
 }
 

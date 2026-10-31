@@ -2,8 +2,11 @@ import type { Prisma } from '@prisma/client';
 import {
   extractBpmnElementIds,
   extractBpmnLabels,
+  diagramElementIds,
+  diagramText,
   type ApprovalRule,
   type ContentType,
+  type DiagramType,
 } from '@processhub/shared';
 import { htmlToText } from '../docs/rich-text';
 
@@ -91,6 +94,42 @@ export async function createPublication(
         links: {
           create: links.map((l) => ({
             bpmnElementId: l.bpmnElementId,
+            repoObjectId: l.repoObjectId,
+            relation: l.relation,
+          })),
+        },
+      },
+    });
+  }
+  if (input.type === 'DIAGRAM') {
+    const [d, v] = await Promise.all([
+      tx.diagram.findUniqueOrThrow({ where: { id: input.id } }),
+      tx.diagramVersion.findUniqueOrThrow({
+        where: { diagramId_versionNumber: { diagramId: input.id, versionNumber } },
+      }),
+    ]);
+    if (label) await tx.diagramVersion.update({ where: { id: v.id }, data: { label } });
+    const type = d.type as DiagramType;
+    const ids = [...diagramElementIds(type, v.content)];
+    const links = await tx.diagramLink.findMany({
+      where: { diagramId: input.id, elementId: { in: ids }, repoObject: { deletedAt: null } },
+    });
+    const text = diagramText(type, v.content);
+    await tx.diagram.update({ where: { id: input.id }, data: { nextReviewAt } });
+    return tx.publication.create({
+      data: {
+        ...common,
+        versionLabel: label || v.label,
+        code: d.code,
+        titleEn: d.nameEn,
+        titleAr: d.nameAr,
+        descriptionEn: d.descriptionEn,
+        descriptionAr: d.descriptionAr,
+        textEn: text.textEn,
+        textAr: text.textAr,
+        links: {
+          create: links.map((l) => ({
+            bpmnElementId: l.elementId,
             repoObjectId: l.repoObjectId,
             relation: l.relation,
           })),

@@ -58,7 +58,7 @@ export class GovernanceScheduler implements OnModuleInit, OnModuleDestroy {
     });
     const ids = (t: ContentType) => pubs.filter((p) => p.entityType === t).map((p) => p.entityId);
     const window = addDays(now, settings.reminderDays);
-    const [processes, pages] = await Promise.all([
+    const [processes, pages, diagrams] = await Promise.all([
       this.prisma.process.findMany({
         where: {
           id: { in: ids('PROCESS') },
@@ -77,6 +77,14 @@ export class GovernanceScheduler implements OnModuleInit, OnModuleDestroy {
         },
         include: { space: { select: { ownerId: true } } },
       }),
+      this.prisma.diagram.findMany({
+        where: {
+          id: { in: ids('DIAGRAM') },
+          deletedAt: null,
+          status: { not: 'ARCHIVED' },
+          nextReviewAt: { lte: window },
+        },
+      }),
     ]);
     const items = [
       ...processes.map((p) => ({
@@ -94,6 +102,14 @@ export class GovernanceScheduler implements OnModuleInit, OnModuleDestroy {
         at: p.nextReviewAt!,
         params: { titleEn: p.titleEn, titleAr: p.titleAr },
         link: itemLink({ type: 'PAGE', id: p.id, spaceId: p.spaceId }),
+      })),
+      ...diagrams.map((d) => ({
+        type: 'DIAGRAM' as const,
+        id: d.id,
+        ownerId: d.ownerId,
+        at: d.nextReviewAt!,
+        params: { titleEn: d.nameEn, titleAr: d.nameAr, code: d.code },
+        link: itemLink({ type: 'DIAGRAM', id: d.id }),
       })),
     ];
     for (const i of items) {
@@ -119,7 +135,9 @@ export class GovernanceScheduler implements OnModuleInit, OnModuleDestroy {
       const item =
         r.entityType === 'PROCESS'
           ? await this.prisma.process.findUnique({ where: { id: r.entityId } })
-          : await this.prisma.page.findUnique({ where: { id: r.entityId } });
+          : r.entityType === 'DIAGRAM'
+            ? await this.prisma.diagram.findUnique({ where: { id: r.entityId } })
+            : await this.prisma.page.findUnique({ where: { id: r.entityId } });
       if (!item) continue;
       const params: Record<string, string> =
         'code' in item

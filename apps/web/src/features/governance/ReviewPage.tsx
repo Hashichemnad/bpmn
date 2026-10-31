@@ -40,6 +40,8 @@ import { useLocale } from '@/app/LocaleProvider';
 import { PageHeader } from '@/components/PageHeader';
 import { ErrorState, LoadingState } from '@/components/states';
 import { useErrorMessage, useFormatDate, useLocalized } from '@/components/i18n-helpers';
+import { workspaceLink } from './links';
+import { DiagramCompare } from '@/features/diagrams/DiagramCompare';
 import { BpmnCompare } from '@/features/versions/BpmnCompare';
 import { DiagramCanvas } from '@/features/docs/EmbeddedDiagram';
 import { DiffStatsTags, PageDiffView } from '@/features/docs/PageDiffView';
@@ -65,9 +67,7 @@ const TASK_COLORS: Record<string, string> = {
 };
 
 function itemLink(r: ReviewDetailDto) {
-  return r.item.entityType === 'PROCESS'
-    ? `/processes/${r.item.entityId}`
-    : `/docs/${r.item.spaceId}/pages/${r.item.entityId}`;
+  return workspaceLink(r.item);
 }
 
 function PageCompare({
@@ -309,6 +309,14 @@ export function ReviewPage() {
               ) : (
                 <DiagramCanvas xml={r.compare.newXml} className="ph-review-canvas" />
               )
+            ) : r.compare.kind === 'DIAGRAM' ? (
+              <DiagramCompare
+                type={r.compare.diagramType}
+                baseContent={r.compare.baseContent}
+                newContent={r.compare.newContent}
+                baseTitle={baseTitle}
+                nextTitle={nextTitle}
+              />
             ) : (
               <PageCompare
                 base={r.compare.base}

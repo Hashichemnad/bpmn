@@ -13,6 +13,7 @@ import { DepartmentsModule } from './departments/departments.module';
 import { SettingsModule } from './settings/settings.module';
 import { ProcessesModule } from './processes/processes.module';
 import { ModelsModule } from './models/models.module';
+import { DiagramsModule } from './diagrams/diagrams.module';
 import { ObjectsModule } from './objects/objects.module';
 import { DictionaryModule } from './dictionary/dictionary.module';
 import { ReportsModule } from './reports/reports.module';
@@ -59,6 +60,7 @@ import { AllExceptionsFilter } from './common/http-exception.filter';
     SettingsModule,
     ProcessesModule,
     ModelsModule,
+    DiagramsModule,
     ObjectsModule,
     DictionaryModule,
     ReportsModule,

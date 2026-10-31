@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next';
 import type { PortalItemDto } from '@processhub/shared';
 import { CategoryTag } from '@/components/tags';
 import { useFormatDate, useLocalized } from '@/components/i18n-helpers';
+import { DiagramTypeIcon } from '@/features/diagrams/DiagramTypeIcon';
 import { portalItemLink } from './portal-links';
 
 /** Card of a published process or page. */
@@ -34,6 +35,13 @@ export function PortalItemCard({
           <>
             <PartitionOutlined style={{ color: '#1d4ed8' }} />
             {item.category && <CategoryTag category={item.category} />}
+          </>
+        ) : item.type === 'DIAGRAM' ? (
+          <>
+            <DiagramTypeIcon type={item.diagramType} />
+            {item.diagramType && (
+              <Tag bordered={false}>{t(`diagrams:type.${item.diagramType}`)}</Tag>
+            )}
           </>
         ) : (
           <>

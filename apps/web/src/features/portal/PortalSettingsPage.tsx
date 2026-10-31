@@ -20,6 +20,7 @@ import {
   PORTAL_MAX_FEATURED,
   PORTAL_MAX_QUICK_LINKS,
   SYSTEM_ROLE_KEYS,
+  type ContentType,
   type PortalPageNodeDto,
   type PortalSettingsInput,
 } from '@processhub/shared';
@@ -100,7 +101,7 @@ export function PortalSettingsPage() {
           roleKeys: v.access.roleKeys ?? [],
         },
         featured: (v.featured ?? []).map((f) => {
-          const [entityType, entityId] = f.split(':') as ['PROCESS' | 'PAGE', string];
+          const [entityType, entityId] = f.split(':') as [ContentType, string];
           return { entityType, entityId };
         }),
       });

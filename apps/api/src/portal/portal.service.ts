@@ -14,7 +14,11 @@ import {
   referencedAttachmentIds,
   reviewDateState,
   type ContentType,
+  type DiagramType,
   type InvolvementReason,
+  type PortalDiagramDto,
+  type PortalDiagramRefDto,
+  diagramRefs,
   type LinkRelation,
   type MyPortalDto,
   type MyPortalItemDto,
@@ -117,7 +121,7 @@ export class PortalService {
   private async visible(user: AuthUser, where: Prisma.PublicationWhereInput = {}) {
     const pubs = await this.access.publications(user, where);
     const ids = (t: ContentType) => pubs.filter((p) => p.entityType === t).map((p) => p.entityId);
-    const [processes, pages] = await Promise.all([
+    const [processes, pages, diagrams] = await Promise.all([
       this.prisma.process.findMany({
         where: { id: { in: ids('PROCESS') } },
         select: {
@@ -151,12 +155,17 @@ export class PortalService {
           },
         },
       }),
+      this.prisma.diagram.findMany({
+        where: { id: { in: ids('DIAGRAM') } },
+        select: { id: true, type: true, processId: true, ownerId: true, departmentId: true },
+      }),
     ]);
     return {
       pubs,
       byKey: new Map(pubs.map((p) => [key(p.entityType, p.entityId), p])),
       processes: new Map(processes.map((p) => [p.id, p])),
       pages: new Map(pages.map((p) => [p.id, p])),
+      diagrams: new Map(diagrams.map((d) => [d.id, d])),
     };
   }
 
@@ -177,6 +186,17 @@ export class PortalService {
         ...base,
         code: pub.code ?? undefined,
         category: p.category as ProcessCategory,
+        descriptionEn: excerpt(pub.descriptionEn),
+        descriptionAr: excerpt(pub.descriptionAr),
+      };
+    }
+    if (pub.entityType === 'DIAGRAM') {
+      const d = v.diagrams.get(pub.entityId);
+      if (!d) return null;
+      return {
+        ...base,
+        code: pub.code ?? undefined,
+        diagramType: d.type as DiagramType,
         descriptionEn: excerpt(pub.descriptionEn),
         descriptionAr: excerpt(pub.descriptionAr),
       };
@@ -231,7 +251,7 @@ export class PortalService {
       quickLinks: settings.quickLinks,
       featured: items(featured),
       recent: items(v.pubs.slice(0, 8)),
-      counts: { processes: v.processes.size, pages: v.pages.size },
+      counts: { processes: v.processes.size, pages: v.pages.size, diagrams: v.diagrams.size },
       canManage: user.permissions.has(PERMISSIONS.PORTAL_MANAGE),
     };
   }
@@ -372,6 +392,105 @@ export class PortalService {
     return v.pubs.map((p) => this.toItem(p, v)).filter((i): i is PortalItemDto => !!i);
   }
 
+  // ---------- Diagrams (value chain, org chart, DMN, EPC, SIPOC — D-120) ----------
+
+  /** Published diagrams, optionally of one type. */
+  async diagrams(user: AuthUser, type?: DiagramType): Promise<PortalItemDto[]> {
+    await this.access.assertAccess(user);
+    const v = await this.visible(user, { entityType: 'DIAGRAM' });
+    return v.pubs
+      .map((p) => this.toItem(p, v))
+      .filter((i): i is PortalItemDto => !!i && (!type || i.diagramType === type))
+      .sort((a, b) => (a.code ?? '').localeCompare(b.code ?? ''));
+  }
+
+  async diagram(id: string, user: AuthUser): Promise<PortalDiagramDto> {
+    await this.access.assertAccess(user);
+    const { pub, diagram } = await this.access.publicationOf('DIAGRAM', id, user);
+    const d = diagram!;
+    const type = d.type as DiagramType;
+    const hidden = portalHiddenTypes((await this.grcSettings.get()).portalVisibility);
+    const [version, department, links] = await Promise.all([
+      this.prisma.diagramVersion.findUnique({
+        where: { diagramId_versionNumber: { diagramId: id, versionNumber: pub.versionNumber } },
+        select: { content: true },
+      }),
+      d.departmentId
+        ? this.prisma.department.findUnique({
+            where: { id: d.departmentId },
+            select: { id: true, nameEn: true, nameAr: true },
+          })
+        : null,
+      this.prisma.publishedLink.findMany({
+        where: { publicationId: pub.id, repoObject: { deletedAt: null, type: { notIn: hidden } } },
+        include: {
+          repoObject: {
+            select: {
+              id: true,
+              type: true,
+              code: true,
+              nameEn: true,
+              nameAr: true,
+              descriptionEn: true,
+              descriptionAr: true,
+            },
+          },
+        },
+      }),
+    ]);
+    const content = version?.content ?? '';
+    const refs = diagramRefs(type, content);
+    const processIds = [...refs.processIds, ...(d.processId ? [d.processId] : [])];
+    const v = await this.visible(user, {
+      OR: [
+        { entityType: 'PROCESS', entityId: { in: processIds } },
+        { entityType: 'DIAGRAM', entityId: { in: refs.diagramIds } },
+      ],
+    });
+    const processRef = (pid: string) => {
+      const p = v.byKey.get(key('PROCESS', pid));
+      return p ? { id: pid, code: p.code ?? '', nameEn: p.titleEn, nameAr: p.titleAr } : null;
+    };
+    const drillDiagrams: PortalDiagramRefDto[] = refs.diagramIds.flatMap((did) => {
+      const p = v.byKey.get(key('DIAGRAM', did));
+      const row = v.diagrams.get(did);
+      return p && row
+        ? [
+            {
+              id: did,
+              type: row.type as DiagramType,
+              code: p.code ?? '',
+              nameEn: p.titleEn,
+              nameAr: p.titleAr,
+            },
+          ]
+        : [];
+    });
+    return {
+      id,
+      type,
+      code: d.code,
+      nameEn: pub.titleEn,
+      nameAr: pub.titleAr,
+      descriptionEn: pub.descriptionEn,
+      descriptionAr: pub.descriptionAr,
+      department,
+      process: d.processId ? processRef(d.processId) : null,
+      meta: await this.meta(pub, d.ownerId, d.nextReviewAt),
+      content,
+      links: links.map((l) => ({
+        elementId: l.bpmnElementId,
+        relation: l.relation as LinkRelation,
+        object: { ...l.repoObject, type: l.repoObject.type as ObjectType },
+      })),
+      drillProcesses: refs.processIds.flatMap((pid) => {
+        const r = processRef(pid);
+        return r ? [r] : [];
+      }),
+      drillDiagrams,
+    };
+  }
+
   // ---------- Documentation ----------
 
   async spaces(user: AuthUser): Promise<PortalSpaceDto[]> {
@@ -509,23 +628,30 @@ export class PortalService {
     if (!tsq) return empty;
     const v = await this.visible(user);
     const processIds =
-      q.type === 'pages' || q.spaceId
+      q.type === 'pages' || q.type === 'diagrams' || q.spaceId
         ? []
         : [...v.processes.values()]
             .filter((p) => !q.category || p.category === q.category)
             .map((p) => p.id);
     const pageIds =
-      q.type === 'processes' || q.category
+      q.type === 'processes' || q.type === 'diagrams' || q.category
         ? []
         : [...v.pages.values()]
             .filter((p) => !q.spaceId || p.spaceId === q.spaceId)
             .map((p) => p.id);
-    if (!processIds.length && !pageIds.length) return empty;
+    const diagramIds =
+      q.type === 'all' || q.type === 'diagrams'
+        ? q.spaceId || q.category
+          ? []
+          : [...v.diagrams.keys()]
+        : [];
+    if (!processIds.length && !pageIds.length && !diagramIds.length) return empty;
     const prefix = `${escapeLike(q.q.trim())}%`;
     const where = Prisma.sql`p."current"
       AND (p."searchVector" @@ query OR p."code" ILIKE ${prefix})
       AND ((p."entityType"::text = 'PROCESS' AND p."entityId" = ANY(${processIds}::uuid[]))
-        OR (p."entityType"::text = 'PAGE' AND p."entityId" = ANY(${pageIds}::uuid[])))`;
+        OR (p."entityType"::text = 'PAGE' AND p."entityId" = ANY(${pageIds}::uuid[]))
+        OR (p."entityType"::text = 'DIAGRAM' AND p."entityId" = ANY(${diagramIds}::uuid[])))`;
     const withQuery = Prisma.sql`WITH q AS (SELECT to_tsquery('english', ${tsq}) || to_tsquery('arabic', ${tsq}) AS query)`;
     const [rows, count] = await Promise.all([
       this.prisma.$queryRaw<

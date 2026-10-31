@@ -78,6 +78,7 @@ enum GitSyncStatus {
 enum ContentType {
   PROCESS
   PAGE
+  DIAGRAM
 }
 
 enum ReviewStatus {
@@ -232,6 +233,7 @@ model User {
   dataObjectsOwned  DataObject[]         @relation("DataObjectOwner")
   capabilitiesOwned Capability[]         @relation("CapabilityOwner")
   objectivesOwned   StrategicObjective[] @relation("ObjectiveOwner")
+  ownedDiagrams     Diagram[]            @relation("DiagramOwner")
 
   @@unique([ssoIssuer, ssoSubject])
   @@index([departmentId])
@@ -328,6 +330,7 @@ model Department {
   requirements Requirement[]
   applications Application[]
   kpis         Kpi[]
+  diagrams     Diagram[]
 
   @@index([parentId])
 }
@@ -369,6 +372,7 @@ model Process {
   pageLinks      PageLink[]
   capabilities   CapabilityProcess[]
   calculatedKpis Kpi[]               @relation("KpiCalculatedProcess")
+  diagrams       Diagram[]
 
   @@index([parentId, sortOrder])
   @@index([category])
@@ -427,10 +431,11 @@ model RepoObject {
   updatedById   String?      @db.Uuid
   deletedAt     DateTime?
 
-  links     ObjectLink[]
-  pageLinks PageLink[]
-  users     UserJobRole[]
-  published PublishedLink[]
+  links        ObjectLink[]
+  diagramLinks DiagramLink[]
+  pageLinks    PageLink[]
+  users        UserJobRole[]
+  published    PublishedLink[]
 
   /// Risk & Compliance details (one of them for RISK / CONTROL / REQUIREMENT objects, D-089).
   risk           Risk?
@@ -854,6 +859,7 @@ model Workflow {
   processes Process[]
   pages     Page[]
   spaces    Space[]
+  diagrams  Diagram[]
 }
 
 /// One review round of one version of a process or page.
@@ -1925,4 +1931,85 @@ model SalesforceSyncRun {
   configuredById String?   @db.Uuid
 
   @@index([startedAt])
+}
+
+// ---------- Diagram types (value chain, organisation chart, DMN, EPC, SIPOC — D-120) ----------
+
+enum DiagramType {
+  VALUE_CHAIN
+  ORG_CHART
+  DMN
+  EPC
+  SIPOC
+}
+
+/// A non-BPMN diagram. Content: DMN 1.3 XML for DMN, versioned JSON (packages/shared diagrams.ts) otherwise.
+model Diagram {
+  id                 String        @id @default(uuid()) @db.Uuid
+  type               DiagramType
+  code               String
+  nameEn             String        @default("")
+  nameAr             String        @default("")
+  descriptionEn      String        @default("")
+  descriptionAr      String        @default("")
+  status             ProcessStatus @default(DRAFT)
+  /// Parent process / process-house node (optional).
+  processId          String?       @db.Uuid
+  process            Process?      @relation(fields: [processId], references: [id], onDelete: SetNull)
+  ownerId            String?       @db.Uuid
+  owner              User?         @relation("DiagramOwner", fields: [ownerId], references: [id], onDelete: SetNull)
+  departmentId       String?       @db.Uuid
+  department         Department?   @relation(fields: [departmentId], references: [id], onDelete: SetNull)
+  sortOrder          Int           @default(0)
+  workflowId         String?       @db.Uuid
+  workflow           Workflow?     @relation(fields: [workflowId], references: [id], onDelete: SetNull)
+  nextReviewAt       DateTime?
+  aiGenerated        Boolean       @default(false)
+  /// Working content (autosaved draft); versions are explicit snapshots.
+  content            String
+  contentUpdatedAt   DateTime      @default(now())
+  contentUpdatedById String?       @db.Uuid
+  createdAt          DateTime      @default(now())
+  updatedAt          DateTime      @updatedAt
+  createdById        String?       @db.Uuid
+  updatedById        String?       @db.Uuid
+  deletedAt          DateTime?
+
+  versions DiagramVersion[]
+  links    DiagramLink[]
+
+  @@index([type])
+  @@index([processId])
+  @@index([code])
+}
+
+model DiagramVersion {
+  id            String   @id @default(uuid()) @db.Uuid
+  diagramId     String   @db.Uuid
+  diagram       Diagram  @relation(fields: [diagramId], references: [id], onDelete: Cascade)
+  versionNumber Int
+  content       String
+  changeNote    String
+  label         String?
+  restoredFrom  Int?
+  createdAt     DateTime @default(now())
+  createdById   String?  @db.Uuid
+
+  @@unique([diagramId, versionNumber])
+}
+
+/// Diagram element ↔ library object (role, IT system, term, risk, control, KPI …), like ObjectLink for BPMN.
+model DiagramLink {
+  id           String       @id @default(uuid()) @db.Uuid
+  diagramId    String       @db.Uuid
+  diagram      Diagram      @relation(fields: [diagramId], references: [id], onDelete: Cascade)
+  elementId    String
+  repoObjectId String       @db.Uuid
+  repoObject   RepoObject   @relation(fields: [repoObjectId], references: [id], onDelete: Cascade)
+  relation     LinkRelation
+  createdAt    DateTime     @default(now())
+  createdById  String?      @db.Uuid
+
+  @@unique([diagramId, elementId, repoObjectId, relation])
+  @@index([repoObjectId])
 }

@@ -53,12 +53,12 @@ import { TasksService } from './tasks.service';
 import { FeedbackService } from './feedback.service';
 import { GovernanceScheduler } from './scheduler.service';
 
-/** `processes` / `pages` in the URL. */
+const URL_TYPES = { processes: 'PROCESS', pages: 'PAGE', diagrams: 'DIAGRAM' } as const;
+
+/** `processes` / `pages` / `diagrams` in the URL. */
 export const ContentTypePipe = () =>
   new ZodPipe(
-    z
-      .enum(['processes', 'pages'])
-      .transform((v): ContentType => (v === 'processes' ? 'PROCESS' : 'PAGE')),
+    z.enum(['processes', 'pages', 'diagrams']).transform((v): ContentType => URL_TYPES[v]),
   );
 
 const READERS = [PERMISSIONS.PROCESSES_READ, PERMISSIONS.DOCS_READ] as const;

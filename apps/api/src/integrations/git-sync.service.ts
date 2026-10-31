@@ -72,6 +72,8 @@ export class GitSyncService implements OnModuleInit, OnModuleDestroy {
           : [];
       case 'content.published':
       case 'content.unpublished':
+        // Diagrams are not synced to Git in this phase (BACKLOG).
+        if (e.entityType === 'DIAGRAM') return [];
         return (e.entityType === 'PROCESS' ? s.syncProcesses : s.syncPages)
           ? [{ entityType: e.entityType, entityId: e.entityId }]
           : [];

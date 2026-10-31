@@ -3,6 +3,7 @@ import {
   type AiFeature,
   type AiStatusDto,
   type AiUsageStatus,
+  type ContentType,
   type SystemRoleKey,
 } from '@processhub/shared';
 import { PrismaService } from '../prisma/prisma.service';
@@ -31,7 +32,7 @@ export interface AiCallOptions<T> {
   /** Structured output: JSON schema for the provider and a validating parser. */
   output?: { schema: Record<string, unknown>; parse: (value: unknown) => T };
   /** The process or page the request is about (usage log and audit). */
-  entity?: { type: 'PROCESS' | 'PAGE'; id: string };
+  entity?: { type: ContentType; id: string };
   onText?: (delta: string) => void;
   onProgress?: (chars: number) => void;
   signal?: AbortSignal;

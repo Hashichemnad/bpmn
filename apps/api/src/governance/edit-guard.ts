@@ -9,7 +9,9 @@ async function statusOf(db: Client, type: ContentType, id: string): Promise<Cont
   const row =
     type === 'PROCESS'
       ? await db.process.findUnique({ where: { id }, select: { status: true } })
-      : await db.page.findUnique({ where: { id }, select: { status: true } });
+      : type === 'DIAGRAM'
+        ? await db.diagram.findUnique({ where: { id }, select: { status: true } })
+        : await db.page.findUnique({ where: { id }, select: { status: true } });
   return (row?.status as ContentStatus | undefined) ?? null;
 }
 
@@ -40,12 +42,11 @@ export async function markEdited(
 ): Promise<ContentStatus | null> {
   const status = await statusOf(db, type, id);
   if (status !== 'APPROVED' && status !== 'PUBLISHED') return status;
-  if (type === 'PROCESS') await db.process.update({ where: { id }, data: { status: 'DRAFT' } });
-  else await db.page.update({ where: { id }, data: { status: 'DRAFT' } });
+  await setItemStatus(db, type, [id], 'DRAFT');
   await db.auditLog.create({
     data: {
       action: 'UPDATE',
-      entityType: type === 'PROCESS' ? 'Process' : 'Page',
+      entityType: AUDIT_ENTITY[type],
       entityId: id,
       userId: actorId,
       summary: { status: { from: status, to: 'DRAFT' }, reason: 'edited' },
@@ -71,15 +72,22 @@ export async function withdrawReviewsOf(db: Client, type: ContentType, ids: stri
     where: { id: { in: reviewIds } },
     data: { status: 'WITHDRAWN', completedAt: new Date() },
   });
-  if (type === 'PROCESS') {
-    await db.process.updateMany({
-      where: { id: { in: ids }, status: 'IN_REVIEW' },
-      data: { status: 'DRAFT' },
-    });
-  } else {
-    await db.page.updateMany({
-      where: { id: { in: ids }, status: 'IN_REVIEW' },
-      data: { status: 'DRAFT' },
-    });
-  }
+  await setItemStatus(db, type, ids, 'DRAFT', 'IN_REVIEW');
+}
+
+/** Audit entity of each content type. */
+export const AUDIT_ENTITY = { PROCESS: 'Process', PAGE: 'Page', DIAGRAM: 'Diagram' } as const;
+
+/** Sets the lifecycle status of items of one type (only those currently in `from`, if given). */
+export async function setItemStatus(
+  db: Client,
+  type: ContentType,
+  ids: string[],
+  status: ContentStatus,
+  from?: ContentStatus,
+) {
+  const where = { id: { in: ids }, ...(from ? { status: from } : {}) };
+  if (type === 'PROCESS') await db.process.updateMany({ where, data: { status } });
+  else if (type === 'DIAGRAM') await db.diagram.updateMany({ where, data: { status } });
+  else await db.page.updateMany({ where, data: { status } });
 }

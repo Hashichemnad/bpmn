@@ -6,6 +6,7 @@ import { useFeedbackList } from '@/api/governance';
 import { PageHeader } from '@/components/PageHeader';
 import { ErrorState, LoadingState } from '@/components/states';
 import { useFormatDate, useLocalized } from '@/components/i18n-helpers';
+import { portalLink } from '@/features/governance/links';
 
 const STATUS_COLORS = { OPEN: 'blue', IN_PROGRESS: 'gold', DONE: 'green' } as const;
 
@@ -43,13 +44,7 @@ export function MyFeedbackPage() {
                       {t(`governance:feedback.status.${f.status}`)}
                     </Tag>
                     <Tag>{t(`governance:feedback.kind.${f.kind}`)}</Tag>
-                    <Link
-                      to={
-                        f.item.entityType === 'PROCESS'
-                          ? `/portal/processes/${f.item.entityId}`
-                          : `/portal/pages/${f.item.entityId}`
-                      }
-                    >
+                    <Link to={portalLink(f.item)}>
                       {f.item.code ? `${f.item.code} ` : ''}
                       {loc(f.item, 'title')}
                     </Link>

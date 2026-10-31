@@ -440,6 +440,9 @@ export const AUDIT_ENTITY_TYPES = [
   'Kpi',
   'KpiMeasurement',
   'StrategicObjective',
+  'Diagram',
+  'DiagramVersion',
+  'DiagramLink',
 ] as const;
 export type AuditEntityType = (typeof AUDIT_ENTITY_TYPES)[number];
 
@@ -592,7 +595,7 @@ export type GitErrorCode = (typeof GIT_ERROR_CODES)[number];
 // ---------- Governance (M8) ----------
 
 /** Items that go through the review workflow. */
-export const CONTENT_TYPES = ['PROCESS', 'PAGE'] as const;
+export const CONTENT_TYPES = ['PROCESS', 'PAGE', 'DIAGRAM'] as const;
 export type ContentType = (typeof CONTENT_TYPES)[number];
 
 /** Lifecycle of processes and pages (same values as PROCESS_STATUSES). */
@@ -699,7 +702,7 @@ export type FeedbackStatus = (typeof FEEDBACK_STATUSES)[number];
 export const INVOLVEMENT_REASONS = ['OWNER', 'DEPARTMENT', 'ROLE'] as const;
 export type InvolvementReason = (typeof INVOLVEMENT_REASONS)[number];
 
-export const PORTAL_SEARCH_TYPES = ['all', 'processes', 'pages'] as const;
+export const PORTAL_SEARCH_TYPES = ['all', 'processes', 'pages', 'diagrams'] as const;
 export type PortalSearchType = (typeof PORTAL_SEARCH_TYPES)[number];
 
 export const PORTAL_MAX_QUICK_LINKS = 12;

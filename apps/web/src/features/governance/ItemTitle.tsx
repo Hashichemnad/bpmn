@@ -5,6 +5,7 @@ import type { ContentRefDto } from '@processhub/shared';
 import { useLocalized } from '@/components/i18n-helpers';
 import { useTranslation } from 'react-i18next';
 import { workspaceLink } from './links';
+import { DiagramTypeIcon } from '@/features/diagrams/DiagramTypeIcon';
 
 /** Icon, code and title of a process or page, linking to it. */
 export function ItemTitle({ item, to }: { item: ContentRefDto; to?: string }) {
@@ -12,7 +13,13 @@ export function ItemTitle({ item, to }: { item: ContentRefDto; to?: string }) {
   const { t } = useTranslation();
   return (
     <Space size={6}>
-      {item.entityType === 'PROCESS' ? <PartitionOutlined /> : <FileTextOutlined />}
+      {item.entityType === 'PROCESS' ? (
+        <PartitionOutlined />
+      ) : item.entityType === 'DIAGRAM' ? (
+        <DiagramTypeIcon type={item.diagramType} />
+      ) : (
+        <FileTextOutlined />
+      )}
       <Link to={to ?? workspaceLink(item)}>
         {item.code && (
           <span dir="ltr" className="ph-title-code" style={{ marginInlineEnd: 6 }}>
