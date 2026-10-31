@@ -21,7 +21,8 @@ import type { ActivityMatchKind } from './matching';
 export const MINING_FILE_FORMATS = ['CSV', 'XLSX', 'XES'] as const;
 export type MiningFileFormat = (typeof MINING_FILE_FORMATS)[number];
 
-export const EVENT_LOG_SOURCES = ['FILE', 'PROCESSHUB'] as const;
+/** FILE: uploaded; PROCESSHUB: built from reviews; WORKFLOW: live log of an executable process (D-151). */
+export const EVENT_LOG_SOURCES = ['FILE', 'PROCESSHUB', 'WORKFLOW'] as const;
 export type EventLogSource = (typeof EVENT_LOG_SOURCES)[number];
 
 export const EVENT_LOG_STATUSES = ['DRAFT', 'IMPORTING', 'READY', 'FAILED', 'DELETING'] as const;

@@ -27,3 +27,4 @@ export * from './org-chart';
 export * from './epc';
 export * from './sipoc';
 export * from './mining';
+export * from './workflow';

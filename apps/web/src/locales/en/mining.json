@@ -13,7 +13,8 @@
   },
   "source": {
     "FILE": "Uploaded file",
-    "PROCESSHUB": "ProcessHub reviews"
+    "PROCESSHUB": "ProcessHub reviews",
+    "WORKFLOW": "Live cases (workflow)"
   },
   "units": {
     "s": "{{n}} s",

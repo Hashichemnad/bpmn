@@ -286,6 +286,16 @@ export async function createApp(): Promise<TestContext> {
 }
 
 const TABLES = [
+  'WorkflowJob',
+  'WorkflowCaseCounter',
+  'WorkflowCaseComment',
+  'WorkflowFile',
+  'WorkflowEvent',
+  'WorkflowTaskCandidate',
+  'WorkflowTask',
+  'WorkflowCase',
+  'WorkflowDefinition',
+  'WorkflowProcessConfig',
   'MiningFilterPreset',
   'MiningMappingTemplate',
   'MiningResultCache',

@@ -13,7 +13,8 @@
   },
   "source": {
     "FILE": "ملف مرفوع",
-    "PROCESSHUB": "مراجعات ProcessHub"
+    "PROCESSHUB": "مراجعات ProcessHub",
+    "WORKFLOW": "الحالات الفعلية (سير العمل)"
   },
   "units": {
     "s": "{{n}} ث",
