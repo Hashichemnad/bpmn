@@ -18,7 +18,7 @@ import { AuditService } from '../audit/audit.service';
 import { badRequest, forbidden, notFound } from '../common/app-exception';
 import type { AuthUser, RequestMeta } from '../common/auth-user';
 import { userRefSelect } from '../governance/content.service';
-import { canDesignWorkflow } from './workflow-access';
+import { canDeployWorkflow, canDesignWorkflow } from './workflow-access';
 import { WorkflowEventLogService } from './workflow-event-log.service';
 import { WorkflowTimersService } from './workflow-timers.service';
 
@@ -148,12 +148,14 @@ export class WorkflowConfigService {
       retentionDays: cfg?.retentionDays ?? null,
       eventLog: cfg?.eventLog ?? true,
       pseudonymiseLog: cfg?.pseudonymiseLog ?? false,
+      reminderMinutesBefore: cfg?.reminderMinutesBefore ?? null,
+      escalationDelayMinutes: cfg?.escalationDelayMinutes ?? null,
       publishedVersion: published?.versionNumber ?? null,
       activeDeployment: deployments.find((d) => d.active) ?? null,
       deployments,
       eventLogId: cfg?.eventLogId ?? null,
       canDesign,
-      canDeploy: canDesign && !!published,
+      canDeploy: canDeployWorkflow(user, p) && !!published,
     };
   }
 
@@ -166,6 +168,18 @@ export class WorkflowConfigService {
     const p = await this.process(processId);
     if (!canDesignWorkflow(user, p)) throw forbidden();
     const before = await this.prisma.workflowProcessConfig.findUnique({ where: { processId } });
+    // While a version is deployed, switching the process on / off and changing who may start it
+    // changes what is live for staff: deploy rights needed (D-154).
+    if (
+      before?.activeDefinitionId &&
+      !canDeployWorkflow(user, p) &&
+      (before.enabled !== input.enabled ||
+        before.startMode !== input.startMode ||
+        [...before.startRoles].sort().join() !== [...input.startRoles].sort().join() ||
+        [...before.startDepartmentIds].sort().join() !==
+          [...input.startDepartmentIds].sort().join())
+    )
+      throw forbidden('DEPLOY_RIGHTS_REQUIRED');
     const clash = await this.prisma.workflowProcessConfig.findFirst({
       where: { casePrefix: input.casePrefix, processId: { not: processId } },
       select: { processId: true },
@@ -182,6 +196,8 @@ export class WorkflowConfigService {
       retentionDays: input.retentionDays,
       eventLog: input.eventLog,
       pseudonymiseLog: input.pseudonymiseLog,
+      reminderMinutesBefore: input.reminderMinutesBefore,
+      escalationDelayMinutes: input.escalationDelayMinutes,
       updatedById: user.id,
     };
     await this.prisma.$transaction(async (tx) => {
@@ -334,7 +350,8 @@ export class WorkflowConfigService {
   /** Deploys the published version (blocking issues → 400 with the issue list). */
   async deploy(processId: string, user: AuthUser, meta: RequestMeta): Promise<WorkflowConfigDto> {
     const p = await this.process(processId);
-    if (!canDesignWorkflow(user, p)) throw forbidden();
+    // Process Owner of this process or workflow admins only (D-154).
+    if (!canDeployWorkflow(user, p)) throw forbidden('DEPLOY_RIGHTS_REQUIRED');
     const cfg = await this.prisma.workflowProcessConfig.findUnique({ where: { processId } });
     if (!cfg) throw badRequest('NOT_EXECUTABLE', 'Save the execution settings first');
     const v = await this.publishedVersion(processId);

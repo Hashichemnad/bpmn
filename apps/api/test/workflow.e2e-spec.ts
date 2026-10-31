@@ -1,5 +1,10 @@
 import { buildWorkflowBpmn } from '../prisma/workflow-bpmn';
 import { BUDGET_DMN, pmsProgramRequestXml } from '../prisma/workflow-demo';
+import {
+  BusinessCalendar,
+  DEFAULT_UAE_HOLIDAYS,
+  DEFAULT_WORKFLOW_SETTINGS,
+} from '@processhub/shared';
 import { WorkflowJobsService } from '../src/workflow/workflow-jobs.service';
 import { createApp, createUser, loggedIn, resetDb, type Client, type TestContext } from './helpers';
 
@@ -226,15 +231,40 @@ describe('Workflow execution (e2e)', () => {
       canDesign: true,
       publishedVersion: null,
     });
-    const notPub = await modeler
+    expect(saved.canDeploy).toBe(false);
+    const notPub = await deptHead
       .post(`/workflow/processes/${processId}/deploy`)
       .send({})
       .expect(400);
     expect(notPub.body.code).toBe('NOT_PUBLISHED');
     await publish(processId);
+    // Deploying makes the process live: the Process Owner of this process and workflow admins only
+    // (D-154). Modelers set it up but cannot deploy; another Process Owner cannot either.
+    expect(
+      (await modeler.get(`/workflow/processes/${processId}/config`).expect(200)).body.canDeploy,
+    ).toBe(false);
+    await modeler.post(`/workflow/processes/${processId}/deploy`).send({}).expect(403);
+    await viewerElsewhere.post(`/workflow/processes/${processId}/deploy`).send({}).expect(403);
+    await reviewer.post(`/workflow/processes/${processId}/deploy`).send({}).expect(403);
+    expect(
+      (await deptHead.get(`/workflow/processes/${processId}/config`).expect(200)).body.canDeploy,
+    ).toBe(true);
     const deployed = (
-      await modeler.post(`/workflow/processes/${processId}/deploy`).send({}).expect(200)
+      await deptHead.post(`/workflow/processes/${processId}/deploy`).send({}).expect(200)
     ).body;
+    // While deployed, a Modeler cannot switch it off or change who may start it, but can change the rest.
+    await modeler
+      .put(`/workflow/processes/${processId}/config`)
+      .send({ ...cfg, enabled: false })
+      .expect(403);
+    await modeler
+      .put(`/workflow/processes/${processId}/config`)
+      .send({ ...cfg, startMode: 'RESTRICTED', startRoles: ['REVIEWER'] })
+      .expect(403);
+    await modeler
+      .put(`/workflow/processes/${processId}/config`)
+      .send({ ...cfg, allowWithdraw: true })
+      .expect(200);
     expect(deployed.activeDeployment).toMatchObject({ versionNumber: 1, active: true });
     expect(deployed.eventLogId).toBeTruthy();
     const audit = await ctx.prisma.auditLog.findFirst({ where: { action: 'DEPLOY' } });
@@ -549,8 +579,10 @@ describe('Workflow execution (e2e)', () => {
     );
     await saveModel(processId, xml2);
     await publish(processId);
-    const cfg = (await modeler.post(`/workflow/processes/${processId}/deploy`).send({}).expect(200))
-      .body;
+    await modeler.post(`/workflow/processes/${processId}/deploy`).send({}).expect(403);
+    const cfg = (
+      await deptHead.post(`/workflow/processes/${processId}/deploy`).send({}).expect(200)
+    ).body;
     expect(cfg.activeDeployment.versionNumber).toBeGreaterThan(1);
     expect(
       cfg.deployments.find((d: { active: boolean }) => !d.active).runningCases,
@@ -629,7 +661,9 @@ describe('Workflow execution (e2e)', () => {
         pseudonymiseLog: false,
       })
       .expect(200);
-    await modeler.post(`/workflow/processes/${pid}/deploy`).send({}).expect(200);
+    // A process without an owner: workflow admins deploy it.
+    await modeler.post(`/workflow/processes/${pid}/deploy`).send({}).expect(403);
+    await admin.post(`/workflow/processes/${pid}/deploy`).send({}).expect(200);
     const c = (
       await requester.post(`/workflow/catalogue/${pid}/start`).send({ data: {} }).expect(201)
     ).body;
@@ -662,6 +696,112 @@ describe('Workflow execution (e2e)', () => {
     await jobs.runDue(later);
     const tasks = await ctx.prisma.workflowTask.findMany({ where: { caseId: c.id } });
     expect(tasks).toEqual([expect.objectContaining({ elementId: 'T', status: 'OPEN' })]);
+  });
+
+  it('escalation: manager, department-head and group fallbacks to the process owner; per-process delays', async () => {
+    const dg = await ctx.prisma.user.findUniqueOrThrow({ where: { email: 'dgo@test.local' } });
+    const head = await ctx.prisma.user.findUniqueOrThrow({ where: { email: 'head@test.local' } });
+    const before = await ctx.prisma.process.findUniqueOrThrow({ where: { id: processId } });
+    // A process owner who is not in the approval chain, so the fallbacks are visible.
+    await ctx.prisma.process.update({ where: { id: processId }, data: { ownerId: dg.id } });
+    const cfg = (await admin.get(`/workflow/processes/${processId}/config`).expect(200)).body;
+    const {
+      processId: _p,
+      code: _c,
+      nameEn: _n,
+      nameAr: _a,
+      publishedVersion: _v,
+      activeDeployment: _d,
+      deployments: _ds,
+      eventLogId: _e,
+      canDesign: _cd,
+      canDeploy: _cdp,
+      ...input
+    } = cfg;
+    await admin
+      .put(`/workflow/processes/${processId}/config`)
+      .send({ ...input, reminderMinutesBefore: 60, escalationDelayMinutes: 120 })
+      .expect(200);
+    const c = (
+      await requester
+        .post(`/workflow/catalogue/${processId}/start`)
+        .send({
+          data: {
+            programName: 'Escalate',
+            programType: 'digital',
+            estimatedBudget: 5,
+            requestingDepartment: ids.strategyId,
+            justification: 'x',
+          },
+        })
+        .expect(201)
+    ).body;
+    const calendar = new BusinessCalendar(
+      DEFAULT_WORKFLOW_SETTINGS.calendar,
+      DEFAULT_UAE_HOLIDAYS.map((h) => h.date),
+    );
+    const sectionTask = await ctx.prisma.workflowTask.findFirstOrThrow({
+      where: { caseId: c.id, elementId: 'SectionReview' },
+    });
+    const jobOf = (kind: string, tokenId: string) =>
+      ctx.prisma.workflowJob.findFirstOrThrow({
+        where: { caseId: c.id, tokenId, kind, status: 'PENDING' },
+      });
+    const remind = await jobOf('REMINDER', sectionTask.tokenId);
+    const escalate = await jobOf('ESCALATE', sectionTask.tokenId);
+    expect(calendar.workingMinutesBetween(remind.dueAt, sectionTask.dueAt!)).toBe(60);
+    expect(calendar.workingMinutesBetween(sectionTask.dueAt!, escalate.dueAt)).toBe(120);
+    const decideTask = async (cl: Client, id: string) => {
+      const t = (await cl.get(`/workflow/tasks/${id}`).expect(200)).body;
+      await cl
+        .post(`/workflow/tasks/${id}/complete`)
+        .send({ data: {}, decision: 'APPROVE', comment: '', version: t.version })
+        .expect(200);
+    };
+    const later = () => new Date(Date.now() + 60 * 86_400_000);
+    const escalatedTo = async (step: string) =>
+      (
+        await ctx.prisma.notification.findMany({
+          where: { type: 'WORKFLOW', params: { path: ['kind'], equals: 'escalated' } },
+        })
+      )
+        .filter(
+          (n) =>
+            (n.params as { code?: string; stepEn?: string }).code === c.number &&
+            (n.params as { stepEn?: string }).stepEn === step,
+        )
+        .map((n) => n.userId)
+        .sort();
+    // 1. The section manager's task escalates to their department head.
+    await jobs.runDue(later);
+    expect(await escalatedTo('Section manager review')).toEqual([head.id]);
+    // 2. The department head is the assignee: no manager above → the process owner.
+    await decideTask(section, sectionTask.id);
+    await jobs.runDue(later);
+    expect(await escalatedTo('Department manager approval')).toEqual([dg.id]);
+    // 3. An unclaimed group task (PMO) → the process owner.
+    await decideTask(
+      deptHead,
+      (
+        await ctx.prisma.workflowTask.findFirstOrThrow({
+          where: { caseId: c.id, elementId: 'DeptApproval' },
+        })
+      ).id,
+    );
+    const pmo = await ctx.prisma.workflowTask.findFirstOrThrow({
+      where: { caseId: c.id, elementId: 'PmoReview' },
+    });
+    expect(pmo.assigneeId).toBeNull();
+    await jobs.runDue(later);
+    expect(await escalatedTo('PMO review')).toEqual([dg.id]);
+    await ctx.prisma.process.update({
+      where: { id: processId },
+      data: { ownerId: before.ownerId },
+    });
+    await admin
+      .put(`/workflow/processes/${processId}/config`)
+      .send({ ...input, reminderMinutesBefore: null, escalationDelayMinutes: null })
+      .expect(200);
   });
 
   it('monitor, dashboard and Excel export respect the monitor scope', async () => {

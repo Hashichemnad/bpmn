@@ -13,6 +13,7 @@ interface Values {
   timeZone: string;
   reminderHours: number;
   escalation: WorkflowSettings['escalation'];
+  escalationDelayHours: number;
   escalationRepeatHours: number;
 }
 
@@ -37,6 +38,7 @@ export function WorkflowSettingsPage() {
         timeZone: s.calendar.timeZone,
         reminderHours: Math.round((s.reminderMinutesBefore / 60) * 100) / 100,
         escalation: s.escalation,
+        escalationDelayHours: Math.round((s.escalationDelayMinutes / 60) * 100) / 100,
         escalationRepeatHours: s.escalationRepeatHours,
       });
   }, [settings.data, form]);
@@ -52,6 +54,7 @@ export function WorkflowSettingsPage() {
         },
         reminderMinutesBefore: Math.round(v.reminderHours * 60),
         escalation: v.escalation,
+        escalationDelayMinutes: Math.round((v.escalationDelayHours ?? 0) * 60),
         escalationRepeatHours: v.escalationRepeatHours,
       });
       message.success(t('workflow:settings.saved'));
@@ -112,6 +115,18 @@ export function WorkflowSettingsPage() {
                 value: x,
                 label: t(`workflow:escalation.${x}`),
               }))}
+            />
+          </Form.Item>
+          <Form.Item
+            name="escalationDelayHours"
+            label={t('workflow:settings.escalationDelay')}
+            extra={t('workflow:settings.escalationDelayHint')}
+          >
+            <InputNumber
+              min={0}
+              max={168}
+              step={0.5}
+              addonAfter={t('workflow:settings.workingHours')}
             />
           </Form.Item>
           <Form.Item

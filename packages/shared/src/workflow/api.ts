@@ -82,6 +82,8 @@ export const workflowSettingsSchema = z.object({
   reminderMinutesBefore: z.number().int().min(0).max(10_080).default(240),
   /** Default escalation target of overdue tasks (a step can override it). */
   escalation: z.enum(['NONE', 'MANAGER', 'OWNER', 'BOTH']).default('MANAGER'),
+  /** Escalate this many working minutes after the due time (0 = at the due time). */
+  escalationDelayMinutes: z.number().int().min(0).max(10_080).default(0),
   /** Repeat the escalation every N working hours while overdue (0 = once). */
   escalationRepeatHours: z.number().int().min(0).max(720).default(0),
 });
@@ -111,6 +113,10 @@ export const workflowConfigInputSchema = z.object({
   /** Live event log (Phase 5.1) fed by the cases; pseudonymise performers. */
   eventLog: z.boolean().default(true),
   pseudonymiseLog: z.boolean().default(false),
+  /** Reminder this many working minutes before due (null = workflow settings). D-154. */
+  reminderMinutesBefore: z.number().int().min(0).max(10_080).nullable().default(null),
+  /** Escalate this many working minutes after due (null = workflow settings). D-154. */
+  escalationDelayMinutes: z.number().int().min(0).max(10_080).nullable().default(null),
 });
 export type WorkflowConfigInput = z.infer<typeof workflowConfigInputSchema>;
 

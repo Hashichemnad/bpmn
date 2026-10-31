@@ -75,11 +75,17 @@ stand-in (s3rver) — no Docker daemon in this sandbox; lint, format, type-check
 --prod` clean (9 moderate, as before). **Not verified here:** Docker image builds and the full Playwright suite in
 Docker (CI runs both).
 
+Product owner answers (D-154), implemented afterwards: deploy only by the process's own Process Owner and workflow
+admins (Modelers set up, cannot deploy or switch a deployed process off / change its start rights); escalation
+fallbacks to the process owner (unclaimed group task, assignee without a manager or who is the department head);
+reminder and escalation delays per process (migration `20261031140000_workflow_delays`); seed test asserts no
+workflow demo users without `SEED_DEMO_DATA=true`; Portal → My tasks keeps its tab order and opens
+`?tab=workflow` (fixed the questionnaire e2e test). API `workflow.e2e-spec.ts` 21 tests.
+
 ### Next (continue here)
 
 1. Review and merge the pull request `phase-5-2-workflow-execution` → `main` (CI: lint/test, e2e, Docker).
-2. Product owner decisions listed in the pull request (role mapping of `workflow.*`, retention, escalation default).
-3. Then Phase 4.4 (integrations, incl. REST service tasks), M15 migration; final performance / polish session.
+2. Then Phase 4.4 (integrations, incl. REST service tasks), M15 migration; final performance / polish session.
 
 ## Previous state — 2026-10-31 (Phase 5 — Part 1: Process mining and simulation, branch `phase-5-1-mining-simulation`, done — awaiting review)
 

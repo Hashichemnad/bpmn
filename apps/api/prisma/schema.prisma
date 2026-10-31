@@ -2295,26 +2295,29 @@ enum WorkflowJobStatus {
 
 /// Operational execution settings of a process (not versioned, D-147).
 model WorkflowProcessConfig {
-  processId          String   @id @db.Uuid
-  process            Process  @relation(fields: [processId], references: [id], onDelete: Cascade)
-  enabled            Boolean  @default(false)
-  casePrefix         String
+  processId              String   @id @db.Uuid
+  process                Process  @relation(fields: [processId], references: [id], onDelete: Cascade)
+  enabled                Boolean  @default(false)
+  casePrefix             String
   /// ALL | RESTRICTED (startRoles / startDepartmentIds)
-  startMode          String   @default("ALL")
-  startRoles         String[] @default([])
-  startDepartmentIds String[] @default([]) @db.Uuid
-  allowWithdraw      Boolean  @default(true)
-  monitorUserIds     String[] @default([]) @db.Uuid
+  startMode              String   @default("ALL")
+  startRoles             String[] @default([])
+  startDepartmentIds     String[] @default([]) @db.Uuid
+  allowWithdraw          Boolean  @default(true)
+  monitorUserIds         String[] @default([]) @db.Uuid
   /// Days after closing a case before its form data and files are removed (null = keep).
-  retentionDays      Int?
-  eventLog           Boolean  @default(true)
-  pseudonymiseLog    Boolean  @default(false)
-  eventLogId         String?  @db.Uuid
-  activeDefinitionId String?  @db.Uuid
-  createdAt          DateTime @default(now())
-  updatedAt          DateTime @updatedAt
-  createdById        String?  @db.Uuid
-  updatedById        String?  @db.Uuid
+  retentionDays          Int?
+  eventLog               Boolean  @default(true)
+  pseudonymiseLog        Boolean  @default(false)
+  /// Reminder / escalation delays in working minutes (null = Setting `workflow`), D-154.
+  reminderMinutesBefore  Int?
+  escalationDelayMinutes Int?
+  eventLogId             String?  @db.Uuid
+  activeDefinitionId     String?  @db.Uuid
+  createdAt              DateTime @default(now())
+  updatedAt              DateTime @updatedAt
+  createdById            String?  @db.Uuid
+  updatedById            String?  @db.Uuid
 }
 
 /// A deployment: the published process version, its parsed model and the DMN decisions it uses.

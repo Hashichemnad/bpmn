@@ -2121,3 +2121,26 @@ A few hundred completions per hour are far below what one API instance handles (
 dashboard is the only heavier query (working-time calculation in JavaScript per completed case) and stays under a
 second. No change needed for the target; with much larger volumes the dashboard would move to a materialised
 summary (BACKLOG).
+
+## D-154 — Product owner answers on workflow execution (Phase 5.2, 2026-10-31)
+
+1. **Permissions (D-149, changed):** Viewers may start requests (each process's start rights still limit the
+   catalogue) and Auditors are read-only monitors — confirmed. **Deployment** makes a process live for staff, so it
+   belongs to the **Process Owner of that process** (with `workflow.design`) and **workflow admins** only
+   (`canDeployWorkflow`). Modelers keep `workflow.design`: they make processes executable and set up forms,
+   assignments and conditions, but cannot deploy. While a version is deployed, switching the process on / off and
+   changing its start rights also need deploy rights (they change what is live). API tests: modeler, reviewer and
+   another Process Owner get 403 on deploy; the owner and an admin deploy; a modeler cannot switch a deployed
+   process off or change its start rights but can change its other settings.
+2. **Form data retention:** keep by default; a period per process is set at go-live (DEPLOYMENT step 12, SECURITY
+   §7) — confirmed, no change.
+3. **Reminders and escalation:** reminder 4 working hours before due, then escalation to the assignee's manager —
+   confirmed. Gaps closed: an **unclaimed group task** escalates to the **process owner**; an assignee **without a
+   manager or who is the department head** escalates to the **process owner**; nobody is escalated to themselves.
+   Both delays are **configurable per process** (process page → Execution: reminder before due, escalation after
+   due, in working hours; empty = Settings → Workflow execution, which gains "escalate after the due time by",
+   default 0). Columns `WorkflowProcessConfig.reminderMinutesBefore` / `escalationDelayMinutes` (migration
+   `20261031140000_workflow_delays`). API test: job times in working minutes and the three escalation recipients.
+4. **Demo approval users** (`section@`, `pmo@`, `finance@`, `dgo@`, `hr@` with the Reviewer role) are created only
+   by the workflow demo seed, which runs only with `SEED_DEMO_DATA=true`; the seed test asserts that an install
+   without demo data has none of them, no executable processes and no requests.

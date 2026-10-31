@@ -20,6 +20,17 @@ export function canDesignWorkflow(user: AuthUser, process: { ownerId: string | n
 
 export const isWorkflowAdmin = (user: AuthUser) => user.permissions.has(P.WORKFLOW_ADMIN);
 
+/**
+ * Deployment makes a process live for staff (product owner, D-154): only the Process Owner of that
+ * process (with `workflow.design`) and workflow admins. Modelers set processes up but do not deploy.
+ */
+export function canDeployWorkflow(user: AuthUser, process: { ownerId: string | null }): boolean {
+  return (
+    isWorkflowAdmin(user) ||
+    (user.permissions.has(P.WORKFLOW_DESIGN) && !!process.ownerId && process.ownerId === user.id)
+  );
+}
+
 /** Read-only monitors of every process: Auditors (audit log + workflow monitor). */
 export const isGlobalMonitor = (user: AuthUser) =>
   isWorkflowAdmin(user) ||

@@ -96,7 +96,13 @@ export function WorkflowConfigCard({ processId }: { processId: string }) {
   const save = useSaveWorkflowConfig(processId);
   const deploy = useDeployWorkflow(processId);
   const departments = useWorkflowDepartments();
-  const [form] = Form.useForm<WorkflowConfigInput & { keepForever: boolean }>();
+  const [form] = Form.useForm<
+    WorkflowConfigInput & {
+      keepForever: boolean;
+      reminderHours: number | null;
+      escalationHours: number | null;
+    }
+  >();
   const [issues, setIssues] = useState<ExecIssue[] | null>(null);
   const [checking, setChecking] = useState(false);
   const startMode = Form.useWatch('startMode', form);
@@ -108,6 +114,8 @@ export function WorkflowConfigCard({ processId }: { processId: string }) {
         ...c,
         keepForever: c.retentionDays === null,
         retentionDays: c.retentionDays ?? 730,
+        reminderHours: c.reminderMinutesBefore === null ? null : c.reminderMinutesBefore / 60,
+        escalationHours: c.escalationDelayMinutes === null ? null : c.escalationDelayMinutes / 60,
       });
   }, [c, form]);
   if (!c) return <Card loading />;
@@ -115,11 +123,15 @@ export function WorkflowConfigCard({ processId }: { processId: string }) {
 
   const onSave = async () => {
     const v = await form.validateFields();
-    const { keepForever: keep, ...rest } = v;
+    const { keepForever: keep, reminderHours, escalationHours, ...rest } = v;
+    const minutes = (h: number | null | undefined) =>
+      h === null || h === undefined ? null : Math.round(h * 60);
     try {
       await save.mutateAsync({
         ...rest,
         retentionDays: keep ? null : (rest.retentionDays ?? null),
+        reminderMinutesBefore: minutes(reminderHours),
+        escalationDelayMinutes: minutes(escalationHours),
       });
       message.success(t('workflow:config.saved'));
     } catch (e) {
@@ -249,6 +261,30 @@ export function WorkflowConfigCard({ processId }: { processId: string }) {
                 )}
               </Space>
             </Form.Item>
+            <Form.Item label={t('workflow:config.delays')} extra={t('workflow:config.delaysHint')}>
+              <Space wrap>
+                <Form.Item name="reminderHours" noStyle>
+                  <InputNumber
+                    min={0}
+                    max={168}
+                    step={0.5}
+                    placeholder={t('workflow:config.default')}
+                    addonBefore={t('workflow:config.reminder')}
+                    addonAfter={t('workflow:settings.workingHours')}
+                  />
+                </Form.Item>
+                <Form.Item name="escalationHours" noStyle>
+                  <InputNumber
+                    min={0}
+                    max={168}
+                    step={0.5}
+                    placeholder={t('workflow:config.default')}
+                    addonBefore={t('workflow:config.escalateAfter')}
+                    addonAfter={t('workflow:settings.workingHours')}
+                  />
+                </Form.Item>
+              </Space>
+            </Form.Item>
             <Form.Item
               name="eventLog"
               valuePropName="checked"
@@ -297,6 +333,11 @@ export function WorkflowConfigCard({ processId }: { processId: string }) {
             >
               {t('workflow:config.checkPublished')}
             </Button>
+            {c.canDesign && !c.canDeploy && c.publishedVersion && (
+              <Typography.Text type="secondary">
+                {t('workflow:config.deployOwnerOnly')}
+              </Typography.Text>
+            )}
             {c.canDeploy && (
               <Button
                 type="primary"

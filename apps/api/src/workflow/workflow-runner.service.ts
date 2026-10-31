@@ -282,7 +282,13 @@ export class WorkflowRunnerService {
             },
           });
           if (dueAt) {
-            const before = settings.reminderMinutesBefore;
+            // Per-process delays override the workflow settings (D-154).
+            const pcfg = await tx.workflowProcessConfig.findUnique({
+              where: { processId: c.processId },
+              select: { reminderMinutesBefore: true, escalationDelayMinutes: true },
+            });
+            const before = pcfg?.reminderMinutesBefore ?? settings.reminderMinutesBefore;
+            const delay = pcfg?.escalationDelayMinutes ?? settings.escalationDelayMinutes;
             if (before > 0 && minutes && minutes > before) {
               const remindAt = calendar.addWorkingMinutes(now, minutes - before);
               await tx.workflowJob.create({
@@ -302,7 +308,7 @@ export class WorkflowRunnerService {
                 caseId: c.id,
                 tokenId: e.tokenId,
                 elementId: node.id,
-                dueAt,
+                dueAt: delay > 0 ? calendar.addWorkingMinutes(dueAt, delay) : dueAt,
                 data: { taskId: task.id },
               },
             });

@@ -10,7 +10,7 @@ D-144 – D-152.
 
 | Permission         | Default roles                              | What it allows                                                                                                      |
 | ------------------ | ------------------------------------------ | ------------------------------------------------------------------------------------------------------------------- |
-| `workflow.design`  | Super Admin, Admin, Process Owner, Modeler | Execution settings and deployment of processes the user may edit                                                    |
+| `workflow.design`  | Super Admin, Admin, Process Owner, Modeler | Execution settings of processes the user may edit; deployment only by the process's own Process Owner (and admins)  |
 | `workflow.start`   | Every role except Auditor                  | Start requests from the service catalogue (plus each process's start rights)                                        |
 | `workflow.monitor` | Super Admin, Admin, Process Owner, Auditor | Monitor and dashboard of the processes of one's department or where one is named monitor (Auditors: all, read-only) |
 | `workflow.admin`   | Super Admin, Admin                         | All processes: retry stuck requests, cancel, reassign tasks; Settings → Workflow execution                          |
@@ -35,7 +35,9 @@ checked on the server for every page and download.
    The **Validation** panel shows the **executable check**: errors block deployment, warnings do not.
 4. Save a version, submit it for review and publish it as usual. Execution settings are part of the BPMN XML, so
    every change to a form, an assignment or a condition goes through the same review.
-5. On the process page → **Execution** → **Deploy version N**. Only the published version can be deployed; the
+5. On the process page → **Execution** → **Deploy version N** — the **Process Owner of the process** or a workflow
+   admin (D-154); Modelers set processes up but do not deploy, and cannot switch a deployed process off or change
+   its start rights. Only the published version can be deployed; the
    server repeats the executable check, including the DMN decisions (they must be approved or published) and the
    linked processes of call activities (they must be executable and deployed).
 
@@ -82,6 +84,10 @@ Settings → **Workflow execution** (`workflow.admin`): working week (Sunday–T
 (the assignee's manager, the process owner, both or nobody) and an optional repeat interval. Public holidays come
 from the **central holiday list** (Process mining → Simulations → Public holidays, D-143). Due times are working
 time: a task due in 16 working hours that starts on Thursday afternoon is due on Monday.
+
+**Escalation fallbacks** (D-154): an unclaimed group task, and an assignee without a manager or who is the
+department head, escalate to the process owner. Each process can override the reminder and the escalation delay
+(process page → Execution → Reminder and escalation).
 
 Reminders and escalations are notifications of type "Workflow tasks and requests" (in-app and e-mail per user
 preference). Timers and these jobs are stored in the database and survive a restart; the API checks them every

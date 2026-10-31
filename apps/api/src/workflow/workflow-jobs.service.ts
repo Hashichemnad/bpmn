@@ -516,19 +516,31 @@ export class WorkflowJobsService implements OnApplicationBootstrap, OnModuleDest
     const node = (await this.config.model(t.case.definitionId)).nodes[t.elementId];
     const target =
       !node || node.exec.escalation === 'DEFAULT' ? settings.escalation : node.exec.escalation;
+    // Escalation targets (D-150, D-154): the manager of the assignee and / or the process owner.
+    // Fallbacks to the process owner: an unclaimed group task (no single assignee whose manager to
+    // ask) and an assignee without a manager or who is the department head.
+    const owner = t.case.process.ownerId;
     const recipients = new Set<string>();
-    if (target === 'MANAGER' || target === 'BOTH') {
-      for (const uid of people) {
-        const u = await this.prisma.user.findUnique({
-          where: { id: uid },
-          select: { department: { select: { managerId: true } } },
-        });
-        if (u?.department?.managerId && u.department.managerId !== uid)
-          recipients.add(u.department.managerId);
+    if (target !== 'NONE') {
+      if (target === 'OWNER' || target === 'BOTH') {
+        if (owner) recipients.add(owner);
+      }
+      if (target === 'MANAGER' || target === 'BOTH') {
+        if (!t.assigneeId) {
+          if (owner) recipients.add(owner);
+        } else {
+          const u = await this.prisma.user.findUnique({
+            where: { id: t.assigneeId },
+            select: { department: { select: { managerId: true } } },
+          });
+          const manager = u?.department?.managerId;
+          if (manager && manager !== t.assigneeId) recipients.add(manager);
+          else if (owner) recipients.add(owner);
+        }
       }
     }
-    if ((target === 'OWNER' || target === 'BOTH') && t.case.process.ownerId)
-      recipients.add(t.case.process.ownerId);
+    // Nobody escalates to themselves.
+    if (t.assigneeId) recipients.delete(t.assigneeId);
     const stamp = now.toISOString().slice(0, 13);
     await this.notifications.notify({
       userIds: people,

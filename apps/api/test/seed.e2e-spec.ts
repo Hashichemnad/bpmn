@@ -222,6 +222,18 @@ describe('Seed (e2e)', () => {
     expect(await ctx.prisma.diagram.count()).toBe(0);
     expect(await ctx.prisma.eventLog.count()).toBe(0);
     expect(await ctx.prisma.simulation.count()).toBe(0);
+    // Workflow demo (D-154): no executable processes, requests or approval-chain demo users.
+    expect(await ctx.prisma.workflowProcessConfig.count()).toBe(0);
+    expect(await ctx.prisma.workflowCase.count()).toBe(0);
+    expect(
+      await ctx.prisma.user.count({
+        where: {
+          email: {
+            in: ['section', 'pmo', 'finance', 'dgo', 'hr'].map((k) => `${k}@processhub.local`),
+          },
+        },
+      }),
+    ).toBe(0);
     // Switched on at go-live once the real value chain is published (DEPLOYMENT.md checklist).
     const portal = await ctx.prisma.setting.findUnique({ where: { key: 'portal' } });
     expect(

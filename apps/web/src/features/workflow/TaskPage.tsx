@@ -84,7 +84,7 @@ export function TaskPage({ portal = false }: { portal?: boolean }) {
         body: { data, decision, comment: comment.trim(), version: d.version },
       });
       message.success(t('workflow:task.done'));
-      navigate(portal ? '/portal/tasks' : '/tasks?tab=workflow');
+      navigate(portal ? '/portal/tasks?tab=workflow' : '/tasks?tab=workflow');
     } catch (e) {
       message.error(errorMessage(e));
       if (e instanceof ApiError && e.code === 'FORM_INVALID' && Array.isArray(e.details))
@@ -302,7 +302,7 @@ export function TaskPage({ portal = false }: { portal?: boolean }) {
               await act.mutateAsync({ action: handOver, userId, comment: note });
               message.success(t(`workflow:task.${handOver}Done`));
               setHandOver(null);
-              navigate(portal ? '/portal/tasks' : '/tasks?tab=workflow');
+              navigate(portal ? '/portal/tasks?tab=workflow' : '/tasks?tab=workflow');
             } catch (e) {
               message.error(errorMessage(e));
             }

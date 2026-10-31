@@ -165,7 +165,7 @@ test.describe.serial('workflow execution', () => {
 
     // The requester corrects it in the portal and resubmits.
     await login(page, DEMO.viewer);
-    await page.goto('/portal/tasks');
+    await page.goto('/portal/tasks?tab=workflow');
     await page
       .getByTestId('wf-tasks')
       .locator('tr', { hasText: caseNumber })
