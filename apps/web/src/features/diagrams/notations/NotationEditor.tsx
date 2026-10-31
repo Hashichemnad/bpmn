@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import type { DiagramDto } from '@processhub/shared';
@@ -7,6 +7,9 @@ import type { GraphInstance } from '../kit/graph-diagram';
 import { ColourLegend, ValueChainProperties, ValueChainTools } from './ValueChain';
 import { decorateValueChain, useColourBy, useValueChain } from './value-chain-view';
 import { OrgChartProperties, OrgChartTools } from './OrgChart';
+import { EpcConvert, EpcProperties, EpcValidation } from './Epc';
+import { useEpcIssues } from './epc-view';
+import type { Canvas } from '@/features/modeler/bpmn-types';
 
 interface Props {
   diagram: DiagramDto;
@@ -18,6 +21,7 @@ interface Props {
 export function NotationEditor(props: Props) {
   if (props.diagram.type === 'VALUE_CHAIN') return <ValueChainEditor {...props} />;
   if (props.diagram.type === 'ORG_CHART') return <OrgChartEditor {...props} />;
+  if (props.diagram.type === 'EPC') return <EpcEditor {...props} />;
   return <GraphEditor {...props} />;
 }
 
@@ -81,6 +85,51 @@ function OrgChartEditor(props: Props) {
       tools={(instance, reload) => (
         <OrgChartTools instance={instance} canEdit={canEdit} onApply={reload} />
       )}
+    />
+  );
+}
+
+function EpcEditor(props: Props) {
+  const { t } = useTranslation();
+  const [{ instance, tick, loaded }, onState] = useEditorState();
+  const issues = useEpcIssues(loaded ? instance : null, tick);
+  const saveRef = useRef<(() => Promise<boolean>) | null>(null);
+  // Elements with a syntax warning get a marker on the canvas.
+  useEffect(() => {
+    if (!instance || !loaded) return;
+    const canvas = instance.get<Canvas>('canvas');
+    const ids = [...new Set(issues.flatMap((i) => (i.elementId ? [i.elementId] : [])))];
+    for (const id of ids) canvas.addMarker(id, 'ph-epc-issue');
+    return () => {
+      for (const id of ids) {
+        try {
+          canvas.removeMarker(id, 'ph-epc-issue');
+        } catch {
+          /* element removed */
+        }
+      }
+    };
+  }, [instance, loaded, issues]);
+  return (
+    <GraphEditor
+      {...props}
+      onState={onState}
+      saveRef={saveRef}
+      renderProperties={(ctx) => <EpcProperties {...ctx} />}
+      tools={() => (
+        <EpcConvert
+          diagram={props.diagram}
+          issues={issues}
+          beforeConvert={() => saveRef.current?.() ?? Promise.resolve(true)}
+        />
+      )}
+      panels={() => [
+        {
+          key: 'validation',
+          label: `${t('diagrams:dmn.validation')}${issues.length ? ` (${issues.length})` : ''}`,
+          children: <EpcValidation issues={issues} instance={instance} />,
+        },
+      ]}
     />
   );
 }

@@ -59,7 +59,13 @@ Steps (tick as they are committed; a new session continues at the first unticked
       `docs/samples/approval-authority.dmn`. ph namespace aligned with the BPMN extension
       (`http://processhub.io/schema/bpmn`). Tests: web +4 (`dmn-model.test.ts`), API +1, Playwright
       `diagrams-dmn.spec.ts` (import → test decision → version → link from a business rule task → publish → portal).
-- [ ] 5. EPC (notation, syntax rules, EPC → BPMN conversion with mapping report).
+- [x] 5. EPC (D-124): ARIS notation and rules (assignments only between functions and resources), Validation panel
+      with the syntax rules (shared `epcIssues`, warnings outlined on the canvas, click selects), resource → library
+      object and process path → process fields, "Convert to BPMN" (`POST /diagrams/:id/convert-to-bpmn`, shared
+      `epcToBpmn` + the AI builder's `structureToBpmn` layout) creating a new draft process with lanes, gateways,
+      branch labels and object links, mapping report in the dialog. Kit: imported connections without waypoints are
+      laid out and cropped at the outlines (also in viewers). Tests: shared +3 (`epc.test.ts`), API +1, Playwright
+      `diagrams-epc.spec.ts` (warnings → version → convert → BPMN model → publish → portal in Arabic).
 - [ ] 6. SIPOC (table diagram, generate from process, handbook section).
 - [ ] 7. Reports, portal (browse by type, value chain start page, drill-down), handbook sections, demo seed,
       permission / e2e tests, screenshots (`docs/screenshots/diagram-types/`), sample handbook (`docs/samples/`),

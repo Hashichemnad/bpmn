@@ -657,12 +657,14 @@ export function graphModule(state: GraphState) {
   };
 }
 
-/** Read-only variant: renderer only (viewers, portal, print, compare). */
+/** Read-only variant: renderer and connection layout (viewers, portal, print, compare). */
 export function graphViewerModule(state: GraphState) {
   return {
     __init__: ['phElementIds', 'graphRenderer'],
     graphState: ['value', state],
     phElementIds: ['type', PhElementIds],
     graphRenderer: ['type', GraphRenderer],
+    layouter: ['type', GraphLayouter],
+    connectionDocking: ['type', CroppingConnectionDocking],
   };
 }

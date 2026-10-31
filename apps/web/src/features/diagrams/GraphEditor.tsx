@@ -56,6 +56,8 @@ interface Props {
   tools?: (instance: GraphInstance | null, reload: (content: GraphContent) => void) => ReactNode;
   /** Extra side panel tabs (validation …), after Properties. */
   panels?: (instance: GraphInstance | null, changeTick: number) => WorkspacePanel[];
+  /** Receives the "save the draft now" function of the workspace. */
+  saveRef?: React.MutableRefObject<(() => Promise<boolean>) | null>;
   /** Floating content on the canvas (colour-by legend …). */
   overlay?: ReactNode;
   /** Reports the diagram instance and every change (notation overlays, colour by). */
@@ -76,6 +78,7 @@ export function GraphEditor({
   panels,
   overlay,
   onState,
+  saveRef,
 }: Props) {
   const { t } = useTranslation();
   const { locale } = useLocale();
@@ -262,6 +265,7 @@ export function GraphEditor({
         });
       }}
       onClose={onClose}
+      saveRef={saveRef}
       palette={
         <GraphPalette
           instance={instance}

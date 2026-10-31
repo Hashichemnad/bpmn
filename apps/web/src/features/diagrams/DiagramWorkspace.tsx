@@ -87,6 +87,8 @@ interface Props {
   onClose: () => void;
   /** Elements can carry object links (not for DMN rules etc.). */
   linkable?: boolean;
+  /** Receives the "save the draft now" function (e.g. before a conversion reads the server copy). */
+  saveRef?: React.MutableRefObject<(() => Promise<boolean>) | null>;
 }
 
 /**
@@ -114,6 +116,7 @@ export function DiagramWorkspace({
   onRestored,
   onClose,
   linkable = true,
+  saveRef,
 }: Props) {
   const { t } = useTranslation();
   const { dir } = useLocale();
@@ -157,6 +160,7 @@ export function DiagramWorkspace({
   }, [canEdit, getContent, save, message, errorMessage]);
   const autosaveRef = useRef(autosave);
   autosaveRef.current = autosave;
+  if (saveRef) saveRef.current = autosave;
 
   // The first content after loading is the saved state.
   useEffect(() => {

@@ -202,5 +202,7 @@
   "PERIOD_MISMATCH": "The period does not match the KPI's frequency.",
   "ELEMENT_NOT_FOUND": "The element no longer exists in the diagram; save the diagram first.",
   "INVALID_DMN": "The file is not a valid DMN 1.3 decision model.",
-  "INVALID_DIAGRAM": "The diagram content is not valid."
+  "INVALID_DIAGRAM": "The diagram content is not valid.",
+  "NOT_EPC": "Only EPC diagrams can be converted to BPMN.",
+  "EMPTY_DIAGRAM": "The diagram has no elements to convert."
 }

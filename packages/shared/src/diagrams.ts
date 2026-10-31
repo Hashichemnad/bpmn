@@ -6,11 +6,12 @@
 import { z } from 'zod';
 import {
   LINK_RELATIONS,
+  PROCESS_CATEGORIES,
   PROCESS_STATUSES,
   type LinkRelation,
   type ProcessStatus,
 } from './constants';
-import { paginationQuerySchema, uuidSchema } from './schemas';
+import { paginationQuerySchema, processCodeSchema, uuidSchema } from './schemas';
 import type { DepartmentRef, PortalMetaDto, PortalStepLinkDto, UserRef } from './types';
 
 export const DIAGRAM_TYPES = ['VALUE_CHAIN', 'ORG_CHART', 'DMN', 'EPC', 'SIPOC'] as const;
@@ -463,6 +464,21 @@ export const createDiagramLinkSchema = z.object({
   relation: z.enum(LINK_RELATIONS).optional(),
 });
 export type CreateDiagramLinkInput = z.infer<typeof createDiagramLinkSchema>;
+
+/** EPC → BPMN: the new draft process (D-124). */
+export const convertEpcSchema = z
+  .object({
+    code: processCodeSchema,
+    category: z.enum(PROCESS_CATEGORIES).optional(),
+    parentId: uuidSchema.nullable().optional(),
+    nameEn: trimmed(200).optional(),
+    nameAr: trimmed(200).optional(),
+  })
+  .refine((v) => !!v.parentId || !!v.category, {
+    path: ['category'],
+    message: 'CATEGORY_REQUIRED',
+  });
+export type ConvertEpcInput = z.infer<typeof convertEpcSchema>;
 
 // ---------- DTOs ----------
 

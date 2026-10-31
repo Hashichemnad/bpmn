@@ -248,5 +248,47 @@
     "apply": "Apply",
     "generateFromData": "Generate from departments and roles",
     "roleDepartmentHint": "Department of the position in organisation charts."
+  },
+  "epc": {
+    "valid": "No EPC syntax problems.",
+    "resourceHint": "Library object of this resource (lanes, object links after conversion).",
+    "convert": "Convert to BPMN",
+    "convertHint": "Create a new draft BPMN process from this EPC",
+    "convertTitle": "Convert EPC to BPMN",
+    "convertText": "Functions become tasks (in the lane of their organisational unit), connectors gateways, start and end events stay events, events between steps become branch labels after decisions, process paths call activities; systems and documents are linked to the tasks. The EPC is not changed.",
+    "convertWithIssues": "The EPC has {{count}} syntax warning(s); the conversion may need corrections.",
+    "parent": "Parent process",
+    "converted": "Process {{code}} created as a draft.",
+    "openProcess": "Open the BPMN model",
+    "reportEpc": "EPC element",
+    "reportBpmn": "In BPMN",
+    "results": {
+      "TASK": "Task",
+      "USER_TASK": "User task",
+      "SERVICE_TASK": "Service task (system)",
+      "CALL_ACTIVITY": "Call activity",
+      "START_EVENT": "Start event",
+      "END_EVENT": "End event",
+      "FLOW_LABEL": "Branch label after the gateway",
+      "DROPPED_STATE": "State between steps (not drawn in BPMN)",
+      "GATEWAY": "Gateway",
+      "LANE": "Lane",
+      "SYSTEM_LINK": "IT system linked to the task",
+      "DOCUMENT_LINK": "Document / information linked to the task",
+      "NOT_CONVERTED": "Not converted"
+    },
+    "issues": {
+      "NO_START_EVENT": "The chain has no start event (an event without incoming flow).",
+      "NO_END_EVENT": "The chain has no end event (an event without outgoing flow).",
+      "START_NOT_EVENT": "The chain starts with a function or connector instead of an event.",
+      "END_NOT_EVENT": "The chain ends with a function or connector instead of an event.",
+      "EVENT_EVENT": "Two events follow each other: events and functions must alternate.",
+      "FUNCTION_FUNCTION": "Two functions follow each other: events and functions must alternate.",
+      "DECISION_AFTER_EVENT": "An XOR / OR split follows a single event: events cannot decide.",
+      "CONNECTOR_DEGREE": "A connector must split (one in, several out) or join (several in, one out).",
+      "BRANCH_WITHOUT_CONNECTOR": "Branches and joins need a connector.",
+      "RESOURCE_UNASSIGNED": "Organisational unit, system or document is not assigned to a function.",
+      "UNCONNECTED": "Element is not connected."
+    }
   }
 }

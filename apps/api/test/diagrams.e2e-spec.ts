@@ -349,6 +349,88 @@ describe('Diagrams (e2e)', () => {
     ]);
   });
 
+  it('converts an EPC into a new draft BPMN process with a mapping report', async () => {
+    const role = (await admin.post('/objects').send({ type: 'ROLE', nameEn: 'Buyer' }).expect(201))
+      .body;
+    const erp = (await admin.post('/objects').send({ type: 'SYSTEM', nameEn: 'ERP' }).expect(201))
+      .body;
+    const node = (id: string, kind: string, nameEn: string, extra = {}) => ({
+      id,
+      kind,
+      x: 0,
+      y: 0,
+      width: 120,
+      height: 60,
+      nameEn,
+      nameAr: `${nameEn} ع`,
+      ...extra,
+    });
+    const flow = (sourceId: string, targetId: string, kind = 'flow') => ({
+      id: `F_${sourceId}_${targetId}`,
+      kind,
+      sourceId,
+      targetId,
+      waypoints: [],
+      nameEn: '',
+      nameAr: '',
+    });
+    const content = JSON.stringify({
+      schema: 1,
+      type: 'EPC',
+      nodes: [
+        node('E1', 'event', 'Request received'),
+        node('F1', 'function', 'Check request'),
+        node('U1', 'orgUnit', 'Buyer', { objectId: role.id }),
+        node('S1', 'system', 'ERP', { objectId: erp.id }),
+        node('E2', 'event', 'Request checked'),
+      ],
+      edges: [
+        flow('E1', 'F1'),
+        flow('F1', 'E2'),
+        flow('U1', 'F1', 'assignment'),
+        flow('F1', 'S1', 'assignment'),
+      ],
+    });
+    const epc = (
+      await modeler
+        .post('/diagrams')
+        .send({ type: 'EPC', nameEn: 'Purchase EPC', nameAr: 'شراء', content })
+        .expect(201)
+    ).body;
+    await viewer
+      .post(`/diagrams/${epc.id}/convert-to-bpmn`)
+      .send({ code: 'S.09', category: 'SUPPORT' })
+      .expect(403);
+    await modeler.post(`/diagrams/${epc.id}/convert-to-bpmn`).send({ code: 'S.09' }).expect(400);
+    const res = (
+      await modeler
+        .post(`/diagrams/${epc.id}/convert-to-bpmn`)
+        .send({ code: 'S.09', category: 'SUPPORT' })
+        .expect(201)
+    ).body;
+    expect(res.code).toBe('S.09');
+    expect(
+      res.report.map((r: { epcId: string; result: string }) => `${r.epcId}:${r.result}`).sort(),
+    ).toEqual(
+      ['E1:START_EVENT', 'E2:END_EVENT', 'F1:USER_TASK', 'S1:SYSTEM_LINK', 'U1:LANE'].sort(),
+    );
+    const model = (await modeler.get(`/processes/${res.processId}/model`).expect(200)).body.bpmnXml;
+    expect(model).toContain('bpmn:userTask id="F1"');
+    expect(model).toContain(`ph:roleId="${role.id}"`);
+    const links = (await modeler.get(`/processes/${res.processId}/links`).expect(200)).body;
+    expect(
+      links
+        .map(
+          (l: { relation: string; repoObject: { id: string } }) =>
+            `${l.relation}:${l.repoObject.id}`,
+        )
+        .sort(),
+    ).toEqual([`PERFORMS:${role.id}`, `SUPPORTS:${erp.id}`].sort());
+    expect((await modeler.get(`/processes/${res.processId}`).expect(200)).body.status).toBe(
+      'DRAFT',
+    );
+  });
+
   it('applies owner-only rights for Process Owners', async () => {
     const owner = await createUser(ctx.prisma, 'owner@test.local', ['PROCESS_OWNER']);
     const ownerClient = await loggedIn(ctx.app, 'owner@test.local');

@@ -2914,3 +2914,10 @@ li.ph-diff-removed {
   background: #fef3c7 !important;
   box-shadow: inset 0 0 0 1px #d97706;
 }
+
+/* EPC: elements with a syntax warning (D-124). */
+.ph-epc-issue .djs-visual > :first-child {
+  stroke: #d97706 !important;
+  stroke-width: 2.5px !important;
+  stroke-dasharray: 4 3;
+}

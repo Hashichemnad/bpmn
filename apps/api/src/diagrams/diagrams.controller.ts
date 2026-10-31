@@ -14,6 +14,7 @@ import { ApiTags } from '@nestjs/swagger';
 import { z } from 'zod';
 import {
   PERMISSIONS,
+  convertEpcSchema,
   createDiagramLinkSchema,
   createDiagramSchema,
   createDiagramVersionSchema,
@@ -23,6 +24,7 @@ import {
   updateDiagramSchema,
   uuidSchema,
   versionLabelSchema,
+  type ConvertEpcInput,
   type CreateDiagramInput,
   type CreateDiagramLinkInput,
   type CreateDiagramVersionInput,
@@ -43,6 +45,7 @@ import { UuidPipe, ZodPipe } from '../common/zod.pipe';
 import { DiagramsService } from './diagrams.service';
 import { DiagramFactsService } from './diagram-facts.service';
 import { OrgChartService } from './org-chart.service';
+import { EpcConversionService } from './epc-conversion.service';
 
 const EDIT = [PERMISSIONS.MODELS_EDIT, PERMISSIONS.MODELS_EDIT_OWN] as const;
 
@@ -68,6 +71,7 @@ export class DiagramsController {
     private readonly diagrams: DiagramsService,
     private readonly facts: DiagramFactsService,
     private readonly org: OrgChartService,
+    private readonly epc: EpcConversionService,
   ) {}
 
   @Get()
@@ -216,6 +220,18 @@ export class DiagramsController {
     @ReqMeta() meta: RequestMeta,
   ) {
     return this.diagrams.labelVersion(id, versionId, body, user, meta);
+  }
+
+  /** EPC → BPMN: a new draft process with the converted model and the mapping report (D-124). */
+  @Post(':id/convert-to-bpmn')
+  @RequirePermissions(PERMISSIONS.PROCESSES_CREATE)
+  convertToBpmn(
+    @Param('id', UuidPipe()) id: string,
+    @Body(new ZodPipe(convertEpcSchema)) body: ConvertEpcInput,
+    @CurrentUser() user: AuthUser,
+    @ReqMeta() meta: RequestMeta,
+  ) {
+    return this.epc.convert(id, body, user, meta);
   }
 
   @Get(':id/links')

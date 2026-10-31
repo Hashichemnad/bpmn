@@ -134,6 +134,12 @@ export async function importGraph(instance: GraphInstance, content: GraphContent
     const parent = (n.parentId && shapes.get(n.parentId)) || root;
     shapes.set(n.id, canvas.addShape(shape, parent));
   }
+  const layouter = instance.get<{
+    layoutConnection(c: unknown, h: unknown): { x: number; y: number }[];
+  } | null>('layouter', false);
+  const docking = instance.get<{
+    getCroppedWaypoints(c: unknown): { x: number; y: number }[];
+  } | null>('connectionDocking', false);
   for (const e of content.edges) {
     const source = shapes.get(e.sourceId);
     const target = shapes.get(e.targetId);
@@ -145,6 +151,11 @@ export async function importGraph(instance: GraphInstance, content: GraphContent
       waypoints: e.waypoints.length >= 2 ? e.waypoints : straight(source, target),
       businessObject: { kind: e.kind, nameEn: e.nameEn, nameAr: e.nameAr },
     });
+    // Generated content may leave the route to the editor: lay it out and end it at the outlines.
+    if (e.waypoints.length < 2) {
+      if (layouter) conn.waypoints = layouter.layoutConnection(conn, { source, target });
+      if (docking) conn.waypoints = docking.getCroppedWaypoints(conn);
+    }
     canvas.addConnection(conn, root);
   }
   instance.get<{ fire(e: string, p?: unknown): void }>('eventBus').fire('import.done', {});

@@ -1615,3 +1615,26 @@ Supersedes the "act as the Super Admin" rule of D-116.
   in the modeler side panel ("Decision table (DMN)", with "View table"); the portal step details show the table
   read-only when it is published; "where used" of a DMN diagram lists the business rule tasks (`relation: DECISION`,
   found by content search and parsing). Sample: `docs/samples/approval-authority.dmn`.
+
+## D-124 — EPC: ARIS notation, syntax rules as warnings, conversion to BPMN (Diagram types, 2026-10-31)
+
+- Notation: **events** (hexagons), **functions** (rounded), **AND / OR / XOR connectors**, **process paths**,
+  **organisational units**, **information systems**, **information objects** and **documents**; **control flow**
+  (arrows) between events / functions / connectors / process paths, dotted **assignments** between a function and its
+  resources (the rules allow nothing else). Classic ARIS colours that follow the theme: functions = start colours
+  (green), connectors = gateway colours, org units = approval colours (yellow), systems = system colours,
+  information objects = intermediate-event colours; events keep the ARIS magenta (the theme has no such kind).
+- **Validation panel** (warnings, never blocking; elements are outlined on the canvas, clicking selects them): start /
+  end events present, chains start and end with events, events and functions alternate (connectors are transparent),
+  no XOR / OR split right after a single event ("events cannot decide"), a connector either splits (1 in, n out) or
+  joins (n in, 1 out), branches / joins only through connectors, resources assigned to a function, no unconnected
+  elements (shared `epcIssues`).
+- **Convert to BPMN** (`POST /diagrams/:id/convert-to-bpmn`, `processes.create` + model rights): shared `epcToBpmn`
+  maps functions → tasks (user task with an org unit, service task with only a system), process paths → call
+  activities (linked process kept), events without incoming / outgoing flow → start / end events, events between
+  steps are states and are dropped — after an XOR / OR split their name labels the branch —, connectors → exclusive /
+  parallel / inclusive gateways, org units → lanes (linked roles become `ph:roleId`, hence PERFORMS links), systems /
+  documents with a library object → SUPPORTS / INPUT links of the task. The API builds the BPMN XML with the AI
+  builder's `structureToBpmn` (shared layered layout, theme colours) and creates a **new draft process** owned by the
+  EPC's owner; the EPC is unchanged; the **mapping report** (every EPC element and what it became) is shown and the
+  conversion is audited (`EXPORT` on the diagram). This is the path for ARIS users moving to BPMN.
