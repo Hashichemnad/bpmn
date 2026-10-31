@@ -12,6 +12,8 @@ import type {
   DiagramVersionDto,
   PortalDiagramDto,
   ProcessFactDto,
+  OrgSourceDto,
+  RoleActivityDto,
   PortalItemDto,
   SaveDiagramContentInput,
   UpdateDiagramInput,
@@ -202,4 +204,14 @@ export const useProcessFacts = (ids: string[], enabled = true) =>
       }),
     enabled: enabled && ids.length > 0,
     staleTime: 30_000,
+  });
+
+/** Departments, positions and people for organisation charts (D-122). */
+export const fetchOrgSource = () => api<OrgSourceDto>('/diagrams/org-source');
+
+export const useRoleActivities = (roleId: string | undefined) =>
+  useQuery({
+    queryKey: ['diagrams', 'role-activities', roleId],
+    queryFn: () => api<RoleActivityDto[]>(`/diagrams/role-activities/${roleId}`),
+    enabled: !!roleId,
   });

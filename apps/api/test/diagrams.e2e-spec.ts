@@ -3,7 +3,15 @@ import {
   stringifyDiagramContent,
   type GraphContent,
 } from '@processhub/shared';
-import { createApp, createUser, loggedIn, resetDb, type Client, type TestContext } from './helpers';
+import {
+  createApp,
+  createUser,
+  loggedIn,
+  resetDb,
+  sampleBpmn,
+  type Client,
+  type TestContext,
+} from './helpers';
 
 /** Diagram framework (D-120): CRUD, content validation, versions, links, governance and portal. */
 describe('Diagrams (e2e)', () => {
@@ -269,6 +277,42 @@ describe('Diagrams (e2e)', () => {
     ]);
     await viewer.get(`/diagrams/process-facts?ids=${processId}`).expect(403);
     await modeler.get('/diagrams/process-facts?ids=not-a-uuid').expect(400);
+  });
+
+  it('provides organisation chart data and what a position performs (RACI)', async () => {
+    const finance = (
+      await admin.post('/departments').send({ nameEn: 'Finance', nameAr: 'المالية' }).expect(201)
+    ).body;
+    const role = (
+      await admin
+        .post('/objects')
+        .send({ type: 'ROLE', nameEn: 'Accountant', attributes: { departmentId: finance.id } })
+        .expect(201)
+    ).body;
+    const src = (await modeler.get('/diagrams/org-source').expect(200)).body;
+    expect(src.departments.map((d: { nameEn: string }) => d.nameEn)).toContain('Finance');
+    expect(src.roles.find((r: { id: string }) => r.id === role.id).departmentIds).toEqual([
+      finance.id,
+    ]);
+    // Every workspace role reads the user directory, so people are included (null without users.read).
+    expect(Array.isArray(src.people)).toBe(true);
+
+    await admin
+      .put(`/processes/${processId}/model`)
+      .send({ bpmnXml: sampleBpmn(['Task_1', 'Task_2']) })
+      .expect(200);
+    await admin
+      .post(`/processes/${processId}/links`)
+      .send({ bpmnElementId: 'Task_2', repoObjectId: role.id })
+      .expect(201);
+    const acts = (await modeler.get(`/diagrams/role-activities/${role.id}`).expect(200)).body;
+    expect(acts).toMatchObject([
+      {
+        process: { id: processId, code: 'C.01' },
+        steps: [{ id: 'Task_2', letter: 'R', viaLane: false }],
+      },
+    ]);
+    await viewer.get(`/diagrams/role-activities/${role.id}`).expect(403);
   });
 
   it('applies owner-only rights for Process Owners', async () => {

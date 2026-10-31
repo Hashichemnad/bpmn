@@ -1,13 +1,27 @@
 import { useEffect, useState } from 'react';
-import { Alert, App, Button, Col, Form, Input, Modal, Row, Select, Space, Typography } from 'antd';
+import {
+  Alert,
+  App,
+  Button,
+  Col,
+  Form,
+  Input,
+  Modal,
+  Row,
+  Select,
+  Space,
+  TreeSelect,
+  Typography,
+} from 'antd';
 import { MinusCircleOutlined, PlusOutlined } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
-import type { ObjectType, RepoObjectDto } from '@processhub/shared';
+import { ROLE_DEPARTMENT_ATTRIBUTE, type ObjectType, type RepoObjectDto } from '@processhub/shared';
 import { useSaveObject } from '@/api/hooks';
 import { useSaveTerm } from '@/api/dictionary';
 import { BilingualFields } from '@/components/BilingualFields';
 import { useErrorMessage } from '@/components/i18n-helpers';
 import { UserSelect } from '@/features/governance/UserSelect';
+import { useDepartmentTreeData } from '@/features/admin/useDepartmentTreeData';
 import { useObjectAccess } from './term-access';
 import { RenameModal } from './RenameModal';
 
@@ -35,6 +49,7 @@ export function ObjectFormModal({ open, type, object, defaults, onClose }: Props
   const saveTerm = useSaveTerm();
   const save = isTerm ? saveTerm : saveObject;
   const [form] = Form.useForm();
+  const departments = useDepartmentTreeData();
   /** Names changed on an object used in diagrams: continue in the rename dialog. */
   const [renameTo, setRenameTo] = useState<{
     object: RepoObjectDto;
@@ -47,10 +62,11 @@ export function ObjectFormModal({ open, type, object, defaults, onClose }: Props
     if (object) {
       form.setFieldsValue({
         ...object,
-        attributes: Object.entries(object.attributes).map(([key, value]) => ({
-          key,
-          value: String(value),
-        })),
+        attributes: Object.entries(object.attributes)
+          .filter(([key]) => !(type === 'ROLE' && key === ROLE_DEPARTMENT_ATTRIBUTE))
+          .map(([key, value]) => ({ key, value: String(value) })),
+        roleDepartmentId:
+          type === 'ROLE' ? (object.attributes[ROLE_DEPARTMENT_ATTRIBUTE] ?? null) : undefined,
       });
     } else {
       form.setFieldsValue({ attributes: [], synonymsEn: [], synonymsAr: [], ...defaults });
@@ -59,11 +75,15 @@ export function ObjectFormModal({ open, type, object, defaults, onClose }: Props
 
   const submit = async () => {
     const values = await form.validateFields();
-    const attributes = Object.fromEntries(
+    const attributes: Record<string, string> = Object.fromEntries(
       ((values.attributes ?? []) as AttrRow[])
-        .filter((a) => a?.key?.trim())
+        .filter((a) => a?.key?.trim() && a.key.trim() !== ROLE_DEPARTMENT_ATTRIBUTE)
         .map((a) => [a.key.trim(), a.value ?? '']),
     );
+    // Roles: the department of the position (organisation charts, D-122).
+    if (type === 'ROLE' && values.roleDepartmentId)
+      attributes[ROLE_DEPARTMENT_ATTRIBUTE] = values.roleDepartmentId;
+    delete values.roleDepartmentId;
     const body = {
       ...values,
       attributes,
@@ -188,6 +208,20 @@ export function ObjectFormModal({ open, type, object, defaults, onClose }: Props
               </Form.Item>
             </Col>
           </Row>
+        )}
+        {type === 'ROLE' && (
+          <Form.Item
+            name="roleDepartmentId"
+            label={t('fields.department')}
+            extra={t('diagrams:org.roleDepartmentHint')}
+          >
+            <TreeSelect
+              allowClear
+              treeDefaultExpandAll
+              treeData={departments}
+              placeholder={t('none')}
+            />
+          </Form.Item>
         )}
         <Typography.Text strong>{t('objects:attributes')}</Typography.Text>
         <Typography.Paragraph type="secondary" style={{ fontSize: 12 }}>

@@ -170,5 +170,31 @@
     "department": "Owner department",
     "noData": "No data",
     "legend": "Legend"
+  },
+  "org": {
+    "unitHint": "The department this unit stands for (generated charts keep it in sync).",
+    "user": "Person (user)",
+    "userHint": "Optional: the employee holding the position.",
+    "role": "Role (library)",
+    "roleHint": "The position is the Role used in lanes and steps of the process models.",
+    "performs": "Processes and steps performed (RACI)",
+    "performsNone": "The role performs no step yet.",
+    "viaLane": "via lane",
+    "raci": {
+      "R": "Responsible: performs the step",
+      "A": "Accountable: approval step"
+    },
+    "regenerate": "Regenerate",
+    "regenerateHint": "Update the chart from departments, roles and people; manual edits are kept",
+    "previewTitle": "Regenerate from data — preview",
+    "mergeHint": "Generated units, positions and people are matched by id: they keep their position and colours and take the current names; new ones are added, those whose source no longer exists are removed. Elements and lines you added yourself stay.",
+    "includePersons": "Include people holding the positions",
+    "added": "Added",
+    "renamed": "Renamed",
+    "removed": "Removed",
+    "keptManual": "Manual elements kept",
+    "apply": "Apply",
+    "generateFromData": "Generate from departments and roles",
+    "roleDepartmentHint": "Department of the position in organisation charts."
   }
 }

@@ -6,6 +6,7 @@ import { GraphEditor } from '../GraphEditor';
 import type { GraphInstance } from '../kit/graph-diagram';
 import { ColourLegend, ValueChainProperties, ValueChainTools } from './ValueChain';
 import { decorateValueChain, useColourBy, useValueChain } from './value-chain-view';
+import { OrgChartProperties, OrgChartTools } from './OrgChart';
 
 interface Props {
   diagram: DiagramDto;
@@ -16,6 +17,7 @@ interface Props {
 /** Graph notation editors: the shared GraphEditor plus each notation's own fields and tools. */
 export function NotationEditor(props: Props) {
   if (props.diagram.type === 'VALUE_CHAIN') return <ValueChainEditor {...props} />;
+  if (props.diagram.type === 'ORG_CHART') return <OrgChartEditor {...props} />;
   return <GraphEditor {...props} />;
 }
 
@@ -65,6 +67,19 @@ function ValueChainEditor(props: Props) {
           canEdit={canEdit}
           onGenerate={reload}
         />
+      )}
+    />
+  );
+}
+
+function OrgChartEditor(props: Props) {
+  const canEdit = props.diagram.canEditContent && !props.readOnly;
+  return (
+    <GraphEditor
+      {...props}
+      renderProperties={(ctx) => <OrgChartProperties {...ctx} />}
+      tools={(instance, reload) => (
+        <OrgChartTools instance={instance} canEdit={canEdit} onApply={reload} />
       )}
     />
   );

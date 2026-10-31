@@ -42,6 +42,7 @@ import type { AuthUser, RequestMeta } from '../common/auth-user';
 import { UuidPipe, ZodPipe } from '../common/zod.pipe';
 import { DiagramsService } from './diagrams.service';
 import { DiagramFactsService } from './diagram-facts.service';
+import { OrgChartService } from './org-chart.service';
 
 const EDIT = [PERMISSIONS.MODELS_EDIT, PERMISSIONS.MODELS_EDIT_OWN] as const;
 
@@ -66,6 +67,7 @@ export class DiagramsController {
   constructor(
     private readonly diagrams: DiagramsService,
     private readonly facts: DiagramFactsService,
+    private readonly org: OrgChartService,
   ) {}
 
   @Get()
@@ -88,6 +90,20 @@ export class DiagramsController {
     @CurrentUser() user: AuthUser,
   ) {
     return this.facts.processFacts(q.ids, user);
+  }
+
+  /** Departments, positions and (with users.read) people for organisation charts (D-122). */
+  @Get('org-source')
+  @RequirePermissions(PERMISSIONS.PROCESSES_READ)
+  orgSource(@CurrentUser() user: AuthUser) {
+    return this.org.source(user);
+  }
+
+  /** Processes and steps a position (Role object) performs, with RACI letters (D-122). */
+  @Get('role-activities/:roleId')
+  @RequirePermissions(PERMISSIONS.PROCESSES_READ)
+  roleActivities(@Param('roleId', UuidPipe()) roleId: string) {
+    return this.org.roleActivities(roleId);
   }
 
   @Get('where-used')

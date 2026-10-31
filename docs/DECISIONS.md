@@ -1564,3 +1564,27 @@ Supersedes the "act as the Super Admin" rule of D-116.
   version 1 "Generated from the process house".
 - diagram-js cancels a create / move on any `elements.changed` that it did not cause, so view refreshes (language,
   theme, Colour by) redraw graphics directly instead of firing that event.
+
+## D-122 — Organisation chart: generation from data, merge by id, what a position performs (Diagram types, 2026-10-31)
+
+- Notation: **organisational units** (linked to a `Department`), **positions** (linked to a Role library object),
+  **persons** (optionally linked to a user), **reporting lines** (orthogonal) and **staff lines** (dashed, from the
+  context pad "Staff line"). Theme colours: units = system colours, positions = human-task colours, persons = start
+  colours.
+- **Source data** (`GET /diagrams/org-source`, `processes.read`): departments (hierarchy), positions = Role objects
+  placed in a department by the new Role attribute **`departmentId`** (a "Department" field on the Role form in the
+  library), or — when it is not set — in the departments of the users holding the job role; people = active users
+  holding the role (only for users with `users.read`, which every workspace role has).
+- **Generation** (shared `generateOrgChart`): top-down tree of units, each with its positions (and optionally the
+  people holding them) in a column below it, "comb" reporting lines along the column so no line crosses a shape.
+  Generated elements have **deterministic ids** (`GU_<department>`, `GP_<hash>_<role>`, `GM_<hash>_<user>`,
+  `GR_<hash>` for lines); manual elements never use these prefixes.
+- **Regeneration merges by id** (shared `mergeOrgChart`) after a **preview** (counts of added / renamed / removed /
+  manual elements kept, list of removals and renames, and the merged chart): generated elements keep their position,
+  size, colours and description and take the current names and references; new sources are added; generated elements
+  whose source is gone are removed (with their lines); manual elements and lines stay. Applying replaces the content
+  as one change (autosaved; undo by restoring a version).
+- **What a position does** (`GET /diagrams/role-activities/:roleId`): the steps of the process models the Role performs
+  — steps in a lane linked to the role (`ph:roleId`, D-081) and steps with a PERFORMS link — with the RACI letter of
+  the B2 report (A for approval steps, R otherwise), shown in the position's side panel with links to the steps.
+- The organisation chart is an optional handbook section (step 7).

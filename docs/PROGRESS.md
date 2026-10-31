@@ -42,8 +42,14 @@ Steps (tick as they are committed; a new session continues at the first unticked
       initial import runs once per editor instance. Tests: shared +2 (`value-chain.test.ts`), web +2 (colour by),
       API +1 (process facts), Playwright `diagrams-value-chain.spec.ts` (create from house → edit → version → submit →
       approve ×2 → publish → portal drill-down → Arabic).
-- [ ] 3. Organisation chart (units, positions, persons, reporting lines, staff functions; generate from data with
-      merge + preview; position → processes / RACI; handbook section).
+- [x] 3. Organisation chart (D-122): units / positions / persons, reporting and staff lines; `GET /diagrams/org-source`
+      (departments, positions from Role `departmentId` attribute or job-role holders, people), shared
+      `generateOrgChart` (comb layout, deterministic ids) and `mergeOrgChart` (merge by id, manual edits kept);
+      New dialog option + workspace "Regenerate" with preview (counts, removals / renames, merged chart); position
+      panel with the steps it performs and RACI letters (`GET /diagrams/role-activities/:roleId`); unit → department,
+      person → user fields; Role form "Department" field; demo roles get departments. Tests: shared +2, API +1,
+      Playwright `diagrams-org-chart.spec.ts` (generate → position RACI → edit → regenerate → version → publish via
+      API → portal). Handbook section: step 7.
 - [ ] 4. DMN decision tables (dmn-js DRD + decision table, `ph:decisionRef` on business rule tasks, test decision,
       import / export).
 - [ ] 5. EPC (notation, syntax rules, EPC → BPMN conversion with mapping report).
