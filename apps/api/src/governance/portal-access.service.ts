@@ -21,6 +21,7 @@ export const DEFAULT_PORTAL: PortalSettingsDto = {
   access: { mode: 'ALL', departmentIds: [], roleKeys: [] },
   quickLinks: [],
   featured: [],
+  startDiagramId: null,
 };
 
 type SpaceWithGrants = Prisma.SpaceGetPayload<{ include: { grants: true } }>;

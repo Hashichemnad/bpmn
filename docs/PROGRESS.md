@@ -71,9 +71,17 @@ Steps (tick as they are committed; a new session continues at the first unticked
       `generateSipoc` (main path, step attributes, lanes and pools) in the New dialog and as a workspace tool.
       Tests: shared +2 (`sipoc.test.ts`), Playwright `diagrams-sipoc.spec.ts` (generate from PMS-01 → add a customer →
       version → publish → portal). Handbook section: step 7.
-- [ ] 7. Reports, portal (browse by type, value chain start page, drill-down), handbook sections, demo seed,
-      permission / e2e tests, screenshots (`docs/screenshots/diagram-types/`), sample handbook (`docs/samples/`),
-      docs, pull request.
+- [ ] 7. Reports, portal, demo data, tests, docs:
+  - [x] 7a. Handbook sections (D-126): options "Place in the value chain", "SIPOC", "Linked decision tables (DMN)",
+        "Organisation chart excerpt" (`handbookSchema` flags, `DiagramReportService` in the reports module — working
+        or published diagram content —, docx sections EN / AR, shared `readDmnTables`); portal start page
+        (Setting `portal.startDiagramId`: a published value chain first on the portal home, with drill-down;
+        `PortalDiagramCanvas`), diagrams in "Featured" and in the home counts. Tests: API +1 (handbook sections).
+  - [ ] 7b. Demo seed: value chain (linked, published, portal start page), org chart from demo departments, DMN
+        "approval authority" linked to a business rule task, EPC with its BPMN conversion, SIPOC.
+  - [ ] 7c. Permission tests (authorization matrix / route sweep for `/diagrams`), full test run.
+  - [ ] 7d. Screenshots EN / AR (`docs/screenshots/diagram-types/`), sample handbook (`docs/samples/`).
+  - [ ] 7e. Docs (README, CLAUDE.md, BACKLOG, DECISIONS, SECURITY route table), audit, build, pull request.
 
 ## Previous state — 2026-10-31 (Phase 4 — Part 3: EA, KPIs and the Salesforce KPI link, branch `phase-4-3-ea-kpi`, merged into `main`)
 

@@ -209,7 +209,9 @@
     "subtitle": "Value chains, organisation charts, decision tables, EPCs and SIPOCs — approved versions.",
     "all": "All",
     "none": "No published diagrams yet.",
-    "drillHint": "Click a highlighted element to open the process or diagram behind it."
+    "drillHint": "Click a highlighted element to open the process or diagram behind it.",
+    "startPage": "Start page",
+    "startPageHint": "A published value chain shown first on the portal home; its elements drill down to the processes."
   },
   "valueChain": {
     "generate": "Generate",
@@ -301,5 +303,11 @@
       "RESOURCE_UNASSIGNED": "Organisational unit, system or document is not assigned to a function.",
       "UNCONNECTED": "Element is not connected."
     }
+  },
+  "handbook": {
+    "includeValueChain": "Place in the value chain",
+    "includeSipoc": "SIPOC",
+    "includeDecisions": "Linked decision tables (DMN)",
+    "includeOrgChart": "Organisation chart excerpt"
   }
 }

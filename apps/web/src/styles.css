@@ -2952,3 +2952,6 @@ li.ph-diff-removed {
   margin: 0 8px 8px;
   inline-size: calc(100% - 16px);
 }
+.ph-portal-start {
+  margin-block-end: 16px;
+}

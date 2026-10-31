@@ -22,6 +22,7 @@ import { StorageService } from '../storage/storage.service';
 import { ObjectsService } from '../objects/objects.service';
 import { badRequest } from '../common/app-exception';
 import type { AuthUser, RequestMeta } from '../common/auth-user';
+import { DiagramReportService } from '../diagrams/diagram-report.service';
 import { ReportDataService, type ReportProcess } from './report-data.service';
 import {
   buildHandbook,
@@ -69,6 +70,7 @@ export class ReportsService {
     private readonly objects: ObjectsService,
     private readonly data: ReportDataService,
     private readonly grcSettings: GrcSettingsService,
+    private readonly diagramReports: DiagramReportService,
   ) {}
 
   /**
@@ -234,6 +236,18 @@ export class ReportsService {
         input.includeSystems && user.permissions.has(PERMISSIONS.EA_READ)
           ? await this.systemRows(processes, locale)
           : undefined,
+      valueChain: input.includeValueChain
+        ? await this.diagramReports.valueChainPaths(processes, locale, source)
+        : undefined,
+      sipoc: input.includeSipoc
+        ? await this.diagramReports.sipocs(processes, locale, source)
+        : undefined,
+      decisions: input.includeDecisions
+        ? await this.diagramReports.decisions(processes, locale, source)
+        : undefined,
+      orgChart: input.includeOrgChart
+        ? await this.diagramReports.orgExcerpt(processes, locale, source)
+        : undefined,
     });
     await this.logExport('handbook', root.id, user, meta, {
       source,
@@ -241,6 +255,10 @@ export class ReportsService {
       includeChildren: input.includeChildren,
       ...(input.includeRisks ? { includeRisks: true } : {}),
       ...(input.includeSystems ? { includeSystems: true } : {}),
+      ...(input.includeValueChain ? { includeValueChain: true } : {}),
+      ...(input.includeSipoc ? { includeSipoc: true } : {}),
+      ...(input.includeDecisions ? { includeDecisions: true } : {}),
+      ...(input.includeOrgChart ? { includeOrgChart: true } : {}),
       processes: processes.map((p) => p.code),
     });
     return {

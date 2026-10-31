@@ -32,6 +32,11 @@ import {
 } from './report-i18n';
 import type { ReportProcess } from './report-data.service';
 import { reportSteps, type ReportStep } from './report-steps';
+import type {
+  HandbookDecision,
+  HandbookOrgRow,
+  HandbookSipoc,
+} from '../diagrams/diagram-report.service';
 
 /** A raster image with its pixel size (diagram PNGs from the browser, the organisation logo). */
 export interface ReportImage {
@@ -56,6 +61,11 @@ export interface HandbookInput {
   grc?: Map<string, HandbookGrcRow[]>;
   /** "Systems and data" rows per process (Phase 4.3); absent = section not requested. */
   systems?: Map<string, HandbookSystemRow[]>;
+  /** Diagram types (D-126); absent = section not requested. */
+  valueChain?: Map<string, string[]>;
+  sipoc?: Map<string, HandbookSipoc[]>;
+  decisions?: Map<string, HandbookDecision[]>;
+  orgChart?: Map<string, HandbookOrgRow[]>;
 }
 
 /** One application used by a process in the handbook (texts already localised). */
@@ -261,6 +271,14 @@ export async function buildHandbook(input: HandbookInput): Promise<Buffer> {
 
     const children: (Paragraph | Table)[] = [
       para([run(`${p.code}  ${pick(locale, p)}`)], { heading: HeadingLevel.HEADING_1 }),
+      ...(input.valueChain
+        ? [
+            para([run(t.valueChainPath, { bold: true })], { heading: HeadingLevel.HEADING_2 }),
+            ...((input.valueChain.get(p.id) ?? []).length
+              ? input.valueChain.get(p.id)!.map((line) => para([run(line, { color: ACCENT })]))
+              : [para([run(t.noValueChain, { color: MUTED })])]),
+          ]
+        : []),
       para([run(t.description, { bold: true })], { heading: HeadingLevel.HEADING_2 }),
       ...(description ? paras(description) : [para([run(t.noDescription, { color: MUTED })])]),
       para([run(t.details, { bold: true })], { heading: HeadingLevel.HEADING_2 }),
@@ -389,6 +407,91 @@ export async function buildHandbook(input: HandbookInput): Promise<Buffer> {
               ),
             ])
           : para([run(t.noSystems, { color: MUTED })]),
+      );
+    }
+    if (input.sipoc) {
+      const sipocs = input.sipoc.get(p.id) ?? [];
+      children.push(para([run(t.sipocTitle, { bold: true })], { heading: HeadingLevel.HEADING_2 }));
+      if (!sipocs.length) children.push(para([run(t.noSipoc, { color: MUTED })]));
+      for (const sp of sipocs) {
+        const cols = ['suppliers', 'inputs', 'steps', 'outputs', 'customers'] as const;
+        const depth = Math.max(1, ...cols.map((c) => sp.columns[c].length));
+        children.push(
+          para([run(sp.title, { color: MUTED })]),
+          table([
+            new TableRow({
+              tableHeader: true,
+              children: cols.map((c) => cell(t.sipocColumns[c], { header: true, width: 20 })),
+            }),
+            ...Array.from(
+              { length: depth },
+              (_, i) =>
+                new TableRow({
+                  children: cols.map((c) =>
+                    cell(
+                      sp.columns[c][i]
+                        ? `${c === 'steps' ? `${i + 1}. ` : ''}${sp.columns[c][i]}`
+                        : '',
+                    ),
+                  ),
+                }),
+            ),
+          ]),
+        );
+      }
+    }
+    if (input.decisions) {
+      const tables = input.decisions.get(p.id) ?? [];
+      children.push(
+        para([run(t.decisionTables, { bold: true })], { heading: HeadingLevel.HEADING_2 }),
+      );
+      if (!tables.length) children.push(para([run(t.noDecisions, { color: MUTED })]));
+      for (const d of tables) {
+        const head = [...d.inputs, ...d.outputs, t.annotation];
+        const width = Math.floor(100 / head.length);
+        children.push(
+          para([run(d.title, { bold: true })]),
+          para([
+            run(fill(t.decisionStep, { step: d.step, policy: d.hitPolicy }), { color: MUTED }),
+          ]),
+          table([
+            new TableRow({
+              tableHeader: true,
+              children: head.map((h) => cell(h, { header: true, width })),
+            }),
+            ...d.rules.map(
+              (r) =>
+                new TableRow({
+                  children: [...r.cells, r.annotation].map((v) => cell(v, { width })),
+                }),
+            ),
+          ]),
+        );
+      }
+    }
+    if (input.orgChart) {
+      const rows = input.orgChart.get(p.id) ?? [];
+      children.push(para([run(t.orgExcerpt, { bold: true })], { heading: HeadingLevel.HEADING_2 }));
+      children.push(
+        rows.length
+          ? table([
+              new TableRow({
+                tableHeader: true,
+                children: [
+                  cell(t.position, { header: true, width: 28 }),
+                  cell(t.unit, { header: true, width: 24 }),
+                  cell(t.reportsTo, { header: true, width: 24 }),
+                  cell(t.orgChart, { header: true, width: 24 }),
+                ],
+              }),
+              ...rows.map(
+                (r) =>
+                  new TableRow({
+                    children: [cell(r.position), cell(r.unit), cell(r.reportsTo), cell(r.chart)],
+                  }),
+              ),
+            ])
+          : para([run(t.noOrg, { color: MUTED })]),
       );
     }
     if (p.pages.length) {

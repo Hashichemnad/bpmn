@@ -243,6 +243,13 @@ export class PortalService {
     const featured = settings.featured
       .map((f) => v.byKey.get(key(f.entityType, f.entityId)))
       .filter((p): p is Pub => !!p);
+    const startPub = settings.startDiagramId
+      ? v.byKey.get(key('DIAGRAM', settings.startDiagramId))
+      : undefined;
+    const startDiagram =
+      startPub && v.diagrams.get(startPub.entityId)?.type === 'VALUE_CHAIN'
+        ? this.toItem(startPub, v)
+        : null;
     return {
       nameEn: settings.nameEn,
       nameAr: settings.nameAr,
@@ -252,6 +259,7 @@ export class PortalService {
       featured: items(featured),
       recent: items(v.pubs.slice(0, 8)),
       counts: { processes: v.processes.size, pages: v.pages.size, diagrams: v.diagrams.size },
+      startDiagram,
       canManage: user.permissions.has(PERMISSIONS.PORTAL_MANAGE),
     };
   }

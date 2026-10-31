@@ -588,3 +588,71 @@ export interface PortalDiagramDto extends PortalDiagramRefDto {
   drillProcesses: { id: string; code: string; nameEn: string; nameAr: string }[];
   drillDiagrams: PortalDiagramRefDto[];
 }
+
+// ---------- Reports (no DOM: also used on the server) ----------
+
+export interface DmnTableSummary {
+  id: string;
+  nameEn: string;
+  nameAr: string;
+  hitPolicy: string;
+  inputs: { nameEn: string; nameAr: string }[];
+  outputs: { nameEn: string; nameAr: string }[];
+  rules: { inputs: string[]; outputs: string[]; annotationEn: string; annotationAr: string }[];
+}
+
+/** Decision tables of DMN XML for reports (regular expressions; dmn-js is not available there). */
+export function readDmnTables(xml: string): DmnTableSummary[] {
+  const attrs = (s: string) =>
+    Object.fromEntries([...s.matchAll(/([\w:.-]+)="([^"]*)"/g)].map((m) => [m[1], decode(m[2])]));
+  const textOf = (s: string) =>
+    decode(/<(?:[\w-]+:)?text>([\s\S]*?)<\/(?:[\w-]+:)?text>/.exec(s)?.[1]?.trim() ?? '');
+  const out: DmnTableSummary[] = [];
+  for (const d of xml.matchAll(
+    /<(?:[\w-]+:)?decision\s([^>]*)>([\s\S]*?)<\/(?:[\w-]+:)?decision>/g,
+  )) {
+    const da = attrs(d[1]);
+    const table =
+      /<(?:[\w-]+:)?decisionTable\s?([^>]*)>([\s\S]*?)<\/(?:[\w-]+:)?decisionTable>/.exec(d[2]);
+    if (!table) continue;
+    const ta = attrs(table[1]);
+    const named = (a: Record<string, string>) => ({
+      nameEn: a['ph:nameEn'] || a.label || a.name || '',
+      nameAr: a['ph:nameAr'] ?? '',
+    });
+    const inputs = [...table[2].matchAll(/<(?:[\w-]+:)?input\s([^>]*)>/g)].map((m) =>
+      named(attrs(m[1])),
+    );
+    const outputs = [...table[2].matchAll(/<(?:[\w-]+:)?output\s([^>]*?)\/?>/g)].map((m) =>
+      named(attrs(m[1])),
+    );
+    const rules = [
+      ...table[2].matchAll(/<(?:[\w-]+:)?rule\s?([^>]*)>([\s\S]*?)<\/(?:[\w-]+:)?rule>/g),
+    ].map((r) => {
+      const ra = attrs(r[1]);
+      const description = decode(
+        /<(?:[\w-]+:)?description>([\s\S]*?)<\/(?:[\w-]+:)?description>/.exec(r[2])?.[1]?.trim() ??
+          '',
+      );
+      return {
+        inputs: [
+          ...r[2].matchAll(/<(?:[\w-]+:)?inputEntry[^>]*>([\s\S]*?)<\/(?:[\w-]+:)?inputEntry>/g),
+        ].map((m) => textOf(m[1])),
+        outputs: [
+          ...r[2].matchAll(/<(?:[\w-]+:)?outputEntry[^>]*>([\s\S]*?)<\/(?:[\w-]+:)?outputEntry>/g),
+        ].map((m) => textOf(m[1])),
+        annotationEn: ra['ph:annotationEn'] || description,
+        annotationAr: ra['ph:annotationAr'] ?? '',
+      };
+    });
+    out.push({
+      id: da.id ?? '',
+      ...named(da),
+      hitPolicy: ta.hitPolicy ?? 'UNIQUE',
+      inputs,
+      outputs,
+      rules,
+    });
+  }
+  return out;
+}

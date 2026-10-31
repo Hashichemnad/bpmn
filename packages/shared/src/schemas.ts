@@ -794,6 +794,8 @@ export const portalSettingsSchema = z.object({
     .array(z.object({ entityType: contentTypeSchema, entityId: uuidSchema }))
     .max(PORTAL_MAX_FEATURED)
     .default([]),
+  /** A published value chain shown first on the portal home (D-126). */
+  startDiagramId: uuidSchema.nullable().default(null),
 });
 export type PortalSettingsInput = z.infer<typeof portalSettingsSchema>;
 
@@ -846,6 +848,11 @@ export const handbookSchema = handbookPlanSchema.extend({
   includeRisks: z.boolean().default(false),
   /** Optional "Systems and data" section per process (Phase 4.3; users with `ea.read`). */
   includeSystems: z.boolean().default(false),
+  /** Diagram types (D-126): value chain path, SIPOC, linked decision tables, organisation chart excerpt. */
+  includeValueChain: z.boolean().default(false),
+  includeSipoc: z.boolean().default(false),
+  includeDecisions: z.boolean().default(false),
+  includeOrgChart: z.boolean().default(false),
   /** Diagram images rendered in the browser (PNG as base64), one per process. */
   images: z
     .array(

@@ -35,6 +35,7 @@ import {
 import { PageHeader } from '@/components/PageHeader';
 import { ErrorState, LoadingState } from '@/components/states';
 import { useErrorMessage, useLocalized } from '@/components/i18n-helpers';
+import { usePortalDiagrams } from '@/api/diagrams';
 import { useDepartmentTreeData } from '@/features/admin/useDepartmentTreeData';
 
 type FormValues = Omit<PortalSettingsInput, 'featured'> & { featured: string[] };
@@ -59,6 +60,8 @@ export function PortalSettingsPage() {
   const [form] = Form.useForm<FormValues>();
   const mode = Form.useWatch(['access', 'mode'], form);
 
+  // Published diagrams (featured items, value chain start page — D-126).
+  const diagrams = usePortalDiagrams();
   const featuredOptions = useMemo(
     () => [
       {
@@ -74,8 +77,15 @@ export function PortalSettingsPage() {
           (q.data ?? []).map((p) => ({ value: `PAGE:${p.id}`, label: loc(p, 'title') })),
         ),
       },
+      {
+        label: t('diagrams:portal.nav'),
+        options: (diagrams.data ?? []).map((d) => ({
+          value: `DIAGRAM:${d.id}`,
+          label: `${d.code ?? ''} ${loc(d, 'title')}`,
+        })),
+      },
     ],
-    [processes.data, pages, loc, t],
+    [processes.data, pages, diagrams.data, loc, t],
   );
 
   useEffect(() => {
@@ -177,6 +187,18 @@ export function PortalSettingsPage() {
             </Card>
           </Col>
           <Col xs={24} xl={12}>
+            <Card title={t('diagrams:portal.startPage')} style={{ marginBlockEnd: 24 }}>
+              <Form.Item name="startDiagramId" extra={t('diagrams:portal.startPageHint')}>
+                <Select
+                  allowClear
+                  data-testid="portal-start-diagram"
+                  placeholder={t('none')}
+                  options={(diagrams.data ?? [])
+                    .filter((d) => d.diagramType === 'VALUE_CHAIN')
+                    .map((d) => ({ value: d.id, label: `${d.code ?? ''} ${loc(d, 'title')}` }))}
+                />
+              </Form.Item>
+            </Card>
             <Card title={t('portal:settings.featured')}>
               <Form.Item
                 name="featured"

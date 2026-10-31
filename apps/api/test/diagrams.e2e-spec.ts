@@ -4,6 +4,7 @@ import {
   type GraphContent,
 } from '@processhub/shared';
 import { readFileSync } from 'node:fs';
+import JSZip from 'jszip';
 import { join } from 'node:path';
 import {
   createApp,
@@ -429,6 +430,130 @@ describe('Diagrams (e2e)', () => {
     expect((await modeler.get(`/processes/${res.processId}`).expect(200)).body.status).toBe(
       'DRAFT',
     );
+  });
+
+  it('adds the value chain path, SIPOC, decision tables and organisation excerpt to the handbook', async () => {
+    const role = (await admin.post('/objects').send({ type: 'ROLE', nameEn: 'Buyer' }).expect(201))
+      .body;
+    const dmnXml = readFileSync(
+      join(__dirname, '../../../docs/samples/approval-authority.dmn'),
+      'utf8',
+    );
+    const dmn = (
+      await modeler
+        .post('/diagrams')
+        .send({ type: 'DMN', nameEn: 'Authority', content: dmnXml })
+        .expect(201)
+    ).body;
+    const bpmn = sampleBpmn(['Task_1']).replace(
+      '<bpmn:task id="Task_1" name="Task_1" />',
+      `<bpmn:businessRuleTask id="Rule_1" name="Find approver" xmlns:ph="http://processhub.io/schema/bpmn" ph:decisionRef="${dmn.id}" />`,
+    );
+    await admin.put(`/processes/${processId}/model`).send({ bpmnXml: bpmn }).expect(200);
+    await admin
+      .post(`/processes/${processId}/links`)
+      .send({ bpmnElementId: 'Rule_1', repoObjectId: role.id })
+      .expect(201);
+    await modeler
+      .post('/diagrams')
+      .send({
+        type: 'VALUE_CHAIN',
+        nameEn: 'Enterprise chain',
+        content: valueChain(['Buy goods'], processId),
+      })
+      .expect(201);
+    const sipoc = {
+      schema: 1,
+      type: 'SIPOC',
+      processId,
+      columns: {
+        suppliers: [{ id: 'S1', nameEn: 'Vendor', nameAr: 'المورد' }],
+        inputs: [],
+        steps: [{ id: 'P1', nameEn: 'Order', nameAr: 'طلب' }],
+        outputs: [],
+        customers: [{ id: 'C1', nameEn: 'Requester', nameAr: 'مقدم الطلب' }],
+      },
+    };
+    await modeler
+      .post('/diagrams')
+      .send({ type: 'SIPOC', nameEn: 'SIPOC', content: JSON.stringify(sipoc) })
+      .expect(201);
+    const org = {
+      schema: 1,
+      type: 'ORG_CHART',
+      nodes: [
+        {
+          id: 'U1',
+          kind: 'unit',
+          x: 0,
+          y: 0,
+          width: 100,
+          height: 50,
+          nameEn: 'Procurement',
+          nameAr: '',
+        },
+        {
+          id: 'P1',
+          kind: 'position',
+          x: 0,
+          y: 80,
+          width: 100,
+          height: 50,
+          nameEn: 'Buyer',
+          nameAr: '',
+          objectId: role.id,
+        },
+      ],
+      edges: [
+        {
+          id: 'R1',
+          kind: 'reports',
+          sourceId: 'U1',
+          targetId: 'P1',
+          waypoints: [],
+          nameEn: '',
+          nameAr: '',
+        },
+      ],
+    };
+    await modeler
+      .post('/diagrams')
+      .send({ type: 'ORG_CHART', nameEn: 'Org', content: JSON.stringify(org) })
+      .expect(201);
+
+    const res = await modeler
+      .post('/reports/handbook')
+      .send({
+        processId,
+        locale: 'en',
+        includeValueChain: true,
+        includeSipoc: true,
+        includeDecisions: true,
+        includeOrgChart: true,
+      })
+      .buffer(true)
+      .parse((r, cb) => {
+        const chunks: Buffer[] = [];
+        r.on('data', (c: Buffer) => chunks.push(c));
+        r.on('end', () => cb(null, Buffer.concat(chunks)));
+      })
+      .expect(200);
+    const xml = await (
+      await JSZip.loadAsync(res.body as Buffer)
+    )
+      .file('word/document.xml')!
+      .async('string');
+    for (const text of [
+      'Place in the value chain',
+      'VC-001 Enterprise chain',
+      'Buy goods',
+      'Vendor',
+      'Decision tables',
+      'IT Director',
+      'Organisation (positions performing the steps)',
+      'Procurement',
+    ])
+      expect(xml).toContain(text);
   });
 
   it('applies owner-only rights for Process Owners', async () => {

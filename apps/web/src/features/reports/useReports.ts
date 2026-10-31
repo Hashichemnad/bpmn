@@ -14,6 +14,11 @@ export interface HandbookOptions {
   includeRisks?: boolean;
   /** "Systems and data" section (Phase 4.3; users with `ea.read`). */
   includeSystems?: boolean;
+  /** Diagram sections (D-126): value chain path, SIPOC, linked decision tables, org chart excerpt. */
+  includeValueChain?: boolean;
+  includeSipoc?: boolean;
+  includeDecisions?: boolean;
+  includeOrgChart?: boolean;
   source?: ReportSource;
   locale: Locale;
 }
@@ -75,6 +80,10 @@ export function useReports() {
             includeChildren: o.includeChildren,
             includeRisks: !!o.includeRisks,
             includeSystems: !!o.includeSystems,
+            includeValueChain: !!o.includeValueChain,
+            includeSipoc: !!o.includeSipoc,
+            includeDecisions: !!o.includeDecisions,
+            includeOrgChart: !!o.includeOrgChart,
             source: plan.source,
             locale: o.locale,
             images,

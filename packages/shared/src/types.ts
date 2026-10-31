@@ -816,6 +816,8 @@ export interface PortalSettingsDto {
   access: { mode: PortalAccessMode; departmentIds: string[]; roleKeys: SystemRoleKey[] };
   quickLinks: PortalQuickLink[];
   featured: { entityType: ContentType; entityId: string }[];
+  /** Published value chain shown first on the portal home (D-126). */
+  startDiagramId: string | null;
 }
 
 /** Publication details shown on every portal item. */
@@ -856,6 +858,8 @@ export interface PortalHomeDto {
   featured: PortalItemDto[];
   recent: PortalItemDto[];
   counts: { processes: number; pages: number; diagrams: number };
+  /** The value chain start page (Setting portal.startDiagramId), when it is published. */
+  startDiagram: PortalItemDto | null;
   canManage: boolean;
 }
 
