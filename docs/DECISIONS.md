@@ -2144,3 +2144,52 @@ summary (BACKLOG).
 4. **Demo approval users** (`section@`, `pmo@`, `finance@`, `dgo@`, `hr@` with the Reviewer role) are created only
    by the workflow demo seed, which runs only with `SEED_DEMO_DATA=true`; the seed test asserts that an install
    without demo data has none of them, no executable processes and no requests.
+
+## D-155 — Import batches on the existing job runner (Import tools / M15, 2026-10-31)
+
+Every import is an `ImportBatch` (number `IMP-0001`, kind, status, options, mapping, preview, summary, result):
+upload (files stored in S3 storage as `ImportFile`, never executed) → **parse** job → preview with the detected
+column mapping and a validation report (errors block, warnings allowed) → dry-run summary (create / update / skip)
+→ **apply** job → result report (Excel) → optional **undo**. The jobs reuse the in-process mining job runner
+(`MiningJobsService`, kinds `IMPORT_PARSE` / `IMPORT_APPLY`): progress, cancel and "interrupted by a restart" come
+for free, and only one queue exists. Importers are plug-ins (`parse(ctx)` → preview items, `apply(item)` →
+entities) in one registry; the batch service owns status, matching, decisions, undo and reporting. The preview is
+stored on the batch (JSON, capped at 5,000 items); each item is applied in its own transaction, so a cancelled or
+failed apply leaves a consistent, undoable partial result.
+
+## D-156 — Imported flag, re-import matching and undo (2026-10-31)
+
+- `ImportItem` (batch, entity type, entity id, action CREATED / UPDATED / SKIPPED / FAILED, external key, source
+  file, before / after summary) is the batch link of every entity. Processes, pages, diagrams and library objects
+  also carry `importBatchId` (the visible "Imported" flag, also used by the migration dashboard).
+- Re-import matches in this order: **code** (process / diagram code, object code), **e-mail** (users),
+  **external id** (BPMN process id, Visio / ARIS / Confluence page id — stored as the item's external key) and
+  **file name** (documents and diagrams of an earlier batch). A match updates (only when the target is still a
+  Draft; published / in-review content is skipped with a warning) instead of duplicating.
+- Everything imported is a **Draft**, with an owner from the file or the batch's default owner.
+- **Undo** removes what the batch created, in reverse order, as soft deletes (audited `DELETE` with the batch),
+  and only while every created item is still a Draft and has no content created outside the batch (e.g. a child
+  process added by hand): otherwise undo lists the blockers. Users created by a batch are deactivated and soft
+  deleted; updates are not reverted — the batch page shows their before / after.
+- The existing Excel imports (risks, controls, requirements, applications, interfaces, data objects,
+  capabilities, KPIs, objectives, measurements) are batch kinds that call the module's own `import(dryRun)`
+  unchanged: the dry run is the preview, apply runs the real import; their result counts are recorded but they
+  have no per-entity undo (those modules have their own approval / history).
+
+## D-157 — Upload security of imports (2026-10-31)
+
+One module (`apps/api/src/imports/safe-upload.ts`) for all importers: type by **content** (magic bytes / XML root
+/ UTF-8 text) and extension together; per-file and per-batch size limits; ZIP archives read with JSZip only after
+checking the central directory: entry count ≤ 2,000, total uncompressed ≤ 200 MB, per-entry ratio ≤ 100:1, no
+absolute paths, `..` segments, drive letters or symlinks (ZIP-slip — entries are never written to disk anyway);
+XML parsed only after rejecting `<!DOCTYPE` / `<!ENTITY` (no XXE / billion laughs) with the DOM parser of jsdom
+(no external resources); macro-enabled Office formats (`.docm`, `.xlsm`, `.dotm`, `vbaProject.bin` inside a
+package) are rejected; HTML goes through the wiki's DOMPurify rules, SVG through the existing SVG sanitiser;
+files are stored in S3 storage and never executed. Antivirus scanning stays a go-live decision (BACKLOG).
+
+## D-158 — Parsing libraries (2026-10-31)
+
+`mammoth` (Word → semantic HTML, images as attachments through its image handler), `unpdf` (pdf.js text
+extraction, `isEvalSupported: false`), `marked` (Markdown → HTML), `jszip` (moves from dev to runtime
+dependencies) and jsdom's XML DOM parser (BPMN, DMN, Visio pages, ARIS AML). All HTML results are sanitised with
+the wiki's `sanitizeRichText`, so the TipTap editor receives only its own tags.

@@ -2,7 +2,39 @@
 
 Read this together with `CLAUDE.md` at the start of every session.
 
-## Current state — 2026-10-31 (Phase 5 — Part 2: Workflow execution, branch `phase-5-2-workflow-execution`, done — awaiting review)
+## Current state — 2026-10-31 (Import tools / migration — module M15, branch `import-tools`, in progress)
+
+Everything up to Phase 5.2 (workflow execution) is merged into `main`. This branch builds module M15: moving DOF's
+existing processes, diagrams, SOPs and lists into ProcessHub before go-live — file based only (uploads), no live
+connectors (BACKLOG). The session works on `claude/laughing-franklin-koipwl` (the harness branch name) and pushes
+the same commits to `import-tools`.
+
+Technical approach (D-155 – D-162): every import is an `ImportBatch` (upload → parse job → preview with mapping and
+validation → dry run → apply job → result report → undo) on the existing mining job runner (kinds `IMPORT_PARSE`,
+`IMPORT_APPLY`); importers are plug-ins of one registry in `apps/api/src/imports/importers/`; `ImportItem` records
+every created / updated entity (undo, re-import matching by code / external id / file name, before/after); imported
+entities carry `importBatchId` (the "Imported" flag). Upload security in `apps/api/src/imports/safe-upload.ts`
+(content sniffing, size / entry / ratio limits, ZIP-slip, no DTD / entities, macro formats rejected, DOMPurify /
+SVG sanitising).
+
+Local setup: as in Phase 5.2 below (PostgreSQL 16, roles / databases, build the shared package first).
+
+Steps (tick as they are committed; a new session continues at the first unticked one):
+
+- [x] 0. CLAUDE.md phase table (5.2 merged, Import in progress), this plan, DECISIONS D-155 – D-162.
+- [ ] 1. Import Center framework: schema (`ImportBatch`, `ImportFile`, `ImportItem`, `importBatchId` flags),
+      permission `import.manage` (+ `export.full` for step 7), shared `imports.ts`, API module `imports` (upload
+      security, batches, jobs, dry run, apply, undo, Excel result report, existing GRC / EA / KPI Excel imports as
+      batch kinds), web Import Center (list, new batch, batch page), EN / AR, API + security tests, e2e.
+- [ ] 2. Process house, departments and users from Excel / CSV (templates, validation, invitations, 2FA rules).
+- [ ] 3. Diagrams: BPMN (ZIP / files), Visio `.vsdx`, ARIS AML (EPC, value chains, objects), DMN.
+- [ ] 4. Documents into the wiki: Word, PDF, Confluence HTML export, Markdown folders; links to processes.
+- [ ] 5. AI-assisted migration: SOP → BPMN review queue, risks / controls extraction, bulk translation.
+- [ ] 6. Migration dashboard and review queue (My tasks, bulk actions).
+- [ ] 7. Full export package + import into an empty installation (round-trip test).
+- [ ] 8. Samples `docs/samples/import/`, screenshots, `docs/MIGRATION.md`, README, final checks, PR.
+
+## Previous state — 2026-10-31 (Phase 5 — Part 2: Workflow execution, branch `phase-5-2-workflow-execution`, merged into `main`)
 
 Everything up to Phase 5.1 (process mining and simulation) is merged into `main`. This branch builds module M14:
 run approved processes as task flows with forms, assignments, approvals, SLAs and monitoring. The session works on
