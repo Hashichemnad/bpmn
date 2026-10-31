@@ -28,48 +28,7 @@ Steps (tick as they are committed; a new session continues at the first unticked
       process versions, 65,500 step links, 5,000 pages / 10,050 versions, 1,000 risks, 1,500 controls, 6,000
       tests, 7,200 KPI values, 994,022 mining events, 10,000 requests, 200,000 audit rows; database 554 MB).
       Timings (API built with `nest build`, `NODE_ENV=production`, PostgreSQL 16 on the same 4-vCPU sandbox,
-      20 sequential requests after 2 warm-ups; before = `main`):
-
-      | Endpoint | P95 before (ms) | P95 after (ms) | P50 after | Response KB |
-      | --- | ---: | ---: | ---: | ---: |
-      | Auth: current user | 13 | 10 | 8 | 1 |
-      | Process tree | 85 | 72 | 57 | 702 |
-      | Process list (page 1) | 15 | 13 | 10 | 7 |
-      | Process detail (largest diagram) | 15 | 13 | 11 | 2 |
-      | Process model (largest diagram) | 24 | 18 | 15 | 191 |
-      | Process versions | 15 | 10 | 8 | 1 |
-      | Search "invoice" | 1007 | 58 | 48 | 12 |
-      | Portal home | 677 | 129 | 105 | 11 |
-      | Portal process list | 261 | 67 | 58 | 243 |
-      | Portal process page | 351 | 81 | 69 | 18 |
-      | Portal page | 677 | 105 | 93 | 3 |
-      | Portal search "approve" | 736 | 169 | 132 | 23 |
-      | Portal "my processes" | 1480 | 164 | 146 | 344 |
-      | My tasks (reviewer) | 815 | 84 | 57 | 5 |
-      | Notifications (unread count) | 11 | 7 | 6 | 0 |
-      | Notifications (list) | 15 | 12 | 9 | 8 |
-      | Inbox: workflow tasks (manager) | 26 | 18 | 15 | 16 |
-      | Inbox: task counts (manager) | 16 | 11 | 9 | 0 |
-      | Governance dashboard | 311 | 187 | 170 | 532 |
-      | GRC dashboard + heat maps | 270 | 257 | 220 | 4 |
-      | GRC process view (heat map per process) | 20 | 16 | 14 | 2 |
-      | Risk register (page 1) | 418 | 142 | 117 | 35 |
-      | Control register (page 1) | 471 | 191 | 159 | 33 |
-      | Assurance dashboard | 1337 | 274 | 251 | 100 |
-      | Assurance tasks | 137 | 127 | 98 | 267 |
-      | KPI list (page 1) | 363 | 162 | 146 | 37 |
-      | KPI scorecard (dashboard) | 372 | 179 | 136 | 349 |
-      | Application catalogue (page 1) | 114 | 85 | 74 | 27 |
-      | Workflow monitor | 28 | 24 | 19 | 3 |
-      | Workflow dashboard | 593 | 272 | 229 | 18 |
-      | Workflow case page | 25 | 24 | 20 | 16 |
-      | Import Center (batches) | 16 | 16 | 14 | 8 |
-      | Audit log (page 1) | 44 | 33 | 29 | 21 |
-      | Users (page 1) | 19 | 14 | 12 | 12 |
-      | Mining log | 17 | 11 | 10 | 1 |
-      | Mining map (analysis, cached) | 49 | 13 | 10 | 22 |
-      | Apply theme (dry run, all diagrams) | 33925 | 1759 | 1389 | 0 |
-      | Handbook export (branch, Word) | — ¹ | 808 | 736 | 70 |
+      20 sequential requests after 2 warm-ups; before = `main`): see "API timings" below.
 
       ¹ The probe first asked for a whole level-1 branch (130 processes, refused by the 40-process limit, as
       designed); measured on a level-2 branch. Every page call is now < 300 ms at P95, exports < 2 s.
@@ -90,13 +49,8 @@ Steps (tick as they are committed; a new session continues at the first unticked
       unlabeled icon buttons, clickable elements without keyboard access, hard-coded strings and non-`Intl`
       dates came back empty after the fixes. `scripts/check-i18n.mjs` in CI (5,118 keys, plural-aware). CI on
       `ubuntu-24.04`, Node 24 action majors, pnpm via Corepack.
-- [x] 4. Production images (D-169, D-170), built here with a sandbox-only proxy wrapper:
-
-      | Image | Before | After |
-      | --- | ---: | ---: |
-      | processhub-api (runtime) | 1.13 GB | 553 MB (239 MB base) |
-      | processhub-api-migrate (one-shot) | — | 733 MB |
-      | processhub-web | 85.8 MB | 98.5 MB (+7 MB precompressed copies; unprivileged, uid 101) |
+- [x] 4. Production images (D-169, D-170), built here with a sandbox-only proxy wrapper (sizes in "Image sizes"
+      below).
 
       Smoke test of the new images: migrate image applied the migrations and the seed, the slim API image
       answered all 38 probes of `perf-api.ts` (mining workers, Word export, apply theme), the web image served
@@ -108,10 +62,61 @@ Steps (tick as they are committed; a new session continues at the first unticked
       CLAUDE.md phase table and data model, BACKLOG; CI bundle budget step (250 KB gzip). Local checks on
       2026-11-01: format, lint, type-check, `check-i18n` (5,121 keys), web unit tests (28 files), API unit +
       e2e (all 52 suites incl. `seed-volume`, then the changed suites again), `pnpm build`, `pnpm audit
-    --audit-level high` (no high / critical; moderate only), the three Docker images built and smoke-tested,
+--audit-level high` (no high / critical; moderate only), the three Docker images built and smoke-tested,
       the full stack with `docker compose up` (migrate → API → web healthy), `backup-drill.sh` passed (backup
       1 s, restore 20 s on demo data) and the Playwright suite against that stack (result below). PR: see
       below.
+
+### API timings (final session, part A)
+
+| Endpoint                                | P95 before (ms) | P95 after (ms) | P50 after | Response KB |
+| --------------------------------------- | --------------: | -------------: | --------: | ----------: |
+| Auth: current user                      |              13 |             10 |         8 |           1 |
+| Process tree                            |              85 |             72 |        57 |         702 |
+| Process list (page 1)                   |              15 |             13 |        10 |           7 |
+| Process detail (largest diagram)        |              15 |             13 |        11 |           2 |
+| Process model (largest diagram)         |              24 |             18 |        15 |         191 |
+| Process versions                        |              15 |             10 |         8 |           1 |
+| Search "invoice"                        |            1007 |             58 |        48 |          12 |
+| Portal home                             |             677 |            129 |       105 |          11 |
+| Portal process list                     |             261 |             67 |        58 |         243 |
+| Portal process page                     |             351 |             81 |        69 |          18 |
+| Portal page                             |             677 |            105 |        93 |           3 |
+| Portal search "approve"                 |             736 |            169 |       132 |          23 |
+| Portal "my processes"                   |            1480 |            164 |       146 |         344 |
+| My tasks (reviewer)                     |             815 |             84 |        57 |           5 |
+| Notifications (unread count)            |              11 |              7 |         6 |           0 |
+| Notifications (list)                    |              15 |             12 |         9 |           8 |
+| Inbox: workflow tasks (manager)         |              26 |             18 |        15 |          16 |
+| Inbox: task counts (manager)            |              16 |             11 |         9 |           0 |
+| Governance dashboard                    |             311 |            187 |       170 |         532 |
+| GRC dashboard + heat maps               |             270 |            257 |       220 |           4 |
+| GRC process view (heat map per process) |              20 |             16 |        14 |           2 |
+| Risk register (page 1)                  |             418 |            142 |       117 |          35 |
+| Control register (page 1)               |             471 |            191 |       159 |          33 |
+| Assurance dashboard                     |            1337 |            274 |       251 |         100 |
+| Assurance tasks                         |             137 |            127 |        98 |         267 |
+| KPI list (page 1)                       |             363 |            162 |       146 |          37 |
+| KPI scorecard (dashboard)               |             372 |            179 |       136 |         349 |
+| Application catalogue (page 1)          |             114 |             85 |        74 |          27 |
+| Workflow monitor                        |              28 |             24 |        19 |           3 |
+| Workflow dashboard                      |             593 |            272 |       229 |          18 |
+| Workflow case page                      |              25 |             24 |        20 |          16 |
+| Import Center (batches)                 |              16 |             16 |        14 |           8 |
+| Audit log (page 1)                      |              44 |             33 |        29 |          21 |
+| Users (page 1)                          |              19 |             14 |        12 |          12 |
+| Mining log                              |              17 |             11 |        10 |           1 |
+| Mining map (analysis, cached)           |              49 |             13 |        10 |          22 |
+| Apply theme (dry run, all diagrams)     |           33925 |           1759 |      1389 |           0 |
+| Handbook export (branch, Word)          |             — ¹ |            808 |       736 |          70 |
+
+### Image sizes (final session, part A)
+
+| Image                             |  Before |                                                       After |
+| --------------------------------- | ------: | ----------------------------------------------------------: |
+| processhub-api (runtime)          | 1.13 GB |                                        553 MB (239 MB base) |
+| processhub-api-migrate (one-shot) |       — |                                                      733 MB |
+| processhub-web                    | 85.8 MB | 98.5 MB (+7 MB precompressed copies; unprivileged, uid 101) |
 
 Next: merge review of the final-session PR; then Phase 4.4 integrations. Known limits are in BACKLOG ("From
 the final session, part A").
