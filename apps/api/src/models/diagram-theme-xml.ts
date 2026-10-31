@@ -25,6 +25,39 @@ export function hasExplicitColour(shape: Element): boolean {
   );
 }
 
+const SHAPE_TAG = /<(?:[\w.-]+:)?BPMNShape\b[^>]*>/g;
+const COLOUR_ATTR = /\s[\w.-]+:(?:background-color|border-color|fill|stroke)\s*=/;
+const ELEMENT_ID = /<(?:[\w.-]+:)?(\w+)\b[^>]*?\sid="([^"]+)"/g;
+/** Shapes of these elements never get a theme colour (`themeKindOf` returns null). */
+const NEVER_THEMED = new Set([
+  'participant',
+  'textAnnotation',
+  'dataObjectReference',
+  'dataStoreReference',
+  'group',
+  'dataInput',
+  'dataOutput',
+]);
+
+/**
+ * Quick text check (no DOM parse): false when every BPMNShape either carries a colour already or
+ * shows an element the theme never colours, so `applyThemeToXml` cannot change anything. True
+ * when in doubt.
+ */
+export function mayNeedColours(xml: string): boolean {
+  const uncoloured: string[] = [];
+  for (const m of xml.matchAll(SHAPE_TAG)) {
+    if (COLOUR_ATTR.test(m[0])) continue;
+    const ref = /\sbpmnElement="([^"]+)"/.exec(m[0]);
+    if (!ref) return true;
+    uncoloured.push(ref[1]);
+  }
+  if (!uncoloured.length) return false;
+  const typeOf = new Map<string, string>();
+  for (const m of xml.matchAll(ELEMENT_ID)) if (!typeOf.has(m[2])) typeOf.set(m[2], m[1]);
+  return uncoloured.some((id) => !NEVER_THEMED.has(typeOf.get(id) ?? ''));
+}
+
 /** The prefix bound to `ns` on the root, declaring `preferred` (or a free variant) when missing. */
 function prefixFor(root: Element, ns: string, preferred: string): string {
   const bound = root.lookupPrefix(ns);
@@ -45,6 +78,8 @@ export function applyThemeToXml(
   xml: string,
   theme: DiagramTheme,
 ): { xml: string; changed: number } {
+  // Most diagrams are coloured already: skip the (costly) DOM parse when no shape can change.
+  if (!mayNeedColours(xml)) return { xml, changed: 0 };
   const w = window();
   const doc = new w.DOMParser().parseFromString(xml, 'application/xml');
   if (doc.getElementsByTagName('parsererror').length) return { xml, changed: 0 };

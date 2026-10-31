@@ -39,6 +39,7 @@ import type { AuthUser, RequestMeta } from '../common/auth-user';
 import { GrcService } from './grc.service';
 import { GrcSettingsService } from './grc-settings.service';
 import { GrcDashboardService } from './grc-dashboard.service';
+import { compareNatural } from '../common/compare';
 
 export interface GrcFile {
   data: Buffer;
@@ -859,7 +860,7 @@ export class GrcExcelService {
     };
     const sorted = [...links].sort(
       (a, b) =>
-        a.process.code.localeCompare(b.process.code, undefined, { numeric: true }) ||
+        compareNatural(a.process.code, b.process.code) ||
         a.bpmnElementId.localeCompare(b.bpmnElementId) ||
         (a.repoObject.code ?? '').localeCompare(b.repoObject.code ?? ''),
     );

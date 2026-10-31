@@ -45,6 +45,7 @@ import { badRequest, conflict, forbidden, notFound } from '../common/app-excepti
 import type { AuthUser, RequestMeta } from '../common/auth-user';
 import { elementLabel } from '../models/bpmn-xml';
 import { GrcSettingsService } from './grc-settings.service';
+import { compareNatural } from '../common/compare';
 
 type Tx = Prisma.TransactionClient | PrismaClient;
 
@@ -270,7 +271,7 @@ function page<T>(
     const va = get(a);
     const vb = get(b);
     if (typeof va === 'number' && typeof vb === 'number') return (va - vb) * dir;
-    return String(va).localeCompare(String(vb), undefined, { numeric: true }) * dir;
+    return compareNatural(String(va), String(vb)) * dir;
   });
   const start = (q.page - 1) * q.pageSize;
   return {
@@ -388,22 +389,37 @@ export class GrcService {
 
   async listRisks(q: RiskListQuery): Promise<Paginated<RiskDto>> {
     const settings = await this.settings.get();
-    const rows = await this.prisma.repoObject.findMany({
-      where: {
-        type: 'RISK',
-        deletedAt: null,
-        ownerId: q.ownerId,
-        ...this.scopeFilter(q.scopeDepartmentId, { risk: { departmentId: q.scopeDepartmentId } }),
-        ...this.textFilter(q.q),
-        ...(q.processId ? { links: { some: { processId: q.processId } } } : {}),
-        risk: {
-          status: q.status,
-          category: q.category,
-          departmentId: q.departmentId,
-        },
+    // Filters on linked controls and the step count need every row in full; otherwise the
+    // register filters and sorts light rows and loads the includes for one page only.
+    const light =
+      !(q.cell && q.matrix === 'tested') &&
+      q.withoutControls === undefined &&
+      !q.alertWithoutEffectiveControl &&
+      q.sort !== 'stepCount';
+    const where: Prisma.RepoObjectWhereInput = {
+      type: 'RISK',
+      deletedAt: null,
+      ownerId: q.ownerId,
+      ...this.scopeFilter(q.scopeDepartmentId, { risk: { departmentId: q.scopeDepartmentId } }),
+      ...this.textFilter(q.q),
+      ...(q.processId ? { links: { some: { processId: q.processId } } } : {}),
+      risk: {
+        status: q.status,
+        category: q.category,
+        departmentId: q.departmentId,
       },
-      include: riskInclude,
-    });
+    };
+    const rows: RiskRow[] = light
+      ? (await this.prisma.repoObject.findMany({ where, include: { risk: true } })).map(
+          (o) =>
+            ({
+              ...o,
+              owner: null,
+              _count: { links: 0 },
+              risk: { ...o.risk!, department: null, controls: [] },
+            }) as RiskRow,
+        )
+      : await this.prisma.repoObject.findMany({ where, include: riskInclude });
     let items = rows.map((r) => toRiskDto(r, settings));
     if (q.overdue !== undefined) items = items.filter((r) => r.overdue === q.overdue);
     if (q.rating) items = items.filter((r) => r.rating.residualBand === q.rating);
@@ -427,7 +443,7 @@ export class GrcService {
     if (q.alert !== undefined) items = items.filter((r) => r.rating.alert === q.alert);
     if (q.alertWithoutEffectiveControl)
       items = items.filter((r) => r.rating.alert && !r.effectivelyControlled);
-    return page(
+    const result = page(
       items,
       q,
       {
@@ -441,6 +457,21 @@ export class GrcService {
       },
       'code',
     );
+    if (!light) return result;
+    return this.fullPage(result, (ids) =>
+      this.prisma.repoObject
+        .findMany({ where: { id: { in: ids } }, include: riskInclude })
+        .then((full) => full.map((r) => toRiskDto(r, settings))),
+    );
+  }
+
+  /** Replaces the light items of a page by their full DTOs (same order). */
+  private async fullPage<T extends { id: string }>(
+    result: Paginated<T>,
+    load: (ids: string[]) => Promise<T[]>,
+  ): Promise<Paginated<T>> {
+    const full = new Map((await load(result.items.map((i) => i.id))).map((i) => [i.id, i]));
+    return { ...result, items: result.items.map((i) => full.get(i.id) ?? i) };
   }
 
   /** Owned by the department, or linked to one of its processes (as on the dashboard). */
@@ -735,32 +766,55 @@ export class GrcService {
 
   async listControls(q: ControlListQuery): Promise<Paginated<ControlDto>> {
     const settings = await this.settings.get();
-    const rows = await this.prisma.repoObject.findMany({
-      where: {
-        type: 'CONTROL',
-        deletedAt: null,
-        ownerId: q.ownerId,
-        ...this.scopeFilter(q.scopeDepartmentId, {
-          control: { departmentId: q.scopeDepartmentId },
-        }),
-        ...this.textFilter(q.q),
-        ...(q.processId ? { links: { some: { processId: q.processId } } } : {}),
-        control: {
-          status: q.status,
-          departmentId: q.departmentId,
-          controlType: q.controlType,
-          nature: q.nature,
-          effectiveness: q.effectiveness,
-          keyControl: q.keyAttention ? true : q.keyControl,
-          ...(q.keyAttention ? { effectiveness: { in: ['NOT_ASSESSED', 'NOT_EFFECTIVE'] } } : {}),
-        },
+    // Light rows for filtering and sorting; full includes for the page only (as listRisks).
+    const light = q.sort !== 'stepCount';
+    const where: Prisma.RepoObjectWhereInput = {
+      type: 'CONTROL',
+      deletedAt: null,
+      ownerId: q.ownerId,
+      ...this.scopeFilter(q.scopeDepartmentId, {
+        control: { departmentId: q.scopeDepartmentId },
+      }),
+      ...this.textFilter(q.q),
+      ...(q.processId ? { links: { some: { processId: q.processId } } } : {}),
+      control: {
+        status: q.status,
+        departmentId: q.departmentId,
+        controlType: q.controlType,
+        nature: q.nature,
+        effectiveness: q.effectiveness,
+        keyControl: q.keyAttention ? true : q.keyControl,
+        ...(q.keyAttention ? { effectiveness: { in: ['NOT_ASSESSED', 'NOT_EFFECTIVE'] } } : {}),
       },
-      include: controlInclude,
-    });
+    };
+    const rows: ControlRow[] = light
+      ? (
+          await this.prisma.repoObject.findMany({
+            where,
+            include: {
+              control: { include: { testPlans: controlInclude.control.include.testPlans } },
+            },
+          })
+        ).map(
+          (o) =>
+            ({
+              ...o,
+              owner: null,
+              _count: { links: 0 },
+              control: {
+                ...o.control!,
+                department: null,
+                system: null,
+                risks: [],
+                requirements: [],
+              },
+            }) as ControlRow,
+        )
+      : await this.prisma.repoObject.findMany({ where, include: controlInclude });
     let items = rows.map((r) => toControlDto(r, settings));
     if (q.overdue !== undefined) items = items.filter((r) => r.overdue === q.overdue);
     if (q.testOverdue !== undefined) items = items.filter((r) => r.testOverdue === q.testOverdue);
-    return page(
+    const result = page(
       items,
       q,
       {
@@ -773,6 +827,12 @@ export class GrcService {
         stepCount: (x) => x.stepCount,
       },
       'code',
+    );
+    if (!light) return result;
+    return this.fullPage(result, (ids) =>
+      this.prisma.repoObject
+        .findMany({ where: { id: { in: ids } }, include: controlInclude })
+        .then((full) => full.map((r) => toControlDto(r, settings))),
     );
   }
 

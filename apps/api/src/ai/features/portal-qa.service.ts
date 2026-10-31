@@ -99,7 +99,8 @@ export class PortalQaService {
       ORDER BY ts_rank_cd(p."searchVector", query) DESC, p."publishedAt" DESC
       LIMIT ${MAX_SOURCES}`;
     const byId = new Map(visible.map((p) => [p.id, p]));
-    return rows.map((r) => byId.get(r.id)!).filter(Boolean);
+    // Full published text only for the few sources sent to the model.
+    return this.portal.withText(rows.map((r) => byId.get(r.id)!).filter(Boolean), true);
   }
 
   /** One numbered <source> block: the published text (pages) or published outline (processes). */

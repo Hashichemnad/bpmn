@@ -18,6 +18,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { elementLabel } from '../models/bpmn-xml';
 import { GrcService } from './grc.service';
 import { GrcSettingsService } from './grc-settings.service';
+import { compareNatural } from '../common/compare';
 
 interface Link {
   processId: string;
@@ -330,7 +331,7 @@ export class GrcDashboardService {
       })
       .sort(
         (a, b) =>
-          a.process.code.localeCompare(b.process.code, undefined, { numeric: true }) ||
+          compareNatural(a.process.code, b.process.code) ||
           a.bpmnElementId.localeCompare(b.bpmnElementId),
       );
   }

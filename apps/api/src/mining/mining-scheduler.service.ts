@@ -8,13 +8,13 @@ import {
 import { APP_CONFIG, type AppConfig } from '../config/config';
 import { MiningSettingsService } from './mining-settings.service';
 import { LogImportService } from './log-import.service';
+import { startPeriodic, type Periodic } from '../common/periodic';
 
 /** Periodic mining work (like the KPI scheduler): retention of event logs. */
 @Injectable()
 export class MiningScheduler implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(MiningScheduler.name);
-  private timer?: ReturnType<typeof setInterval>;
-  private first?: ReturnType<typeof setTimeout>;
+  private periodic?: Periodic;
   private readonly jobs: ((now: Date) => Promise<unknown>)[] = [];
 
   constructor(
@@ -31,14 +31,18 @@ export class MiningScheduler implements OnModuleInit, OnModuleDestroy {
   onModuleInit() {
     const minutes = this.config.SCHEDULER_INTERVAL_MINUTES;
     if (!minutes || this.config.NODE_ENV === 'test') return;
-    const run = () => void this.runOnce().catch((e: Error) => this.logger.error(e.message));
-    this.first = setTimeout(run, 150_000);
-    this.timer = setInterval(run, minutes * 60_000);
+    // Never two runs at once (a slow run on a large repository skips the next tick).
+    this.periodic = startPeriodic(
+      'Mining scheduler',
+      () => this.runOnce(),
+      150_000,
+      minutes * 60_000,
+      this.logger,
+    );
   }
 
   onModuleDestroy() {
-    clearTimeout(this.first);
-    clearInterval(this.timer);
+    this.periodic?.stop();
   }
 
   async runOnce(now = new Date()) {

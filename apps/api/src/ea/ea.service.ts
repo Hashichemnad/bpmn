@@ -32,6 +32,7 @@ import { AuditService, diffFields } from '../audit/audit.service';
 import { badRequest, conflict, notFound } from '../common/app-exception';
 import type { AuthUser, RequestMeta } from '../common/auth-user';
 import { elementLabel } from '../models/bpmn-xml';
+import { compareNatural } from '../common/compare';
 
 type Tx = Prisma.TransactionClient | PrismaClient;
 
@@ -239,7 +240,7 @@ export function pageOf<T>(
     const va = get(a);
     const vb = get(b);
     if (typeof va === 'number' && typeof vb === 'number') return (va - vb) * dir;
-    return String(va).localeCompare(String(vb), undefined, { numeric: true }) * dir;
+    return compareNatural(String(va), String(vb)) * dir;
   });
   const start = (q.page - 1) * q.pageSize;
   return {
@@ -452,7 +453,7 @@ export class EaService {
       item,
       interfaces: interfaces.map(toInterfaceDto),
       dataObjects: [...data.values()].sort((a, b) =>
-        (a.code ?? a.nameEn).localeCompare(b.code ?? b.nameEn, undefined, { numeric: true }),
+        compareNatural(a.code ?? a.nameEn, b.code ?? b.nameEn),
       ),
       steps: (steps.get(id) ?? []).map(({ step }) => step),
     };

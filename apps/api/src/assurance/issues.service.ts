@@ -31,6 +31,7 @@ import { AssuranceFilesService } from './assurance-files.service';
 import { AssuranceEventsService } from './assurance-events.service';
 import { AssuranceSettingsService } from './assurance-settings.service';
 import { AssigneeResolver } from './assignees';
+import { compareNatural } from '../common/compare';
 
 const ENTITY = 'Issue';
 const userSelect = { id: true, email: true, nameEn: true, nameAr: true } as const;
@@ -420,7 +421,7 @@ export class IssuesService implements OnModuleInit {
       return (
         (typeof va === 'number' && typeof vb === 'number'
           ? va - vb
-          : String(va).localeCompare(String(vb), undefined, { numeric: true })) * dir
+          : compareNatural(String(va), String(vb))) * dir
       );
     });
     const start = (q.page - 1) * q.pageSize;

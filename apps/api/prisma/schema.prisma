@@ -390,6 +390,8 @@ model Process {
   aiGenerated   Boolean         @default(false)
   /// Created by an Import Center batch (the "Imported" flag, D-156).
   importBatchId String?         @db.Uuid
+  /// Generated column (names + descriptions, English and Arabic stemming) for workspace search.
+  searchVector  Unsupported("tsvector")?
   createdAt     DateTime        @default(now())
   updatedAt     DateTime        @updatedAt
   createdById   String?         @db.Uuid
@@ -413,6 +415,7 @@ model Process {
   @@index([category])
   @@index([code])
   @@index([importBatchId])
+  @@index([searchVector], type: Gin)
 }
 
 /// Current working BPMN model of a process. Bilingual labels live inside the XML (ph:nameEn / ph:nameAr).

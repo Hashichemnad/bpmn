@@ -146,17 +146,13 @@ export class TasksService {
 
   /** Published items whose next review date is before `until` (optionally owned by one user). */
   private async reviewDue(until: Date, from: Date | null, user: AuthUser, ownerId?: string) {
-    const pubs = await this.prisma.publication.findMany({
-      where: { current: true },
-      select: { entityType: true, entityId: true },
-    });
-    const ids = (t: ContentType) => pubs.filter((p) => p.entityType === t).map((p) => p.entityId);
+    // Items due in the window first (few), then which of them are published — instead of all
+    // current publications as an IN list (thousands of IDs, final session A).
     const date = { lte: until, ...(from ? { gt: from } : {}) };
     const { spaceIds } = await this.content.readablePageFilter(user);
     const [processes, pages, diagrams] = await Promise.all([
       this.prisma.process.findMany({
         where: {
-          id: { in: ids('PROCESS') },
           deletedAt: null,
           status: { not: 'ARCHIVED' },
           nextReviewAt: date,
@@ -167,7 +163,6 @@ export class TasksService {
       }),
       this.prisma.page.findMany({
         where: {
-          id: { in: ids('PAGE') },
           deletedAt: null,
           status: { not: 'ARCHIVED' },
           nextReviewAt: date,
@@ -182,7 +177,6 @@ export class TasksService {
       user.permissions.has(PERMISSIONS.PROCESSES_READ)
         ? this.prisma.diagram.findMany({
             where: {
-              id: { in: ids('DIAGRAM') },
               deletedAt: null,
               status: { not: 'ARCHIVED' },
               nextReviewAt: date,
@@ -193,7 +187,24 @@ export class TasksService {
           })
         : [],
     ]);
-    return this.items(processes, pages, diagrams);
+    const published = await this.prisma.publication.findMany({
+      where: {
+        current: true,
+        OR: [
+          { entityType: 'PROCESS', entityId: { in: processes.map((p) => p.id) } },
+          { entityType: 'PAGE', entityId: { in: pages.map((p) => p.id) } },
+          { entityType: 'DIAGRAM', entityId: { in: diagrams.map((d) => d.id) } },
+        ],
+      },
+      select: { entityType: true, entityId: true },
+    });
+    const live = new Set(published.map((p) => `${p.entityType}:${p.entityId}`));
+    const isLive = (t: ContentType) => (r: { id: string }) => live.has(`${t}:${r.id}`);
+    return this.items(
+      processes.filter(isLive('PROCESS')),
+      pages.filter(isLive('PAGE')),
+      diagrams.filter(isLive('DIAGRAM')),
+    );
   }
 
   async myTasks(user: AuthUser): Promise<MyTasksDto> {
@@ -257,18 +268,19 @@ export class TasksService {
       page: [],
       diagram: [],
     };
-    for (const p of approvedProcesses) {
-      const item = await this.content.find('PROCESS', p.id, user);
-      if (item && item.canRead && (item.canEdit || item.canManage)) publishable.process.push(p);
-    }
-    for (const p of approvedPages) {
-      const item = await this.content.find('PAGE', p.id, user);
-      if (item && item.canRead && (item.canEdit || item.canManage)) publishable.page.push(p);
-    }
-    for (const d of approvedDiagrams) {
-      const item = await this.content.find('DIAGRAM', d.id, user);
-      if (item && item.canRead && (item.canEdit || item.canManage)) publishable.diagram.push(d);
-    }
+    // One access check per type (was one `content.find` per approved item).
+    const [okProcesses, okPages, okDiagrams] = await Promise.all([
+      this.content.publishableIds('PROCESS', approvedProcesses, user),
+      this.content.publishableIds(
+        'PAGE',
+        approvedPages.map((p) => ({ ...p, spaceOwnerId: p.space.ownerId })),
+        user,
+      ),
+      this.content.publishableIds('DIAGRAM', approvedDiagrams, user),
+    ]);
+    publishable.process = approvedProcesses.filter((p) => okProcesses.has(p.id));
+    publishable.page = approvedPages.filter((p) => okPages.has(p.id));
+    publishable.diagram = approvedDiagrams.filter((d) => okDiagrams.has(d.id));
 
     // Returned submissions: only while that review is the item's latest and it is still a draft.
     const returned = [];
@@ -319,6 +331,7 @@ export class TasksService {
         }),
         this.prisma.publication.findMany({
           where: { current: true },
+          omit: { textEn: true, textAr: true },
           orderBy: { publishedAt: 'desc' },
           take: 30,
         }),

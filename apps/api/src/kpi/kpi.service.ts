@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { Prisma, type PrismaClient } from '@prisma/client';
+import { Prisma, type KpiMeasurement, type PrismaClient } from '@prisma/client';
 import {
   PERMISSIONS,
   PROCESS_ELEMENT_ID,
@@ -43,6 +43,7 @@ import { AuditService, diffFields } from '../audit/audit.service';
 import { badRequest, conflict, forbidden, notFound } from '../common/app-exception';
 import type { AuthUser, RequestMeta } from '../common/auth-user';
 import { elementLabel } from '../models/bpmn-xml';
+import { compareNatural } from '../common/compare';
 
 type Tx = Prisma.TransactionClient | PrismaClient;
 
@@ -84,6 +85,12 @@ const kpiInclude = {
   },
 } satisfies Prisma.RepoObjectInclude;
 type KpiRow = Prisma.RepoObjectGetPayload<{ include: typeof kpiInclude }>;
+/** As kpiInclude, without the measurements (loaded for many KPIs at once by `findKpis`). */
+const { measurements: _measurements, ...kpiIncludeWithoutMeasurements } = kpiInclude.kpi.include;
+const kpiListInclude = {
+  ...kpiInclude,
+  kpi: { include: kpiIncludeWithoutMeasurements },
+} satisfies Prisma.RepoObjectInclude;
 
 /** Fields a Salesforce-linked KPI takes from Salesforce (read-only in ProcessHub, D-114). */
 export const SALESFORCE_FIELDS = [
@@ -207,7 +214,7 @@ function pageOf<T>(
     const va = get(a);
     const vb = get(b);
     if (typeof va === 'number' && typeof vb === 'number') return (va - vb) * dir;
-    return String(va).localeCompare(String(vb), undefined, { numeric: true }) * dir;
+    return compareNatural(String(va), String(vb)) * dir;
   });
   const start = (q.page - 1) * q.pageSize;
   return {
@@ -308,11 +315,31 @@ export class KpiService {
 
   async listAll(): Promise<KpiDto[]> {
     await this.ensureKpiRows();
-    const rows = await this.prisma.repoObject.findMany({
-      where: { type: 'KPI', deletedAt: null },
-      include: kpiInclude,
-    });
+    const rows = await this.findKpis({ type: 'KPI', deletedAt: null });
     return rows.map((r) => toKpiDto(r));
+  }
+
+  /**
+   * KPI rows with their latest 36 measurements, loaded for all KPIs in one windowed query (the
+   * nested `take` of kpiInclude runs one query per KPI — 200 KPIs took ~250 ms, final session A).
+   */
+  private async findKpis(where: Prisma.RepoObjectWhereInput): Promise<KpiRow[]> {
+    const rows = await this.prisma.repoObject.findMany({ where, include: kpiListInclude });
+    const ids = rows.map((r) => r.id);
+    const measurements = ids.length
+      ? await this.prisma.$queryRaw<KpiMeasurement[]>`
+          SELECT m.* FROM (
+            SELECT *, row_number() OVER (PARTITION BY "kpiId" ORDER BY "periodStart" DESC) AS n
+            FROM "KpiMeasurement" WHERE "kpiId" = ANY(${ids}::uuid[])
+          ) m WHERE m.n <= 36 ORDER BY m."kpiId", m."periodStart" DESC`
+      : [];
+    const byKpi = new Map<string, KpiMeasurement[]>();
+    for (const { n: _n, ...m } of measurements as (KpiMeasurement & { n: bigint })[])
+      byKpi.set(m.kpiId, [...(byKpi.get(m.kpiId) ?? []), m]);
+    return rows.map((r) => ({
+      ...r,
+      kpi: r.kpi && { ...r.kpi, measurements: byKpi.get(r.id) ?? [] },
+    }));
   }
 
   /** KPI objects created outside the register (older data, seeds) get their row (as the migration did). */
@@ -330,42 +357,39 @@ export class KpiService {
 
   async list(q: KpiListQuery): Promise<Paginated<KpiDto>> {
     await this.ensureKpiRows();
-    const rows = await this.prisma.repoObject.findMany({
-      where: {
-        type: 'KPI',
-        deletedAt: null,
-        ownerId: q.ownerId,
-        ...(q.processId
-          ? {
-              OR: [
-                { links: { some: { processId: q.processId } } },
-                { kpi: { is: { calculatedProcessId: q.processId } } },
-              ],
-            }
-          : {}),
-        kpi: {
-          is: {
-            status: q.status,
-            departmentId: q.departmentId,
-            dataSource: q.dataSource,
-            ...(q.objectiveId ? { objectives: { some: { objectiveId: q.objectiveId } } } : {}),
-          },
+    const rows = await this.findKpis({
+      type: 'KPI',
+      deletedAt: null,
+      ownerId: q.ownerId,
+      ...(q.processId
+        ? {
+            OR: [
+              { links: { some: { processId: q.processId } } },
+              { kpi: { is: { calculatedProcessId: q.processId } } },
+            ],
+          }
+        : {}),
+      kpi: {
+        is: {
+          status: q.status,
+          departmentId: q.departmentId,
+          dataSource: q.dataSource,
+          ...(q.objectiveId ? { objectives: { some: { objectiveId: q.objectiveId } } } : {}),
         },
-        ...(q.q
-          ? {
-              AND: [
-                {
-                  OR: [
-                    { code: { contains: q.q, mode: 'insensitive' } },
-                    { nameEn: { contains: q.q, mode: 'insensitive' } },
-                    { nameAr: { contains: q.q, mode: 'insensitive' } },
-                  ],
-                },
-              ],
-            }
-          : {}),
       },
-      include: kpiInclude,
+      ...(q.q
+        ? {
+            AND: [
+              {
+                OR: [
+                  { code: { contains: q.q, mode: 'insensitive' } },
+                  { nameEn: { contains: q.q, mode: 'insensitive' } },
+                  { nameAr: { contains: q.q, mode: 'insensitive' } },
+                ],
+              },
+            ],
+          }
+        : {}),
     });
     let items = rows.map((r) => toKpiDto(r, new Date(), q.asOf));
     if (q.rag) items = items.filter((k) => k.latest?.rag === q.rag);
@@ -900,14 +924,11 @@ export class KpiService {
   /** KPIs of the user whose last completed period has no value (My tasks). */
   async myTasks(user: AuthUser, now = new Date()): Promise<KpiTaskDto[]> {
     if (!user.permissions.has(PERMISSIONS.KPI_MEASURE) && !this.canEdit(user)) return [];
-    const rows = await this.prisma.repoObject.findMany({
-      where: {
-        type: 'KPI',
-        deletedAt: null,
-        ownerId: user.id,
-        kpi: { is: { status: 'ACTIVE', dataSource: { in: ['MANUAL', 'EXCEL'] } } },
-      },
-      include: kpiInclude,
+    const rows = await this.findKpis({
+      type: 'KPI',
+      deletedAt: null,
+      ownerId: user.id,
+      kpi: { is: { status: 'ACTIVE', dataSource: { in: ['MANUAL', 'EXCEL'] } } },
     });
     return rows
       .map((r) => toKpiDto(r, now))
@@ -954,11 +975,7 @@ export class KpiService {
     });
     const rank = (k: KpiDto) => (k.latest?.rag ? RAG_SEVERITY[k.latest.rag] : -1);
     const sortKpis = (l: KpiDto[]) =>
-      [...l].sort(
-        (a, b) =>
-          rank(b) - rank(a) ||
-          (a.code ?? '').localeCompare(b.code ?? '', undefined, { numeric: true }),
-      );
+      [...l].sort((a, b) => rank(b) - rank(a) || compareNatural(a.code ?? '', b.code ?? ''));
     // Objectives with KPIs in scope and their ancestors, in tree order.
     const direct = new Map<string, KpiDto[]>();
     for (const k of kpis)

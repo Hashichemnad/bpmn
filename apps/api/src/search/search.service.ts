@@ -47,15 +47,11 @@ export class SearchService {
       q.type !== 'pages' && !q.spaceId && user.permissions.has(PERMISSIONS.PROCESSES_READ);
     const spaceIds = wantPages ? await this.access.visibleSpaceIds(user) : [];
     const parts: Prisma.Sql[] = [];
-
+    // Phase 1 ranks the matches with indexed search vectors only; snippets (ts_headline, which
+    // re-parses the text) are computed in phase 2 for the returned page of hits only.
     if (wantPages && spaceIds.length) {
       parts.push(Prisma.sql`
-        SELECT 'page' AS "type", p."id", p."titleEn", p."titleAr",
-          CASE WHEN p."textEn" <> '' AND to_tsvector('english', p."textEn") @@ query
-            THEN ts_headline('english', p."textEn", query, ${HEADLINE})
-            ELSE ts_headline('arabic', p."textAr", query, ${HEADLINE}) END AS "snippet",
-          p."spaceId", NULL::text AS "code", p."updatedById" AS "authorId", p."updatedAt",
-          ts_rank(p."searchVector", query) AS "rank"
+        SELECT 'page' AS "type", p."id", p."updatedAt", ts_rank(p."searchVector", query) AS "rank"
         FROM "Page" p, q
         WHERE p."deletedAt" IS NULL
           AND p."spaceId" = ANY(${spaceIds}::uuid[])
@@ -68,24 +64,13 @@ export class SearchService {
               : Prisma.empty
           }`);
     }
+    const codePrefix = `${escapeLike(q.q.trim())}%`;
     if (wantProcesses) {
-      const codePrefix = `${escapeLike(q.q.trim())}%`;
       parts.push(Prisma.sql`
-        SELECT 'process' AS "type", p."id", p."nameEn" AS "titleEn", p."nameAr" AS "titleAr",
-          CASE WHEN p."descriptionEn" <> '' AND to_tsvector('english', p."descriptionEn") @@ query
-            THEN ts_headline('english', p."descriptionEn", query, ${HEADLINE})
-            ELSE ts_headline('arabic', p."descriptionAr", query, ${HEADLINE}) END AS "snippet",
-          NULL::uuid AS "spaceId", p."code", p."updatedById" AS "authorId", p."updatedAt",
-          (ts_rank(p.v, query) + CASE WHEN p."code" ILIKE ${codePrefix} THEN 1 ELSE 0 END)::real AS "rank"
-        FROM (
-          SELECT pr.*,
-            setweight(to_tsvector('english', pr."nameEn"), 'A') ||
-            setweight(to_tsvector('arabic', pr."nameAr"), 'A') ||
-            setweight(to_tsvector('english', pr."descriptionEn"), 'B') ||
-            setweight(to_tsvector('arabic', pr."descriptionAr"), 'B') AS v
-          FROM "Process" pr WHERE pr."deletedAt" IS NULL
-        ) p, q
-        WHERE (p.v @@ query OR p."code" ILIKE ${codePrefix})
+        SELECT 'process' AS "type", p."id", p."updatedAt",
+          (ts_rank(p."searchVector", query) + CASE WHEN p."code" ILIKE ${codePrefix} THEN 1 ELSE 0 END)::real AS "rank"
+        FROM "Process" p, q
+        WHERE p."deletedAt" IS NULL AND (p."searchVector" @@ query OR p."code" ILIKE ${codePrefix})
           ${
             q.authorId
               ? Prisma.sql`AND (p."createdById" = ${q.authorId}::uuid OR p."updatedById" = ${q.authorId}::uuid)`
@@ -96,14 +81,42 @@ export class SearchService {
 
     const union = Prisma.join(parts, ' UNION ALL ');
     const withQuery = Prisma.sql`WITH q AS (SELECT to_tsquery('english', ${tsq}) || to_tsquery('arabic', ${tsq}) AS query)`;
-    const [rows, count] = await Promise.all([
-      this.prisma.$queryRaw<Row[]>`${withQuery}
-        SELECT * FROM (${union}) r
+    const [hits, count] = await Promise.all([
+      this.prisma.$queryRaw<Pick<Row, 'type' | 'id' | 'rank'>[]>`${withQuery}
+        SELECT r."type", r."id", r."rank" FROM (${union}) r
         ORDER BY r."rank" DESC, r."updatedAt" DESC
         LIMIT ${q.pageSize} OFFSET ${(q.page - 1) * q.pageSize}`,
       this.prisma.$queryRaw<{ total: bigint }[]>`${withQuery}
         SELECT count(*) AS total FROM (${union}) r`,
     ]);
+    const idsOf = (type: Row['type']) => hits.filter((h) => h.type === type).map((h) => h.id);
+    const pageIds = idsOf('page');
+    const processIds = idsOf('process');
+    const [pageRows, processRows] = await Promise.all([
+      pageIds.length
+        ? this.prisma.$queryRaw<Omit<Row, 'type' | 'rank'>[]>`${withQuery}
+            SELECT p."id", p."titleEn", p."titleAr",
+              CASE WHEN p."textEn" <> '' AND to_tsvector('english', p."textEn") @@ query
+                THEN ts_headline('english', p."textEn", query, ${HEADLINE})
+                ELSE ts_headline('arabic', p."textAr", query, ${HEADLINE}) END AS "snippet",
+              p."spaceId", NULL::text AS "code", p."updatedById" AS "authorId", p."updatedAt"
+            FROM "Page" p, q WHERE p."id" = ANY(${pageIds}::uuid[])`
+        : [],
+      processIds.length
+        ? this.prisma.$queryRaw<Omit<Row, 'type' | 'rank'>[]>`${withQuery}
+            SELECT p."id", p."nameEn" AS "titleEn", p."nameAr" AS "titleAr",
+              CASE WHEN p."descriptionEn" <> '' AND to_tsvector('english', p."descriptionEn") @@ query
+                THEN ts_headline('english', p."descriptionEn", query, ${HEADLINE})
+                ELSE ts_headline('arabic', p."descriptionAr", query, ${HEADLINE}) END AS "snippet",
+              NULL::uuid AS "spaceId", p."code", p."updatedById" AS "authorId", p."updatedAt"
+            FROM "Process" p, q WHERE p."id" = ANY(${processIds}::uuid[])`
+        : [],
+    ]);
+    const detail = new Map([...pageRows, ...processRows].map((r) => [r.id, r]));
+    const rows: Row[] = hits.flatMap((h) => {
+      const d = detail.get(h.id);
+      return d ? [{ ...d, type: h.type, rank: h.rank }] : [];
+    });
 
     const [spaces, users] = await Promise.all([
       this.prisma.space.findMany({

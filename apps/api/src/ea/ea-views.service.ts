@@ -25,6 +25,7 @@ import { XLSX_TYPE, addSheet, type ExcelFile } from '../common/excel';
 import { elementLabel } from '../models/bpmn-xml';
 import { GrcSettingsService } from '../grc/grc-settings.service';
 import { EaService, toAppRef } from './ea.service';
+import { compareNatural } from '../common/compare';
 
 const procRef = { select: { id: true, code: true, nameEn: true, nameAr: true, status: true } };
 const ref = (o: { id: string; code: string | null; nameEn: string; nameAr: string }): EaRef => ({
@@ -510,7 +511,7 @@ export class EaViewsService {
       },
       steps,
       controls: [...controls.values()].sort((a, b) =>
-        (a.code ?? a.nameEn).localeCompare(b.code ?? b.nameEn, undefined, { numeric: true }),
+        compareNatural(a.code ?? a.nameEn, b.code ?? b.nameEn),
       ),
       interfaces: detail.interfaces,
       dataObjects: detail.dataObjects,

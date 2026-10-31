@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import type { Prisma } from '@prisma/client';
+import { Prisma } from '@prisma/client';
 import ExcelJS from 'exceljs';
 import {
   PERMISSIONS,
@@ -198,37 +198,62 @@ export class WorkflowMonitorService {
       b.sum += hours[i];
     });
 
-    // Steps: completed tasks in the period, open / overdue now.
+    // Steps: completed tasks in the period, open / overdue now. Open tasks are counted in SQL per
+    // step and assignee (thousands of rows otherwise; final session A), done tasks read flat.
     const taskScope: Prisma.WorkflowTaskWhereInput = { case: scope };
-    const [done, open] = await Promise.all([
-      this.prisma.workflowTask.findMany({
-        where: { AND: [taskScope, { status: 'COMPLETED', completedAt: { gte: from, lte: to } }] },
-        select: {
-          elementId: true,
-          nameEn: true,
-          nameAr: true,
-          dueAt: true,
-          createdAt: true,
-          completedAt: true,
-          completedById: true,
-          case: { select: { processId: true, definitionId: true } },
-        },
-        take: 100_000,
-      }),
-      this.prisma.workflowTask.findMany({
-        where: { AND: [taskScope, { status: 'OPEN' }] },
-        select: {
-          elementId: true,
-          nameEn: true,
-          nameAr: true,
-          dueAt: true,
-          assigneeId: true,
-          case: { select: { processId: true, definitionId: true } },
-        },
-        take: 100_000,
-      }),
-    ]);
     const now = new Date();
+    const pw = monitorProcessWhere(user);
+    const scopeIds =
+      pw || q.processId
+        ? (
+            await this.prisma.process.findMany({
+              where: { AND: [pw ?? {}, q.processId ? { id: q.processId } : {}] },
+              select: { id: true },
+            })
+          ).map((p) => p.id)
+        : null;
+    const inScope = scopeIds
+      ? Prisma.sql`c."processId" = ANY(${scopeIds}::uuid[])`
+      : Prisma.sql`TRUE`;
+    type StepKey = { elementId: string; nameEn: string; nameAr: string };
+    type TaskCase = { case: { processId: string; definitionId: string } };
+    const [doneRows, openRows] = await Promise.all([
+      this.prisma.$queryRaw<
+        (StepKey & {
+          processId: string;
+          definitionId: string;
+          dueAt: Date | null;
+          createdAt: Date;
+          completedAt: Date;
+          completedById: string | null;
+        })[]
+      >`SELECT t."elementId", t."nameEn", t."nameAr", t."dueAt", t."createdAt", t."completedAt",
+          t."completedById", c."processId", c."definitionId"
+        FROM "WorkflowTask" t JOIN "WorkflowCase" c ON c."id" = t."caseId"
+        WHERE t."status" = 'COMPLETED' AND t."completedAt" >= ${from} AND t."completedAt" <= ${to}
+          AND ${inScope}
+        LIMIT 100000`,
+      this.prisma.$queryRaw<
+        (StepKey & {
+          processId: string;
+          definitionId: string;
+          assigneeId: string | null;
+          open: number;
+          overdue: number;
+        })[]
+      >`SELECT c."processId", c."definitionId", t."elementId", t."assigneeId",
+          min(t."nameEn") AS "nameEn", min(t."nameAr") AS "nameAr",
+          count(*)::int AS "open", (count(*) FILTER (WHERE t."dueAt" < ${now}))::int AS "overdue"
+        FROM "WorkflowTask" t JOIN "WorkflowCase" c ON c."id" = t."caseId"
+        WHERE t."status" = 'OPEN' AND ${inScope}
+        GROUP BY c."processId", c."definitionId", t."elementId", t."assigneeId"`,
+    ]);
+    const withCase = <T extends { processId: string; definitionId: string }>(r: T) => ({
+      ...r,
+      case: { processId: r.processId, definitionId: r.definitionId },
+    });
+    const done: (StepKey & TaskCase & (typeof doneRows)[number])[] = doneRows.map(withCase);
+    const open: (StepKey & TaskCase & (typeof openRows)[number])[] = openRows.map(withCase);
     const steps = new Map<string, WorkflowDashboardDto['steps'][number] & { sum: number }>();
     const stepOf = (t: {
       elementId: string;
@@ -272,8 +297,8 @@ export class WorkflowMonitorService {
     }
     for (const t of open) {
       const s = stepOf(t);
-      s.open++;
-      if (t.dueAt && t.dueAt < now) s.overdue++;
+      s.open += t.open;
+      s.overdue += t.overdue;
     }
 
     // Workload: open / overdue / completed per user, department and lane role.
@@ -282,12 +307,14 @@ export class WorkflowMonitorService {
       kind: 'USER' | 'ROLE' | 'DEPARTMENT',
       id: string,
       f: 'open' | 'overdue' | 'completed',
+      n = 1,
     ) => {
+      if (!n) return;
       const k = `${kind}:${id}`;
       let w = load.get(k);
       if (!w)
         load.set(k, (w = { kind, id, nameEn: '', nameAr: '', open: 0, overdue: 0, completed: 0 }));
-      w[f]++;
+      w[f] += n;
     };
     const userIds = [
       ...new Set(
@@ -304,20 +331,19 @@ export class WorkflowMonitorService {
     const roleOf = async (defId: string, elementId: string) =>
       (await this.config.model(defId)).nodes[elementId]?.laneRoleId ?? null;
     for (const t of open) {
-      const overdueNow = !!t.dueAt && t.dueAt < now;
       if (t.assigneeId) {
-        add('USER', t.assigneeId, 'open');
-        if (overdueNow) add('USER', t.assigneeId, 'overdue');
+        add('USER', t.assigneeId, 'open', t.open);
+        add('USER', t.assigneeId, 'overdue', t.overdue);
         const dep = userBy.get(t.assigneeId)?.departmentId;
         if (dep) {
-          add('DEPARTMENT', dep, 'open');
-          if (overdueNow) add('DEPARTMENT', dep, 'overdue');
+          add('DEPARTMENT', dep, 'open', t.open);
+          add('DEPARTMENT', dep, 'overdue', t.overdue);
         }
       }
       const role = await roleOf(t.case.definitionId, t.elementId);
       if (role) {
-        add('ROLE', role, 'open');
-        if (overdueNow) add('ROLE', role, 'overdue');
+        add('ROLE', role, 'open', t.open);
+        add('ROLE', role, 'overdue', t.overdue);
       }
     }
     for (const t of done) {
