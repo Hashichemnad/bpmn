@@ -379,6 +379,7 @@ model Process {
   calculatedKpis Kpi[]               @relation("KpiCalculatedProcess")
   diagrams       Diagram[]
   eventLogs      EventLog[]
+  simulations    Simulation[]
 
   @@index([parentId, sortOrder])
   @@index([category])
@@ -2208,4 +2209,54 @@ model MiningFilterPreset {
   createdAt DateTime  @default(now())
 
   @@index([userId, logId])
+}
+
+enum SimulationScenarioKind {
+  AS_IS
+  TO_BE
+}
+
+/// A what-if simulation of a process: several scenarios run and compared (Phase 5.1, D-138).
+model Simulation {
+  id            String               @id @default(uuid()) @db.Uuid
+  code          String
+  nameEn        String               @default("")
+  nameAr        String               @default("")
+  descriptionEn String               @default("")
+  descriptionAr String               @default("")
+  processId     String               @db.Uuid
+  process       Process              @relation(fields: [processId], references: [id], onDelete: Cascade)
+  /// Event log the defaults (branch probabilities, arrivals) were taken from.
+  logId         String?              @db.Uuid
+  ownerId       String?              @db.Uuid
+  createdAt     DateTime             @default(now())
+  updatedAt     DateTime             @updatedAt
+  createdById   String?              @db.Uuid
+  updatedById   String?              @db.Uuid
+  scenarios     SimulationScenario[]
+
+  @@index([processId])
+}
+
+/// Parameters and the last result of one scenario; the result records the process version it ran against.
+model SimulationScenario {
+  id             String                 @id @default(uuid()) @db.Uuid
+  simulationId   String                 @db.Uuid
+  simulation     Simulation             @relation(fields: [simulationId], references: [id], onDelete: Cascade)
+  nameEn         String                 @default("")
+  nameAr         String                 @default("")
+  kind           SimulationScenarioKind @default(TO_BE)
+  sortOrder      Int                    @default(0)
+  /// Process version to simulate (null = the working model).
+  processVersion Int?
+  params         Json
+  result         Json?
+  /// Version (or "working model" + hash) the result was computed on.
+  resultModel    String?
+  ranAt          DateTime?
+  ranById        String?                @db.Uuid
+  createdAt      DateTime               @default(now())
+  updatedAt      DateTime               @updatedAt
+
+  @@index([simulationId])
 }

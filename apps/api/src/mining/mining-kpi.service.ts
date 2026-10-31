@@ -13,6 +13,7 @@ import { badRequest, notFound } from '../common/app-exception';
 import { MiningJobsService, type JobContext } from './jobs/mining-jobs.service';
 import { MiningScheduler } from './mining-scheduler.service';
 import { SnapshotService } from './snapshot.service';
+import { LogImportService } from './log-import.service';
 
 /**
  * KPIs calculated from event logs (Phase 5.1, D-136): a job writes one measurement per completed
@@ -27,10 +28,13 @@ export class MiningKpiService implements OnModuleInit {
     private readonly jobs: MiningJobsService,
     private readonly snapshots: SnapshotService,
     private readonly scheduler: MiningScheduler,
+    private readonly importer: LogImportService,
   ) {}
 
   onModuleInit() {
     this.jobs.register('KPI', (ctx) => this.run(ctx));
+    // KPIs calculated from a log follow its new data.
+    this.importer.onImported((logId, userId) => this.enqueueForLog(logId, userId));
     this.scheduler.register(async (now) => {
       // Once a day is enough: the values change with imports, which trigger their own run.
       if (now.getUTCHours() !== 2) return;

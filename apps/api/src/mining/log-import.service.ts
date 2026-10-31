@@ -35,8 +35,6 @@ import {
   type Row,
 } from './import/file-readers';
 import { RowNormaliser, detectFormatFromRows } from './import/normalise';
-import { ModuleRef } from '@nestjs/core';
-import { MiningKpiService } from './mining-kpi.service';
 
 const BATCH = 5000;
 const EXT: Record<MiningFileFormat, string> = { CSV: 'csv', XLSX: 'xlsx', XES: 'xes' };
@@ -79,8 +77,15 @@ export class LogImportService implements OnModuleInit {
     private readonly jobs: MiningJobsService,
     private readonly snapshots: SnapshotService,
     @Inject(APP_CONFIG) private readonly config: AppConfig,
-    private readonly moduleRef: ModuleRef,
   ) {}
+
+  private readonly importedHooks: ((logId: string, userId: string | null) => Promise<unknown>)[] =
+    [];
+
+  /** Work that follows a successful import (KPIs calculated from the log, D-136). */
+  onImported(fn: (logId: string, userId: string | null) => Promise<unknown>) {
+    this.importedHooks.push(fn);
+  }
 
   onModuleInit() {
     this.jobs.register('VALIDATE', (ctx) => this.runImport(ctx, true));
@@ -685,11 +690,8 @@ export class LogImportService implements OnModuleInit {
     });
     if (log.dataVersion > 0) await this.snapshots.remove(log.id, log.dataVersion);
     await this.logs.autoMatch(log.id);
-    // KPIs calculated from this log (D-136) follow the new data.
-    await this.moduleRef
-      .get(MiningKpiService, { strict: false })
-      .enqueueForLog(log.id, ctx.job.createdById)
-      .catch(() => undefined);
+    for (const hook of this.importedHooks)
+      await hook(log.id, ctx.job.createdById).catch(() => undefined);
     await this.audit.log({
       action: 'IMPORT',
       entityType: 'EventLog',

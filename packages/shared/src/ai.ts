@@ -26,6 +26,8 @@ export const AI_FEATURES = [
   'TEST_CONNECTION',
   /** Risk & Compliance: control gaps of a process (Phase 4.1). */
   'CONTROL_GAPS',
+  /** Process mining (Phase 5.1): explain simulation results, propose improvement scenarios. */
+  'SIMULATION',
 ] as const;
 export type AiFeature = (typeof AI_FEATURES)[number];
 

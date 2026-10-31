@@ -3,6 +3,12 @@ import { paginationQuerySchema, processCodeSchema, uuidSchema } from '../schemas
 import { PROCESS_CATEGORIES } from '../constants';
 import { analysisRequestSchema } from './analysis';
 import { heuristicsOptionsSchema } from './heuristics';
+import {
+  scenarioParamsSchema,
+  type ScenarioParams,
+  type SimIssue,
+  type SimulationResult,
+} from './simulation';
 import type { DepartmentRef, UserRef } from '../types';
 import { DEFAULT_MINING_TIME_ZONE, TIMESTAMP_FORMATS, isValidTimeZone } from './timestamps';
 import type { ActivityMatchKind } from './matching';
@@ -414,3 +420,127 @@ export const applySuggestionsSchema = z.object({
   changeNote: z.string().trim().min(1).max(2000),
 });
 export type ApplySuggestionsInput = z.infer<typeof applySuggestionsSchema>;
+
+// ---------- Simulation (step 4) ----------
+
+export const SIMULATION_SCENARIO_KINDS = ['AS_IS', 'TO_BE'] as const;
+export type SimulationScenarioKind = (typeof SIMULATION_SCENARIO_KINDS)[number];
+
+export const createSimulationSchema = z
+  .object({
+    processId: uuidSchema,
+    nameEn: text(200).default(''),
+    nameAr: text(200).default(''),
+    descriptionEn: text(5000).default(''),
+    descriptionAr: text(5000).default(''),
+    /** Event log for default branch probabilities and arrivals (optional). */
+    logId: uuidSchema.nullable().optional(),
+  })
+  .refine((v) => !!(v.nameEn || v.nameAr), { path: ['nameEn'], message: 'NAME_REQUIRED' });
+export type CreateSimulationInput = z.infer<typeof createSimulationSchema>;
+
+export const updateSimulationSchema = z.object({
+  nameEn: text(200).optional(),
+  nameAr: text(200).optional(),
+  descriptionEn: text(5000).optional(),
+  descriptionAr: text(5000).optional(),
+});
+export type UpdateSimulationInput = z.infer<typeof updateSimulationSchema>;
+
+export const scenarioInputSchema = z.object({
+  nameEn: text(200).optional(),
+  nameAr: text(200).optional(),
+  kind: z.enum(SIMULATION_SCENARIO_KINDS).optional(),
+  processVersion: z.number().int().min(1).nullable().optional(),
+  params: scenarioParamsSchema.optional(),
+  /** Create as a copy of this scenario (parameters), then apply the fields above. */
+  copyFrom: uuidSchema.optional(),
+});
+export type ScenarioInput = z.infer<typeof scenarioInputSchema>;
+
+export const runSimulationSchema = z.object({
+  scenarioIds: z.array(uuidSchema).max(10).optional(),
+});
+export type RunSimulationInput = z.infer<typeof runSimulationSchema>;
+
+export interface ScenarioDto {
+  id: string;
+  nameEn: string;
+  nameAr: string;
+  kind: SimulationScenarioKind;
+  sortOrder: number;
+  processVersion: number | null;
+  params: ScenarioParams;
+  result: SimulationResult | null;
+  /** "v3" or "working" — what the result ran against. */
+  resultModel: string | null;
+  ranAt: string | null;
+  issues: SimIssue[];
+  /** The parameters or the model changed after the last run. */
+  stale: boolean;
+}
+
+export interface SimulationDto {
+  id: string;
+  code: string;
+  nameEn: string;
+  nameAr: string;
+  descriptionEn: string;
+  descriptionAr: string;
+  process: { id: string; code: string; nameEn: string; nameAr: string };
+  logId: string | null;
+  owner: UserRef | null;
+  createdAt: string;
+  updatedAt: string;
+  canManage: boolean;
+  scenarios: ScenarioDto[];
+  /** Model facts for the parameter editor: steps, lanes, gateways with their outgoing flows. */
+  model: {
+    steps: {
+      id: string;
+      nameEn: string;
+      nameAr: string;
+      laneId: string | null;
+      durationMinutes: number | null;
+      costPerExecution: number | null;
+    }[];
+    lanes: { id: string; nameEn: string; nameAr: string }[];
+    gateways: {
+      id: string;
+      nameEn: string;
+      nameAr: string;
+      type: string;
+      flows: { id: string; to: string; nameEn: string; nameAr: string }[];
+    }[];
+    arrivalsPerMonth: number;
+    versions: number[];
+  };
+  /** Running job of the simulation (if any). */
+  job: MiningJobDto | null;
+}
+
+export interface SimulationListItemDto {
+  id: string;
+  code: string;
+  nameEn: string;
+  nameAr: string;
+  process: { id: string; code: string; nameEn: string; nameAr: string };
+  scenarios: number;
+  lastRunAt: string | null;
+  updatedAt: string;
+}
+
+export interface SimulationDefaultsDto {
+  probabilities: Record<string, number>;
+  arrivalsPerMonth: number | null;
+  logId: string | null;
+}
+
+/** AI proposal of a to-be scenario (never applied automatically). */
+export interface AiScenarioProposal {
+  nameEn: string;
+  nameAr: string;
+  rationale: string;
+  capacities: Record<string, number>;
+  durations: Record<string, number>;
+}

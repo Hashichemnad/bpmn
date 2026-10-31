@@ -8,3 +8,4 @@ export * from './analysis';
 export * from './heuristics';
 export * from './conformance';
 export * from './kpis';
+export * from './simulation';

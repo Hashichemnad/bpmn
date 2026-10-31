@@ -3,6 +3,7 @@ import { heuristicsMiner, netToStructure, type HeuristicsOptions } from './heuri
 import { parseBpmnGraph } from '../bpmn-graph';
 import type { KpiFrequency, MiningMetric } from '../kpi';
 import { miningKpiSeries } from './kpis';
+import { simulate, type ScenarioParamsInput } from './simulation';
 import { checkConformance, type ConformanceRequest } from './conformance';
 import { decodeLogData, encodeLogData, sortRawLog, summariseLog, type RawLog } from './log-data';
 
@@ -58,6 +59,9 @@ const TASKS = {
       values: miningKpiSeries(log, k.metric, k.frequency, input.slaByActivity),
     }));
   },
+  /** Discrete-event simulation of one scenario. */
+  simulate: (input: { bpmnXml: string; params: ScenarioParamsInput }, progress: ProgressFn) =>
+    simulate(parseBpmnGraph(input.bpmnXml), input.params, (v) => progress(v, 'simulate')),
   /** Health check of the worker set-up. */
   ping: (input: { bytes?: Uint8Array }) => ({
     ok: true,
