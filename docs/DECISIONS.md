@@ -1786,7 +1786,7 @@ Supersedes the "act as the Super Admin" rule of D-116.
   per resource, resource and department **handovers**), **bottlenecks** (slowest 25 transitions and activities with
   the 5 slowest cases each) and the filter choices. The bundle is cached (`MiningResultCache`) per log data version
   and request; the UI's tabs share it.
-- **Sliders.** The **activity slider** keeps the most frequent activities and *projects* the others out (their
+- **Sliders.** The **activity slider** keeps the most frequent activities and _projects_ the others out (their
   predecessor and successor get connected), computed on the server; the **path slider** is client-side: it keeps the
   most frequent edges but never leaves an activity without its strongest incoming and outgoing edge. Layout with
   **dagre** (`@dagrejs/dagre`, MIT, top to bottom in both languages). Case animation is not built (BACKLOG).
@@ -1826,24 +1826,24 @@ Supersedes the "act as the Super Admin" rule of D-116.
   400 markings / 12 steps); otherwise the missing tokens are created and counted. Fitness = ½(1 − m/c) + ½(1 − r/p),
   log level from the summed counts, plus the mean case fitness. Unit tests reproduce the textbook example
   (⟨a,d,c,e,h⟩ on the sequential net: p = c = 6, m = r = 1, fitness 5/6).
-- **Deviations**: *inserted* — an activity not mapped to the model, or a mapped step repeated where the model does
-  not allow it (not replayed, so rework does not distort the token counts); *wrong order* — a missing token whose
-  producing step occurs later in the case; *skipped* — the producing step never occurs (also steps not reached
+- **Deviations**: _inserted_ — an activity not mapped to the model, or a mapped step repeated where the model does
+  not allow it (not replayed, so rework does not distort the token counts); _wrong order_ — a missing token whose
+  producing step occurs later in the case; _skipped_ — the producing step never occurs (also steps not reached
   before the case ended). Each deviation has its frequency (cases) and up to 5 example cases. A case **conforms**
   when it has no missing / remaining tokens and no deviation.
 - **Per step / flow values** for the overlay: cases and events per step, processing and waiting time (median /
   mean), cases with a deviation; cases per sequence flow (tokens produced). Cached like the analysis, keyed also by
   a hash of the working model and the activity mapping (a model change never shows stale values).
-- **Overlay**: three new "Colour by" views (D-086 mechanism, view only): *Mining: cases per step*, *measured time*,
-  *deviations* — bands by thirds of the maximum, a badge per step (cases / time / deviations) and per flow (cases),
+- **Overlay**: three new "Colour by" views (D-086 mechanism, view only): _Mining: cases per step_, _measured time_,
+  _deviations_ — bands by thirds of the maximum, a badge per step (cases / time / deviations) and per flow (cases),
   flows drawn in violet with a width by frequency. Available in the modeler and the read-only view when the user
   can see a log linked to the process; the log is the most recent one or `?log=`; the legend names it.
 
 ## D-136 — KPIs calculated from event logs (Phase 5.1, 2026-10-31)
 
-- New KPI data source **EVENT_LOG** (`Kpi.miningLogId`, migration `mining_kpis`) with the measures *mean throughput
-  time (hours)*, *step executions within SLA (%)* — each mapped step execution (waiting since the previous event +
-  processing) against the step's `ph:slaMinutes` —, *cases with rework (%)* and *cases completed*. A case counts in
+- New KPI data source **EVENT_LOG** (`Kpi.miningLogId`, migration `mining_kpis`) with the measures _mean throughput
+  time (hours)_, _step executions within SLA (%)_ — each mapped step execution (waiting since the previous event +
+  processing) against the step's `ph:slaMinutes` —, _cases with rework (%)_ and _cases completed_. A case counts in
   the KPI period in which it was **completed**; only completed periods are written.
 - A `KPI` mining job writes one measurement per period (source `EVENT_LOG`, comment "LOG-xxx: n cases"), audited as
   `SYNC`; status comes from the KPI thresholds like any measurement. It runs after every import of the log, daily
