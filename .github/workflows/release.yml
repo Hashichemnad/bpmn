@@ -1,0 +1,80 @@
+name: Release images
+
+# Publishes versioned images to the GitHub Container Registry when a version tag is pushed
+# (git tag v1.4.0 && git push origin v1.4.0), so servers pull instead of building
+# (docs/DEPLOYMENT.md §9, DECISIONS D-169):
+#   ghcr.io/<owner>/processhub-api:<version>          API server (production dependencies only)
+#   ghcr.io/<owner>/processhub-api-migrate:<version>  migrations + seed, run once by docker compose
+#   ghcr.io/<owner>/processhub-web:<version>          web app (unprivileged nginx)
+# Tags: the full version (1.4.0), major.minor (1.4) and `latest` for releases without a suffix.
+on:
+  push:
+    tags: ['v*.*.*']
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to publish (e.g. 1.4.0); the workflow runs on the selected ref'
+        required: true
+
+permissions:
+  contents: read
+  packages: write
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  images:
+    name: Build and push images
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v5
+      - name: Version and image names
+        id: meta
+        env:
+          INPUT_VERSION: ${{ github.event.inputs.version }}
+        run: |
+          version="${INPUT_VERSION:-${GITHUB_REF_NAME#v}}"
+          if ! printf '%s' "$version" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.]+)?$'; then
+            echo "Not a version: $version" >&2; exit 1
+          fi
+          owner="$(printf '%s' "$GITHUB_REPOSITORY_OWNER" | tr '[:upper:]' '[:lower:]')"
+          {
+            echo "version=$version"
+            echo "minor=$(printf '%s' "$version" | cut -d. -f1,2)"
+            echo "prefix=ghcr.io/$owner/processhub"
+            # Pre-releases (1.4.0-rc.1) get only their own tag.
+            if printf '%s' "$version" | grep -q -- '-'; then echo "stable=false"; else echo "stable=true"; fi
+          } >> "$GITHUB_OUTPUT"
+      - name: Sign in to the GitHub Container Registry
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
+      - name: Build
+        env:
+          PREFIX: ${{ steps.meta.outputs.prefix }}
+          VERSION: ${{ steps.meta.outputs.version }}
+        run: |
+          labels="--label org.opencontainers.image.source=https://github.com/${GITHUB_REPOSITORY} \
+            --label org.opencontainers.image.version=${VERSION} \
+            --label org.opencontainers.image.revision=${GITHUB_SHA}"
+          docker build $labels -f apps/api/Dockerfile --target runtime -t "$PREFIX-api:$VERSION" .
+          docker build $labels -f apps/api/Dockerfile --target migrate -t "$PREFIX-api-migrate:$VERSION" .
+          docker build $labels -f apps/web/Dockerfile -t "$PREFIX-web:$VERSION" .
+          docker images --format '{{.Repository}}:{{.Tag}}  {{.Size}}' | grep "$PREFIX" | tee -a "$GITHUB_STEP_SUMMARY"
+      - name: Push
+        env:
+          PREFIX: ${{ steps.meta.outputs.prefix }}
+          VERSION: ${{ steps.meta.outputs.version }}
+          MINOR: ${{ steps.meta.outputs.minor }}
+          STABLE: ${{ steps.meta.outputs.stable }}
+        run: |
+          for image in api api-migrate web; do
+            docker push "$PREFIX-$image:$VERSION"
+            if [ "$STABLE" = "true" ]; then
+              for tag in "$MINOR" latest; do
+                docker tag "$PREFIX-$image:$VERSION" "$PREFIX-$image:$tag"
+                docker push "$PREFIX-$image:$tag"
+              done
+            fi
+          done

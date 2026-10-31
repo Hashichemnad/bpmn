@@ -1,5 +1,8 @@
 #!/bin/sh
-# Start-up for the API container: secrets, migrations, optional seed, then the server.
+# Start-up of the API images (apps/api/Dockerfile):
+#   (no argument)  secrets, then the API server              — image processhub-api
+#   migrate        secrets, database migrations, seed, exit   — image processhub-api-migrate
+# docker-compose runs the migrate service once and starts the API after it succeeded.
 set -e
 
 # Generate a per-installation JWT secret when none is configured, persisted in the data volume.
@@ -26,12 +29,19 @@ if [ -z "$INTEGRATIONS_ENCRYPTION_KEY" ]; then
   export INTEGRATIONS_ENCRYPTION_KEY
 fi
 
-echo "Applying database migrations…"
-./node_modules/.bin/prisma migrate deploy
-
-if [ "$SEED_ON_START" = "true" ]; then
-  echo "Running seed…"
-  node dist/prisma/seed.js
+if [ "$1" = "migrate" ]; then
+  if [ -z "$PRISMA_CLI" ]; then
+    echo "This image has no Prisma CLI: run migrations with the processhub-api-migrate image." >&2
+    exit 1
+  fi
+  echo "Applying database migrations…"
+  "$PRISMA_CLI" migrate deploy --schema prisma/schema.prisma
+  if [ "$SEED_ON_START" = "true" ]; then
+    echo "Running seed…"
+    node dist/prisma/seed.js
+  fi
+  echo "Database is up to date."
+  exit 0
 fi
 
 exec node dist/src/main.js

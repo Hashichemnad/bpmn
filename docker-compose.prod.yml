@@ -53,7 +53,7 @@ services:
     build:
       context: .
       dockerfile: apps/web/Dockerfile
-    image: processhub-web:${PROCESSHUB_VERSION:-latest}
+    image: ${PROCESSHUB_IMAGE_PREFIX:-processhub}-web:${PROCESSHUB_VERSION:-latest}
     restart: unless-stopped
     networks: [edge, backend]
     depends_on:
@@ -65,11 +65,11 @@ services:
         limits: { cpus: '${WEB_CPUS:-1}', memory: '${WEB_MEMORY:-256M}' }
     logging: *logging
 
-  api:
+  api: &api
     build:
       context: .
       dockerfile: apps/api/Dockerfile
-    image: processhub-api:${PROCESSHUB_VERSION:-latest}
+    image: ${PROCESSHUB_IMAGE_PREFIX:-processhub}-api:${PROCESSHUB_VERSION:-latest}
     restart: unless-stopped
     env_file: .env
     environment:
@@ -105,6 +105,8 @@ services:
       - api-data:/app/data
     networks: [backend, egress]
     depends_on:
+      migrate:
+        condition: service_completed_successfully
       postgres:
         condition: service_healthy
       storage:
@@ -114,6 +116,26 @@ services:
       resources:
         limits: { cpus: '${API_CPUS:-2}', memory: '${API_MEMORY:-2G}' }
     logging: *logging
+
+  # Database migrations and the seed (Prisma CLI), run once on every `docker compose up` before the
+  # API starts; the API image itself has production dependencies only (final session A, D-168).
+  migrate:
+    <<: *api
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+      target: migrate
+    image: ${PROCESSHUB_IMAGE_PREFIX:-processhub}-api-migrate:${PROCESSHUB_VERSION:-latest}
+    restart: 'no'
+    command: ['migrate']
+    healthcheck:
+      disable: true
+    networks: [backend]
+    depends_on:
+      postgres:
+        condition: service_healthy
+      storage:
+        condition: service_healthy
 
   postgres:
     image: ${POSTGRES_IMAGE:-postgres:16-alpine}

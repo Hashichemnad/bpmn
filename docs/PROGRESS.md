@@ -21,14 +21,89 @@ Steps (tick as they are committed; a new session continues at the first unticked
       Settings → Authentication → "Require MFA from the identity provider" (`requireIdpMfa`, default off,
       `SSO_MFA_REQUIRED`, `amr` audited). Tests: `auth.e2e` (absolute limit, deactivation ends sessions at once),
       `sso.e2e` (amr), `sso-claims.spec`. SECURITY / DEPLOYMENT / BACKLOG / `.env.example*` updated.
-- [ ] 1. Volume seed (`apps/api/prisma/seed-volume.ts`, refuses production) and database review: timings
-      before / after for the main endpoints, indexes, N+1, pagination, caching; scheduler / job runner under load.
-- [ ] 2. Web performance: route-based code splitting, vendor chunks, bundle sizes before / after; gzip / brotli
-      in nginx and Caddy, long-cache headers, font preload; large diagrams and lists.
-- [ ] 3. Accessibility and UX polish: keyboard / focus / contrast / labels; consistency sweep; CI check for
-      missing `en` / `ar` keys; CI runner pinned (`ubuntu-24.04`) and actions on Node 24.
-- [ ] 4. Production images: slim API image (`pnpm deploy --prod`, separate migration step), unprivileged nginx,
-      health checks, sizes before / after; GHCR images on tags; backup / restore drill script in CI.
+- [x] 1. Volume seed and database review (D-167). `prisma/seed-volume.ts` (refuses production; 1 % run is
+      `test/seed-volume.e2e-spec.ts`), `prisma/perf-api.ts` (38 screen endpoints over HTTP, P50 / P95),
+      `prisma/perf-schedulers.ts`; migration `20261101100000_performance` (generated, GIN-indexed
+      `Process.searchVector`). Full volume seed: 13 minutes in this sandbox (500 users, 2,000 processes, 5,733
+      process versions, 65,500 step links, 5,000 pages / 10,050 versions, 1,000 risks, 1,500 controls, 6,000
+      tests, 7,200 KPI values, 994,022 mining events, 10,000 requests, 200,000 audit rows; database 554 MB).
+      Timings (API built with `nest build`, `NODE_ENV=production`, PostgreSQL 16 on the same 4-vCPU sandbox,
+      20 sequential requests after 2 warm-ups; before = `main`):
+
+      | Endpoint | P95 before (ms) | P95 after (ms) | P50 after | Response KB |
+      | --- | ---: | ---: | ---: | ---: |
+      | Auth: current user | 13 | 10 | 8 | 1 |
+      | Process tree | 85 | 72 | 57 | 702 |
+      | Process list (page 1) | 15 | 13 | 10 | 7 |
+      | Process detail (largest diagram) | 15 | 13 | 11 | 2 |
+      | Process model (largest diagram) | 24 | 18 | 15 | 191 |
+      | Process versions | 15 | 10 | 8 | 1 |
+      | Search "invoice" | 1007 | 58 | 48 | 12 |
+      | Portal home | 677 | 129 | 105 | 11 |
+      | Portal process list | 261 | 67 | 58 | 243 |
+      | Portal process page | 351 | 81 | 69 | 18 |
+      | Portal page | 677 | 105 | 93 | 3 |
+      | Portal search "approve" | 736 | 169 | 132 | 23 |
+      | Portal "my processes" | 1480 | 164 | 146 | 344 |
+      | My tasks (reviewer) | 815 | 84 | 57 | 5 |
+      | Notifications (unread count) | 11 | 7 | 6 | 0 |
+      | Notifications (list) | 15 | 12 | 9 | 8 |
+      | Inbox: workflow tasks (manager) | 26 | 18 | 15 | 16 |
+      | Inbox: task counts (manager) | 16 | 11 | 9 | 0 |
+      | Governance dashboard | 311 | 187 | 170 | 532 |
+      | GRC dashboard + heat maps | 270 | 257 | 220 | 4 |
+      | GRC process view (heat map per process) | 20 | 16 | 14 | 2 |
+      | Risk register (page 1) | 418 | 142 | 117 | 35 |
+      | Control register (page 1) | 471 | 191 | 159 | 33 |
+      | Assurance dashboard | 1337 | 274 | 251 | 100 |
+      | Assurance tasks | 137 | 127 | 98 | 267 |
+      | KPI list (page 1) | 363 | 162 | 146 | 37 |
+      | KPI scorecard (dashboard) | 372 | 179 | 136 | 349 |
+      | Application catalogue (page 1) | 114 | 85 | 74 | 27 |
+      | Workflow monitor | 28 | 24 | 19 | 3 |
+      | Workflow dashboard | 593 | 272 | 229 | 18 |
+      | Workflow case page | 25 | 24 | 20 | 16 |
+      | Import Center (batches) | 16 | 16 | 14 | 8 |
+      | Audit log (page 1) | 44 | 33 | 29 | 21 |
+      | Users (page 1) | 19 | 14 | 12 | 12 |
+      | Mining log | 17 | 11 | 10 | 1 |
+      | Mining map (analysis, cached) | 49 | 13 | 10 | 22 |
+      | Apply theme (dry run, all diagrams) | 33925 | 1759 | 1389 | 0 |
+      | Handbook export (branch, Word) | — ¹ | 808 | 736 | 70 |
+
+      ¹ The probe first asked for a whole level-1 branch (130 processes, refused by the 40-process limit, as
+      designed); measured on a level-2 branch. Every page call is now < 300 ms at P95, exports < 2 s.
+      Schedulers on the volume database (two runs each; the second must send nothing): governance reminders
+      4.6 s / 1,005 → 4.3 s / 0, assurance 12.9 s / 2,585 → 1.2 s / 116 **before the fix** (issues first seen
+      past their escalation date got the overdue notice one run late — now both in one run, test in
+      `issues.e2e`), KPI 0.1 s, mining 4 ms, workflow timers 335 ms / 10 → 4 ms / 0. Schedulers never overlap
+      (`common/periodic.ts`); workflow timers survive restarts (claim + lock expiry, existing `workflow.e2e`).
+
+- [x] 2. Web performance (D-168): lazy route chunks incl. the workspace shell, active language only, shared
+      package side-effect free; initial JavaScript (entry + static imports, `node apps/web/scripts/bundle-report.mjs`):
+      **1,583 KB → 238 KB gzip** (5,266 KB → 738 KB raw; Brotli 201 KB), 3 → 400 lazy chunks. Precompressed
+      assets (408 files, 6.7 MB → gzip 2.2 MB / Brotli 1.9 MB) served by nginx (checked with a local nginx:
+      `br` / `gzip` / identity negotiation, immutable caching, `.br` not directly reachable), Caddy
+      `encode zstd gzip`, font preload, virtual trees over 300 nodes.
+- [x] 3. Accessibility and polish (D-171): WCAG AA text colours, focus outline, skip link, `activateProps`
+      on clickable tags / tiles, labels for the remaining icon-only buttons, form-error live region; scans for
+      unlabeled icon buttons, clickable elements without keyboard access, hard-coded strings and non-`Intl`
+      dates came back empty after the fixes. `scripts/check-i18n.mjs` in CI (5,118 keys, plural-aware). CI on
+      `ubuntu-24.04`, Node 24 action majors, pnpm via Corepack.
+- [x] 4. Production images (D-169, D-170), built here with a sandbox-only proxy wrapper:
+
+      | Image | Before | After |
+      | --- | ---: | ---: |
+      | processhub-api (runtime) | 1.13 GB | 553 MB (239 MB base) |
+      | processhub-api-migrate (one-shot) | — | 733 MB |
+      | processhub-web | 85.8 MB | 98.5 MB (+7 MB precompressed copies; unprivileged, uid 101) |
+
+      Smoke test of the new images: migrate image applied the migrations and the seed, the slim API image
+      answered all 38 probes of `perf-api.ts` (mining workers, Word export, apply theme), the web image served
+      Brotli assets and proxied the API as uid 101; all three report healthy. `.github/workflows/release.yml`
+      publishes the three images to GHCR on `v*.*.*` tags; `scripts/backup-drill.sh` runs in the CI e2e job
+      (timings in the CI log). Volume database dump: 554 MB → 81 MB in 12 s.
+
 - [ ] 5. README refresh, phase table, final checks (lint, type-check, tests, audit, images), PR.
 
 ## Previous state — 2026-10-31 (Import tools / migration — module M15, branch `import-tools`, done — awaiting review)

@@ -96,6 +96,10 @@ is never saved without a human accepting a preview, AI per-user and organisation
   Swagger off unless `ENABLE_SWAGGER=true`, errors normalised (no stack traces or internals).
 - Web (nginx): CSP `script-src 'self'` (no inline scripts), `object-src 'none'`, `frame-ancestors 'none'`,
   `X-Frame-Options`, `nosniff`, `Referrer-Policy: no-referrer`, `Permissions-Policy`, COOP; `server_tokens off`.
+- Images (final session, D-169): the web container runs as an unprivileged user (`nginx-unprivileged`, uid 101,
+  port 8080); the API runs as `node` with production dependencies only — no compiler, no Prisma CLI, no dev
+  tools; schema changes only through the one-shot `migrate` image. Precompressed assets carry the same
+  security headers (one snippet in every location, including the Brotli locations).
 
 **A06 Vulnerable components** — `pnpm audit --prod`: no high/critical (see SEC-08 / SEC-09).
 

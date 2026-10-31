@@ -13,12 +13,14 @@ import { i18nReady } from './i18n';
 import './styles.css';
 import { AppProviders, createQueryClient } from './app/AppProviders';
 import { createRouter } from './App';
+import { startFormErrorAnnouncer } from './app/formErrorAnnouncer';
 
 const queryClient = createQueryClient();
 const router = createRouter();
 
 // The first screen renders once the active language's texts are there (no flash of keys).
 void i18nReady.finally(() => {
+  startFormErrorAnnouncer();
   createRoot(document.getElementById('root')!).render(
     <StrictMode>
       <AppProviders client={queryClient}>

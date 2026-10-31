@@ -70,19 +70,26 @@ export class AssuranceDashboardService {
           select: {
             departmentId: true,
             department: { select: { id: true, code: true, nameEn: true, nameAr: true } },
-            object: {
-              select: {
-                links: { where: { process: { deletedAt: null } }, select: { processId: true } },
-              },
-            },
           },
         },
       },
     });
-    // Processes of each test, computed once (was rebuilt for every process × test pair).
-    const procsOf = new Map(
-      tests.map((t) => [t.id, [...new Set(t.control.object.links.map((l) => l.processId))]]),
-    );
+    // Processes of each control, read once per control (not once per test) and computed once per
+    // test (was rebuilt for every process × test pair).
+    const controlLinks = await this.prisma.objectLink.findMany({
+      where: {
+        repoObjectId: { in: [...new Set(tests.map((t) => t.controlId))] },
+        process: { deletedAt: null },
+      },
+      select: { repoObjectId: true, processId: true },
+    });
+    const procsOfControl = new Map<string, Set<string>>();
+    for (const l of controlLinks)
+      procsOfControl.set(
+        l.repoObjectId,
+        (procsOfControl.get(l.repoObjectId) ?? new Set()).add(l.processId),
+      );
+    const procsOf = new Map(tests.map((t) => [t.id, [...(procsOfControl.get(t.controlId) ?? [])]]));
     const procOf = (t: (typeof tests)[number]) => procsOf.get(t.id)!;
     const inScope = (t: (typeof tests)[number]) =>
       !scopeProcessIds

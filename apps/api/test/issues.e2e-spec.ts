@@ -174,6 +174,26 @@ describe('Issues and actions (e2e)', () => {
     expect(detail.escalatedAt).not.toBeNull();
   });
 
+  it('first run after a long downtime: overdue and escalation in one run, nothing on the next', async () => {
+    await raise().expect(201);
+    const scheduler = ctx.app.get(AssuranceScheduler);
+    await scheduler.runOnce(new Date('2027-01-20T00:00:00Z')); // first run, long past escalation
+    const count = () => ctx.prisma.notification.count({ where: { type: 'ISSUE' } });
+    const after = await count();
+    const rows = await ctx.prisma.notification.findMany({ where: { type: 'ISSUE' } });
+    const kinds = (userId: string) =>
+      rows
+        .filter((r) => r.userId === userId)
+        .map((r) => (r.params as { kind: string }).kind)
+        .sort();
+    expect(kinds(ownerId)).toEqual(['assigned', 'overdue']);
+    expect(kinds(managerId)).toEqual(['escalated']);
+    expect(kinds(doerId)).toEqual(['action_assigned', 'action_overdue']);
+    await scheduler.runOnce(new Date('2027-01-20T01:00:00Z'));
+    await scheduler.runOnce(new Date('2027-01-21T00:00:00Z'));
+    expect(await count()).toBe(after);
+  });
+
   it('Viewers change only the actions assigned to them (D-106)', async () => {
     const issue = (
       await raise({

@@ -2356,3 +2356,70 @@ refusal is audited (`LOGIN_FAILED`, with the `amr` values received) and successf
 `amr` in the `LOGIN` summary, so the administrator can check what Entra ID sends before switching it on. It
 complements, not replaces, the Conditional Access policy (D-064): turn it on once IT confirms the policy and a
 test sign-in shows `mfa` (DEPLOYMENT.md §6.1 step 9). Password sign-in keeps ProcessHub's own TOTP.
+
+## D-167 — Performance work is measured on a production-size volume seed (final session, part A, 2026-11-01)
+
+**Decision:** `apps/api/prisma/seed-volume.ts` builds a disposable repository of the size DOF expects (500
+users, ~2,000 processes with diagrams of up to 200 elements and 1–5 versions, ~5,000 wiki pages, 1,000 risks /
+1,500 controls with three years of quarterly tests, 300 applications, 200 KPIs × 36 months, a 994k-event
+mining log, 10,000 workflow requests through the real services, 50 import batches, 200,000 audit rows). It
+refuses `NODE_ENV=production`, needs `VOLUME_SEED=yes`, refuses a database that already holds volume data and
+switches off 2FA-by-role on that test database (the measurement scripts sign in with passwords); a 1 % run is
+an API test (`test/seed-volume.e2e-spec.ts`). `prisma/perf-api.ts` signs in over HTTP and prints P50 / P95 of
+38 screen endpoints, `prisma/perf-schedulers.ts` runs every periodic task twice. Target: P95 < 300 ms for page
+calls, < 2 s for everything except exports and background jobs — reached (PROGRESS.md has the before / after
+table). Techniques, in order of preference: fix the query shape (portal visibility in one SQL join without the
+search text; flipped `reviewDue`; KPI measurements with a window function; grouped workflow dashboard; process
+search vector as a generated, GIN-indexed column), remove N+1 loops (My tasks access checks, My processes
+versions, assurance dashboard grouping), two-phase lists where filters / sorts need computed values (light
+rows, full includes only for the page), and cache only immutable data (step labels per process version,
+3,000 entries). A shared `Intl.Collator` replaces `localeCompare(…, { numeric: true })` (25× faster sorts).
+Lists whose UI pages on the client (governance dashboard, process tree of ~700 KB) stay complete — their
+timings are within target; server paging for them is in BACKLOG.
+
+## D-168 — Web delivery: route chunks, one language, precompressed assets (final session, part A)
+
+**Decision:** every screen — and the workspace shell — is a lazy route chunk (`app/lazyPage.ts`, reloads the
+page once when a chunk of an older deployment is missing), Ant Design / charts / bpmn-js / dmn-js / TipTap are
+split by the bundler along those chunks (only React is a fixed vendor chunk; fixed groups had pulled shared
+helpers into the entry), `@processhub/shared` is marked side-effect free, and only the active language's
+translations are loaded (one chunk per namespace, no fallback language: `scripts/check-i18n.mjs` keeps both
+languages complete). Initial JavaScript: 1,583 KB → 238 KB gzip (`apps/web/scripts/bundle-report.mjs`). The
+build precompresses text assets (Brotli q11 + gzip -9, `precompress.mjs`); nginx serves the `.br` file when the
+browser accepts Brotli (the official nginx image has no Brotli encoder, so dynamic Brotli is not used), else
+`gzip_static`; hashed assets are cached for a year (`immutable`), `index.html` revalidates. Caddy adds
+`encode zstd gzip` for API responses. The regular weights of Inter and IBM Plex Sans Arabic are preloaded.
+Ant Design trees with more than 300 nodes render virtually (`useVirtualTreeHeight`).
+
+## D-169 — Slim API image, separate migration step, images published to GHCR (final session, part A)
+
+**Decision:** the API runtime image contains `pnpm deploy --prod` output only — the peers pnpm installs for
+`@prisma/client` (Prisma CLI, engines, TypeScript, effect) and the unused WebAssembly engines are removed, the
+query engine of the other CPU architecture too: 1.13 GB → 553 MB (of which 239 MB is `node:22-alpine`).
+Migrations and the seed run in a separate image / compose service `migrate` (`--target migrate`, Prisma CLI in
+the lockfile's version) that `docker compose up` runs to completion before the API starts; the API image can
+no longer migrate (`docker-entrypoint.sh migrate` refuses without the CLI). The web image uses
+`nginxinc/nginx-unprivileged` (uid 101, port 8080; Caddy and the compose files point to 8080). Version tags
+`v*.*.*` publish `processhub-api`, `processhub-api-migrate` and `processhub-web` to
+`ghcr.io/<owner>/…` with the version, major.minor and `latest` (`.github/workflows/release.yml`, plain docker
+CLI); servers set `PROCESSHUB_IMAGE_PREFIX` and pull (DEPLOYMENT.md §9). Building on the server stays possible.
+
+## D-170 — Backup / restore drill in CI (final session, part A)
+
+**Decision:** `scripts/backup-drill.sh` runs after the Playwright suite in CI and on demand on a test VM: it
+seals a canary with `INTEGRATIONS_ENCRYPTION_KEY`, fingerprints the database (row counts, checksums of
+processes, models and settings) and every stored file, runs `backup.sh`, damages the data on purpose, runs
+`restore.sh --yes` and requires identical fingerprints and a decryptable canary; it prints backup / restore
+timings. The quarterly manual restore test on a separate VM stays in the go-live checklist.
+
+## D-171 — Accessibility baseline and CI hygiene (final session, part A)
+
+**Decision:** Ant Design's tertiary / description / placeholder text colours are darkened to pass WCAG 2.1 AA
+(≥ 4.5:1 on white and on the page background; `--ph-muted` likewise); a global `:focus-visible` outline and a
+"Skip to content" link in both layouts; clickable tags, tiles and cards use `activateProps` (button role,
+Tab, Enter / Space); icon-only buttons carry translated `aria-label`s. Ant Design links a form error to its
+field but does not announce it: one app-wide live region reads newly shown errors (`app/formErrorAnnouncer.ts`). CI: `ubuntu-24.04` instead of `ubuntu-latest`, `actions/checkout|setup-node|cache|upload-artifact`
+on their Node 24 majors and pnpm through Corepack (replaces `pnpm/action-setup`, which ran on Node 20), and a
+translation check step. Schedulers never run twice at once (`common/periodic.ts`); issue reminders send the
+overdue notice before the escalation in the same run (an issue first seen past its escalation date — e.g.
+after downtime — used to get the overdue notice one run later).
