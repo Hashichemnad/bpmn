@@ -152,7 +152,9 @@
       "StrategicObjective": "هدف استراتيجي",
       "Diagram": "مخطط",
       "DiagramVersion": "إصدار مخطط",
-      "DiagramLink": "رابط مخطط"
+      "DiagramLink": "رابط مخطط",
+      "EventLog": "سجل أحداث",
+      "SimulationScenario": "سيناريو محاكاة"
     }
   },
   "settings": {

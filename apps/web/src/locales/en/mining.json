@@ -1,0 +1,191 @@
+{
+  "nav": { "group": "Process mining", "logs": "Event logs" },
+  "status": {
+    "DRAFT": "Draft",
+    "IMPORTING": "Importing",
+    "READY": "Ready",
+    "FAILED": "Failed",
+    "DELETING": "Deleting"
+  },
+  "source": { "FILE": "Uploaded file", "PROCESSHUB": "ProcessHub reviews" },
+  "units": {
+    "s": "{{n}} s",
+    "min": "{{n}} min",
+    "h": "{{n}} h",
+    "d": "{{n}} d",
+    "dh": "{{d}} d {{h}} h"
+  },
+  "job": {
+    "kind": {
+      "VALIDATE": "Validation",
+      "IMPORT": "Import",
+      "DELETE": "Deletion",
+      "ANALYSE": "Analysis",
+      "DISCOVER": "Discovery",
+      "CONFORMANCE": "Conformance check",
+      "KPI": "KPI calculation",
+      "SIMULATE": "Simulation"
+    },
+    "status": {
+      "QUEUED": "queued",
+      "RUNNING": "running",
+      "DONE": "done",
+      "FAILED": "failed",
+      "CANCELLED": "cancelled"
+    },
+    "cancel": "Cancel",
+    "failed": "The job failed: {{error}}"
+  },
+  "fields": {
+    "code": "Code",
+    "name": "Name",
+    "nameEn": "Name (English)",
+    "nameAr": "Name (Arabic)",
+    "descriptionEn": "Description (English)",
+    "descriptionAr": "Description (Arabic)",
+    "process": "Linked process",
+    "status": "Status",
+    "cases": "Cases",
+    "events": "Events",
+    "activities": "Activities",
+    "resources": "Resources",
+    "period": "Period",
+    "owner": "Owner",
+    "department": "Department",
+    "source": "Source",
+    "file": "File",
+    "timestamps": "Timestamps",
+    "startAndEnd": "Start and end",
+    "endOnly": "One timestamp per event",
+    "importedAt": "Imported",
+    "pseudonymised": "Pseudonymised"
+  },
+  "logs": {
+    "title": "Event logs",
+    "subtitle": "Import event logs from other systems and analyse how processes really run",
+    "import": "Import log",
+    "fromProcessHub": "Create log from ProcessHub",
+    "search": "Search code or name",
+    "empty": "No event logs yet"
+  },
+  "processhub": {
+    "title": "Create log from ProcessHub",
+    "help": "Each governance review becomes a case: submitted, decisions per review step (with waiting and processing time), published or withdrawn.",
+    "create": "Create log",
+    "started": "The log is being built",
+    "items": "Reviews of",
+    "item": { "PROCESS": "Processes", "PAGE": "Pages", "DIAGRAM": "Diagrams" },
+    "period": "Submitted between",
+    "language": "Language of the activity names"
+  },
+  "import": {
+    "title": "Import event log",
+    "steps": {
+      "upload": "Upload",
+      "mapping": "Column mapping",
+      "validate": "Validation",
+      "import": "Import"
+    },
+    "file": "File",
+    "fileRequired": "Choose a file first",
+    "drop": "Click or drag a CSV, Excel (.xlsx) or XES file here",
+    "hint": "Up to {{mb}} MB. One row per event: case id, activity, timestamp(s).",
+    "processHint": "Optional: activities can then be mapped to the steps of its BPMN model.",
+    "uploadNext": "Upload and continue",
+    "loadTemplate": "Load a saved mapping",
+    "saveTemplate": "Save mapping as template",
+    "templateName": "Template name",
+    "templateSaved": "Mapping template saved",
+    "delimiter": "Delimiter",
+    "delimiters": {
+      "comma": "Comma ,",
+      "semicolon": "Semicolon ;",
+      "tab": "Tab",
+      "pipe": "Pipe |"
+    },
+    "sheet": "Worksheet",
+    "preview": "Preview (first rows)",
+    "validate": "Validate",
+    "back": "Back to mapping",
+    "run": "Import {{count}} events",
+    "done": "Event log imported"
+  },
+  "mapping": {
+    "caseColumn": "Case id",
+    "activityColumn": "Activity",
+    "startColumn": "Start time",
+    "endColumn": "End time (or timestamp)",
+    "resourceColumn": "Resource",
+    "departmentColumn": "Department",
+    "attributes": "Other attributes (filters)",
+    "none": "— not used —",
+    "timestampFormat": "Timestamp format",
+    "timeZone": "Time zone",
+    "ambiguous": "day/month unclear",
+    "pseudonymise": "Pseudonymise case ids and resources",
+    "pseudonymiseHint": "Real ids are replaced at import and the uploaded file is deleted afterwards.",
+    "dropDuplicates": "Skip duplicate events",
+    "formats": {
+      "auto": "Detect automatically",
+      "iso": "ISO 8601 (2026-03-01 08:15)",
+      "dmy": "Day first (01/03/2026 08:15)",
+      "mdy": "Month first (03/01/2026 8:15 AM)",
+      "ymd": "Year first (2026/03/01 08:15)",
+      "excel": "Excel serial number",
+      "epochSeconds": "Unix time (seconds)",
+      "epochMillis": "Unix time (milliseconds)"
+    }
+  },
+  "report": {
+    "rows": "Rows read",
+    "events": "Valid events",
+    "cases": "Cases",
+    "activities": "Activities",
+    "skipped": "Skipped",
+    "format": "Timestamp format",
+    "ambiguous": "Day and month could not be told apart from the values (all ≤ 12): day first was assumed. Choose the format explicitly if this is wrong.",
+    "clean": "No problems found",
+    "issues": "Some rows will be skipped",
+    "missingCase": "{{count}} rows without a case id",
+    "missingActivity": "{{count}} rows without an activity",
+    "missingTimestamp": "{{count}} rows without a timestamp",
+    "unparsableTimestamp": "{{count}} rows with a timestamp that cannot be read",
+    "startAfterEnd": "{{count}} rows where the start is after the end",
+    "duplicates": "{{count}} duplicate events",
+    "row": "Row",
+    "column": "Column",
+    "value": "Value"
+  },
+  "tabs": { "overview": "Overview", "activities": "Activities and steps", "access": "Access" },
+  "log": {
+    "edit": "Edit",
+    "continueImport": "Continue import",
+    "reimport": "Re-import",
+    "delete": "Delete",
+    "deleteConfirm": "Delete this event log for good?",
+    "deleteHint": "All events are deleted permanently. This cannot be undone.",
+    "failed": "The last import failed. Check the mapping and import again.",
+    "report": "Last validation / import",
+    "processHint": "Changing the process clears the activity mapping."
+  },
+  "activities": {
+    "title": "Activities and BPMN steps",
+    "autoMatch": "Match automatically",
+    "matched": "{{count}} activities matched",
+    "noProcess": "Link the log to a process (Edit) to map activities to its BPMN steps.",
+    "summary": "{{mapped}} of {{total}} activities are mapped to steps of the process.",
+    "activity": "Activity in the log",
+    "step": "BPMN step",
+    "unmapped": "Not in the model",
+    "match": "Matched by",
+    "matchKind": { "LABEL": "Label", "SYNONYM": "Dictionary synonym", "MANUAL": "Manual" }
+  },
+  "access": {
+    "title": "Who can see this log",
+    "help": "The owner, members of the log's department and the users below. Event logs can contain personal data: grant access only where needed.",
+    "grant": "Grant access",
+    "revoke": "Remove",
+    "user": "User",
+    "email": "E-mail"
+  }
+}

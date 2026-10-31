@@ -53,7 +53,10 @@ export function detectFileFormat(head: Buffer, fileName: string): MiningFileForm
   )
     return /\.xlsx$/i.test(fileName) ? 'XLSX' : null;
   if (head.includes(0)) return null; // binary, not text
-  const text = head.toString('utf8').replace(/^\uFEFF/, '').trimStart();
+  const text = head
+    .toString('utf8')
+    .replace(/^\uFEFF/, '')
+    .trimStart();
   if (text.startsWith('<'))
     return /<log[\s>]/.test(text) || /\.xes$/i.test(fileName) ? 'XES' : null;
   return /\.(csv|txt|tsv)$/i.test(fileName) ? 'CSV' : null;

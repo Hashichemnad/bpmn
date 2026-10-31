@@ -1714,3 +1714,62 @@ Supersedes the "act as the Super Admin" rule of D-116.
   `dataVersion`; a worker decodes 1 M events in well under a second. Analysis results are cached in
   `MiningResultCache` keyed by log, data version and a hash of the request (filters, options) and dropped when the
   data version changes or the log is deleted.
+
+## D-129 — Event log import: formats, mapping, time zones, validation (Phase 5.1, 2026-10-31)
+
+- **Formats**: CSV (any of `,` `;` tab `|`, detected from the first lines; UTF-8 with or without BOM), Excel `.xlsx`
+  (first or chosen worksheet, date cells read as wall-clock times) and XES (IEEE 1849; `lifecycle:transition`
+  start / complete pairs of the same activity become one event with start and end, other transitions are ignored;
+  trace attributes become `case:<key>` columns). The type is checked from the **content** (zip magic number for
+  `.xlsx`, `<log` for XES, text without NUL bytes for CSV), never only from the extension; the size limit is
+  `MINING_UPLOAD_MAX_MB` (default 200 MB, nginx / Caddy allow 210 MB on the upload route only). Files are stored in
+  the existing S3-compatible storage (`mining/<log>/source.<ext>`) and read as streams (csv-parse, exceljs
+  `WorkbookReader`, saxes) — never fully in memory.
+- **Flow**: upload creates a draft log → **preview** (first 20 rows, detected timestamp format per column, suggested
+  mapping from column names in English and Arabic and from the values) → **mapping** (case id, activity, start and / or
+  end time, resource, department, up to 20 extra attributes; timestamp format or "detect"; IANA time zone, default
+  **Asia/Dubai**; skip duplicates; pseudonymise) → **validation** job (dry run: missing case / activity / timestamp,
+  unparsable timestamps, start after end, duplicates — counts and up to 50 example rows) → **import** job. Invalid
+  rows are skipped and reported, never "fixed". Mappings can be saved as **templates** (per format).
+- **Timestamps**: ISO 8601 (with or without offset), day-first, month-first, year-first, Excel serial numbers, Unix
+  seconds / milliseconds. Detection picks the format that parses most of the first 500 values; when day and month
+  cannot be told apart (all parts ≤ 12) **day first** is assumed (UAE convention) and the report says so. Wall-clock
+  times are converted with the zone's offset from `Intl` (DST-safe, cached per hour).
+- **Storage of the import**: events in batches of 5,000 (`createMany`), the old events of a re-import deleted in
+  batches first; the columnar snapshot is sorted in a worker thread; `dataVersion` + 1, cached results dropped.
+
+## D-130 — Activities ↔ BPMN steps (Phase 5.1, 2026-10-31)
+
+- A log can be linked to a process. Its activities (`MiningActivity`: name, events, cases) are matched to the flow
+  nodes of the **working model** (tasks, sub-processes, call activities and events — events so that "Request
+  received" can be the start event): first by label (English or Arabic, normalised: case, punctuation, Arabic
+  diacritics / tatweel / alef, ya and ta marbuta variants), then by the **dictionary**: the synonyms of the term the
+  step label is linked to (`ph:labelRef`) or of the term named like the step. Unmatched activities are mapped by hand
+  (or left as "not in the model"); manual mappings are kept on re-import, all mappings are cleared when another
+  process is linked. Mapping changes drop the cached conformance results.
+
+## D-131 — Event log privacy and access (Phase 5.1, 2026-10-31)
+
+- Permissions `mining.read` (see logs one has access to, analyses, simulation results) and `mining.manage` (import,
+  map, grant, delete, run discovery and simulations). Bundles: Process Owner, Internal Audit and Performance Officer
+  read + manage; Modeler, Auditor, Risk & Compliance Officer and Enterprise Architect read; Admin and Super Admin
+  everything; Viewer and Reviewer nothing.
+- A log is **visible** to its owner, to members of its department and to users granted access (`EventLogGrant`);
+  Super Admins (`settings.manage`) see all logs. Others get 404 (ids are not confirmed). It can be **changed** by its
+  owner, by `mining.manage` holders of its department and by Super Admins. Admins do not see all logs by default —
+  event logs can hold personal data (who did what when).
+- **Pseudonymisation** at import replaces case ids and resources with `C-…` / `R-…` keyed hashes (HMAC-SHA-256 with a
+  random key per import that is never stored: consistent within the log, not reversible) and **deletes the uploaded
+  file** afterwards (a re-import then needs a new upload).
+- **Delete is a hard delete**: the log disappears at once (status `DELETING`, hidden), a job removes the events in
+  batches, the file and the snapshot; audited (`DELETE` with counts). **Retention** (Setting `mining.retentionMonths`,
+  off by default): the scheduler deletes logs whose last event is older, audited as a system action.
+
+## D-132 — "Create log from ProcessHub" (Phase 5.1, 2026-10-31)
+
+- ProcessHub's own governance data as an event log — a ready demo and a real use (how long do approvals take, where
+  do reviews loop): one **case per review** (`<code> v<version> #<id>`), events "Submit for review" (submitter),
+  one event per decided review task "Approve / Request changes / Reject: <step name>" with **start = when the step
+  became active** and end = decision (so waiting vs processing is known), "Publish" and "Withdraw". Attributes:
+  item type and workflow; resources and departments are the users'. Filters: item kinds, submission period, language
+  of the activity names. Built as an import job like a file; re-import refreshes it.

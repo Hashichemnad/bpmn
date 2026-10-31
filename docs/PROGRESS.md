@@ -21,14 +21,22 @@ Local setup: PostgreSQL 16 (`service postgresql start`; role `processhub` / `dev
 Steps (tick as they are committed; a new session continues at the first unticked one):
 
 - [x] 0. CLAUDE.md phase table (diagram types merged; Phase 5 split into 5.1 / 5.2), this plan, D-128 approach.
-- [ ] 1. Event logs — import and data (D-129 – ): `EventLog` / `MiningEvent` / `MiningActivity` / `EventLogGrant` /
-      `MiningJob` / `MiningMappingTemplate`, permissions `mining.read` / `mining.manage`, upload (CSV / XLSX / XES,
-      type + size checks, file storage), preview, column mapping (case, activity, start / end, resource, department,
-      extra attributes), timestamp format detection + time zone (default Asia/Dubai), validation report, import job
-      (streaming, batched inserts, columnar snapshot), mapping templates, "Create log from ProcessHub" (governance
-      reviews), activity ↔ BPMN step mapping (EN / AR labels + dictionary synonyms, then manual), pseudonymisation,
-      access (owner / department / grants), hard delete (audited), retention setting. Web: Mining menu, logs list,
-      import wizard, log page (overview, activities mapping, access). Tests + Playwright.
+- [x] 1. Event logs — import and data (D-129 – D-132): `EventLog` / `MiningEvent` / `MiningActivity` /
+      `EventLogGrant` / `MiningJob` / `MiningResultCache` / `MiningMappingTemplate` / `MiningFilterPreset` (migration
+      `20261031080623_mining_event_logs`), permissions `mining.read` / `mining.manage` (bundles in D-131), Setting
+      `mining`; shared `mining/` (timestamps with format detection and IANA zones, columnar `LogData` + binary
+      snapshot, label matching, schemas, worker task registry `runMiningTask`); API module `mining`:
+      `MiningJobsService` (queue, progress, cancel, long-poll `GET /mining/jobs/:id?wait=`, restart cleanup),
+      `runInWorker` (inline worker loading the compiled shared package), streaming readers (csv-parse, exceljs, saxes),
+      `RowNormaliser` (validation report, duplicates, pseudonyms), import / validate / delete jobs, snapshot in the
+      file storage (gzip, LRU, rebuild from events), ProcessHub reviews source, activity auto-match (labels + dictionary
+      synonyms) and manual mapping, grants, templates, retention via `MiningScheduler`; nginx / Caddy 210 MB on the
+      upload route, `MINING_UPLOAD_MAX_MB`, `MINING_WORKERS`. Web: menu "Process mining → Event logs", logs list,
+      "Create log from ProcessHub" dialog, import wizard (upload → mapping with preview, templates, delimiter / sheet,
+      time zone, pseudonymise → validation report → import progress), log page (overview + report, activities ↔
+      steps, access), EN / AR. Tests: shared 8 (`mining/import.test.ts`), API 7 (`mining-logs.e2e-spec.ts`),
+      Playwright `mining.spec.ts` (import CSV with mapping → validation → import → Arabic → viewer denied).
+      Note: API tests run the worker on `packages/shared/dist` — build the shared package after changing it.
 - [ ] 2. Discovery and analysis: shared DFG, variants, statistics, filters, bottlenecks, handovers, heuristics miner;
       analysis jobs in worker threads + cache; process map (frequency / performance, activity + path sliders, start /
       end), variants (compare, open on map), stackable filters saved per user, statistics dashboard, bottlenecks with

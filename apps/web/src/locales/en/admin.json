@@ -152,7 +152,9 @@
       "StrategicObjective": "Strategic objective",
       "Diagram": "Diagram",
       "DiagramVersion": "Diagram version",
-      "DiagramLink": "Diagram link"
+      "DiagramLink": "Diagram link",
+      "EventLog": "Event log",
+      "SimulationScenario": "Simulation scenario"
     }
   },
   "settings": {

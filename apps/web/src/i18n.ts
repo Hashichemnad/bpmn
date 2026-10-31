@@ -17,6 +17,7 @@ import enAssurance from './locales/en/assurance.json';
 import enEa from './locales/en/ea.json';
 import enKpi from './locales/en/kpi.json';
 import enDiagrams from './locales/en/diagrams.json';
+import enMining from './locales/en/mining.json';
 import arCommon from './locales/ar/common.json';
 import arAdmin from './locales/ar/admin.json';
 import arProcesses from './locales/ar/processes.json';
@@ -33,6 +34,7 @@ import arAssurance from './locales/ar/assurance.json';
 import arEa from './locales/ar/ea.json';
 import arKpi from './locales/ar/kpi.json';
 import arDiagrams from './locales/ar/diagrams.json';
+import arMining from './locales/ar/mining.json';
 
 export const resources = {
   en: {
@@ -52,6 +54,7 @@ export const resources = {
     ea: enEa,
     kpi: enKpi,
     diagrams: enDiagrams,
+    mining: enMining,
   },
   ar: {
     common: arCommon,
@@ -70,6 +73,7 @@ export const resources = {
     ea: arEa,
     kpi: arKpi,
     diagrams: arDiagrams,
+    mining: arMining,
   },
 } as const;
 
@@ -90,6 +94,7 @@ export const NAMESPACES = [
   'ea',
   'kpi',
   'diagrams',
+  'mining',
 ] as const;
 
 const STORAGE_KEY = 'ph.locale';

@@ -49,7 +49,10 @@ const COLUMN_GUESS: [keyof MiningMappingInput, RegExp][] = [
   ['activityColumn', /(activity|activit|step|task|event|نشاط|خطوة|مهمة|الإجراء)/i],
   ['startColumn', /(start|begin|بداية|بدء)/i],
   ['endColumn', /(end|complete|finish|timestamp|time|date|نهاية|انتهاء|تاريخ|وقت)/i],
-  ['resourceColumn', /(resource|user|performer|employee|agent|actor|مورد|موظف|مستخدم|المنفذ)/i],
+  [
+    'resourceColumn',
+    /(resource|user|performer|employee|agent|actor|clerk|handler|assignee|officer|staff|مورد|موظف|مستخدم|المنفذ)/i,
+  ],
   ['departmentColumn', /(department|dept|unit|team|group|division|قسم|إدارة|الإدارة|وحدة)/i],
 ];
 
@@ -97,7 +100,7 @@ export class LogImportService implements OnModuleInit {
     if (!file?.buffer?.length) throw badRequest('FILE_REQUIRED');
     if (file.size > this.maxBytes) throw badRequest('FILE_TOO_LARGE');
     const format = detectFileFormat(file.buffer.subarray(0, 4096), file.originalname);
-    if (!format) throw badRequest('FILE_TYPE_NOT_ALLOWED', 'CSV, Excel (.xlsx) or XES files only');
+    if (!format) throw badRequest('UNSUPPORTED_FILE_TYPE', 'CSV, Excel (.xlsx) or XES files only');
     const log = await this.logs.create(
       input,
       {
