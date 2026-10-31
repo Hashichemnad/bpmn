@@ -23,10 +23,17 @@ export const SSO_ERROR_CODES = [
   'SSO_USER_NOT_FOUND',
   'SSO_USER_INACTIVE',
   'SSO_ACCOUNT_CONFLICT',
+  'SSO_MFA_REQUIRED',
 ] as const;
 export type SsoErrorCode = (typeof SSO_ERROR_CODES)[number];
 
 export const MAX_GROUP_MAPPINGS = 100;
+
+/**
+ * `amr` values (RFC 8176) that show a multi-factor sign-in. Entra ID reports `mfa`; other
+ * providers may list the second factor itself next to the password.
+ */
+export const IDP_MFA_AMR_VALUES = ['mfa'] as const;
 export const MAX_ALLOWED_DOMAINS = 50;
 
 /** Number of recovery codes generated at enrolment (each can be used once). */
@@ -82,6 +89,11 @@ export const authSettingsSchema = z
     groupMappings: z.array(ssoGroupMappingSchema).max(MAX_GROUP_MAPPINGS),
     /** Apply the group mappings on every sign-in (not only when the user is created). */
     syncRolesOnLogin: z.boolean(),
+    /**
+     * Refuse SSO sign-ins whose ID token does not report multi-factor authentication in the
+     * `amr` claim (D-166). Turn on once IT confirms the Conditional Access MFA policy.
+     */
+    requireIdpMfa: z.boolean(),
     /** Password sign-in; when off only the break-glass account may use it. */
     localLoginEnabled: z.boolean(),
     breakGlassUserId: z.guid().nullable(),

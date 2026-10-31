@@ -50,6 +50,7 @@ describe('Single sign-on with OpenID Connect (e2e, mocked identity provider)', (
     groupsClaim: 'groups',
     groupMappings: [],
     syncRolesOnLogin: false,
+    requireIdpMfa: false,
     localLoginEnabled: true,
     breakGlassUserId: null,
     mfaRequiredRoles: [],
@@ -229,6 +230,7 @@ describe('Single sign-on with OpenID Connect (e2e, mocked identity provider)', (
           { group: 'grp-finance', roles: ['REVIEWER'], departmentId: dep.id },
         ],
         syncRolesOnLogin: true,
+        requireIdpMfa: false,
       });
       const first = await signIn({ groups: ['grp-editors', 'grp-finance', 'unrelated'] });
       const me = (await first.c.get('/auth/me')).body;
@@ -257,6 +259,7 @@ describe('Single sign-on with OpenID Connect (e2e, mocked identity provider)', (
       await configure({
         groupMappings: [{ group: 'grp-editors', roles: ['MODELER'], departmentId: null }],
         syncRolesOnLogin: false,
+        requireIdpMfa: false,
       });
       const first = await signIn({ groups: ['grp-editors'] });
       const again = await signIn({ groups: [] });
@@ -274,6 +277,7 @@ describe('Single sign-on with OpenID Connect (e2e, mocked identity provider)', (
       await configure({
         groupMappings: [{ group: 'grp-editors', roles: ['MODELER'], departmentId: null }],
         syncRolesOnLogin: true,
+        requireIdpMfa: false,
       });
       const { c } = await signIn({ sub: 'admin-subject', email: 'admin@example.com', groups: [] });
       expect((await c.get('/auth/me')).body.roles.sort()).toEqual(['SUPER_ADMIN', 'VIEWER']);
@@ -317,6 +321,29 @@ describe('Single sign-on with OpenID Connect (e2e, mocked identity provider)', (
         method: 'SSO',
         reason: code,
       });
+    });
+
+    it('requires MFA from the identity provider when the setting is on (amr claim)', async () => {
+      // Off (default): a sign-in without amr is accepted.
+      await configure();
+      expect((await signIn({ sub: 'no-mfa', email: 'nomfa@example.com' })).location).toBe(
+        `${APP_URL}/`,
+      );
+      await configure({ requireIdpMfa: true });
+      const refused = await signIn({ sub: 'pwd-only', email: 'pwd@example.com', amr: ['pwd'] });
+      expect(refused.location).toBe(`${APP_URL}/login?ssoError=SSO_MFA_REQUIRED`);
+      await refused.c.get('/auth/me').expect(401);
+      expect(await ctx.prisma.user.count({ where: { email: 'pwd@example.com' } })).toBe(0);
+      expect((await lastAudit('LOGIN_FAILED'))?.summary).toMatchObject({
+        method: 'SSO',
+        reason: 'SSO_MFA_REQUIRED',
+        amr: ['pwd'],
+      });
+      const missing = await signIn({ sub: 'no-amr', email: 'none@example.com' });
+      expect(missing.location).toBe(`${APP_URL}/login?ssoError=SSO_MFA_REQUIRED`);
+      const ok = await signIn({ sub: 'mfa-user', email: 'mfa@example.com', amr: ['pwd', 'mfa'] });
+      expect((await ok.c.get('/auth/me')).body.email).toBe('mfa@example.com');
+      expect((await lastAudit('LOGIN'))?.summary).toMatchObject({ amr: ['pwd', 'mfa'] });
     });
 
     it('refuses inactive accounts', async () => {

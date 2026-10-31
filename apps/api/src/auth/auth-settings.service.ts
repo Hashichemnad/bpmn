@@ -36,6 +36,7 @@ export const AUTH_DEFAULTS: StoredAuthSettings = {
   groupsClaim: 'groups',
   groupMappings: [],
   syncRolesOnLogin: false,
+  requireIdpMfa: false,
   localLoginEnabled: true,
   breakGlassUserId: null,
   mfaRequiredRoles: [...DEFAULT_MFA_REQUIRED_ROLES],

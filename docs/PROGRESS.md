@@ -2,7 +2,36 @@
 
 Read this together with `CLAUDE.md` at the start of every session.
 
-## Current state — 2026-10-31 (Import tools / migration — module M15, branch `import-tools`, done — awaiting review)
+## Current state — 2026-11-01 (Final session, Part A — performance, reliability and polish, branch `final-a-performance`)
+
+All feature phases (1 – 5.2, AI, diagram types, import tools) are merged into `main`. This branch is the Phase 6
+remainder: measurement-driven performance work, reliability, accessibility / polish and production images —
+**no new features** (ideas go to `docs/BACKLOG.md`). The session works on the harness branch
+`claude/laughing-clarke-9wv94u` and pushes the same commits to `final-a-performance`.
+
+Local setup: PostgreSQL 16 (`service postgresql start`; role `processhub` / `devpassword`, databases
+`processhub`, `processhub_test`); build the shared package first (`cd packages/shared && npx tsc -p
+tsconfig.build.json`); API suites `npx jest --runInBand test/<file> --selectProjects e2e` in `apps/api`. No
+Docker daemon in the sandbox — CI builds the images and runs the full Playwright suite.
+
+Steps (tick as they are committed; a new session continues at the first unticked one):
+
+- [x] 0. Decisions D-165 / D-166: absolute session limit `SESSION_MAX_HOURS` (default 168 = 7 days, on top of
+      the 24-hour idle limit; `RefreshToken.sessionStartedAt`, migration `20261101090000_session_max_lifetime`);
+      Settings → Authentication → "Require MFA from the identity provider" (`requireIdpMfa`, default off,
+      `SSO_MFA_REQUIRED`, `amr` audited). Tests: `auth.e2e` (absolute limit, deactivation ends sessions at once),
+      `sso.e2e` (amr), `sso-claims.spec`. SECURITY / DEPLOYMENT / BACKLOG / `.env.example*` updated.
+- [ ] 1. Volume seed (`apps/api/prisma/seed-volume.ts`, refuses production) and database review: timings
+      before / after for the main endpoints, indexes, N+1, pagination, caching; scheduler / job runner under load.
+- [ ] 2. Web performance: route-based code splitting, vendor chunks, bundle sizes before / after; gzip / brotli
+      in nginx and Caddy, long-cache headers, font preload; large diagrams and lists.
+- [ ] 3. Accessibility and UX polish: keyboard / focus / contrast / labels; consistency sweep; CI check for
+      missing `en` / `ar` keys; CI runner pinned (`ubuntu-24.04`) and actions on Node 24.
+- [ ] 4. Production images: slim API image (`pnpm deploy --prod`, separate migration step), unprivileged nginx,
+      health checks, sizes before / after; GHCR images on tags; backup / restore drill script in CI.
+- [ ] 5. README refresh, phase table, final checks (lint, type-check, tests, audit, images), PR.
+
+## Previous state — 2026-10-31 (Import tools / migration — module M15, branch `import-tools`, done — awaiting review)
 
 Everything up to Phase 5.2 (workflow execution) is merged into `main`. This branch builds module M15: moving DOF's
 existing processes, diagrams, SOPs and lists into ProcessHub before go-live — file based only (uploads), no live

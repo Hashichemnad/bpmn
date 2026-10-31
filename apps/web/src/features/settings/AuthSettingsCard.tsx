@@ -356,6 +356,14 @@ export function AuthSettingsCard() {
         >
           <Switch />
         </Form.Item>
+        <Form.Item
+          name="requireIdpMfa"
+          valuePropName="checked"
+          label={t('admin:auth.requireIdpMfa')}
+          extra={t('admin:auth.requireIdpMfaHint')}
+        >
+          <Switch />
+        </Form.Item>
 
         <Divider />
         <Typography.Title level={5}>{t('admin:auth.passwordSignIn')}</Typography.Title>

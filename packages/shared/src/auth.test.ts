@@ -23,6 +23,7 @@ const base: AuthSettingsInput = {
   groupsClaim: 'groups',
   groupMappings: [],
   syncRolesOnLogin: true,
+  requireIdpMfa: false,
   localLoginEnabled: true,
   breakGlassUserId: null,
   mfaRequiredRoles: [],

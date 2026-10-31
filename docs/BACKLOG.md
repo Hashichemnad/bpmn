@@ -227,10 +227,8 @@ Other ideas from Part A:
 - Slim API runtime image (`pnpm deploy --prod` plus a separate migration step); unprivileged nginx image.
   (Node 22 LTS: done in part 4, D-066.)
 - From the part 4 decisions (D-061 – D-065): **automatic de-provisioning** (SCIM / back-channel logout, see
-  above) stays here — until then the leaver process deactivates users by hand; optionally an absolute session
-  limit (e.g. sign in again every 24 hours even when active; today the 24 hours are an idle timeout); check the
-  `amr` / `acrs` claim so ProcessHub refuses SSO sign-ins without MFA if Conditional Access is misconfigured;
-  a quarterly reminder to test the break-glass account; an admin-side report of who has 2FA turned on.
+  above) stays here — until then the leaver process deactivates users by hand (the absolute session limit and
+  the `amr` check are done: D-165, D-166); a quarterly reminder to test the break-glass account; an admin-side report of who has 2FA turned on.
 - Production follow-ups from part 2 (D-051 – D-053): publish versioned images to a registry (GHCR / ACR /
   ECR) so servers pull instead of build; rename the `MINIO_*` variables to `STORAGE_*` (keep the old names as
   aliases); replace the `minio` npm client with `@aws-sdk/client-s3` (also clears SEC-09); run the storage

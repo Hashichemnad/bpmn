@@ -315,17 +315,19 @@ model UserRole {
 
 /// Refresh tokens are stored hashed and rotated on every use.
 model RefreshToken {
-  id        String    @id @default(uuid()) @db.Uuid
-  userId    String    @db.Uuid
-  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  tokenHash String    @unique
+  id               String    @id @default(uuid()) @db.Uuid
+  userId           String    @db.Uuid
+  user             User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash        String    @unique
   /// All tokens issued from one login share a family; reuse of a rotated token revokes the family.
-  familyId  String    @db.Uuid
-  expiresAt DateTime
-  revokedAt DateTime?
-  createdAt DateTime  @default(now())
-  userAgent String?
-  ip        String?
+  familyId         String    @db.Uuid
+  /// Sign-in time of the family: the absolute session limit (SESSION_MAX_HOURS) counts from here.
+  sessionStartedAt DateTime  @default(now())
+  expiresAt        DateTime
+  revokedAt        DateTime?
+  createdAt        DateTime  @default(now())
+  userAgent        String?
+  ip               String?
 
   @@index([userId])
   @@index([familyId])
@@ -387,7 +389,7 @@ model Process {
   /// The working model was produced by the AI assistant and not yet edited or approved by a person.
   aiGenerated   Boolean         @default(false)
   /// Created by an Import Center batch (the "Imported" flag, D-156).
-  importBatchId String?   @db.Uuid
+  importBatchId String?         @db.Uuid
   createdAt     DateTime        @default(now())
   updatedAt     DateTime        @updatedAt
   createdById   String?         @db.Uuid
@@ -460,7 +462,7 @@ model RepoObject {
   approvedAt    DateTime?
   approvedById  String?      @db.Uuid
   /// Created by an Import Center batch (the "Imported" flag, D-156).
-  importBatchId String?   @db.Uuid
+  importBatchId String?      @db.Uuid
   createdAt     DateTime     @default(now())
   updatedAt     DateTime     @updatedAt
   createdById   String?      @db.Uuid
@@ -734,7 +736,7 @@ model Page {
   /// The saved content was produced by the AI assistant and not yet edited or approved by a person.
   aiGenerated   Boolean                  @default(false)
   /// Created by an Import Center batch (the "Imported" flag, D-156).
-  importBatchId String?   @db.Uuid
+  importBatchId String?                  @db.Uuid
   /// Maintained by a database trigger (see migration 20261021082019_phase2_wiki).
   searchVector  Unsupported("tsvector")?
   createdAt     DateTime                 @default(now())
@@ -2010,7 +2012,7 @@ model Diagram {
   nextReviewAt       DateTime?
   aiGenerated        Boolean       @default(false)
   /// Created by an Import Center batch (the "Imported" flag, D-156).
-  importBatchId String?   @db.Uuid
+  importBatchId      String?       @db.Uuid
   /// Working content (autosaved draft); versions are explicit snapshots.
   content            String
   contentUpdatedAt   DateTime      @default(now())

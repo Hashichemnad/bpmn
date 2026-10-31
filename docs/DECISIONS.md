@@ -2335,3 +2335,24 @@ source document:
   `scripts/backup.sh` / `restore.sh` (database + files + keys) and the export package is for moving servers
   and avoiding lock-in.
 - **Antivirus** scanning goes to the final security review (BACKLOG).
+
+## D-165 — Absolute session limit of 7 days (final session, part A, 2026-11-01)
+
+**Decision:** the 24-hour idle limit (D-065) stays and every session now also ends **7 days after sign-in**,
+however active it is. `SESSION_MAX_HOURS` (default **168**, 1 – 8760) in `.env`; an environment variable like
+the idle limit, so both lifetimes live in one place. `RefreshToken.sessionStartedAt` stores the sign-in time
+of the token family (copied on every rotation; a password change starts a new family); a rotated refresh token
+expires at `min(now + idle, start + max)`, the access token (and its cookie) never outlives the session, and a
+refresh after the limit revokes the family (`SESSION_EXPIRED`). Existing sessions get the oldest token of their
+family as start (migration). Deactivating a user still revokes all refresh tokens and every request reloads the
+user, so access ends immediately (test in `auth.e2e`).
+
+## D-166 — Optional check of MFA at the identity provider (`amr`) (final session, part A, 2026-11-01)
+
+**Decision:** Settings → Authentication → **Require MFA from the identity provider** (`requireIdpMfa`, default
+**off**). When on, the SSO callback refuses an ID token whose `amr` claim (RFC 8176) does not contain `mfa`
+with `SSO_MFA_REQUIRED` (bilingual message on the login page), before any account is created or linked; the
+refusal is audited (`LOGIN_FAILED`, with the `amr` values received) and successful SSO sign-ins record their
+`amr` in the `LOGIN` summary, so the administrator can check what Entra ID sends before switching it on. It
+complements, not replaces, the Conditional Access policy (D-064): turn it on once IT confirms the policy and a
+test sign-in shows `mfa` (DEPLOYMENT.md §6.1 step 9). Password sign-in keeps ProcessHub's own TOTP.

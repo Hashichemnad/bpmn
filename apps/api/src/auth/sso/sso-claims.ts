@@ -1,4 +1,9 @@
-import type { SsoGroupMapping, SsoProvider, SystemRoleKey } from '@processhub/shared';
+import {
+  IDP_MFA_AMR_VALUES,
+  type SsoGroupMapping,
+  type SsoProvider,
+  type SystemRoleKey,
+} from '@processhub/shared';
 
 /** What ProcessHub takes from a verified ID token. */
 export interface SsoIdentity {
@@ -10,6 +15,8 @@ export interface SsoIdentity {
   groups: string[];
   /** Entra ID left the groups out because the user is in too many (more than 200). */
   groupsOverage: boolean;
+  /** Authentication methods (`amr` claim), lower case; empty when the provider sent none. */
+  amr: string[];
 }
 
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -46,7 +53,21 @@ export function identityFromClaims(
     name: name.slice(0, 200),
     groups,
     groupsOverage: !!claimNames?.groups || claims.hasgroups === true || claims.hasgroups === 'true',
+    amr: (Array.isArray(claims.amr)
+      ? claims.amr
+      : typeof claims.amr === 'string'
+        ? [claims.amr]
+        : []
+    )
+      .filter((v): v is string => typeof v === 'string')
+      .map((v) => v.trim().toLowerCase().slice(0, 50))
+      .slice(0, 20),
   };
+}
+
+/** The identity provider reported a multi-factor sign-in (`amr` contains `mfa`). */
+export function idpMfaPerformed(amr: readonly string[]): boolean {
+  return amr.some((v) => (IDP_MFA_AMR_VALUES as readonly string[]).includes(v));
 }
 
 export function domainAllowed(email: string, allowedDomains: readonly string[]): boolean {

@@ -387,6 +387,16 @@ Administrator) — about 15 minutes.
    Then sign in once in a private window: Microsoft must ask for the second factor. Note the policy name in
    the go-live checklist (SECURITY.md §7).
 
+   **Let ProcessHub check it too (D-166).** Once IT confirms the policy is **On**, sign in once with a test
+   account and open **Administration → Audit log**: the `LOGIN` entry of that sign-in lists the `amr` values
+   Entra ID sent — it must contain `mfa`. Then switch on **Settings → Authentication → Require MFA from the
+   identity provider**. From then on ProcessHub refuses single sign-on whose token does not report MFA (the
+   user sees "Your organisation requires multi-factor authentication…", the refusal is audited as
+   `LOGIN_FAILED` / `SSO_MFA_REQUIRED` with the `amr` values received), so a policy switched back to
+   report-only or excluded by mistake cannot silently let people in with a password only. If the test sign-in
+   shows no `amr` values, leave the setting off (the provider does not send the claim) and rely on Conditional
+   Access. The setting is off by default and does not affect password sign-in (ProcessHub's own 2FA, 6.2).
+
 **Other providers** (Google Workspace, Okta, Keycloak, ADFS, …): choose _Other OpenID Connect provider_ and
 enter the issuer URL (ProcessHub reads `<issuer>/.well-known/openid-configuration`), client ID and secret; the
 redirect URI is the same. The provider must send the `email` claim; for groups, set the claim name.
@@ -412,8 +422,10 @@ Admin).
 
 **Sessions** end after **24 hours without activity** (`REFRESH_TOKEN_TTL_HOURS` in `.env`, default 24):
 whoever has not used ProcessHub for a day signs in again (with single sign-on usually without typing
-anything). A session also ends at sign-out, a password change, a 2FA reset or when the user is deactivated.
-To change the lifetime, set the value in hours in `.env` and run `sudo docker compose up -d`. (Older `.env`
+anything). However active, a session also ends **7 days after sign-in** (`SESSION_MAX_HOURS`, default 168,
+D-165), so everybody signs in again at least once a week. A session also ends at sign-out, a password change,
+a 2FA reset or when the user is deactivated (immediately). To change a lifetime, set the value in hours in
+`.env` and run `sudo docker compose up -d`. (Older `.env`
 files contain `REFRESH_TOKEN_TTL_DAYS`; it is no longer used — replace it with `REFRESH_TOKEN_TTL_HOURS=24`.)
 
 **Leavers:** ProcessHub does not yet notice when an account is disabled in Entra ID (automatic
