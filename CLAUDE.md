@@ -267,6 +267,18 @@ Phase 5.2 additions (DECISIONS D-144 – D-153):
 - Shared `packages/shared/src/workflow/` (S-FEEL, server DMN, forms, model reader, executable check, pure engine,
   business calendar, templates); API module `workflow`; admin guide `docs/WORKFLOWS.md`
 
+Import tools additions (M15, DECISIONS D-155 – D-163):
+
+- `ImportBatch` (number IMP-0001, kind, status, options, preview / summary / result JSON, job), `ImportFile`
+  (S3, SHA-256), `ImportItem` (entity written by a batch: outcome, external key, before / after — undo, re-import
+  matching, result report); `importBatchId` on `Process`, `Page`, `Diagram`, `RepoObject` (the "Imported" flag)
+- `UserInvitation` (set-password link of users imported without a password), `AiProposal` (AI migration review
+  queue); permissions `import.manage`, `export.full` (Super Admin); audit actions `IMPORT`, `UNDO`; AI feature
+  `EXTRACT_GRC`; job kinds `IMPORT_PARSE`, `IMPORT_APPLY`, `IMPORT_AI` on the mining job runner
+- API module `imports` (importers per kind in `importers/`, upload security `safe-upload.ts`, migration
+  dashboard, AI migration, full export / restore); shared `packages/shared/src/imports.ts`; guide
+  `docs/MIGRATION.md`
+
 ## 10. Definition of Done (every phase)
 
 1. Features work end to end in both Arabic (RTL) and English.

@@ -2285,3 +2285,24 @@ source document:
 - **Translation** (feature `TRANSLATE`): the empty language side of names, descriptions, BPMN labels and page
   title / content; accepting writes it and marks the item as AI output for a human check.
   Nothing is published or submitted automatically; reject leaves the item unchanged. Tests mock the provider.
+
+## D-163 — Full export package and restore (Import tools step 7, 2026-10-31)
+
+- **Export** (`GET /repository-export`, permission `export.full` — Super Admin only; Admins keep everything
+  else): one ZIP built in the request (sizes of a 50–500 user installation are tens of MB) with
+  `data/<Model>.json` for 42 content tables in foreign-key order (departments, users without any credential
+  or 2FA data, approval workflows, library objects with GRC / EA / KPI details and relations, processes with
+  models and versions, links, spaces, pages with versions and attachments, diagrams with versions and links,
+  publications, content settings — never e-mail, SSO, AI or integration secrets), `UserRole` by role key,
+  attachment bytes, readable copies (BPMN per process and version, DMN / diagram JSON, pages as HTML and
+  Markdown per language with attachments), Excel (process house — re-importable —, library objects, GRC
+  registers, applications, KPIs) and `manifest.json` (counts, SHA-256 per file). Audited (`EXPORT`,
+  `RepositoryExport`).
+- **Restore** is the Import Center kind "ProcessHub export package" (Super Admin): every data / attachment
+  file is checked against the manifest (`PACKAGE_CHECKSUM`), the target must have **no** processes, pages,
+  diagrams or library objects (`TARGET_NOT_EMPTY`, so a restore never merges into live content), rows keep
+  their ids (all links stay valid), users and approval workflows that already exist (by e-mail / name) are
+  mapped instead of duplicated, imported users have no password (invitation / SSO), references to tables that
+  are not exported (event logs, reviews) are cleared, attachments go back to storage. A restore has no undo
+  (it is a whole installation). The round trip (export → empty database → restore → identical content) is an
+  API test in CI (`test/imports-package.e2e-spec.ts`).

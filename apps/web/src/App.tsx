@@ -12,6 +12,8 @@ import { AuditLogPage } from '@/features/admin/AuditLogPage';
 import { ImportCenterPage } from '@/features/imports/ImportCenterPage';
 import { ImportBatchPage } from '@/features/imports/ImportBatchPage';
 import { AiProposalPage, AiProposalsPage } from '@/features/imports/AiProposalsPage';
+import { MigrationDashboardPage } from '@/features/imports/MigrationDashboardPage';
+import { ReviewQueuePage } from '@/features/imports/ReviewQueuePage';
 import { SettingsPage } from '@/features/settings/SettingsPage';
 import { RepositoryLayout } from '@/features/processes/RepositoryLayout';
 import { ProcessListPage } from '@/features/processes/ProcessListPage';
@@ -697,6 +699,22 @@ export const routes: RouteObject[] = [
                     element: (
                       <RequirePermission all={[P.IMPORT_MANAGE]}>
                         <ImportCenterPage />
+                      </RequirePermission>
+                    ),
+                  },
+                  {
+                    path: 'admin/imports/dashboard',
+                    element: (
+                      <RequirePermission any={[P.IMPORT_MANAGE, P.GOVERNANCE_DASHBOARD]}>
+                        <MigrationDashboardPage />
+                      </RequirePermission>
+                    ),
+                  },
+                  {
+                    path: 'admin/imports/review',
+                    element: (
+                      <RequirePermission any={[P.IMPORT_MANAGE, P.GOVERNANCE_DASHBOARD]}>
+                        <ReviewQueuePage />
                       </RequirePermission>
                     ),
                   },

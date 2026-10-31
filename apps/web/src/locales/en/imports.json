@@ -163,7 +163,8 @@
     "history": "Import batches",
     "empty": "No imports yet",
     "resultLine": "{{created}} created · {{updated}} updated · {{failed}} failed",
-    "summaryLine": "{{create}} new · {{update}} updates · {{errors}} errors"
+    "summaryLine": "{{create}} new · {{update}} updates · {{errors}} errors",
+    "fullExport": "Full export (ZIP)"
   },
   "fields": {
     "kind": "Kind",
@@ -369,7 +370,12 @@
     "WORD_UNSUPPORTED_CONTENT": "{{count}} parts of the document could not be converted exactly (check the page).",
     "PDF_NEEDS_MANUAL_WORK": "Scanned PDF without text: needs manual work (the original is attached).",
     "PDF_UNREADABLE": "{{file}}: the PDF cannot be read.",
-    "BROKEN_LINKS": "{{count}} links point to pages or files that are not in the export: {{list}}"
+    "BROKEN_LINKS": "{{count}} links point to pages or files that are not in the export: {{list}}",
+    "TARGET_NOT_EMPTY": "The installation already has content ({{processes}} processes, {{pages}} pages, {{diagrams}} diagrams, {{objects}} library objects): a package is restored only into an empty installation.",
+    "PACKAGE_INFO": "Package of {{organisation}} from {{date}}.",
+    "NOT_A_PACKAGE": "{{file}} is not a ProcessHub export package.",
+    "PACKAGE_VERSION": "The package was made by a newer ProcessHub (format {{version}}).",
+    "PACKAGE_CHECKSUM": "The package is damaged or was changed ({{path}})."
   },
   "field": {
     "code": "Code",
@@ -458,5 +464,72 @@
       "EXTRACT_GRC": "Find risks and controls",
       "TRANSLATE": "Translate missing language"
     }
+  },
+  "dashboard": {
+    "title": "Migration dashboard",
+    "subtitle": "Imported content per department and process-house branch: review progress and what still needs work.",
+    "department": "Department",
+    "branch": "Process-house branch",
+    "none": "(none / not linked)",
+    "progress": "Approved / published",
+    "export": "Export to Excel",
+    "batches": "{{total}} import batches · {{applied}} applied · {{undone}} undone · {{failed}} failed",
+    "proposals": "{{count}} AI proposals to review",
+    "byDepartment": "By department",
+    "byBranch": "By process-house branch",
+    "byType": "By type",
+    "scope": {
+      "IMPORTED": "Imported",
+      "ALL": "All content"
+    },
+    "col": {
+      "total": "Items",
+      "draft": "Draft",
+      "inReview": "In review",
+      "approved": "Approved",
+      "published": "Published",
+      "archived": "Archived",
+      "noOwner": "Without owner",
+      "missingEn": "Without English",
+      "missingAr": "Without Arabic",
+      "conventions": "Failing conventions"
+    }
+  },
+  "problem": {
+    "NO_OWNER": "No owner",
+    "MISSING_EN": "No English",
+    "MISSING_AR": "No Arabic",
+    "CONVENTIONS": "Conventions",
+    "NO_MODEL": "No diagram",
+    "CONVENTION": "Convention",
+    "NOT_FOUND": "Not found"
+  },
+  "review": {
+    "title": "Review queue",
+    "subtitle": "Imported drafts: assign owners, apply the colour theme, validate and submit for review in bulk.",
+    "empty": "Nothing to review",
+    "clearGroup": "Show all groups",
+    "selected": "{{count}} selected",
+    "owner": "Owner",
+    "problems": "To fix",
+    "updated": "Updated",
+    "done": "{{count}} items done.",
+    "note": "Note for the reviewers (optional)",
+    "submitHelp": "{{count}} items are submitted through their review workflow. Items that fail checks (e.g. mandatory modeling conventions) are listed.",
+    "result": "Done: {{done}} · unchanged: {{unchanged}} · failed: {{failed}}",
+    "filter": {
+      "type": "Type",
+      "status": "Status",
+      "problem": "To fix"
+    },
+    "action": {
+      "ASSIGN_OWNER": "Assign owner",
+      "APPLY_THEME": "Apply colour theme",
+      "VALIDATE": "Run validation",
+      "SUBMIT": "Submit for review"
+    }
+  },
+  "tasks": {
+    "tab": "Imported drafts"
   }
 }

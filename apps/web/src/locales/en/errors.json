@@ -301,5 +301,8 @@
   "SPACE_REQUIRED": "Choose the space the pages go to.",
   "NO_DOCUMENTS_FOUND": "No documents were found in the files.",
   "PDF_UNREADABLE": "{{file}}: the PDF cannot be read.",
-  "NOTHING_TO_PROPOSE": "Nothing in this selection for the assistant."
+  "NOTHING_TO_PROPOSE": "Nothing in this selection for the assistant.",
+  "NOT_A_PACKAGE": "{{file}} is not a ProcessHub export package.",
+  "PACKAGE_VERSION": "The package was made by a newer ProcessHub (format {{version}}).",
+  "PACKAGE_CHECKSUM": "The package is damaged or was changed ({{path}})."
 }

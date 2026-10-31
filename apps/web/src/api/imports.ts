@@ -1,6 +1,10 @@
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type {
   AcceptProposalInput,
+  MigrationBulkInput,
+  MigrationBulkResultDto,
+  MigrationDashboardDto,
+  MigrationItemDto,
   MigrationAiRunDto,
   MigrationAiRunInput,
   MigrationProposalDto,
@@ -188,6 +192,38 @@ export function useDecideProposal() {
         method: 'POST',
         body: body ?? {},
       }),
+    onSuccess: () => void qc.invalidateQueries({ queryKey: importKeys.all }),
+  });
+}
+
+// ---------- Migration tracker and review queue (step 6) ----------
+
+export const useMigrationDashboard = (scope: string) =>
+  useQuery({
+    queryKey: ['imports', 'migration', 'dashboard', scope],
+    queryFn: () => api<MigrationDashboardDto>('/migration/dashboard', { query: { scope } }),
+    placeholderData: keepPreviousData,
+  });
+
+export const useMigrationItems = (q: ImportQuery) =>
+  useQuery({
+    queryKey: ['imports', 'migration', 'items', q],
+    queryFn: () => api<Paginated<MigrationItemDto>>('/migration/items', { query: q }),
+    placeholderData: keepPreviousData,
+  });
+
+export const useMyImportedDrafts = (enabled = true) =>
+  useQuery({
+    queryKey: ['imports', 'migration', 'mine'],
+    queryFn: () => api<MigrationItemDto[]>('/migration/my-drafts'),
+    enabled,
+  });
+
+export function useMigrationBulk() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (input: MigrationBulkInput) =>
+      api<MigrationBulkResultDto>('/migration/bulk', { method: 'POST', body: input }),
     onSuccess: () => void qc.invalidateQueries({ queryKey: importKeys.all }),
   });
 }

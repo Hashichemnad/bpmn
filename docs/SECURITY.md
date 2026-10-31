@@ -166,6 +166,13 @@ in the environment); the file storage and the database come from the environment
   password policy) or sign in with SSO (linked by e-mail). An import never creates or changes Super Admins,
   the break-glass account or the importing user's own account; roles that require 2FA are flagged and enrol
   at the first sign-in; roles are only added, never removed.
+- **PDF** text is extracted by pdf.js in a separate worker thread (memory limit, 30 s timeout, `eval` off).
+- **Full export package** (`/repository-export`, `export.full` — Super Admin only) contains no password hashes,
+  2FA secrets, SSO links or integration / e-mail / AI secrets; a **restore** checks the SHA-256 of every data
+  file against the manifest and only runs into an empty installation; restored users have no password.
+- **AI migration** sends imported document text to the configured AI provider only when an admin starts a run
+  (role, daily and monthly limits of the AI settings apply; usage and audit logged, prompts not stored); results
+  are proposals that a person accepts.
 - **Access:** `import.manage` (Admins, Super Admins); module register kinds also need the module's own edit
   permission; the full export package is Super Admin only (`export.full`). Every batch step is audited
   (`CREATE`, `IMPORT`, `UNDO`, `EXPORT`, and each created / updated entity with the batch number).
@@ -461,6 +468,11 @@ zod / UUID pipe; file uploads are checked in the service (allow-list, content sn
 | POST   | `/migration-ai/proposals/:id/accept`              | `import.manage`                                                | body, param `id`                     | default    |
 | POST   | `/migration-ai/proposals/:id/reject`              | `import.manage`                                                | param `id`                           | default    |
 | POST   | `/migration-ai/run`                               | `import.manage`                                                | body                                 | default    |
+| POST   | `/migration/bulk`                                 | `import.manage`                                                | body                                 | default    |
+| GET    | `/migration/dashboard`                            | any of `import.manage`, `governance.dashboard`                 | query                                | default    |
+| GET    | `/migration/dashboard/export`                     | any of `import.manage`, `governance.dashboard`                 | query                                | default    |
+| GET    | `/migration/items`                                | any of `import.manage`, `governance.dashboard`                 | query                                | default    |
+| GET    | `/migration/my-drafts`                            | authenticated                                                  | —                                    | default    |
 | GET    | `/mining/jobs/:id`                                | `mining.read`                                                  | param `id`, query                    | default    |
 | POST   | `/mining/jobs/:id/cancel`                         | `mining.read`                                                  | param `id`                           | default    |
 | POST   | `/mining/kpis/:kpiId/recalculate`                 | `kpi.edit`                                                     | param `kpiId`                        | default    |
@@ -564,6 +576,7 @@ zod / UUID pipe; file uploads are checked in the service (allow-list, content sn
 | POST   | `/reports/handbook/plan`                          | any of `processes.read`, `portal.read`                         | body                                 | default    |
 | GET    | `/reports/objects/:id`                            | `objects.read` + `processes.read`                              | param `id`, query                    | default    |
 | GET    | `/reports/raci/:processId`                        | any of `processes.read`, `portal.read`                         | param `processId`, query             | default    |
+| GET    | `/repository-export`                              | `export.full`                                                  | —                                    | default    |
 | GET    | `/reviews/:id`                                    | authenticated                                                  | param `id`                           | default    |
 | POST   | `/reviews/:id/decision`                           | authenticated                                                  | body, param `id`                     | default    |
 | GET    | `/roles`                                          | any of `roles.read`, `users.manage`                            | —                                    | default    |

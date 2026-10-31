@@ -21,6 +21,7 @@ import { FeedbackManageModal } from './FeedbackManageModal';
 import { useAssuranceTaskTabs } from '@/features/assurance/AssuranceTaskTabs';
 import { useKpiTaskTabs } from '@/features/kpi/KpiTaskTabs';
 import { useWorkflowTaskTabs } from '@/features/workflow/WorkflowTaskTabs';
+import { useImportTaskTabs } from '@/features/imports/ImportTaskTabs';
 
 type TabKey =
   'reviews' | 'toPublish' | 'returned' | 'dueReviews' | 'grcReviews' | 'mentions' | 'feedback';
@@ -38,6 +39,7 @@ export function MyTasksPage() {
   const assurance = useAssuranceTaskTabs();
   const kpiTasks = useKpiTaskTabs();
   const workflowTasks = useWorkflowTaskTabs();
+  const importTasks = useImportTaskTabs();
   const name = (u: { nameEn: string; nameAr: string; email: string } | null) =>
     u ? loc(u) || u.email : '—';
 
@@ -371,6 +373,7 @@ export function MyTasksPage() {
             },
             ...assurance.items,
             ...kpiTasks.items,
+            ...importTasks.items,
           ]}
         />
       </Card>

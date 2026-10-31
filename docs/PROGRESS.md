@@ -57,8 +57,18 @@ Steps (tick as they are committed; a new session continues at the first unticked
       `.controller.ts` (`/migration-ai/run`, proposals, accept / reject), `migration-labels.ts`, AI feature
       `EXTRACT_GRC`; web: "AI assistant for this batch" card on the batch page, review queue
       `/admin/imports/ai` with side-by-side detail; API tests `test/imports-ai.e2e-spec.ts` (4, mocked provider).
-- [ ] 6. Migration dashboard and review queue (My tasks, bulk actions).
-- [ ] 7. Full export package + import into an empty installation (round-trip test).
+- [x] 6. Migration dashboard and review queue (My tasks, bulk actions).
+      Done: `migration.service.ts` / `migration.controller.ts` (`/migration/dashboard` + Excel export,
+      `/migration/items`, `/migration/bulk` — assign owner, apply theme, validate, submit for review through the
+      existing workflows —, `/migration/my-drafts`); web: Migration dashboard (`/admin/imports/dashboard`, by
+      department / branch / type, imported or all content, problem counts link into the queue), Review queue
+      (`/admin/imports/review`, filters, selection, bulk actions with a result list), My tasks tab "Imported
+      drafts"; API tests `test/imports-migration.e2e-spec.ts` (2); Playwright: undo + dashboard + queue flow.
+- [x] 7. Full export package + import into an empty installation (round-trip test).
+      Done (D-163): `repository-package.ts` (tables), `repository-export.service.ts` / `.controller.ts`
+      (`/repository-export`), `importers/package.importer.ts` (kind PACKAGE); "Full export (ZIP)" button for
+      Super Admins in the Import Center; API test `test/imports-package.e2e-spec.ts` (round trip + tampered
+      package); Playwright: full export download.
 - [ ] 8. Samples `docs/samples/import/`, screenshots, `docs/MIGRATION.md`, README, final checks, PR.
 
 ## Previous state — 2026-10-31 (Phase 5 — Part 2: Workflow execution, branch `phase-5-2-workflow-execution`, merged into `main`)

@@ -213,7 +213,7 @@ export const IMPORT_KIND_INFO: Record<ImportKind, ImportKindInfo> = {
     multiple: false,
     template: false,
     tabular: false,
-    undo: true,
+    undo: false,
     options: [],
     superAdmin: true,
   },
@@ -847,4 +847,117 @@ export interface MigrationProposalDto {
 export interface MigrationAiRunDto {
   jobId: string;
   items: number;
+}
+
+// ---------- Migration tracker and review queue (M15 step 6) ----------
+
+export const MIGRATION_PROBLEMS = [
+  'NO_OWNER',
+  'MISSING_EN',
+  'MISSING_AR',
+  'CONVENTIONS',
+  'NO_MODEL',
+] as const;
+export type MigrationProblem = (typeof MIGRATION_PROBLEMS)[number];
+export const MIGRATION_ITEM_TYPES = ['PROCESS', 'PAGE', 'DIAGRAM'] as const;
+export type MigrationItemType = (typeof MIGRATION_ITEM_TYPES)[number];
+export const MIGRATION_SCOPES = ['IMPORTED', 'ALL'] as const;
+export type MigrationScope = (typeof MIGRATION_SCOPES)[number];
+
+export interface MigrationCounts {
+  total: number;
+  draft: number;
+  inReview: number;
+  approved: number;
+  published: number;
+  archived: number;
+  noOwner: number;
+  missingEn: number;
+  missingAr: number;
+  conventions: number;
+}
+
+export interface MigrationGroupDto {
+  /** Department or process-house branch id (null: none / not linked). */
+  id: string | null;
+  code: string;
+  nameEn: string;
+  nameAr: string;
+  counts: MigrationCounts;
+  byType: Record<MigrationItemType, MigrationCounts>;
+}
+
+export interface MigrationDashboardDto {
+  scope: MigrationScope;
+  totals: MigrationCounts;
+  byType: Record<MigrationItemType, MigrationCounts>;
+  departments: MigrationGroupDto[];
+  branches: MigrationGroupDto[];
+  batches: { total: number; applied: number; undone: number; failed: number };
+  proposalsPending: number;
+}
+
+export const migrationQuerySchema = z.object({
+  scope: z.enum(MIGRATION_SCOPES).default('IMPORTED'),
+});
+
+export const migrationItemsQuerySchema = z.object({
+  scope: z.enum(MIGRATION_SCOPES).default('IMPORTED'),
+  page: z.coerce.number().int().min(1).default(1),
+  pageSize: z.coerce.number().int().min(1).max(200).default(50),
+  type: z.enum(MIGRATION_ITEM_TYPES).optional(),
+  status: z.enum(['DRAFT', 'IN_REVIEW', 'APPROVED', 'PUBLISHED', 'ARCHIVED']).optional(),
+  problem: z.enum(MIGRATION_PROBLEMS).optional(),
+  departmentId: z.string().max(40).optional(),
+  branchId: z.string().max(40).optional(),
+  ownerId: z.uuid().optional(),
+  batchId: z.uuid().optional(),
+  q: z.string().trim().max(200).optional(),
+});
+export type MigrationItemsQuery = z.infer<typeof migrationItemsQuerySchema>;
+
+export interface MigrationItemDto {
+  type: MigrationItemType;
+  id: string;
+  code: string;
+  nameEn: string;
+  nameAr: string;
+  status: string;
+  owner: { id: string; nameEn: string; nameAr: string } | null;
+  department: { id: string; nameEn: string; nameAr: string } | null;
+  branch: { id: string; code: string; nameEn: string; nameAr: string } | null;
+  batch: { id: string; number: string } | null;
+  problems: MigrationProblem[];
+  href: string;
+  updatedAt: string;
+}
+
+export const MIGRATION_BULK_ACTIONS = [
+  'ASSIGN_OWNER',
+  'APPLY_THEME',
+  'VALIDATE',
+  'SUBMIT',
+] as const;
+export type MigrationBulkAction = (typeof MIGRATION_BULK_ACTIONS)[number];
+
+export const migrationBulkSchema = z
+  .object({
+    action: z.enum(MIGRATION_BULK_ACTIONS),
+    items: z
+      .array(z.object({ type: z.enum(MIGRATION_ITEM_TYPES), id: z.uuid() }))
+      .min(1)
+      .max(200),
+    ownerId: z.uuid().optional(),
+    note: z.string().trim().max(1000).optional(),
+  })
+  .refine((v) => v.action !== 'ASSIGN_OWNER' || !!v.ownerId, { message: 'OWNER_REQUIRED' });
+export type MigrationBulkInput = z.infer<typeof migrationBulkSchema>;
+
+export interface MigrationBulkResultDto {
+  action: MigrationBulkAction;
+  done: number;
+  unchanged: number;
+  failed: { type: MigrationItemType; id: string; code: string }[];
+  /** VALIDATE: the checks each item fails. */
+  issues: { type: MigrationItemType; id: string; problems: string[] }[];
 }

@@ -10,9 +10,12 @@ import {
   PartitionOutlined,
   DatabaseOutlined,
   RobotOutlined,
+  DashboardOutlined,
+  ExportOutlined,
 } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
 import {
+  PERMISSIONS,
   IMPORT_BATCH_STATUSES,
   IMPORT_GROUPS,
   type ImportBatchSummaryDto,
@@ -22,6 +25,7 @@ import {
 import { useImportBatches, useImportKinds, type ImportQuery } from '@/api/imports';
 import { apiDownload } from '@/api/client';
 import { useLocale } from '@/app/LocaleProvider';
+import { useAuth } from '@/auth/AuthProvider';
 import { PageHeader } from '@/components/PageHeader';
 import { EmptyState, ErrorState } from '@/components/states';
 import {
@@ -79,6 +83,19 @@ export function ImportCenterPage() {
     }
   };
 
+  const { can } = useAuth();
+  const [exporting, setExporting] = useState(false);
+  const fullExport = async () => {
+    setExporting(true);
+    try {
+      const f = await apiDownload('/repository-export', {}, 'processhub-export.zip');
+      downloadBlob(f.blob, f.fileName);
+    } catch (e) {
+      message.error(errorMessage(e));
+    } finally {
+      setExporting(false);
+    }
+  };
   const available = kinds.data ?? [];
   return (
     <>
@@ -86,9 +103,24 @@ export function ImportCenterPage() {
         title={t('imports:center.title')}
         subtitle={t('imports:center.subtitle')}
         extra={
-          <Link to="/admin/imports/ai">
-            <Button icon={<RobotOutlined />}>{t('imports:ai.queue')}</Button>
-          </Link>
+          <>
+            <Link to="/admin/imports/dashboard">
+              <Button icon={<DashboardOutlined />}>{t('imports:dashboard.title')}</Button>
+            </Link>
+            <Link to="/admin/imports/ai">
+              <Button icon={<RobotOutlined />}>{t('imports:ai.queue')}</Button>
+            </Link>
+            {can(PERMISSIONS.EXPORT_FULL) && (
+              <Button
+                icon={<ExportOutlined />}
+                loading={exporting}
+                data-testid="full-export"
+                onClick={() => void fullExport()}
+              >
+                {t('imports:center.fullExport')}
+              </Button>
+            )}
+          </>
         }
       />
       <Row gutter={[16, 16]} style={{ marginBlockEnd: 16 }}>

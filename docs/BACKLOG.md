@@ -13,6 +13,10 @@ where they belong; move items into the plan when that phase starts.
 - **ARIS AML:** organisation charts (`MT_ORG_CHRT`) into the org chart type, function allocation diagrams,
   other attributes (descriptions, custom attributes) and model hierarchy (assignments) — EPCs, value chains,
   roles and systems are imported today (D-160).
+- **Full export** of very large installations as a background job with a download link (today the ZIP is
+  built in the request — fine for 50–500 users); restore into a non-empty installation (merge) is out of scope.
+- **Import Center:** column mapping templates per organisation (like the mining mapping templates); scheduled
+  re-imports from a shared folder (needs a connector).
 - **Visio:** use Visio shape positions as an alternative to the auto-layout; data / document shapes as BPMN
   data objects.
 

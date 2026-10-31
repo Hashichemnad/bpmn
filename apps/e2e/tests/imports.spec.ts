@@ -124,14 +124,18 @@ test('BPMN ZIP: Arabic and English diagrams, one without layout; imported flag o
   page,
 }) => {
   await loginAdmin(page);
-  await startImport(page, 'BPMN', [sampleFile('bpmn-diagrams.zip', 'application/zip')]);
+  // New processes (the demo data already has processes with some of the sample codes).
+  await startImport(page, 'BPMN', [sampleFile('bpmn-diagrams.zip', 'application/zip')], (dialog) =>
+    dialog.getByText('Always create new processes').click(),
+  );
   const items = page.getByTestId('import-items');
   await expect(items).toContainText('تسجيل الطلبات');
   await expect(items).toContainText('laid out automatically');
   await applyImport(page);
   await page
     .getByTestId('import-records')
-    .getByRole('link', { name: /Supplier onboarding/ })
+    .getByRole('row', { name: /Created Process .*Supplier onboarding/ })
+    .getByRole('link')
     .first()
     .click();
   await expect(page.getByTestId('imported-tag')).toBeVisible();
@@ -141,7 +145,9 @@ test('Visio flowchart: the shape mapping table lists masters and unmapped shapes
   page,
 }) => {
   await loginAdmin(page);
-  await startImport(page, 'VISIO', [sampleFile('S.03 Leave request flowchart.vsdx')]);
+  await startImport(page, 'VISIO', [sampleFile('S.03 Leave request flowchart.vsdx')], (dialog) =>
+    dialog.getByText('Always create new processes').click(),
+  );
   const mapping = page.getByTestId('visio-mapping');
   await expect(mapping).toContainText('swimlane');
   await expect(mapping).toContainText('document');
@@ -175,4 +181,52 @@ test('Word SOP into the wiki: page in the chosen space, RTL Arabic document, pro
     .click();
   await expect(page.getByTestId('imported-tag')).toBeVisible();
   await expect(page.locator('[dir="rtl"]').first()).toBeVisible();
+});
+
+test('Undo a batch while its items are drafts; the migration dashboard and review queue', async ({
+  page,
+}) => {
+  await loginAdmin(page);
+  const code = `U${stamp}`;
+  const data = await workbook(
+    ['Process code', 'Name (English)', 'Name (Arabic)', 'Category'],
+    [[code, `Undo me ${stamp}`, `تراجع ${stamp}`, 'Support']],
+  );
+  await startImport(page, 'PROCESS_HOUSE', [
+    {
+      name: 'undo.xlsx',
+      mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      buffer: data,
+    },
+  ]);
+  await applyImport(page);
+  await page.getByTestId('import-undo').click();
+  await page.getByTestId('import-undo-ok').click();
+  await expect(page.getByTestId('import-status').first()).toHaveText('Undone');
+
+  await page.goto('/admin/imports/dashboard');
+  await expect(page.getByTestId('migration-tiles')).toContainText('Items');
+  await expect(page.getByTestId('migration-departmentId')).toBeVisible();
+  await page.getByRole('tab', { name: 'By process-house branch' }).click();
+  await expect(page.getByTestId('migration-branchId')).toBeVisible();
+  await page.getByRole('link', { name: 'Review queue' }).click();
+  await expect(page.getByTestId('review-items')).toBeVisible();
+  await page.getByTestId('review-items').locator('.ant-checkbox-input').nth(1).check();
+  await page.getByTestId('review-validate').click();
+  await expect(page.getByTestId('review-result')).toBeVisible();
+});
+
+test('Full export: the Super Admin downloads the repository package with its manifest', async ({
+  page,
+}) => {
+  await loginAdmin(page);
+  await page.goto('/admin/imports');
+  const [download] = await Promise.all([
+    page.waitForEvent('download', { timeout: 90_000 }),
+    page.getByTestId('full-export').click(),
+  ]);
+  expect(download.suggestedFilename()).toMatch(/^processhub-export-.*\.zip$/);
+  const path = await download.path();
+  const head = readFileSync(path).subarray(0, 2).toString('latin1');
+  expect(head).toBe('PK');
 });
