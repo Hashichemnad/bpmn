@@ -1958,3 +1958,118 @@ SIMULATION_INVALID` with the issues); missing durations (0 used) and no end even
   (`calendar.useCentralHolidays`, default on; resolved when a scenario is validated and run); a scenario can switch
   to its own list (starting from a copy of the central one). Results record the holidays they ran with: a change
   of the central list marks the results of the scenarios that use it as "changed since the run".
+
+## D-144 — Workflow engine: a small TypeScript engine of our own, not `bpmn-engine` (Phase 5.2, 2026-10-31)
+
+Evaluated for module M14 (run approved processes as task flows) against the criteria in the phase brief:
+
+| Criterion | `bpmn-engine` 26 (MIT, active) | Own engine for the supported subset |
+|---|---|---|
+| State in PostgreSQL | `getState()` returns one JSON document per run; tasks, timers and waits live inside it, so "my open tasks" or "overdue timers" need our own tables mirrored from engine events anyway | Tokens, tasks, timers and history are rows; the case keeps a small token state |
+| Timers surviving restarts | `setTimeout` inside a running engine; after a restart every waiting case must be recovered into memory to re-arm its timers (10,000 open cases = 10,000 engines in RAM) | Timers are `WorkflowJob` rows with a due time, polled and claimed; nothing in memory |
+| Versions pinned per case | Possible (store the XML per run) | `WorkflowDefinition` snapshot per deployment; a case points to it |
+| Transactions / double completion | Engine runs asynchronously with event emitters; mixing it with a Prisma transaction and an optimistic lock is awkward | A pure function `step(model, state, command) → state + effects` runs inside one transaction with an optimistic version check |
+| Safety | Conditions and script tasks evaluate JavaScript by default (`vm`), expressions use its own `${}` syntax; both must be disabled / replaced | No JavaScript anywhere: S-FEEL expressions (D-145) |
+| Testability | Asynchronous, timers need fake clocks | Synchronous and deterministic; unit tests per element without a database |
+| Packaging | ES modules only (`"type": "module"`); the API and its Jest suite are CommonJS | Plain TypeScript in `packages/shared` |
+| Maintenance / licence | MIT, one main maintainer; we would still own the persistence, task and timer layers | ~1,000 lines we own, limited to the documented subset |
+
+**Decision:** own engine in `packages/shared/src/workflow/` (model reader, executable check, engine, S-FEEL, DMN
+evaluator, forms, business calendar) and an API module `workflow` for persistence, assignment, jobs and timers. The
+supported subset is fixed and checked before deployment (start events none / form / timer, user and approval tasks,
+exclusive / parallel / inclusive gateways, business rule task → DMN, notification (send) task, "set data" and
+"generate document" service tasks, intermediate and boundary timers, call activity → linked process, end events
+normal / terminate / error with error boundary events). Anything else is reported by the executable check. No Java
+engine (Camunda / Flowable): it would break the stack in CLAUDE.md §4.
+
+## D-145 — Expressions: S-FEEL evaluator in the shared package (Phase 5.2, 2026-10-31)
+
+- Gateway conditions, "set data" assignments, assignment "value from form data", DMN input expressions and decision
+  table entries use **S-FEEL** — the simple FEEL subset defined by the DMN standard — evaluated by our own small
+  parser / interpreter in `packages/shared/src/workflow/feel.ts`. No `eval`, no `Function`, no user JavaScript.
+- Supported: literals (numbers, strings, `true` / `false` / `null`), names and paths (`budget`, `applicant.name`,
+  names with spaces are written with underscores), `+ - * /`, comparisons, `and` / `or` / `not()`, `in` lists and
+  ranges, `if … then … else`, string concatenation and a few functions (`string length`, `contains`, `starts with`,
+  `upper case`, `lower case`, `count`, `sum`, `min`, `max`, `abs`, `date`, `today`, `now`). Unary tests for decision
+  tables: `-`, values, comparisons, ranges `[a..b]` / `(a..b)` / `]a..b[`, lists and `not(…)`.
+- Why not `feelin` (already used by the DMN editor in the browser): it is ES-modules only and pulls a polyfill; the
+  API test suite (Jest, CommonJS) cannot load it without a custom transform, and the server needs only the simple
+  subset. The deployment check parses every condition and every DMN cell with the server evaluator, so a table that
+  the browser accepts but the server cannot evaluate is caught **before** deployment, never at run time.
+- Business rule tasks evaluate the linked DMN decision table on the server (hit policies UNIQUE, FIRST, PRIORITY
+  (by output value order), ANY, COLLECT with SUM / MIN / MAX / COUNT, RULE ORDER, OUTPUT ORDER). The DMN XML is
+  copied into the deployment (pinned like the process version).
+
+## D-146 — Forms: schema-driven Ant Design forms, not form-js (Phase 5.2, 2026-10-31)
+
+- form-js (bpmn.io) was evaluated: one `label` per field (bilingual labels only through FEEL templating tricks that
+  admins would have to write by hand), its CSS is not written for RTL, it renders with Preact next to our React
+  tree, and the server would still need its own validation of submitted data.
+- **Decision:** a ProcessHub form schema in `packages/shared/src/workflow/forms.ts` (zod): fields with key,
+  type (text, long text, number, amount, date, yes / no, choice (dropdown / radio), multiple choice, user,
+  department, attachment, read-only info text), bilingual label / help, required, min / max, max length,
+  bilingual options, default value. The **same schema** renders the form in the browser (Ant Design, RTL through
+  `ConfigProvider`) and validates submitted data on the server (`validateFormData`, unknown keys rejected, types
+  coerced, limits enforced). The form editor is a field list in the modeler's Execution tab (add, reorder, edit,
+  preview in both languages). Conditional sections beyond required / read-only stay in BACKLOG.
+
+## D-147 — Where execution settings live (Phase 5.2, 2026-10-31)
+
+- **In the BPMN XML (versioned and approved with the process):** standard BPMN for conditions
+  (`conditionExpression`, S-FEEL), default flows, timer definitions (`timeDuration` / `timeDate` / `timeCycle`,
+  ISO 8601), error and terminate end events, error boundary events; one ProcessHub attribute `ph:exec` (JSON) per
+  element for the rest: form, assignment, due time, four-eyes, approval outcome of a flow, notification template,
+  "set data" assignments, document template, decision input mapping, call activity options. Changing a form or a
+  rule therefore needs a new process version and goes through review like any other change.
+- **In the database (operational, not versioned):** `WorkflowProcessConfig` per process — executable on / off,
+  case number prefix, start rights (everyone / roles / departments), withdraw allowed, monitors, form data retention,
+  active deployment.
+- **Deployment** (`WorkflowDefinition`): only the **published** version can be deployed; the deployment copies its
+  XML, the parsed model and the referenced DMN decisions (latest version of the linked DMN diagram, which must be
+  approved or published). A case is pinned to the deployment it started on; deploying a newer version only affects
+  new cases (case migration → BACKLOG).
+
+## D-148 — Persistence, transactions and concurrency (Phase 5.2, 2026-10-31)
+
+- Tables: `WorkflowCase` (number, deployment, status, variables, token state, `version`), `WorkflowTask` (open /
+  completed / cancelled, assignee or candidates, due / SLA, form data, decision, `version`), `WorkflowTaskCandidate`,
+  `WorkflowJob` (timers and asynchronous steps: due time, status, attempts, lock), `WorkflowEvent` (timeline),
+  `WorkflowFile` (attachments and generated documents), `WorkflowCaseComment`, `WorkflowCaseCounter`.
+- Every engine step runs in **one transaction**: load the case, run the pure engine, write the new state with
+  `UPDATE … WHERE id = ? AND version = ?` (optimistic lock; on a lost race the step is retried from a fresh read or the
+  user gets `409 TASK_ALREADY_COMPLETED`), create / cancel tasks and jobs, write the timeline and the live event log.
+- Completing a task: `UPDATE task SET status = COMPLETED WHERE id = ? AND status = OPEN AND version = ?` — exactly
+  one of two simultaneous completions wins.
+- Timers and asynchronous steps (document generation, call activity start, retries) are `WorkflowJob` rows. A
+  scheduler polls due jobs every 15 s (configurable), **claims** them with a conditional update (`PENDING → RUNNING`,
+  lock until now + 5 min) and runs them; a job is idempotent (it only acts if its token is still waiting at its
+  element). After an API restart, stale `RUNNING` jobs are released and picked up again; nothing lives in memory.
+- A failing step (DMN error, document template error, missing assignee) becomes an **incident**: the token stays,
+  the case shows "stuck" in the monitor with the error, and an admin can **retry**. Errors with an error boundary
+  event follow the "on error" path instead.
+- Notifications and e-mails are sent after the commit (existing notification service).
+
+## D-149 — Permissions, role mapping and case visibility (Phase 5.2, 2026-10-31)
+
+- New permissions: `workflow.design` (make a process executable, execution settings, deploy — together with edit
+  rights on the process), `workflow.start` (start cases; plus the start rights of each process), `workflow.monitor`
+  (monitor and dashboard for processes of one's department or where one is named monitor), `workflow.admin` (all
+  processes; retry, cancel, reassign, settings).
+- Role mapping: Super Admin and Admin — all four; Process Owner — design, start, monitor; Modeler — design, start;
+  Reviewer, Risk Officer, Internal Audit, Enterprise Architect, Performance Officer, **Viewer** — start;
+  Auditor — monitor (read-only: the monitor's actions need `workflow.admin`). Everyone who works on tasks needs no
+  permission beyond being the assignee.
+- A case is visible to: the initiator, current and past assignees and candidates of its tasks, the process owner,
+  users with `workflow.monitor` for that process (department of the process or named monitor), `workflow.admin`, and
+  Auditors (`audit.read` + `workflow.monitor`, read-only). Checked on the server for every case endpoint; exports
+  include only visible cases.
+
+## D-150 — Business calendar, SLAs, reminders and escalation (Phase 5.2, 2026-10-31)
+
+- Due times are in **working time**: the central public holiday list of Phase 5.1 (Setting `mining.holidays`, D-143)
+  and a central working week in Setting `workflow` (default Sunday–Thursday, 07:30–15:30, Asia/Dubai).
+- Task due time: `ph:exec.dueMinutes` or else the step's `ph:slaMinutes` (Phase B2 step attribute), in working
+  minutes. Timer events use calendar time (ISO 8601) unless marked "working time".
+- Reminders before due (Setting, default 4 working hours before) and escalation after due (to the assignee's
+  department manager, the process owner, or both; configurable per process step, default from the Setting), through
+  the existing notifications and e-mail preferences (new notification type `WORKFLOW`). Reminders are de-duplicated.
