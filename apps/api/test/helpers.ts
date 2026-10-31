@@ -286,6 +286,9 @@ export async function createApp(): Promise<TestContext> {
 }
 
 const TABLES = [
+  'ImportItem',
+  'ImportFile',
+  'ImportBatch',
   'WorkflowJob',
   'WorkflowCaseCounter',
   'WorkflowCaseComment',

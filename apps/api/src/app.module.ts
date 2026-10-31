@@ -34,6 +34,7 @@ import { KpiModule } from './kpi/kpi.module';
 import { SalesforceModule } from './salesforce/salesforce.module';
 import { MiningModule } from './mining/mining.module';
 import { WorkflowModule } from './workflow/workflow.module';
+import { ImportsModule } from './imports/imports.module';
 import { HealthController } from './health/health.controller';
 import { CsrfGuard, JwtAuthGuard, PermissionsGuard } from './common/guards';
 import { AllExceptionsFilter } from './common/http-exception.filter';
@@ -74,6 +75,7 @@ import { AllExceptionsFilter } from './common/http-exception.filter';
     SalesforceModule,
     MiningModule,
     WorkflowModule,
+    ImportsModule,
     DocsModule,
     SearchModule,
     IntegrationsModule,

@@ -15,6 +15,6 @@ import { GrcRemindersService } from './grc-reminders.service';
     GrcDashboardService,
     GrcRemindersService,
   ],
-  exports: [GrcService, GrcSettingsService, GrcRemindersService],
+  exports: [GrcService, GrcSettingsService, GrcRemindersService, GrcExcelService],
 })
 export class GrcModule {}

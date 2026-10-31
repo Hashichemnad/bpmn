@@ -8,6 +8,8 @@ import { ProfilePage } from '@/features/profile/ProfilePage';
 import { UsersPage } from '@/features/admin/UsersPage';
 import { DepartmentsPage } from '@/features/admin/DepartmentsPage';
 import { AuditLogPage } from '@/features/admin/AuditLogPage';
+import { ImportCenterPage } from '@/features/imports/ImportCenterPage';
+import { ImportBatchPage } from '@/features/imports/ImportBatchPage';
 import { SettingsPage } from '@/features/settings/SettingsPage';
 import { RepositoryLayout } from '@/features/processes/RepositoryLayout';
 import { ProcessListPage } from '@/features/processes/ProcessListPage';
@@ -684,6 +686,22 @@ export const routes: RouteObject[] = [
                     element: (
                       <RequirePermission all={[P.AUDIT_READ]}>
                         <AuditLogPage />
+                      </RequirePermission>
+                    ),
+                  },
+                  {
+                    path: 'admin/imports',
+                    element: (
+                      <RequirePermission all={[P.IMPORT_MANAGE]}>
+                        <ImportCenterPage />
+                      </RequirePermission>
+                    ),
+                  },
+                  {
+                    path: 'admin/imports/:id',
+                    element: (
+                      <RequirePermission all={[P.IMPORT_MANAGE]}>
+                        <ImportBatchPage />
                       </RequirePermission>
                     ),
                   },

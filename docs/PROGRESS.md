@@ -22,10 +22,16 @@ Local setup: as in Phase 5.2 below (PostgreSQL 16, roles / databases, build the 
 Steps (tick as they are committed; a new session continues at the first unticked one):
 
 - [x] 0. CLAUDE.md phase table (5.2 merged, Import in progress), this plan, DECISIONS D-155 – D-162.
-- [ ] 1. Import Center framework: schema (`ImportBatch`, `ImportFile`, `ImportItem`, `importBatchId` flags),
+- [x] 1. Import Center framework: schema (`ImportBatch`, `ImportFile`, `ImportItem`, `importBatchId` flags),
       permission `import.manage` (+ `export.full` for step 7), shared `imports.ts`, API module `imports` (upload
       security, batches, jobs, dry run, apply, undo, Excel result report, existing GRC / EA / KPI Excel imports as
       batch kinds), web Import Center (list, new batch, batch page), EN / AR, API + security tests, e2e.
+      Done: migration `20261031150000_import_tools`; `safe-upload.ts` (+ `safe-upload.spec.ts`, 20 malicious
+      samples), `imports.service.ts` (life cycle, undo, report), `importer.ts` (plug-in contract),
+      `importers/module-excel.importer.ts` (GRC / EA / KPI registers); web `features/imports/` (Import Center,
+      new batch dialog with per-kind options, batch page: progress / cancel, mapping, validation report, dry
+      run, preview decisions and suggestions, apply, records, undo); namespace `imports` (EN / AR, generated);
+      API tests `test/imports.e2e-spec.ts` (5); Playwright `imports.spec.ts` (register import as a batch).
 - [ ] 2. Process house, departments and users from Excel / CSV (templates, validation, invitations, 2FA rules).
 - [ ] 3. Diagrams: BPMN (ZIP / files), Visio `.vsdx`, ARIS AML (EPC, value chains, objects), DMN.
 - [ ] 4. Documents into the wiki: Word, PDF, Confluence HTML export, Markdown folders; links to processes.

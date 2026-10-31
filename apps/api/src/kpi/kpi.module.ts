@@ -13,7 +13,7 @@ import { KpiScheduler } from './kpi-scheduler.service';
   imports: [AssuranceModule],
   controllers: [KpiController],
   providers: [KpiService, KpiExcelService, KpiSettingsService, KpiScheduler],
-  exports: [KpiService, KpiSettingsService, KpiScheduler],
+  exports: [KpiService, KpiSettingsService, KpiScheduler, KpiExcelService],
 })
 export class KpiModule implements OnModuleInit {
   constructor(

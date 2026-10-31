@@ -115,7 +115,8 @@
       "DELEGATE": "تفويض",
       "REASSIGN": "إعادة إسناد",
       "CANCEL": "إلغاء",
-      "RETRY": "إعادة المحاولة"
+      "RETRY": "إعادة المحاولة",
+      "UNDO": "تراجع عن استيراد"
     },
     "entities": {
       "User": "مستخدم",
@@ -167,7 +168,9 @@
       "WorkflowDefinition": "نشر سير العمل",
       "WorkflowCase": "طلب (حالة)",
       "WorkflowTask": "مهمة سير عمل",
-      "WorkflowFile": "ملف طلب"
+      "WorkflowFile": "ملف طلب",
+      "ImportBatch": "دفعة استيراد",
+      "RepositoryExport": "تصدير المستودع"
     }
   },
   "settings": {

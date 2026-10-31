@@ -3,6 +3,14 @@
 Ideas and follow-ups noted during development, outside the current phase scope. Group by the phase
 where they belong; move items into the plan when that phase starts.
 
+## Import tools / migration (M15) — not in this phase
+
+- **Live connectors** (Salesforce, SharePoint, Oracle): integrations phase (4.4); imports are file based.
+- **OCR** for scanned PDFs (they are flagged "needs manual work").
+- **Visio `.vsd`** (old binary format): users save as `.vsdx`.
+- **Antivirus scanning** of uploads (e.g. a ClamAV container): decide in the final security review.
+- **Bizagi `.bpm`** native format (Bizagi's BPMN export works today).
+
 ## Phase 5.2 — workflow execution follow-ups (noted during the work)
 
 - Service tasks calling external systems (REST, Salesforce, Oracle) — integrations phase (4.4).

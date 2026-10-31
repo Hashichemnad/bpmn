@@ -10,6 +10,6 @@ import { EaViewsService } from './ea-views.service';
   imports: [GrcModule],
   controllers: [EaController, EaViewsController],
   providers: [EaService, EaExcelService, EaViewsService],
-  exports: [EaService, EaViewsService],
+  exports: [EaService, EaViewsService, EaExcelService],
 })
 export class EaModule {}

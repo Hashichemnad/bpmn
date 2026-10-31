@@ -137,6 +137,34 @@ login / lockout / settings change / AI call; logs contain no secrets (tested).
 **A10 SSRF** — see SEC-01. The AI provider address is not configurable in the UI (only `ANTHROPIC_BASE_URL`
 in the environment); the file storage and the database come from the environment.
 
+**Import uploads (Import tools / M15, D-157)** — every file of an Import Center batch goes through
+`apps/api/src/imports/safe-upload.ts` (unit tests with malicious samples in `safe-upload.spec.ts`, API tests in
+`test/imports*.e2e-spec.ts`):
+
+- **Type by content, not only the extension:** magic bytes (ZIP, PDF, OLE, images), XML root and UTF-8 / UTF-16
+  text are sniffed and must agree with the extension, which must be one the import kind accepts (an
+  executable renamed `.bpmn` or a ZIP renamed `.pdf` is refused with `FILE_TYPE_MISMATCH`). Old binary Office
+  and Visio files (`.doc`, `.xls`, `.vsd`) are refused with a message to save them as Office Open XML.
+- **Size and count limits:** 100 MB per file, 200 MB and 50 files per batch, 5,000 rows / preview items.
+- **ZIP archives** are checked from the central directory **before** anything is decompressed: at most 2,000
+  entries, 200 MB declared uncompressed in total, compression ratio ≤ 100:1 per entry larger than 1 MB (zip
+  bomb), encrypted entries refused, and any entry with an absolute path, a drive letter, a `..` segment, a NUL
+  byte or a symbolic-link mode refused (**ZIP-slip / path traversal** — entries are also never written to
+  disk). While decompressing, an entry that grows beyond its declared size or the archive budget is stopped
+  (lying headers).
+- **XML without DTDs:** `<!DOCTYPE` / `<!ENTITY` are refused before parsing (no **XXE**, no "billion laughs");
+  jsdom's XML parser never loads external resources.
+- **Macros are never accepted or run:** `.docm`, `.xlsm`, `.dotm`, `.pptm` … are refused, and so is any Office
+  package that contains `vbaProject.bin` / `vbaData.xml` or a macro-enabled content type (a renamed `.xlsm`).
+- **HTML and SVG:** imported HTML (Word, Confluence, Markdown) goes through the wiki's DOMPurify rules
+  (`sanitizeRichText`); SVG through the existing SVG sanitiser; images only as attachments with sniffed types.
+- **Storage:** uploads are stored in S3 storage under `imports/<batch>/<file>` with their SHA-256 (checked when
+  the job reads them again), served back only as `application/octet-stream` downloads with `nosniff`, and never
+  executed. Antivirus scanning is a go-live decision (BACKLOG).
+- **Access:** `import.manage` (Admins, Super Admins); module register kinds also need the module's own edit
+  permission; the full export package is Super Admin only (`export.full`). Every batch step is audited
+  (`CREATE`, `IMPORT`, `UNDO`, `EXPORT`, and each created / updated entity with the batch number).
+
 ## 4. Rate limits
 
 | Scope                                                                                 | Limit (default)                                     | Setting                                                |
@@ -356,6 +384,23 @@ zod / UUID pipe; file uploads are checked in the service (allow-list, content sn
 | PUT    | `/grc/settings`                                   | `grc.admin`                                                    | body                                 | default    |
 | GET    | `/grc/template/:kind`                             | `grc.edit`                                                     | param `kind`, query                  | default    |
 | GET    | `/health`                                         | **public**                                                     | —                                    | skip       |
+| GET    | `/imports`                                        | `import.manage`                                                | query                                | default    |
+| POST   | `/imports`                                        | `import.manage`                                                | body                                 | default    |
+| DELETE | `/imports/:id`                                    | `import.manage`                                                | param `id`                           | default    |
+| GET    | `/imports/:id`                                    | `import.manage`                                                | param `id`                           | default    |
+| POST   | `/imports/:id/apply`                              | `import.manage`                                                | param `id`                           | default    |
+| POST   | `/imports/:id/cancel`                             | `import.manage`                                                | param `id`                           | default    |
+| GET    | `/imports/:id/files/:fileId`                      | `import.manage`                                                | param `fileId`, param `id`           | default    |
+| GET    | `/imports/:id/items`                              | `import.manage`                                                | param `id`, query                    | default    |
+| PUT    | `/imports/:id/items/:ref`                         | `import.manage`                                                | body, param `id`, param `ref`        | default    |
+| PUT    | `/imports/:id/options`                            | `import.manage`                                                | body, param `id`                     | default    |
+| GET    | `/imports/:id/records`                            | `import.manage`                                                | param `id`, query                    | default    |
+| GET    | `/imports/:id/report`                             | `import.manage`                                                | param `id`, query                    | default    |
+| PUT    | `/imports/:id/suggestions`                        | `import.manage`                                                | body, param `id`                     | default    |
+| GET    | `/imports/:id/undo`                               | `import.manage`                                                | param `id`                           | default    |
+| POST   | `/imports/:id/undo`                               | `import.manage`                                                | param `id`                           | default    |
+| GET    | `/imports/kinds`                                  | `import.manage`                                                | —                                    | default    |
+| GET    | `/imports/templates/:kind`                        | `import.manage`                                                | param `kind`, query                  | default    |
 | GET    | `/integrations/git`                               | `settings.manage`                                              | —                                    | default    |
 | PUT    | `/integrations/git`                               | `settings.manage`                                              | body                                 | default    |
 | POST   | `/integrations/git/items/:id/retry`               | `settings.manage`                                              | param `id`                           | default    |

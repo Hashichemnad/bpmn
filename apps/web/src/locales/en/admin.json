@@ -115,7 +115,8 @@
       "DELEGATE": "Delegate",
       "REASSIGN": "Reassign",
       "CANCEL": "Cancel",
-      "RETRY": "Retry"
+      "RETRY": "Retry",
+      "UNDO": "Import undone"
     },
     "entities": {
       "User": "User",
@@ -167,7 +168,9 @@
       "WorkflowDefinition": "Workflow deployment",
       "WorkflowCase": "Request (case)",
       "WorkflowTask": "Workflow task",
-      "WorkflowFile": "Request file"
+      "WorkflowFile": "Request file",
+      "ImportBatch": "Import batch",
+      "RepositoryExport": "Repository export"
     }
   },
   "settings": {

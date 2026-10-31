@@ -16,6 +16,7 @@ import {
   ApartmentOutlined,
   AppstoreOutlined,
   AuditOutlined,
+  CloudUploadOutlined,
   BookOutlined,
   BranchesOutlined,
   CheckSquareOutlined,
@@ -418,6 +419,13 @@ export function AppLayout() {
         label: <Link to="/admin/departments">{t('nav.departments')}</Link>,
       });
     }
+    if (can(PERMISSIONS.IMPORT_MANAGE)) {
+      admin.push({
+        key: '/admin/imports',
+        icon: <CloudUploadOutlined />,
+        label: <Link to="/admin/imports">{t('nav.imports')}</Link>,
+      });
+    }
     if (can(PERMISSIONS.AUDIT_READ)) {
       admin.push({
         key: '/admin/audit',
@@ -517,6 +525,7 @@ export function AppLayout() {
       '/settings/workflow-execution',
       '/admin/users',
       '/admin/departments',
+      '/admin/imports',
       '/admin/audit',
       '/settings/workflows',
       '/settings/conventions',
