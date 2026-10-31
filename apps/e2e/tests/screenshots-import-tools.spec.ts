@@ -71,6 +71,8 @@ const sample = (name: string) => ({ name, data: readFileSync(join(SAMPLES, name)
 for (const locale of ['en', 'ar'] as const) {
   test(`import tools (${locale})`, async ({ page }) => {
     await loginAdmin(page, locale);
+    // The "Diagrams can now be coloured" notice is not part of these screenshots.
+    await apiCall(page, 'POST', '/settings/diagram-theme/notice/dismiss');
     const stamp = `${locale.toUpperCase()}${Date.now().toString(36).toUpperCase()}`;
 
     // 1. Batch preview: column mapping, dry run and the validation report (a missing parent).
@@ -134,7 +136,7 @@ for (const locale of ['en', 'ar'] as const) {
     );
     await page.goto(records.data.items.find((r) => r.entity === 'PAGE')!.href!);
     await expect(page.getByTestId('imported-tag')).toBeVisible();
-    await shot(page, '3-word-page-ar', locale);
+    await shot(page, '3-word-sop-arabic', locale);
 
     // 4. Migration dashboard.
     await page.goto('/admin/imports/dashboard');

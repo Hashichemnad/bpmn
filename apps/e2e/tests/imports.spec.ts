@@ -211,7 +211,12 @@ test('Undo a batch while its items are drafts; the migration dashboard and revie
   await expect(page.getByTestId('migration-branchId')).toBeVisible();
   await page.getByRole('link', { name: 'Review queue' }).click();
   await expect(page.getByTestId('review-items')).toBeVisible();
-  await page.getByTestId('review-items').locator('.ant-checkbox-input').nth(1).check();
+  await page
+    .getByTestId('review-items')
+    .locator('tbody tr.ant-table-row')
+    .first()
+    .locator('.ant-checkbox-input')
+    .check();
   await page.getByTestId('review-validate').click();
   await expect(page.getByTestId('review-result')).toBeVisible();
 });

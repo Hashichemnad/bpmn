@@ -41,7 +41,7 @@ const IMPORTERS = [
   PackageImporter,
 ];
 
-/** Import tools / migration (module M15, D-155 – ). */
+/** Import tools / migration (module M15, D-155 – D-163). */
 @Module({
   imports: [
     MiningModule,

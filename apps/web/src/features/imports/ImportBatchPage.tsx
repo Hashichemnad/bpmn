@@ -564,7 +564,7 @@ function PreviewCard({ b, editable }: { b: ImportBatchDto; editable: boolean }) 
         data-testid="import-items"
         loading={items.isLoading}
         dataSource={items.data?.items ?? []}
-        scroll={{ x: 900 }}
+        scroll={{ x: 1240 }}
         pagination={{
           current: page,
           pageSize: 50,
@@ -596,13 +596,8 @@ function PreviewCard({ b, editable }: { b: ImportBatchDto; editable: boolean }) 
             render: (_, i) => <ActionTag item={i} />,
           },
           {
-            title: t('imports:fields.entity'),
-            width: 120,
-            render: (_, i) => t(`imports:entity.${i.entity}`),
-          },
-          { title: t('imports:fields.key'), dataIndex: 'key', width: 160, ellipsis: true },
-          {
             title: t('imports:fields.name'),
+            width: 280,
             render: (_, i) => (
               <Flex vertical>
                 {i.nameEn && <span>{i.nameEn}</span>}
@@ -643,6 +638,12 @@ function PreviewCard({ b, editable }: { b: ImportBatchDto; editable: boolean }) 
               </Flex>
             ),
           },
+          {
+            title: t('imports:fields.entity'),
+            width: 120,
+            render: (_, i) => t(`imports:entity.${i.entity}`),
+          },
+          { title: t('imports:fields.key'), dataIndex: 'key', width: 160, ellipsis: true },
           { title: t('imports:fields.source'), dataIndex: 'source', width: 160, ellipsis: true },
         ]}
       />

@@ -78,7 +78,7 @@ export function MigrationDashboardPage() {
       size="small"
       pagination={false}
       dataSource={rows}
-      scroll={{ x: 1000 }}
+      scroll={{ x: 1400 }}
       data-testid={`migration-${key}`}
       columns={[
         {

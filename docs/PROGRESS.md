@@ -2,14 +2,14 @@
 
 Read this together with `CLAUDE.md` at the start of every session.
 
-## Current state — 2026-10-31 (Import tools / migration — module M15, branch `import-tools`, in progress)
+## Current state — 2026-10-31 (Import tools / migration — module M15, branch `import-tools`, done — awaiting review)
 
 Everything up to Phase 5.2 (workflow execution) is merged into `main`. This branch builds module M15: moving DOF's
 existing processes, diagrams, SOPs and lists into ProcessHub before go-live — file based only (uploads), no live
 connectors (BACKLOG). The session works on `claude/laughing-franklin-koipwl` (the harness branch name) and pushes
 the same commits to `import-tools`.
 
-Technical approach (D-155 – D-162): every import is an `ImportBatch` (upload → parse job → preview with mapping and
+Technical approach (D-155 – D-163): every import is an `ImportBatch` (upload → parse job → preview with mapping and
 validation → dry run → apply job → result report → undo) on the existing mining job runner (kinds `IMPORT_PARSE`,
 `IMPORT_APPLY`); importers are plug-ins of one registry in `apps/api/src/imports/importers/`; `ImportItem` records
 every created / updated entity (undo, re-import matching by code / external id / file name, before/after); imported
@@ -21,7 +21,7 @@ Local setup: as in Phase 5.2 below (PostgreSQL 16, roles / databases, build the 
 
 Steps (tick as they are committed; a new session continues at the first unticked one):
 
-- [x] 0. CLAUDE.md phase table (5.2 merged, Import in progress), this plan, DECISIONS D-155 – D-162.
+- [x] 0. CLAUDE.md phase table (5.2 merged, Import in progress), this plan, DECISIONS D-155 – D-158.
 - [x] 1. Import Center framework: schema (`ImportBatch`, `ImportFile`, `ImportItem`, `importBatchId` flags),
       permission `import.manage` (+ `export.full` for step 7), shared `imports.ts`, API module `imports` (upload
       security, batches, jobs, dry run, apply, undo, Excel result report, existing GRC / EA / KPI Excel imports as
@@ -69,7 +69,21 @@ Steps (tick as they are committed; a new session continues at the first unticked
       (`/repository-export`), `importers/package.importer.ts` (kind PACKAGE); "Full export (ZIP)" button for
       Super Admins in the Import Center; API test `test/imports-package.e2e-spec.ts` (round trip + tampered
       package); Playwright: full export download.
-- [ ] 8. Samples `docs/samples/import/`, screenshots, `docs/MIGRATION.md`, README, final checks, PR.
+- [x] 8. Samples `docs/samples/import/`, screenshots, `docs/MIGRATION.md`, README, final checks, PR.
+      Done: invented samples + `generate-samples.mjs` + README; screenshots EN / AR in
+      `docs/screenshots/import-tools/` (`screenshots-import-tools.spec.ts`, `SCREENSHOTS=1`); `docs/MIGRATION.md`
+      (how to prepare files, order structure → diagrams → documents → objects → review, go-live checklist);
+      README (feature table + tour); SECURITY (import uploads, export package, AI migration; route table);
+      BACKLOG; CLAUDE.md phase table and data model; PR
+      [Hashichemnad/bpmn#21](https://github.com/Hashichemnad/bpmn/pull/21).
+
+Local verification on 2026-10-31: API suites incl. `imports*.e2e-spec.ts` (8 files: framework, structure,
+diagrams, documents, AI, migration, package round trip) and `safe-upload.spec.ts`; web unit and i18n tests;
+Playwright `imports.spec.ts` (7 flows) and the screenshot spec against API + Vite dev server + an in-memory S3
+stand-in (no Docker daemon in this sandbox — CI runs the Docker images and the full Playwright suite).
+
+Next: product owner review (open questions in the PR description); then the final performance / polish session
+(Phase 6 remainder) and Phase 4.4 integrations.
 
 ## Previous state — 2026-10-31 (Phase 5 — Part 2: Workflow execution, branch `phase-5-2-workflow-execution`, merged into `main`)
 
