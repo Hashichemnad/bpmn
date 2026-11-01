@@ -12,17 +12,19 @@ const BPMN_MODEL_NS = 'http://www.omg.org/spec/BPMN/20100524/MODEL';
  * bpmn-js on the client; the server rejects DTDs/entities (XXE, billion laughs)
  * and anything that is not a BPMN 2.0 definitions document.
  */
-/** The BPMN 2.0 model namespace declared as an xmlns attribute (not just mentioned somewhere). */
-const BPMN_NS_DECLARATION = new RegExp(
-  `\\sxmlns(:[\\w.-]+)?\\s*=\\s*["']${BPMN_MODEL_NS.replace(/[.*+?^${}()|[\]\\/]/g, '\\$&')}["']`,
-);
+/** True when the BPMN 2.0 model namespace is declared as an xmlns attribute (exact value). */
+function declaresBpmnNamespace(xml: string): boolean {
+  for (const m of xml.matchAll(/\sxmlns(?::[\w.-]+)?\s*=\s*(["'])(.*?)\1/g))
+    if (m[2] === BPMN_MODEL_NS) return true;
+  return false;
+}
 
 export function assertSafeBpmnXml(xml: string): void {
   if (/<!DOCTYPE|<!ENTITY/i.test(xml)) {
     throw badRequest('INVALID_BPMN', 'DTD and entity declarations are not allowed');
   }
   const withoutProlog = xml.replace(/^\uFEFF?\s*(<\?xml[^>]*\?>)?\s*(<!--[\s\S]*?-->\s*)*/, '');
-  if (!/^<([\w-]+:)?definitions[\s>]/.test(withoutProlog) || !BPMN_NS_DECLARATION.test(xml)) {
+  if (!/^<([\w-]+:)?definitions[\s>]/.test(withoutProlog) || !declaresBpmnNamespace(xml)) {
     throw badRequest('INVALID_BPMN', 'Not a BPMN 2.0 document');
   }
 }
