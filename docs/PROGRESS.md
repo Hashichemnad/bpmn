@@ -44,8 +44,23 @@ Steps (tick as they are committed; a new session continues at the first unticked
       status). Tests: `test/public-api.e2e-spec.ts` (10), `api-keys.spec.ts`, route-security lists every public
       route with its scope; Playwright `integrations.spec.ts` (create key → public API → call log → revoke →
       401, passed locally against API + Vite). Docs: `docs/integrations/API.md`, SECURITY route table.
-- [ ] 2. Webhooks (events, HMAC-SHA256 signature + timestamp, persisted retries with backoff, auto-disable,
-      delivery log, resend, test event, SSRF guard incl. redirects, allow-list).
+- [x] 2. Webhooks (D-174): migration `*_integrations_webhooks` (`Webhook` — kind WEBHOOK / TEAMS, encrypted
+      URL and secret —, `WebhookDelivery` = persisted queue + log), shared events / schemas / DTOs, Setting
+      `integrations.webhooks`, notification type `INTEGRATION` (EN / AR e-mail + in-app); domain event
+      `integration` emitted by reviews (submitted / approved / rejected), workflow (case started / completed /
+      overdue via `AfterCommit.events`), issues (raised / overdue), KPIs (turned red), imports (completed), plus
+      `content.published` / `unpublished`; API `apps/api/src/webhooks/` — `destination-guard.ts` (HTTPS, host
+      allow-lists, resolved-address check), `webhook-http.ts` (safeFetch: pinned address, no redirects, 10 s,
+      64 KB), `webhook-signature.ts`, `payloads.ts` (payload + Teams Adaptive Card), `webhook-dispatcher.service.ts`
+      (filters, claim / send / backoff / switch-off / notification / retention), `webhooks.service.ts` +
+      controller (CRUD, secret, test, resend, log, settings); `outbound.ts` also blocks `::/96`. Web: Webhooks
+      and Microsoft Teams tabs (`DestinationsTab.tsx`: form with event groups, departments, branch, language;
+      delivery log drawer with payload / resend; test event; switch on again; delivery settings). Compose dev
+      service `webhook-receiver` (`apps/e2e/receiver/server.mjs`). Tests: `test/webhooks.e2e-spec.ts` (7: CRUD
+      and permissions, signed delivery, filters, retries → switch-off → notification → resend / test,
+      redirect / timeout / size limits, SSRF refusals incl. metadata / mapped IPv6 / allow-lists, real issue and
+      KPI flows), `webhooks.spec.ts` (18 unit), `outbound.spec.ts`; Playwright: publish → signed delivery at the
+      receiver → delivery log → test event (passed locally). Docs: `docs/integrations/WEBHOOKS.md`.
 - [ ] 3. Power BI / reporting feed (`reporting:read`, flat paged JSON) + `docs/integrations/POWER-BI.md`.
 - [ ] 4. Microsoft Teams channel notifications (Workflows webhook URL, Adaptive Cards AR / EN, same delivery
       log / retries / SSRF, host allow-list) + `docs/integrations/TEAMS.md`.

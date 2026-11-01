@@ -101,6 +101,10 @@ const envSchema = z.object({
     .default('')
     .transform((v) => v.replace(/\/+$/, '')),
   RENDERER_TOKEN: z.string().default(''),
+  /** Timeout of one webhook / Teams delivery, in milliseconds (Phase 4.4). */
+  WEBHOOK_TIMEOUT_MS: z.coerce.number().int().min(1000).max(60000).default(10000),
+  /** How often due webhook deliveries (retries) are checked, in seconds; 0 = only on new events. */
+  WEBHOOK_POLL_SECONDS: z.coerce.number().int().min(0).max(3600).default(15),
   RENDERER_TIMEOUT_MS: z.coerce.number().int().min(1000).default(60000),
 });
 

@@ -2710,3 +2710,73 @@ model ApiKeyUsage {
   @@index([keyId, createdAt])
   @@index([createdAt])
 }
+
+enum WebhookKind {
+  WEBHOOK
+  TEAMS
+}
+
+enum WebhookDeliveryStatus {
+  PENDING
+  SUCCEEDED
+  FAILED
+  GAVE_UP
+}
+
+/// Outbound destination (D-174): a generic HTTPS webhook (HMAC-signed JSON) or a Microsoft Teams
+/// channel through a Teams "Workflows" webhook URL (Adaptive Card, D-176). The URL and the signing
+/// secret are stored encrypted (AES-256-GCM, INTEGRATIONS_ENCRYPTION_KEY).
+model Webhook {
+  id                  String      @id @default(uuid()) @db.Uuid
+  kind                WebhookKind @default(WEBHOOK)
+  name                String
+  urlSealed           String
+  /// Scheme, host and path (no query string) for display.
+  urlDisplay          String
+  secretSealed        String?
+  events              String[]
+  departmentIds       String[]    @db.Uuid
+  processBranchId     String?     @db.Uuid
+  /// Teams card language: EN | AR | BOTH.
+  language            String      @default("BOTH")
+  active              Boolean     @default(true)
+  consecutiveFailures Int         @default(0)
+  disabledAt          DateTime?
+  disabledReason      String?
+  createdAt           DateTime    @default(now())
+  updatedAt           DateTime    @updatedAt
+  createdById         String?     @db.Uuid
+  updatedById         String?     @db.Uuid
+  deletedAt           DateTime?
+
+  deliveries WebhookDelivery[]
+
+  @@index([kind, active])
+}
+
+/// One event for one destination, with its attempts (persisted queue: survives restarts).
+model WebhookDelivery {
+  id              String                @id @default(uuid()) @db.Uuid
+  webhookId       String                @db.Uuid
+  webhook         Webhook               @relation(fields: [webhookId], references: [id], onDelete: Cascade)
+  /// Event id (the same for every destination of one event; receivers deduplicate on it).
+  eventId         String                @db.Uuid
+  eventType       String
+  payload         Json
+  status          WebhookDeliveryStatus @default(PENDING)
+  attempts        Int                   @default(0)
+  nextAttemptAt   DateTime?             @default(now())
+  /// Set while a worker sends it (stale locks are taken over after 5 minutes).
+  lockedAt        DateTime?
+  lastStatusCode  Int?
+  lastError       String?
+  responseSnippet String?
+  durationMs      Int?
+  test            Boolean               @default(false)
+  createdAt       DateTime              @default(now())
+  deliveredAt     DateTime?
+
+  @@index([status, nextAttemptAt])
+  @@index([webhookId, createdAt])
+  @@index([createdAt])
+}

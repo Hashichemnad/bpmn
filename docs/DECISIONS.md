@@ -2496,3 +2496,45 @@ prefix, which keeps changing with the UI) authenticated only by API keys.
   (Admin, Super Admin) shows keys, webhooks and their logs.
 - **Docs:** OpenAPI document of the public module only at `/api/public/docs` (`-json`), switched by
   `ENABLE_PUBLIC_API_DOCS` independently of `ENABLE_SWAGGER` (default on outside production).
+
+## D-174 — Webhooks: persisted queue, HMAC signatures, SSRF guard (Phase 4.4)
+
+**Decision:** one `Webhook` table for both generic webhooks and Microsoft Teams destinations (`kind`), and one
+`WebhookDelivery` table that is the queue and the delivery log at once.
+
+- **Events** (16): process / page / diagram published or archived, review submitted / approved / rejected
+  (rejected also covers "changes requested", `data.status` tells which), workflow case started / completed /
+  overdue (top-level cases only), issue raised / overdue, KPI turned red (first value of a period that is red),
+  import batch completed. Sources emit an `integration` domain event after their transaction; published /
+  archived come from the existing `content.published` / `content.unpublished` events. Pages of view-restricted
+  spaces are never announced.
+- **Filters:** departments (events without a department are left out when set) and a process-house branch
+  (the event's process or one of its ancestors).
+- **Payload:** `{ id, type, occurredAt, entity { type, id, code, nameEn, nameAr }, links { app, portal, api },
+data }` — ids, links and a few facts (version, status, outcome, severity, period, value). Never form data,
+  descriptions, comments or secrets.
+- **Signature:** `X-ProcessHub-Signature: sha256=<hex HMAC-SHA256(secret, "<timestamp>.<raw body>")>` with
+  `X-ProcessHub-Timestamp` (Unix seconds; receivers refuse > 5 minutes), plus `X-ProcessHub-Event` and
+  `X-ProcessHub-Delivery` (event id, the same for every retry and destination — receivers deduplicate on it).
+  The secret (`whsec_…`, 256 bits) is shown once and stored encrypted (AES-256-GCM, like Git tokens); the URL
+  is encrypted too (Teams URLs carry their signature in the query string) and shown without query string.
+- **Delivery:** a worker claims due rows (`lockedAt`, stale after 5 minutes) — on every new event and every
+  `WEBHOOK_POLL_SECONDS` (15) — so deliveries survive restarts. Retries after 1, 5, 15 minutes, 1, 4, 12 and
+  24 hours, then `GAVE_UP`. After `WEBHOOK_DISABLE_AFTER` (10) failed attempts in a row the destination is
+  switched off (`disabledAt`, reason), waiting deliveries are dropped and Super Admins plus the creator get the
+  new notification type `INTEGRATION` (in-app + e-mail, EN / AR). Switching it on again resets the counter.
+  "Send test event" and "Resend" make one immediate attempt and report the result; they never count towards the
+  switch-off. Delivery log kept `integrations.webhooks.retentionDays` (30).
+- **SSRF:** checked when saving and before every delivery: HTTPS only (plain http and internal addresses only
+  for hosts in `OUTBOUND_ALLOWED_HOSTS`, i.e. test receivers), no credentials in URLs, optional host allow-list
+  for webhooks (`integrations.webhooks.allowedHosts`, exact or `*.domain`), Teams limited to Power Automate
+  hosts (`*.logic.azure.com`, `*.environment.api.powerplatform.com`, `*.webhook.office.com` + `teamsHosts`);
+  every resolved address must be public (loopback, private, link-local / metadata, CGNAT, NAT64, IPv4-mapped /
+  -compatible IPv6 refused; the IPv4-compatible `::/96` range was added to the shared block list). The sender
+  (`safeFetch`) connects to the checked address (no DNS rebinding), never follows redirects (a 3xx is a failed
+  attempt "REDIRECT_NOT_FOLLOWED"), stops after `WEBHOOK_TIMEOUT_MS` (10 s) and 64 KB of response.
+- **Access:** managing destinations needs `settings.manage`; `integrations.read` (Admins) shows them and the
+  delivery log. Audit `CREATE`, `UPDATE`, `DELETE`, `ROTATE` (secret), `RETRY` (resend).
+- **Dev / CI:** Compose service `webhook-receiver` (records requests at `localhost:8090/received`) for the demo
+  webhook and the Playwright test; it is listed in the dev `OUTBOUND_ALLOWED_HOSTS` and not part of the
+  production stack.

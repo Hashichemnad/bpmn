@@ -549,6 +549,8 @@ export const SETTING_KEYS = {
   WORKFLOW: 'workflow',
   /** Phase 4.4: public API (longest key lifetime, call log retention). */
   INTEGRATIONS_API: 'integrations.api',
+  /** Phase 4.4: webhook / Teams host allow-lists, delivery log retention. */
+  INTEGRATIONS_WEBHOOKS: 'integrations.webhooks',
 } as const;
 
 /** Logo upload limits. */
@@ -767,6 +769,11 @@ export const NOTIFICATION_TYPES = [
    * case completed / returned / rejected / withdrawn / cancelled, template notification (params.kind).
    */
   'WORKFLOW',
+  /**
+   * Integrations (Phase 4.4): webhook / Teams destination switched off after repeated failures,
+   * scheduled report failed (params.kind: webhookDisabled | reportFailed).
+   */
+  'INTEGRATION',
 ] as const;
 export type NotificationType = (typeof NOTIFICATION_TYPES)[number];
 

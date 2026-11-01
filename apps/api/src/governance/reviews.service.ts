@@ -181,6 +181,7 @@ export class ReviewsService {
       const next = await this.advance(tx, review, steps, 0, item, actor);
       return { review, next };
     });
+    this.reviewEvent('review.submitted', item, result.review.versionNumber);
     await this.afterAdvance(item, result.review, steps, result.next, actor);
     return this.info(type, id, actor);
   }
@@ -266,6 +267,31 @@ export class ReviewsService {
     return { activated: null, approved: true, published: false };
   }
 
+  /** Webhook / Teams event of a review step (Phase 4.4). */
+  private reviewEvent(
+    event: 'review.submitted' | 'review.approved' | 'review.rejected',
+    item: ContentItem,
+    versionNumber: number,
+    status?: string,
+  ) {
+    this.events.emit({
+      type: 'integration',
+      event,
+      entity: {
+        type: item.type,
+        id: item.id,
+        code: item.code ?? null,
+        nameEn: item.titleEn,
+        nameAr: item.titleAr,
+      },
+      departmentId: item.departmentId,
+      processId: item.type === 'PROCESS' ? item.id : null,
+      ownerId: item.ownerId,
+      link: itemLink(item),
+      data: { version: versionNumber, ...(status ? { status } : {}) },
+    });
+  }
+
   private async afterAdvance(
     item: ContentItem,
     review: { id: string; versionNumber: number; submittedById: string | null },
@@ -290,6 +316,7 @@ export class ReviewsService {
       });
     }
     if (next.approved) {
+      this.reviewEvent('review.approved', item, review.versionNumber);
       await this.notifications.notify({
         ...base,
         userIds: [review.submittedById, item.ownerId],
@@ -377,6 +404,7 @@ export class ReviewsService {
 
     if (result.next) await this.afterAdvance(item, review, steps, result.next, actor);
     if (result.outcome === 'CHANGES_REQUESTED' || result.outcome === 'REJECTED') {
+      this.reviewEvent('review.rejected', item, review.versionNumber, result.outcome);
       await this.notifications.notify({
         userIds: [review.submittedById, item.ownerId],
         type: result.outcome === 'REJECTED' ? 'REJECTED' : 'CHANGES_REQUESTED',

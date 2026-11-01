@@ -37,6 +37,7 @@ import { MiningModule } from './mining/mining.module';
 import { WorkflowModule } from './workflow/workflow.module';
 import { ImportsModule } from './imports/imports.module';
 import { ApiKeysModule, PublicApiModule } from './public-api/public-api.module';
+import { WebhooksModule } from './webhooks/webhooks.module';
 import { ApiKeyGuard } from './public-api/api-key.guard';
 import { HealthController } from './health/health.controller';
 import { CsrfGuard, JwtAuthGuard, PermissionsGuard } from './common/guards';
@@ -81,6 +82,7 @@ import { AllExceptionsFilter } from './common/http-exception.filter';
     WorkflowModule,
     ImportsModule,
     ApiKeysModule,
+    WebhooksModule,
     PublicApiModule,
     DocsModule,
     SearchModule,

@@ -310,5 +310,12 @@
   "API_KEY_EXPIRY_TOO_LONG": "The expiry date is beyond the longest allowed key lifetime.",
   "API_KEY_EXPIRY_PAST": "The expiry date must be in the future.",
   "API_KEY_REVOKED": "This API key was revoked and cannot be changed.",
-  "INVALID_IP": "Enter IP addresses or CIDR ranges, e.g. 10.20.0.0/16."
+  "INVALID_IP": "Enter IP addresses or CIDR ranges, e.g. 10.20.0.0/16.",
+  "WEBHOOK_URL_INVALID": "Enter a valid URL without user name or password.",
+  "HTTPS_URL_REQUIRED": "The address must start with https://.",
+  "WEBHOOK_HOST_NOT_ALLOWED": "This host is not on the allow-list (Settings → Integrations).",
+  "WEBHOOK_HOST_BLOCKED": "This address points to an internal network and is blocked.",
+  "WEBHOOK_HOST_UNRESOLVED": "The host name could not be resolved.",
+  "NO_SECRET_FOR_TEAMS": "Teams destinations have no signing secret.",
+  "RENDERER_UNAVAILABLE": "Diagram images are not available (renderer not running)."
 }

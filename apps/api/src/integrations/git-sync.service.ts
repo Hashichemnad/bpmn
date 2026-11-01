@@ -77,10 +77,13 @@ export class GitSyncService implements OnModuleInit, OnModuleDestroy {
         return (e.entityType === 'PROCESS' ? s.syncProcesses : s.syncPages)
           ? [{ entityType: e.entityType, entityId: e.entityId }]
           : [];
+      case 'integration':
+        return [];
     }
   }
 
   async onEvent(e: DomainEvent): Promise<void> {
+    if (e.type === 'integration') return;
     const s = await this.settings.get();
     if (!s.enabled) return;
     const targets = this.targetsFor(e, s);

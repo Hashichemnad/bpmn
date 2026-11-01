@@ -223,540 +223,551 @@ zod / UUID pipe; file uploads are checked in the service (allow-list, content sn
 
 <!-- route-table:start -->
 
-| Method | Path (under `/api/v1` unless shown)               | Access (server guard)                                          | Validated input                      | Rate limit |
-| ------ | ------------------------------------------------- | -------------------------------------------------------------- | ------------------------------------ | ---------- |
-| POST   | `/ai/analyse`                                     | authenticated                                                  | body                                 | default    |
-| POST   | `/ai/control-gaps`                                | authenticated                                                  | body                                 | default    |
-| POST   | `/ai/doc-to-process`                              | authenticated                                                  | body                                 | default    |
-| POST   | `/ai/generate-doc`                                | authenticated                                                  | body                                 | default    |
-| POST   | `/ai/generate-process`                            | authenticated                                                  | body                                 | default    |
-| POST   | `/ai/portal/ask`                                  | authenticated                                                  | body                                 | default    |
-| POST   | `/ai/refine-process`                              | authenticated                                                  | body                                 | default    |
-| GET    | `/ai/settings`                                    | `settings.manage`                                              | —                                    | default    |
-| PUT    | `/ai/settings`                                    | `settings.manage`                                              | body                                 | default    |
-| POST   | `/ai/settings/test`                               | `settings.manage`                                              | body                                 | default    |
-| GET    | `/ai/status`                                      | authenticated                                                  | —                                    | default    |
-| POST   | `/ai/summarise`                                   | authenticated                                                  | body                                 | default    |
-| POST   | `/ai/translate`                                   | authenticated                                                  | body                                 | default    |
-| GET    | `/ai/usage`                                       | `ai.usage.read`                                                | query                                | default    |
-| GET    | `/api/public/v1/applications`                     | API key, scope `ea:read`                                       | query                                | default    |
-| GET    | `/api/public/v1/capabilities`                     | API key, scope `ea:read`                                       | query                                | default    |
-| GET    | `/api/public/v1/controls`                         | API key, scope `grc:read`                                      | query                                | default    |
-| GET    | `/api/public/v1/diagrams`                         | API key, scope `diagrams:read`                                 | query                                | default    |
-| GET    | `/api/public/v1/diagrams/:id`                     | API key, scope `diagrams:read`                                 | param `id`                           | default    |
-| GET    | `/api/public/v1/diagrams/:id/svg`                 | API key, scope `diagrams:read`                                 | param `id`, query                    | default    |
-| GET    | `/api/public/v1/kpis`                             | API key, scope `kpis:read`                                     | query                                | default    |
-| GET    | `/api/public/v1/kpis/:id/measurements`            | API key, scope `kpis:read`                                     | param `id`, query                    | default    |
-| GET    | `/api/public/v1/me`                               | API key, scope `any`                                           | —                                    | default    |
-| GET    | `/api/public/v1/objects`                          | API key, scope `objects:read`                                  | query                                | default    |
-| GET    | `/api/public/v1/pages`                            | API key, scope `pages:read`                                    | query                                | default    |
-| GET    | `/api/public/v1/pages/:id`                        | API key, scope `pages:read`                                    | param `id`, query                    | default    |
-| GET    | `/api/public/v1/process-house`                    | API key, scope `processes:read`                                | —                                    | default    |
-| GET    | `/api/public/v1/processes`                        | API key, scope `processes:read`                                | query                                | default    |
-| GET    | `/api/public/v1/processes/:id`                    | API key, scope `processes:read`                                | param `id`                           | default    |
-| GET    | `/api/public/v1/processes/:id/bpmn`               | API key, scope `processes:read`                                | param `id`, query                    | default    |
-| GET    | `/api/public/v1/processes/:id/svg`                | API key, scope `processes:read`                                | param `id`, query                    | default    |
-| GET    | `/api/public/v1/processes/:id/versions`           | API key, scope `processes:read`                                | param `id`                           | default    |
-| GET    | `/api/public/v1/requirements`                     | API key, scope `grc:read`                                      | query                                | default    |
-| GET    | `/api/public/v1/risks`                            | API key, scope `grc:read`                                      | query                                | default    |
-| GET    | `/api/public/v1/spaces`                           | API key, scope `pages:read`                                    | query                                | default    |
-| GET    | `/api/public/v1/workflow/cases`                   | API key, scope `workflow:cases:read`                           | query                                | default    |
-| GET    | `/api/public/v1/workflow/statistics`              | API key, scope `workflow:read`                                 | —                                    | default    |
-| GET    | `/assurance/dashboard`                            | any of `grc.read`, `audit.manage`, `issues.manage`             | query                                | default    |
-| GET    | `/assurance/dashboard/export`                     | any of `grc.read`, `audit.manage`, `issues.manage`             | query                                | default    |
-| DELETE | `/assurance/files/:id`                            | authenticated                                                  | param `id`                           | default    |
-| GET    | `/assurance/files/:id`                            | authenticated                                                  | param `id`                           | default    |
-| GET    | `/assurance/settings`                             | any of `grc.read`, `issues.manage`, `audit.manage`             | —                                    | default    |
-| PUT    | `/assurance/settings`                             | `grc.admin`                                                    | body                                 | default    |
-| GET    | `/assurance/tasks`                                | authenticated                                                  | —                                    | default    |
-| DELETE | `/attachments/:id`                                | `docs.read` + `docs.edit`                                      | param `id`                           | default    |
-| GET    | `/attachments/:id/content`                        | `docs.read`                                                    | param `id`                           | default    |
-| GET    | `/audit-logs`                                     | `audit.read`                                                   | query                                | default    |
-| GET    | `/audits`                                         | any of `audit.manage`, `grc.edit`, `audit.read`                | query                                | default    |
-| POST   | `/audits`                                         | `audit.manage`                                                 | body                                 | default    |
-| DELETE | `/audits/:id`                                     | `audit.manage`                                                 | param `id`                           | default    |
-| GET    | `/audits/:id`                                     | any of `audit.manage`, `grc.edit`, `audit.read`                | param `id`                           | default    |
-| PATCH  | `/audits/:id`                                     | `audit.manage`                                                 | body, param `id`                     | default    |
-| POST   | `/audits/:id/comments`                            | `audit.manage`                                                 | body, param `id`                     | default    |
-| POST   | `/audits/:id/findings`                            | `audit.manage`                                                 | body, param `id`                     | default    |
-| POST   | `/audits/:id/items`                               | `audit.manage`                                                 | body, param `id`                     | default    |
-| GET    | `/audits/:id/report`                              | any of `audit.manage`, `grc.edit`, `audit.read`                | param `id`, query                    | default    |
-| POST   | `/audits/:id/status`                              | `audit.manage`                                                 | body, param `id`                     | default    |
-| DELETE | `/audits/findings/:id`                            | `audit.manage`                                                 | param `id`                           | default    |
-| GET    | `/audits/findings/:id`                            | authenticated                                                  | param `id`                           | default    |
-| PATCH  | `/audits/findings/:id`                            | `audit.manage`                                                 | body, param `id`                     | default    |
-| POST   | `/audits/findings/:id/files`                      | `audit.manage`                                                 | file, param `id`                     | default    |
-| POST   | `/audits/findings/:id/response`                   | authenticated                                                  | body, param `id`                     | default    |
-| DELETE | `/audits/items/:id`                               | `audit.manage`                                                 | param `id`                           | default    |
-| PATCH  | `/audits/items/:id`                               | `audit.manage`                                                 | body, param `id`                     | default    |
-| POST   | `/audits/items/:id/files`                         | `audit.manage`                                                 | file, param `id`                     | default    |
-| GET    | `/audits/universe`                                | any of `audit.manage`, `grc.edit`, `audit.read`                | query                                | default    |
-| POST   | `/auth/change-password`                           | authenticated                                                  | body                                 | login      |
-| GET    | `/auth/csrf`                                      | **public**                                                     | —                                    | default    |
-| GET    | `/auth/invitations/:token`                        | **public**                                                     | param `token`                        | login      |
-| POST   | `/auth/invitations/accept`                        | **public**                                                     | body                                 | login      |
-| POST   | `/auth/login`                                     | **public**                                                     | body                                 | login      |
-| POST   | `/auth/login/mfa`                                 | **public**                                                     | body                                 | login      |
-| POST   | `/auth/login/mfa/setup`                           | **public**                                                     | —                                    | login      |
-| POST   | `/auth/login/mfa/setup/confirm`                   | **public**                                                     | body                                 | login      |
-| POST   | `/auth/logout`                                    | **public**                                                     | —                                    | default    |
-| GET    | `/auth/me`                                        | authenticated                                                  | —                                    | default    |
-| PATCH  | `/auth/me`                                        | authenticated                                                  | body                                 | default    |
-| GET    | `/auth/mfa`                                       | authenticated                                                  | —                                    | default    |
-| POST   | `/auth/mfa/disable`                               | authenticated                                                  | body                                 | login      |
-| POST   | `/auth/mfa/enable`                                | authenticated                                                  | body                                 | login      |
-| POST   | `/auth/mfa/recovery-codes`                        | authenticated                                                  | body                                 | login      |
-| POST   | `/auth/mfa/setup`                                 | authenticated                                                  | body                                 | login      |
-| GET    | `/auth/options`                                   | **public**                                                     | —                                    | default    |
-| POST   | `/auth/refresh`                                   | **public**                                                     | —                                    | login      |
-| GET    | `/auth/sso/callback`                              | **public**                                                     | query                                | login      |
-| GET    | `/auth/sso/start`                                 | **public**                                                     | query                                | login      |
-| DELETE | `/comments/:commentId`                            | `comments.write`                                               | param `commentId`                    | default    |
-| PATCH  | `/comments/:commentId`                            | `comments.write`                                               | body, param `commentId`              | default    |
-| POST   | `/comments/:commentId/reopen`                     | `comments.write`                                               | param `commentId`                    | default    |
-| POST   | `/comments/:commentId/resolve`                    | `comments.write`                                               | param `commentId`                    | default    |
-| GET    | `/comments/:type/:id`                             | any of `processes.read`, `docs.read`                           | param `id`, param `type`             | default    |
-| POST   | `/comments/:type/:id`                             | `comments.write`                                               | body, param `id`, param `type`       | default    |
-| GET    | `/control-tests`                                  | `grc.read`                                                     | query                                | default    |
-| POST   | `/control-tests`                                  | `grc.edit`                                                     | body                                 | default    |
-| DELETE | `/control-tests/:id`                              | `grc.edit`                                                     | param `id`                           | default    |
-| GET    | `/control-tests/:id`                              | any of `grc.read`, `controls.test`, `controls.review`          | param `id`                           | default    |
-| POST   | `/control-tests/:id/close`                        | any of `grc.edit`, `controls.review`                           | param `id`                           | default    |
-| POST   | `/control-tests/:id/comments`                     | any of `grc.read`, `controls.test`, `controls.review`          | body, param `id`                     | default    |
-| POST   | `/control-tests/:id/files`                        | `controls.test`                                                | file, param `id`                     | default    |
-| PUT    | `/control-tests/:id/results`                      | `controls.test`                                                | body, param `id`                     | default    |
-| POST   | `/control-tests/:id/review`                       | `controls.review`                                              | body, param `id`                     | default    |
-| POST   | `/control-tests/:id/start`                        | `controls.test`                                                | param `id`                           | default    |
-| POST   | `/control-tests/:id/submit`                       | `controls.test`                                                | param `id`                           | default    |
-| GET    | `/control-tests/plans`                            | `grc.read`                                                     | query                                | default    |
-| POST   | `/control-tests/plans`                            | `grc.edit`                                                     | body                                 | default    |
-| DELETE | `/control-tests/plans/:id`                        | `grc.edit`                                                     | param `id`                           | default    |
-| PATCH  | `/control-tests/plans/:id`                        | `grc.edit`                                                     | body, param `id`                     | default    |
-| GET    | `/departments`                                    | `departments.read`                                             | —                                    | default    |
-| POST   | `/departments`                                    | `departments.manage`                                           | body                                 | default    |
-| DELETE | `/departments/:id`                                | `departments.manage`                                           | param `id`                           | default    |
-| PATCH  | `/departments/:id`                                | `departments.manage`                                           | body, param `id`                     | default    |
-| GET    | `/diagrams`                                       | `processes.read`                                               | query                                | default    |
-| POST   | `/diagrams`                                       | `processes.create`                                             | body                                 | default    |
-| DELETE | `/diagrams/:id`                                   | `processes.delete`                                             | param `id`                           | default    |
-| GET    | `/diagrams/:id`                                   | `processes.read`                                               | param `id`                           | default    |
-| PATCH  | `/diagrams/:id`                                   | any of `processes.edit`, `processes.edit_own`                  | body, param `id`                     | default    |
-| GET    | `/diagrams/:id/content`                           | `processes.read`                                               | param `id`                           | default    |
-| PUT    | `/diagrams/:id/content`                           | any of `models.edit`, `models.edit_own`                        | body, param `id`                     | default    |
-| POST   | `/diagrams/:id/convert-to-bpmn`                   | `processes.create`                                             | body, param `id`                     | default    |
-| GET    | `/diagrams/:id/links`                             | `processes.read`                                               | param `id`                           | default    |
-| POST   | `/diagrams/:id/links`                             | any of `models.edit`, `models.edit_own`, `grc.edit`            | body, param `id`                     | default    |
-| DELETE | `/diagrams/:id/links/:linkId`                     | any of `models.edit`, `models.edit_own`, `grc.edit`            | param `id`, param `linkId`           | default    |
-| GET    | `/diagrams/:id/versions`                          | `processes.read`                                               | param `id`                           | default    |
-| POST   | `/diagrams/:id/versions`                          | any of `models.edit`, `models.edit_own`                        | body, param `id`                     | default    |
-| GET    | `/diagrams/:id/versions/:versionId`               | `processes.read`                                               | param `id`, param `versionId`        | default    |
-| PATCH  | `/diagrams/:id/versions/:versionId`               | any of `models.edit`, `models.edit_own`                        | body, param `id`, param `versionId`  | default    |
-| POST   | `/diagrams/:id/versions/:versionId/restore`       | any of `models.edit`, `models.edit_own`                        | body, param `id`, param `versionId`  | default    |
-| GET    | `/diagrams/all`                                   | `processes.read`                                               | —                                    | default    |
-| GET    | `/diagrams/org-source`                            | `processes.read`                                               | —                                    | default    |
-| GET    | `/diagrams/process-facts`                         | `processes.read`                                               | query                                | default    |
-| GET    | `/diagrams/role-activities/:roleId`               | `processes.read`                                               | param `roleId`                       | default    |
-| GET    | `/diagrams/where-used`                            | `processes.read`                                               | query                                | default    |
-| POST   | `/dictionary/objects/:id/rename`                  | `objects.read` + `processes.read`                              | body, param `id`                     | default    |
-| POST   | `/dictionary/objects/:id/rename-preview`          | `objects.read` + `processes.read`                              | body, param `id`                     | default    |
-| GET    | `/dictionary/suggest`                             | `objects.read`                                                 | query                                | default    |
-| POST   | `/dictionary/terms`                               | `dictionary.propose`                                           | body                                 | default    |
-| PATCH  | `/dictionary/terms/:id`                           | `dictionary.propose`                                           | body, param `id`                     | default    |
-| POST   | `/dictionary/terms/:id/approve`                   | `dictionary.approve`                                           | param `id`                           | default    |
-| POST   | `/dictionary/terms/:id/reject`                    | `dictionary.approve`                                           | body, param `id`                     | default    |
-| GET    | `/ea/applications`                                | `ea.read`                                                      | query                                | default    |
-| POST   | `/ea/applications`                                | `ea.edit`                                                      | body                                 | default    |
-| DELETE | `/ea/applications/:id`                            | `ea.admin`                                                     | param `id`                           | default    |
-| GET    | `/ea/applications/:id`                            | `ea.read`                                                      | param `id`                           | default    |
-| PATCH  | `/ea/applications/:id`                            | `ea.edit`                                                      | body, param `id`                     | default    |
-| GET    | `/ea/applications/:id/impact`                     | `ea.read`                                                      | param `id`                           | default    |
-| GET    | `/ea/applications/:id/impact/export`              | `ea.read`                                                      | param `id`, query                    | default    |
-| GET    | `/ea/capabilities`                                | `ea.read`                                                      | —                                    | default    |
-| POST   | `/ea/capabilities`                                | `ea.edit`                                                      | body                                 | default    |
-| DELETE | `/ea/capabilities/:id`                            | `ea.admin`                                                     | param `id`                           | default    |
-| GET    | `/ea/capabilities/:id`                            | `ea.read`                                                      | param `id`                           | default    |
-| PATCH  | `/ea/capabilities/:id`                            | `ea.edit`                                                      | body, param `id`                     | default    |
-| GET    | `/ea/capability-map`                              | `ea.read`                                                      | —                                    | default    |
-| GET    | `/ea/data-objects`                                | `ea.read`                                                      | query                                | default    |
-| POST   | `/ea/data-objects`                                | `ea.edit`                                                      | body                                 | default    |
-| DELETE | `/ea/data-objects/:id`                            | `ea.admin`                                                     | param `id`                           | default    |
-| GET    | `/ea/data-objects/:id`                            | `ea.read`                                                      | param `id`                           | default    |
-| PATCH  | `/ea/data-objects/:id`                            | `ea.edit`                                                      | body, param `id`                     | default    |
-| GET    | `/ea/export/:kind`                                | `ea.read`                                                      | param `kind`, query                  | default    |
-| POST   | `/ea/import/:kind`                                | `ea.edit`                                                      | file, param `kind`, query            | default    |
-| GET    | `/ea/interfaces`                                  | `ea.read`                                                      | query                                | default    |
-| POST   | `/ea/interfaces`                                  | `ea.edit`                                                      | body                                 | default    |
-| DELETE | `/ea/interfaces/:id`                              | `ea.admin`                                                     | param `id`                           | default    |
-| GET    | `/ea/interfaces/:id`                              | `ea.read`                                                      | param `id`                           | default    |
-| PATCH  | `/ea/interfaces/:id`                              | `ea.edit`                                                      | body, param `id`                     | default    |
-| GET    | `/ea/landscape`                                   | `ea.read`                                                      | query                                | default    |
-| GET    | `/ea/template/:kind`                              | `ea.edit`                                                      | param `kind`, query                  | default    |
-| GET    | `/ea/trace`                                       | `ea.read`                                                      | query                                | default    |
-| GET    | `/ea/trace/export`                                | `ea.read`                                                      | query                                | default    |
-| GET    | `/feedback`                                       | authenticated                                                  | query                                | default    |
-| POST   | `/feedback`                                       | `portal.read`                                                  | body                                 | default    |
-| PATCH  | `/feedback/:id`                                   | authenticated                                                  | body, param `id`                     | default    |
-| GET    | `/governance/:type/:id`                           | any of `processes.read`, `docs.read`                           | param `id`, param `type`             | default    |
-| PATCH  | `/governance/:type/:id`                           | any of `processes.read`, `docs.read`                           | body, param `id`, param `type`       | default    |
-| POST   | `/governance/:type/:id/archive`                   | any of `processes.read`, `docs.read`                           | body, param `id`, param `type`       | default    |
-| POST   | `/governance/:type/:id/confirm-review`            | any of `processes.read`, `docs.read`                           | param `id`, param `type`             | default    |
-| GET    | `/governance/:type/:id/publications`              | any of `processes.read`, `docs.read`                           | param `id`, param `type`             | default    |
-| POST   | `/governance/:type/:id/publish`                   | any of `processes.read`, `docs.read`                           | body, param `id`, param `type`       | default    |
-| POST   | `/governance/:type/:id/restore`                   | any of `processes.read`, `docs.read`                           | param `id`, param `type`             | default    |
-| GET    | `/governance/:type/:id/reviews`                   | any of `processes.read`, `docs.read`                           | param `id`, param `type`             | default    |
-| POST   | `/governance/:type/:id/submit`                    | any of `processes.read`, `docs.read`                           | body, param `id`, param `type`       | default    |
-| POST   | `/governance/:type/:id/withdraw`                  | any of `processes.read`, `docs.read`                           | param `id`, param `type`             | default    |
-| GET    | `/governance/dashboard`                           | `governance.dashboard`                                         | —                                    | default    |
-| POST   | `/governance/reminders/run`                       | `governance.manage`                                            | —                                    | default    |
-| GET    | `/governance/settings`                            | any of `governance.manage`, `processes.read`, `docs.read`      | —                                    | default    |
-| PUT    | `/governance/settings`                            | `governance.manage`                                            | body                                 | default    |
-| PUT    | `/governance/spaces/:spaceId/workflow`            | any of `governance.manage`, `docs.read`                        | body, param `spaceId`                | default    |
-| GET    | `/grc/changes`                                    | `grc.read`                                                     | query                                | default    |
-| GET    | `/grc/changes/:id`                                | `grc.read`                                                     | param `id`                           | default    |
-| POST   | `/grc/changes/:id/decision`                       | `grc.read` + `reviews.decide`                                  | body, param `id`                     | default    |
-| POST   | `/grc/changes/:id/withdraw`                       | `grc.edit`                                                     | param `id`                           | default    |
-| POST   | `/grc/changes/batches/:batchId/decision`          | `grc.read` + `reviews.decide`                                  | body, param `batchId`                | default    |
-| GET    | `/grc/controls`                                   | `grc.read`                                                     | query                                | default    |
-| POST   | `/grc/controls`                                   | any of `grc.edit`, `grc.propose`                               | body                                 | default    |
-| DELETE | `/grc/controls/:id`                               | any of `grc.edit`, `grc.propose`                               | param `id`                           | default    |
-| GET    | `/grc/controls/:id`                               | `grc.read`                                                     | param `id`                           | default    |
-| PATCH  | `/grc/controls/:id`                               | any of `grc.edit`, `grc.propose`                               | body, param `id`                     | default    |
-| GET    | `/grc/dashboard`                                  | `grc.read`                                                     | query                                | default    |
-| GET    | `/grc/dashboard/uncovered-steps`                  | `grc.read`                                                     | query                                | default    |
-| GET    | `/grc/export/:kind`                               | `grc.read`                                                     | param `kind`, query                  | default    |
-| POST   | `/grc/import/:kind`                               | `grc.edit`                                                     | file, param `kind`, query            | default    |
-| POST   | `/grc/items/:id/comments`                         | `grc.read` + `comments.write`                                  | body, param `id`                     | default    |
-| GET    | `/grc/items/:id/timeline`                         | `grc.read`                                                     | param `id`                           | default    |
-| GET    | `/grc/processes/:id`                              | `grc.read` + `processes.read`                                  | param `id`                           | default    |
-| GET    | `/grc/processes/:id/gaps`                         | `grc.read` + `processes.read`                                  | param `id`                           | default    |
-| GET    | `/grc/rcm`                                        | `grc.read`                                                     | query                                | default    |
-| GET    | `/grc/requirements`                               | `grc.read`                                                     | query                                | default    |
-| POST   | `/grc/requirements`                               | `grc.edit`                                                     | body                                 | default    |
-| DELETE | `/grc/requirements/:id`                           | `grc.admin`                                                    | param `id`                           | default    |
-| GET    | `/grc/requirements/:id`                           | `grc.read`                                                     | param `id`                           | default    |
-| PATCH  | `/grc/requirements/:id`                           | `grc.edit`                                                     | body, param `id`                     | default    |
-| GET    | `/grc/risks`                                      | `grc.read`                                                     | query                                | default    |
-| POST   | `/grc/risks`                                      | any of `grc.edit`, `grc.propose`                               | body                                 | default    |
-| DELETE | `/grc/risks/:id`                                  | any of `grc.edit`, `grc.propose`                               | param `id`                           | default    |
-| GET    | `/grc/risks/:id`                                  | `grc.read`                                                     | param `id`                           | default    |
-| PATCH  | `/grc/risks/:id`                                  | any of `grc.edit`, `grc.propose`                               | body, param `id`                     | default    |
-| GET    | `/grc/settings`                                   | any of `grc.read`, `processes.read`                            | —                                    | default    |
-| PUT    | `/grc/settings`                                   | `grc.admin`                                                    | body                                 | default    |
-| GET    | `/grc/template/:kind`                             | `grc.edit`                                                     | param `kind`, query                  | default    |
-| GET    | `/health`                                         | **public**                                                     | —                                    | skip       |
-| GET    | `/imports`                                        | any of `import.manage`, `import.own`                           | query                                | default    |
-| POST   | `/imports`                                        | any of `import.manage`, `import.own`                           | body                                 | default    |
-| DELETE | `/imports/:id`                                    | any of `import.manage`, `import.own`                           | param `id`                           | default    |
-| GET    | `/imports/:id`                                    | any of `import.manage`, `import.own`                           | param `id`                           | default    |
-| POST   | `/imports/:id/apply`                              | any of `import.manage`, `import.own`                           | param `id`                           | default    |
-| POST   | `/imports/:id/cancel`                             | any of `import.manage`, `import.own`                           | param `id`                           | default    |
-| GET    | `/imports/:id/files/:fileId`                      | any of `import.manage`, `import.own`                           | param `fileId`, param `id`           | default    |
-| GET    | `/imports/:id/items`                              | any of `import.manage`, `import.own`                           | param `id`, query                    | default    |
-| PUT    | `/imports/:id/items/:ref`                         | any of `import.manage`, `import.own`                           | body, param `id`, param `ref`        | default    |
-| PUT    | `/imports/:id/options`                            | any of `import.manage`, `import.own`                           | body, param `id`                     | default    |
-| GET    | `/imports/:id/records`                            | any of `import.manage`, `import.own`                           | param `id`, query                    | default    |
-| GET    | `/imports/:id/report`                             | any of `import.manage`, `import.own`                           | param `id`, query                    | default    |
-| PUT    | `/imports/:id/suggestions`                        | any of `import.manage`, `import.own`                           | body, param `id`                     | default    |
-| GET    | `/imports/:id/undo`                               | any of `import.manage`, `import.own`                           | param `id`                           | default    |
-| POST   | `/imports/:id/undo`                               | any of `import.manage`, `import.own`                           | param `id`                           | default    |
-| GET    | `/imports/kinds`                                  | any of `import.manage`, `import.own`                           | —                                    | default    |
-| GET    | `/imports/settings`                               | any of `import.manage`, `import.own`, `settings.manage`        | —                                    | default    |
-| PUT    | `/imports/settings`                               | `settings.manage`                                              | body                                 | default    |
-| GET    | `/imports/templates/:kind`                        | any of `import.manage`, `import.own`                           | param `kind`, query                  | default    |
-| GET    | `/integrations/api-keys`                          | any of `settings.manage`, `integrations.read`                  | —                                    | default    |
-| POST   | `/integrations/api-keys`                          | `settings.manage`                                              | body                                 | default    |
-| GET    | `/integrations/api-keys/:id`                      | any of `settings.manage`, `integrations.read`                  | param `id`                           | default    |
-| PATCH  | `/integrations/api-keys/:id`                      | `settings.manage`                                              | body, param `id`                     | default    |
-| POST   | `/integrations/api-keys/:id/revoke`               | `settings.manage`                                              | param `id`                           | default    |
-| POST   | `/integrations/api-keys/:id/rotate`               | `settings.manage`                                              | param `id`                           | default    |
-| GET    | `/integrations/api-keys/:id/usage`                | any of `settings.manage`, `integrations.read`                  | param `id`, query                    | default    |
-| GET    | `/integrations/api-settings`                      | any of `settings.manage`, `integrations.read`                  | —                                    | default    |
-| PUT    | `/integrations/api-settings`                      | `settings.manage`                                              | body                                 | default    |
-| GET    | `/integrations/git`                               | `settings.manage`                                              | —                                    | default    |
-| PUT    | `/integrations/git`                               | `settings.manage`                                              | body                                 | default    |
-| POST   | `/integrations/git/items/:id/retry`               | `settings.manage`                                              | param `id`                           | default    |
-| GET    | `/integrations/git/status`                        | `settings.manage`                                              | —                                    | default    |
-| POST   | `/integrations/git/sync`                          | `settings.manage`                                              | body                                 | default    |
-| POST   | `/integrations/git/test`                          | `settings.manage`                                              | body                                 | default    |
-| GET    | `/integrations/renderer`                          | any of `settings.manage`, `integrations.read`                  | —                                    | default    |
-| GET    | `/integrations/salesforce`                        | any of `settings.manage`, `kpi.sync`                           | —                                    | default    |
-| PUT    | `/integrations/salesforce`                        | `settings.manage`                                              | body                                 | default    |
-| GET    | `/integrations/salesforce/describe/:object`       | `settings.manage`                                              | param `object`                       | default    |
-| POST   | `/integrations/salesforce/preview`                | any of `settings.manage`, `kpi.sync`                           | —                                    | default    |
-| GET    | `/integrations/salesforce/runs`                   | any of `settings.manage`, `kpi.sync`                           | —                                    | default    |
-| GET    | `/integrations/salesforce/runs/:id/warnings`      | any of `settings.manage`, `kpi.sync`                           | param `id`                           | default    |
-| POST   | `/integrations/salesforce/sync`                   | any of `settings.manage`, `kpi.sync`                           | —                                    | default    |
-| POST   | `/integrations/salesforce/test`                   | `settings.manage`                                              | —                                    | default    |
-| GET    | `/issues`                                         | any of `grc.read`, `issues.manage`                             | query                                | default    |
-| POST   | `/issues`                                         | `issues.manage`                                                | body                                 | default    |
-| DELETE | `/issues/:id`                                     | `issues.manage` + `grc.admin`                                  | param `id`                           | default    |
-| GET    | `/issues/:id`                                     | authenticated                                                  | param `id`                           | default    |
-| PATCH  | `/issues/:id`                                     | authenticated                                                  | body, param `id`                     | default    |
-| POST   | `/issues/:id/actions`                             | authenticated                                                  | body, param `id`                     | default    |
-| POST   | `/issues/:id/comments`                            | authenticated                                                  | body, param `id`                     | default    |
-| POST   | `/issues/:id/files`                               | authenticated                                                  | file, param `id`                     | default    |
-| POST   | `/issues/:id/transition`                          | authenticated                                                  | body, param `id`                     | default    |
-| DELETE | `/issues/actions/:id`                             | authenticated                                                  | param `id`                           | default    |
-| PATCH  | `/issues/actions/:id`                             | authenticated                                                  | body, param `id`                     | default    |
-| POST   | `/issues/actions/:id/files`                       | authenticated                                                  | file, param `id`                     | default    |
-| GET    | `/kpis`                                           | `kpi.read`                                                     | query                                | default    |
-| POST   | `/kpis`                                           | `kpi.edit`                                                     | body                                 | default    |
-| DELETE | `/kpis/:id`                                       | `kpi.edit`                                                     | param `id`                           | default    |
-| GET    | `/kpis/:id`                                       | `kpi.read`                                                     | param `id`                           | default    |
-| PATCH  | `/kpis/:id`                                       | `kpi.edit`                                                     | body, param `id`                     | default    |
-| PUT    | `/kpis/:id/measurements`                          | any of `kpi.edit`, `kpi.measure`                               | body, param `id`                     | default    |
-| DELETE | `/kpis/:id/measurements/:measurementId`           | any of `kpi.edit`, `kpi.measure`                               | param `id`, param `measurementId`    | default    |
-| POST   | `/kpis/:id/recalculate`                           | `kpi.edit`                                                     | param `id`                           | default    |
-| GET    | `/kpis/export/:kind`                              | `kpi.read`                                                     | param `kind`, query                  | default    |
-| POST   | `/kpis/import/:kind`                              | any of `kpi.edit`, `kpi.measure`                               | file, param `kind`, query            | default    |
-| POST   | `/kpis/measurements/:measurementId/files`         | any of `kpi.edit`, `kpi.measure`                               | file, param `measurementId`          | default    |
-| GET    | `/kpis/objectives`                                | `kpi.read`                                                     | —                                    | default    |
-| POST   | `/kpis/objectives`                                | `kpi.edit`                                                     | body                                 | default    |
-| DELETE | `/kpis/objectives/:id`                            | `kpi.edit`                                                     | param `id`                           | default    |
-| PATCH  | `/kpis/objectives/:id`                            | `kpi.edit`                                                     | body, param `id`                     | default    |
-| GET    | `/kpis/processes/:processId`                      | `kpi.read`                                                     | param `processId`                    | default    |
-| GET    | `/kpis/scorecard`                                 | `kpi.read`                                                     | query                                | default    |
-| GET    | `/kpis/scorecard/export`                          | `kpi.read`                                                     | query                                | default    |
-| GET    | `/kpis/settings`                                  | any of `kpi.read`, `portal.manage`                             | —                                    | default    |
-| PUT    | `/kpis/settings`                                  | `kpi.edit`                                                     | body                                 | default    |
-| GET    | `/kpis/tasks`                                     | any of `kpi.edit`, `kpi.measure`                               | —                                    | default    |
-| GET    | `/kpis/template/:kind`                            | any of `kpi.edit`, `kpi.measure`                               | param `kind`, query                  | default    |
-| GET    | `/migration-ai/proposals`                         | `import.manage`                                                | query                                | default    |
-| GET    | `/migration-ai/proposals/:id`                     | `import.manage`                                                | param `id`                           | default    |
-| POST   | `/migration-ai/proposals/:id/accept`              | `import.manage`                                                | body, param `id`                     | default    |
-| POST   | `/migration-ai/proposals/:id/reject`              | `import.manage`                                                | param `id`                           | default    |
-| POST   | `/migration-ai/run`                               | `import.manage`                                                | body                                 | default    |
-| POST   | `/migration/bulk`                                 | `import.manage`                                                | body                                 | default    |
-| GET    | `/migration/dashboard`                            | any of `import.manage`, `governance.dashboard`                 | query                                | default    |
-| GET    | `/migration/dashboard/export`                     | any of `import.manage`, `governance.dashboard`                 | query                                | default    |
-| GET    | `/migration/items`                                | any of `import.manage`, `governance.dashboard`                 | query                                | default    |
-| GET    | `/migration/my-drafts`                            | authenticated                                                  | —                                    | default    |
-| GET    | `/mining/jobs/:id`                                | `mining.read`                                                  | param `id`, query                    | default    |
-| POST   | `/mining/jobs/:id/cancel`                         | `mining.read`                                                  | param `id`                           | default    |
-| POST   | `/mining/kpis/:kpiId/recalculate`                 | `kpi.edit`                                                     | param `kpiId`                        | default    |
-| GET    | `/mining/logs`                                    | `mining.read`                                                  | query                                | default    |
-| DELETE | `/mining/logs/:id`                                | `mining.manage`                                                | param `id`                           | default    |
-| GET    | `/mining/logs/:id`                                | `mining.read`                                                  | param `id`                           | default    |
-| PATCH  | `/mining/logs/:id`                                | `mining.manage`                                                | body, param `id`                     | default    |
-| GET    | `/mining/logs/:id/activities`                     | `mining.read`                                                  | param `id`                           | default    |
-| PUT    | `/mining/logs/:id/activities`                     | `mining.manage`                                                | body, param `id`                     | default    |
-| POST   | `/mining/logs/:id/activities/auto-match`          | `mining.manage`                                                | param `id`                           | default    |
-| POST   | `/mining/logs/:id/analysis`                       | `mining.read`                                                  | body, param `id`                     | default    |
-| GET    | `/mining/logs/:id/cases/:caseId`                  | `mining.read`                                                  | param `caseId`, param `id`           | default    |
-| POST   | `/mining/logs/:id/conformance`                    | `mining.read`                                                  | body, param `id`                     | default    |
-| POST   | `/mining/logs/:id/discover`                       | `mining.manage` + `processes.create`                           | body, param `id`                     | default    |
-| POST   | `/mining/logs/:id/export`                         | `mining.read`                                                  | body, param `id`                     | default    |
-| GET    | `/mining/logs/:id/grants`                         | `mining.read`                                                  | param `id`                           | default    |
-| PUT    | `/mining/logs/:id/grants`                         | `mining.manage`                                                | body, param `id`                     | default    |
-| POST   | `/mining/logs/:id/import`                         | `mining.manage`                                                | param `id`                           | default    |
-| PUT    | `/mining/logs/:id/mapping`                        | `mining.manage`                                                | body, param `id`                     | default    |
-| GET    | `/mining/logs/:id/presets`                        | `mining.read`                                                  | param `id`                           | default    |
-| POST   | `/mining/logs/:id/presets`                        | `mining.read`                                                  | body, param `id`                     | default    |
-| GET    | `/mining/logs/:id/preview`                        | `mining.manage`                                                | param `id`, query                    | default    |
-| GET    | `/mining/logs/:id/step-suggestions`               | `mining.read`                                                  | param `id`                           | default    |
-| POST   | `/mining/logs/:id/step-suggestions/apply`         | `mining.read`                                                  | body, param `id`                     | default    |
-| POST   | `/mining/logs/:id/validate`                       | `mining.manage`                                                | param `id`                           | default    |
-| POST   | `/mining/logs/processhub`                         | `mining.manage`                                                | body                                 | default    |
-| POST   | `/mining/logs/upload`                             | `mining.manage`                                                | body, file                           | default    |
-| GET    | `/mining/portal/processes/:processId/performance` | `portal.read`                                                  | param `processId`                    | default    |
-| DELETE | `/mining/presets/:id`                             | `mining.read`                                                  | param `id`                           | default    |
-| GET    | `/mining/processes/:processId/logs`               | `mining.read`                                                  | param `processId`                    | default    |
-| GET    | `/mining/settings`                                | any of `mining.read`, `settings.manage`                        | —                                    | default    |
-| PUT    | `/mining/settings`                                | `settings.manage`                                              | body                                 | default    |
-| GET    | `/mining/templates`                               | `mining.manage`                                                | —                                    | default    |
-| POST   | `/mining/templates`                               | `mining.manage`                                                | body                                 | default    |
-| DELETE | `/mining/templates/:id`                           | `mining.manage`                                                | param `id`                           | default    |
-| GET    | `/notifications`                                  | authenticated                                                  | query                                | default    |
-| POST   | `/notifications/:id/read`                         | authenticated                                                  | param `id`                           | default    |
-| GET    | `/notifications/preferences`                      | authenticated                                                  | —                                    | default    |
-| PUT    | `/notifications/preferences`                      | authenticated                                                  | body                                 | default    |
-| POST   | `/notifications/read-all`                         | authenticated                                                  | —                                    | default    |
-| GET    | `/notifications/unread-count`                     | authenticated                                                  | —                                    | default    |
-| GET    | `/objects`                                        | `objects.read`                                                 | query                                | default    |
-| POST   | `/objects`                                        | `objects.manage`                                               | body                                 | default    |
-| DELETE | `/objects/:id`                                    | `objects.manage`                                               | param `id`                           | default    |
-| GET    | `/objects/:id`                                    | `objects.read`                                                 | param `id`                           | default    |
-| PATCH  | `/objects/:id`                                    | `objects.manage`                                               | body, param `id`                     | default    |
-| GET    | `/objects/:id/pages`                              | `docs.read` + `objects.read`                                   | param `id`                           | default    |
-| GET    | `/objects/:id/usage`                              | `objects.read` + `processes.read`                              | param `id`                           | default    |
-| DELETE | `/pages/:id`                                      | `docs.read` + `docs.edit`                                      | param `id`                           | default    |
-| GET    | `/pages/:id`                                      | `docs.read`                                                    | param `id`                           | default    |
-| PUT    | `/pages/:id`                                      | `docs.read` + `docs.edit`                                      | body, param `id`                     | default    |
-| GET    | `/pages/:id/attachments`                          | `docs.read`                                                    | param `id`                           | default    |
-| POST   | `/pages/:id/attachments`                          | `docs.read` + `docs.edit`                                      | file, param `id`                     | default    |
-| DELETE | `/pages/:id/draft`                                | `docs.read` + `docs.edit`                                      | param `id`                           | default    |
-| GET    | `/pages/:id/draft`                                | `docs.read` + `docs.edit`                                      | param `id`                           | default    |
-| PUT    | `/pages/:id/draft`                                | `docs.read` + `docs.edit`                                      | body, param `id`                     | default    |
-| GET    | `/pages/:id/export/markdown`                      | `docs.read`                                                    | param `id`, query `lang`             | default    |
-| GET    | `/pages/:id/links`                                | `docs.read`                                                    | param `id`                           | default    |
-| POST   | `/pages/:id/links`                                | `docs.read` + `docs.edit`                                      | body, param `id`                     | default    |
-| DELETE | `/pages/:id/links/:linkId`                        | `docs.read` + `docs.edit`                                      | param `id`, param `linkId`           | default    |
-| POST   | `/pages/:id/move`                                 | `docs.read` + `docs.edit`                                      | body, param `id`                     | default    |
-| DELETE | `/pages/:id/purge`                                | `docs.read` + `docs.manage`                                    | param `id`                           | default    |
-| POST   | `/pages/:id/restore`                              | `docs.read` + `docs.edit`                                      | param `id`                           | default    |
-| GET    | `/pages/:id/versions`                             | `docs.read`                                                    | param `id`                           | default    |
-| GET    | `/pages/:id/versions/:versionId`                  | `docs.read`                                                    | param `id`, param `versionId`        | default    |
-| PATCH  | `/pages/:id/versions/:versionId`                  | `docs.read` + `docs.edit`                                      | body, param `id`, param `versionId`  | default    |
-| POST   | `/pages/:id/versions/:versionId/restore`          | `docs.read` + `docs.edit`                                      | body, param `id`, param `versionId`  | default    |
-| GET    | `/portal/:type/:id/feedback`                      | `portal.read`                                                  | param `id`, param `type`             | default    |
-| GET    | `/portal/attachments/:id/content`                 | `portal.read`                                                  | param `id`                           | default    |
-| GET    | `/portal/diagrams`                                | `portal.read`                                                  | query                                | default    |
-| GET    | `/portal/diagrams/:id`                            | `portal.read`                                                  | param `id`                           | default    |
-| GET    | `/portal/home`                                    | `portal.read`                                                  | —                                    | default    |
-| GET    | `/portal/my`                                      | `portal.read`                                                  | —                                    | default    |
-| GET    | `/portal/pages/:id`                               | `portal.read`                                                  | param `id`                           | default    |
-| GET    | `/portal/processes`                               | `portal.read`                                                  | —                                    | default    |
-| GET    | `/portal/processes/:id`                           | `portal.read`                                                  | param `id`                           | default    |
-| GET    | `/portal/search`                                  | `portal.read`                                                  | query                                | default    |
-| GET    | `/portal/settings`                                | `portal.manage`                                                | —                                    | default    |
-| PUT    | `/portal/settings`                                | `portal.manage`                                                | body                                 | default    |
-| GET    | `/portal/spaces`                                  | `portal.read`                                                  | —                                    | default    |
-| GET    | `/portal/spaces/:id/pages`                        | `portal.read`                                                  | param `id`                           | default    |
-| GET    | `/processes`                                      | `processes.read`                                               | query                                | default    |
-| POST   | `/processes`                                      | `processes.create`                                             | body                                 | default    |
-| DELETE | `/processes/:id`                                  | `processes.delete`                                             | param `id`                           | default    |
-| GET    | `/processes/:id`                                  | `processes.read`                                               | param `id`                           | default    |
-| PATCH  | `/processes/:id`                                  | any of `processes.edit`, `processes.edit_own`                  | body, param `id`                     | default    |
-| GET    | `/processes/:id/links`                            | `processes.read`                                               | param `id`                           | default    |
-| POST   | `/processes/:id/links`                            | any of `models.edit`, `models.edit_own`, `grc.edit`            | body, param `id`                     | default    |
-| DELETE | `/processes/:id/links/:linkId`                    | any of `models.edit`, `models.edit_own`, `grc.edit`            | param `id`, param `linkId`           | default    |
-| GET    | `/processes/:id/model`                            | `processes.read`                                               | param `id`                           | default    |
-| PUT    | `/processes/:id/model`                            | any of `models.edit`, `models.edit_own`                        | body, param `id`                     | default    |
-| POST   | `/processes/:id/move`                             | `processes.edit`                                               | body, param `id`                     | default    |
-| GET    | `/processes/:id/pages`                            | `docs.read` + `processes.read`                                 | param `id`                           | default    |
-| GET    | `/processes/:id/versions`                         | `processes.read`                                               | param `id`                           | default    |
-| POST   | `/processes/:id/versions`                         | any of `models.edit`, `models.edit_own`                        | body, param `id`                     | default    |
-| GET    | `/processes/:id/versions/:versionId`              | `processes.read`                                               | param `id`, param `versionId`        | default    |
-| PATCH  | `/processes/:id/versions/:versionId`              | any of `models.edit`, `models.edit_own`                        | body, param `id`, param `versionId`  | default    |
-| POST   | `/processes/:id/versions/:versionId/restore`      | any of `models.edit`, `models.edit_own`                        | body, param `id`, param `versionId`  | default    |
-| GET    | `/processes/tree`                                 | `processes.read`                                               | —                                    | default    |
-| POST   | `/reports/handbook`                               | any of `processes.read`, `portal.read`                         | body                                 | default    |
-| POST   | `/reports/handbook/plan`                          | any of `processes.read`, `portal.read`                         | body                                 | default    |
-| GET    | `/reports/objects/:id`                            | `objects.read` + `processes.read`                              | param `id`, query                    | default    |
-| GET    | `/reports/raci/:processId`                        | any of `processes.read`, `portal.read`                         | param `processId`, query             | default    |
-| GET    | `/repository-export`                              | `export.full`                                                  | —                                    | default    |
-| GET    | `/reviews/:id`                                    | authenticated                                                  | param `id`                           | default    |
-| POST   | `/reviews/:id/decision`                           | authenticated                                                  | body, param `id`                     | default    |
-| GET    | `/roles`                                          | any of `roles.read`, `users.manage`                            | —                                    | default    |
-| GET    | `/search`                                         | any of `docs.read`, `processes.read`                           | query                                | default    |
-| GET    | `/settings`                                       | `settings.manage`                                              | —                                    | default    |
-| PATCH  | `/settings`                                       | `settings.manage`                                              | body                                 | default    |
-| GET    | `/settings/auth`                                  | `settings.manage`                                              | —                                    | default    |
-| PUT    | `/settings/auth`                                  | `settings.manage`                                              | body                                 | default    |
-| POST   | `/settings/auth/test`                             | `settings.manage`                                              | body                                 | default    |
-| DELETE | `/settings/diagram-theme`                         | `settings.manage`                                              | —                                    | default    |
-| PUT    | `/settings/diagram-theme`                         | `settings.manage`                                              | body                                 | default    |
-| POST   | `/settings/diagram-theme/apply`                   | `settings.manage`                                              | body                                 | default    |
-| GET    | `/settings/diagram-theme/notice`                  | `settings.manage`                                              | —                                    | default    |
-| POST   | `/settings/diagram-theme/notice/dismiss`          | `settings.manage`                                              | —                                    | default    |
-| GET    | `/settings/email`                                 | `settings.manage`                                              | —                                    | default    |
-| PUT    | `/settings/email`                                 | `settings.manage`                                              | body                                 | default    |
-| POST   | `/settings/email/test`                            | `settings.manage`                                              | body                                 | default    |
-| DELETE | `/settings/logo`                                  | `settings.manage`                                              | —                                    | default    |
-| GET    | `/settings/logo`                                  | **public**                                                     | —                                    | default    |
-| POST   | `/settings/logo`                                  | `settings.manage`                                              | file                                 | default    |
-| GET    | `/settings/modeling-conventions`                  | `processes.read`                                               | —                                    | default    |
-| PUT    | `/settings/modeling-conventions`                  | `conventions.manage`                                           | body                                 | default    |
-| GET    | `/settings/public`                                | **public**                                                     | —                                    | default    |
-| GET    | `/simulations`                                    | `mining.read`                                                  | query                                | default    |
-| POST   | `/simulations`                                    | `mining.manage`                                                | body                                 | default    |
-| DELETE | `/simulations/:id`                                | `mining.manage`                                                | param `id`                           | default    |
-| GET    | `/simulations/:id`                                | `mining.read`                                                  | param `id`                           | default    |
-| PATCH  | `/simulations/:id`                                | `mining.manage`                                                | body, param `id`                     | default    |
-| POST   | `/simulations/:id/ai/explain`                     | `mining.read`                                                  | param `id`                           | default    |
-| POST   | `/simulations/:id/ai/suggest`                     | `mining.read`                                                  | param `id`                           | default    |
-| GET    | `/simulations/:id/export`                         | `mining.read`                                                  | param `id`                           | default    |
-| POST   | `/simulations/:id/run`                            | `mining.manage`                                                | body, param `id`                     | default    |
-| POST   | `/simulations/:id/scenarios`                      | `mining.manage`                                                | body, param `id`                     | default    |
-| DELETE | `/simulations/:id/scenarios/:scenarioId`          | `mining.manage`                                                | param `id`, param `scenarioId`       | default    |
-| PATCH  | `/simulations/:id/scenarios/:scenarioId`          | `mining.manage`                                                | body, param `id`, param `scenarioId` | default    |
-| GET    | `/simulations/defaults`                           | `mining.read`                                                  | query                                | default    |
-| GET    | `/simulations/holidays`                           | any of `mining.read`, `settings.manage`                        | —                                    | default    |
-| PUT    | `/simulations/holidays`                           | any of `settings.manage`, `departments.manage`                 | body                                 | default    |
-| GET    | `/spaces`                                         | `docs.read`                                                    | —                                    | default    |
-| POST   | `/spaces`                                         | `docs.manage`                                                  | body                                 | default    |
-| DELETE | `/spaces/:id`                                     | `docs.manage`                                                  | param `id`                           | default    |
-| GET    | `/spaces/:id`                                     | `docs.read`                                                    | param `id`                           | default    |
-| PATCH  | `/spaces/:id`                                     | `docs.read`                                                    | body, param `id`                     | default    |
-| GET    | `/spaces/:id/permissions`                         | `docs.read`                                                    | param `id`                           | default    |
-| PUT    | `/spaces/:id/permissions`                         | `docs.read`                                                    | body, param `id`                     | default    |
-| GET    | `/spaces/:spaceId/pages`                          | `docs.read`                                                    | param `spaceId`                      | default    |
-| POST   | `/spaces/:spaceId/pages`                          | `docs.read` + `docs.edit`                                      | body, param `spaceId`                | default    |
-| GET    | `/spaces/:spaceId/trash`                          | `docs.read` + `docs.edit`                                      | param `spaceId`                      | default    |
-| GET    | `/surveys/campaigns`                              | any of `surveys.manage`, `processes.read`                      | query                                | default    |
-| POST   | `/surveys/campaigns`                              | `surveys.manage`                                               | body                                 | default    |
-| DELETE | `/surveys/campaigns/:id`                          | `surveys.manage`                                               | param `id`                           | default    |
-| GET    | `/surveys/campaigns/:id`                          | any of `surveys.manage`, `processes.read`                      | param `id`                           | default    |
-| PATCH  | `/surveys/campaigns/:id`                          | `surveys.manage`                                               | body, param `id`                     | default    |
-| POST   | `/surveys/campaigns/:id/close`                    | any of `surveys.manage`, `processes.read`                      | param `id`                           | default    |
-| GET    | `/surveys/campaigns/:id/export`                   | any of `surveys.manage`, `processes.read`                      | param `id`, query                    | default    |
-| POST   | `/surveys/campaigns/:id/launch`                   | any of `surveys.manage`, `processes.read`                      | param `id`                           | default    |
-| GET    | `/surveys/campaigns/:id/proposals`                | any of `surveys.manage`, `grc.edit`                            | param `id`                           | default    |
-| GET    | `/surveys/campaigns/:id/results`                  | any of `surveys.manage`, `processes.read`                      | param `id`                           | default    |
-| POST   | `/surveys/feedback-requests`                      | `processes.read`                                               | body                                 | default    |
-| POST   | `/surveys/proposals/:id/decision`                 | `grc.edit`                                                     | body, param `id`                     | default    |
-| GET    | `/surveys/questionnaires`                         | `surveys.manage`                                               | —                                    | default    |
-| POST   | `/surveys/questionnaires`                         | `surveys.manage`                                               | body                                 | default    |
-| DELETE | `/surveys/questionnaires/:id`                     | `surveys.manage`                                               | param `id`                           | default    |
-| GET    | `/surveys/questionnaires/:id`                     | `surveys.manage`                                               | param `id`                           | default    |
-| PATCH  | `/surveys/questionnaires/:id`                     | `surveys.manage`                                               | body, param `id`                     | default    |
-| GET    | `/surveys/responses/:id`                          | `surveys.respond`                                              | param `id`                           | default    |
-| PUT    | `/surveys/responses/:id`                          | `surveys.respond`                                              | body, param `id`                     | default    |
-| GET    | `/surveys/responses/:id/diagram`                  | `surveys.respond`                                              | param `id`                           | default    |
-| POST   | `/surveys/responses/:id/files`                    | `surveys.respond`                                              | file, param `id`                     | default    |
-| GET    | `/tasks`                                          | authenticated                                                  | —                                    | default    |
-| GET    | `/templates`                                      | `docs.read`                                                    | —                                    | default    |
-| POST   | `/templates`                                      | `docs.manage`                                                  | body                                 | default    |
-| DELETE | `/templates/:id`                                  | `docs.manage`                                                  | param `id`                           | default    |
-| GET    | `/templates/:id`                                  | `docs.read`                                                    | param `id`                           | default    |
-| PUT    | `/templates/:id`                                  | `docs.manage`                                                  | body, param `id`                     | default    |
-| GET    | `/users`                                          | `users.read`                                                   | query                                | default    |
-| POST   | `/users`                                          | `users.manage`                                                 | body                                 | default    |
-| GET    | `/users/:id`                                      | `users.read`                                                   | param `id`                           | default    |
-| PATCH  | `/users/:id`                                      | `users.manage`                                                 | body, param `id`                     | default    |
-| POST   | `/users/:id/invitation`                           | `users.manage`                                                 | param `id`                           | default    |
-| POST   | `/users/:id/mfa/reset`                            | `users.manage`                                                 | param `id`                           | default    |
-| POST   | `/users/:id/reset-password`                       | `users.manage`                                                 | body, param `id`                     | default    |
-| POST   | `/users/:id/unlock`                               | `users.manage`                                                 | param `id`                           | default    |
-| GET    | `/users/directory`                                | any of `comments.write`, `governance.manage`                   | query                                | default    |
-| GET    | `/workflow/cases`                                 | authenticated                                                  | query                                | default    |
-| GET    | `/workflow/cases/:id`                             | authenticated                                                  | param `id`                           | default    |
-| POST   | `/workflow/cases/:id/cancel`                      | `workflow.admin`                                               | body, param `id`                     | default    |
-| POST   | `/workflow/cases/:id/comments`                    | authenticated                                                  | body, param `id`                     | default    |
-| POST   | `/workflow/cases/:id/retry`                       | `workflow.admin`                                               | param `id`                           | default    |
-| POST   | `/workflow/cases/:id/withdraw`                    | authenticated                                                  | body, param `id`                     | default    |
-| GET    | `/workflow/catalogue`                             | `workflow.start`                                               | —                                    | default    |
-| GET    | `/workflow/catalogue/:processId`                  | `workflow.start`                                               | param `processId`                    | default    |
-| POST   | `/workflow/catalogue/:processId/start`            | `workflow.start`                                               | body, param `processId`              | default    |
-| GET    | `/workflow/dashboard`                             | any of `workflow.monitor`, `workflow.admin`                    | query                                | default    |
-| GET    | `/workflow/dashboard/export`                      | any of `workflow.monitor`, `workflow.admin`                    | query                                | default    |
-| GET    | `/workflow/departments`                           | authenticated                                                  | —                                    | default    |
-| POST   | `/workflow/files`                                 | authenticated                                                  | body, file                           | default    |
-| GET    | `/workflow/files/:id`                             | authenticated                                                  | param `id`                           | default    |
-| GET    | `/workflow/monitor`                               | any of `workflow.monitor`, `workflow.admin`                    | —                                    | default    |
-| GET    | `/workflow/out-of-office`                         | authenticated                                                  | —                                    | default    |
-| PUT    | `/workflow/out-of-office`                         | authenticated                                                  | body                                 | default    |
-| POST   | `/workflow/processes/:id/check`                   | `processes.read`                                               | body, param `id`                     | default    |
-| GET    | `/workflow/processes/:id/config`                  | `processes.read`                                               | param `id`                           | default    |
-| PUT    | `/workflow/processes/:id/config`                  | any of `workflow.design`, `workflow.admin`                     | body, param `id`                     | default    |
-| POST   | `/workflow/processes/:id/deploy`                  | any of `workflow.design`, `workflow.admin`                     | param `id`                           | default    |
-| GET    | `/workflow/settings`                              | any of `workflow.admin`, `workflow.design`, `workflow.monitor` | —                                    | default    |
-| PUT    | `/workflow/settings`                              | `workflow.admin`                                               | body                                 | default    |
-| GET    | `/workflow/tasks`                                 | authenticated                                                  | query                                | default    |
-| GET    | `/workflow/tasks/:id`                             | authenticated                                                  | param `id`                           | default    |
-| POST   | `/workflow/tasks/:id/claim`                       | authenticated                                                  | param `id`                           | default    |
-| POST   | `/workflow/tasks/:id/complete`                    | authenticated                                                  | body, param `id`                     | default    |
-| POST   | `/workflow/tasks/:id/delegate`                    | authenticated                                                  | body, param `id`                     | default    |
-| PUT    | `/workflow/tasks/:id/draft`                       | authenticated                                                  | body, param `id`                     | default    |
-| POST   | `/workflow/tasks/:id/reassign`                    | `workflow.admin`                                               | body, param `id`                     | default    |
-| POST   | `/workflow/tasks/:id/unclaim`                     | authenticated                                                  | param `id`                           | default    |
-| GET    | `/workflow/tasks/counts`                          | authenticated                                                  | —                                    | default    |
-| GET    | `/workflow/users`                                 | authenticated                                                  | query                                | default    |
-| GET    | `/workflows`                                      | any of `governance.manage`, `processes.read`, `docs.read`      | —                                    | default    |
-| POST   | `/workflows`                                      | `governance.manage`                                            | body                                 | default    |
-| DELETE | `/workflows/:id`                                  | `governance.manage`                                            | param `id`                           | default    |
-| GET    | `/workflows/:id`                                  | any of `governance.manage`, `processes.read`, `docs.read`      | param `id`                           | default    |
-| PUT    | `/workflows/:id`                                  | `governance.manage`                                            | body, param `id`                     | default    |
+| Method | Path (under `/api/v1` unless shown)                        | Access (server guard)                                          | Validated input                      | Rate limit |
+| ------ | ---------------------------------------------------------- | -------------------------------------------------------------- | ------------------------------------ | ---------- |
+| POST   | `/ai/analyse`                                              | authenticated                                                  | body                                 | default    |
+| POST   | `/ai/control-gaps`                                         | authenticated                                                  | body                                 | default    |
+| POST   | `/ai/doc-to-process`                                       | authenticated                                                  | body                                 | default    |
+| POST   | `/ai/generate-doc`                                         | authenticated                                                  | body                                 | default    |
+| POST   | `/ai/generate-process`                                     | authenticated                                                  | body                                 | default    |
+| POST   | `/ai/portal/ask`                                           | authenticated                                                  | body                                 | default    |
+| POST   | `/ai/refine-process`                                       | authenticated                                                  | body                                 | default    |
+| GET    | `/ai/settings`                                             | `settings.manage`                                              | —                                    | default    |
+| PUT    | `/ai/settings`                                             | `settings.manage`                                              | body                                 | default    |
+| POST   | `/ai/settings/test`                                        | `settings.manage`                                              | body                                 | default    |
+| GET    | `/ai/status`                                               | authenticated                                                  | —                                    | default    |
+| POST   | `/ai/summarise`                                            | authenticated                                                  | body                                 | default    |
+| POST   | `/ai/translate`                                            | authenticated                                                  | body                                 | default    |
+| GET    | `/ai/usage`                                                | `ai.usage.read`                                                | query                                | default    |
+| GET    | `/api/public/v1/applications`                              | API key, scope `ea:read`                                       | query                                | default    |
+| GET    | `/api/public/v1/capabilities`                              | API key, scope `ea:read`                                       | query                                | default    |
+| GET    | `/api/public/v1/controls`                                  | API key, scope `grc:read`                                      | query                                | default    |
+| GET    | `/api/public/v1/diagrams`                                  | API key, scope `diagrams:read`                                 | query                                | default    |
+| GET    | `/api/public/v1/diagrams/:id`                              | API key, scope `diagrams:read`                                 | param `id`                           | default    |
+| GET    | `/api/public/v1/diagrams/:id/svg`                          | API key, scope `diagrams:read`                                 | param `id`, query                    | default    |
+| GET    | `/api/public/v1/kpis`                                      | API key, scope `kpis:read`                                     | query                                | default    |
+| GET    | `/api/public/v1/kpis/:id/measurements`                     | API key, scope `kpis:read`                                     | param `id`, query                    | default    |
+| GET    | `/api/public/v1/me`                                        | API key, scope `any`                                           | —                                    | default    |
+| GET    | `/api/public/v1/objects`                                   | API key, scope `objects:read`                                  | query                                | default    |
+| GET    | `/api/public/v1/pages`                                     | API key, scope `pages:read`                                    | query                                | default    |
+| GET    | `/api/public/v1/pages/:id`                                 | API key, scope `pages:read`                                    | param `id`, query                    | default    |
+| GET    | `/api/public/v1/process-house`                             | API key, scope `processes:read`                                | —                                    | default    |
+| GET    | `/api/public/v1/processes`                                 | API key, scope `processes:read`                                | query                                | default    |
+| GET    | `/api/public/v1/processes/:id`                             | API key, scope `processes:read`                                | param `id`                           | default    |
+| GET    | `/api/public/v1/processes/:id/bpmn`                        | API key, scope `processes:read`                                | param `id`, query                    | default    |
+| GET    | `/api/public/v1/processes/:id/svg`                         | API key, scope `processes:read`                                | param `id`, query                    | default    |
+| GET    | `/api/public/v1/processes/:id/versions`                    | API key, scope `processes:read`                                | param `id`                           | default    |
+| GET    | `/api/public/v1/requirements`                              | API key, scope `grc:read`                                      | query                                | default    |
+| GET    | `/api/public/v1/risks`                                     | API key, scope `grc:read`                                      | query                                | default    |
+| GET    | `/api/public/v1/spaces`                                    | API key, scope `pages:read`                                    | query                                | default    |
+| GET    | `/api/public/v1/workflow/cases`                            | API key, scope `workflow:cases:read`                           | query                                | default    |
+| GET    | `/api/public/v1/workflow/statistics`                       | API key, scope `workflow:read`                                 | —                                    | default    |
+| GET    | `/assurance/dashboard`                                     | any of `grc.read`, `audit.manage`, `issues.manage`             | query                                | default    |
+| GET    | `/assurance/dashboard/export`                              | any of `grc.read`, `audit.manage`, `issues.manage`             | query                                | default    |
+| DELETE | `/assurance/files/:id`                                     | authenticated                                                  | param `id`                           | default    |
+| GET    | `/assurance/files/:id`                                     | authenticated                                                  | param `id`                           | default    |
+| GET    | `/assurance/settings`                                      | any of `grc.read`, `issues.manage`, `audit.manage`             | —                                    | default    |
+| PUT    | `/assurance/settings`                                      | `grc.admin`                                                    | body                                 | default    |
+| GET    | `/assurance/tasks`                                         | authenticated                                                  | —                                    | default    |
+| DELETE | `/attachments/:id`                                         | `docs.read` + `docs.edit`                                      | param `id`                           | default    |
+| GET    | `/attachments/:id/content`                                 | `docs.read`                                                    | param `id`                           | default    |
+| GET    | `/audit-logs`                                              | `audit.read`                                                   | query                                | default    |
+| GET    | `/audits`                                                  | any of `audit.manage`, `grc.edit`, `audit.read`                | query                                | default    |
+| POST   | `/audits`                                                  | `audit.manage`                                                 | body                                 | default    |
+| DELETE | `/audits/:id`                                              | `audit.manage`                                                 | param `id`                           | default    |
+| GET    | `/audits/:id`                                              | any of `audit.manage`, `grc.edit`, `audit.read`                | param `id`                           | default    |
+| PATCH  | `/audits/:id`                                              | `audit.manage`                                                 | body, param `id`                     | default    |
+| POST   | `/audits/:id/comments`                                     | `audit.manage`                                                 | body, param `id`                     | default    |
+| POST   | `/audits/:id/findings`                                     | `audit.manage`                                                 | body, param `id`                     | default    |
+| POST   | `/audits/:id/items`                                        | `audit.manage`                                                 | body, param `id`                     | default    |
+| GET    | `/audits/:id/report`                                       | any of `audit.manage`, `grc.edit`, `audit.read`                | param `id`, query                    | default    |
+| POST   | `/audits/:id/status`                                       | `audit.manage`                                                 | body, param `id`                     | default    |
+| DELETE | `/audits/findings/:id`                                     | `audit.manage`                                                 | param `id`                           | default    |
+| GET    | `/audits/findings/:id`                                     | authenticated                                                  | param `id`                           | default    |
+| PATCH  | `/audits/findings/:id`                                     | `audit.manage`                                                 | body, param `id`                     | default    |
+| POST   | `/audits/findings/:id/files`                               | `audit.manage`                                                 | file, param `id`                     | default    |
+| POST   | `/audits/findings/:id/response`                            | authenticated                                                  | body, param `id`                     | default    |
+| DELETE | `/audits/items/:id`                                        | `audit.manage`                                                 | param `id`                           | default    |
+| PATCH  | `/audits/items/:id`                                        | `audit.manage`                                                 | body, param `id`                     | default    |
+| POST   | `/audits/items/:id/files`                                  | `audit.manage`                                                 | file, param `id`                     | default    |
+| GET    | `/audits/universe`                                         | any of `audit.manage`, `grc.edit`, `audit.read`                | query                                | default    |
+| POST   | `/auth/change-password`                                    | authenticated                                                  | body                                 | login      |
+| GET    | `/auth/csrf`                                               | **public**                                                     | —                                    | default    |
+| GET    | `/auth/invitations/:token`                                 | **public**                                                     | param `token`                        | login      |
+| POST   | `/auth/invitations/accept`                                 | **public**                                                     | body                                 | login      |
+| POST   | `/auth/login`                                              | **public**                                                     | body                                 | login      |
+| POST   | `/auth/login/mfa`                                          | **public**                                                     | body                                 | login      |
+| POST   | `/auth/login/mfa/setup`                                    | **public**                                                     | —                                    | login      |
+| POST   | `/auth/login/mfa/setup/confirm`                            | **public**                                                     | body                                 | login      |
+| POST   | `/auth/logout`                                             | **public**                                                     | —                                    | default    |
+| GET    | `/auth/me`                                                 | authenticated                                                  | —                                    | default    |
+| PATCH  | `/auth/me`                                                 | authenticated                                                  | body                                 | default    |
+| GET    | `/auth/mfa`                                                | authenticated                                                  | —                                    | default    |
+| POST   | `/auth/mfa/disable`                                        | authenticated                                                  | body                                 | login      |
+| POST   | `/auth/mfa/enable`                                         | authenticated                                                  | body                                 | login      |
+| POST   | `/auth/mfa/recovery-codes`                                 | authenticated                                                  | body                                 | login      |
+| POST   | `/auth/mfa/setup`                                          | authenticated                                                  | body                                 | login      |
+| GET    | `/auth/options`                                            | **public**                                                     | —                                    | default    |
+| POST   | `/auth/refresh`                                            | **public**                                                     | —                                    | login      |
+| GET    | `/auth/sso/callback`                                       | **public**                                                     | query                                | login      |
+| GET    | `/auth/sso/start`                                          | **public**                                                     | query                                | login      |
+| DELETE | `/comments/:commentId`                                     | `comments.write`                                               | param `commentId`                    | default    |
+| PATCH  | `/comments/:commentId`                                     | `comments.write`                                               | body, param `commentId`              | default    |
+| POST   | `/comments/:commentId/reopen`                              | `comments.write`                                               | param `commentId`                    | default    |
+| POST   | `/comments/:commentId/resolve`                             | `comments.write`                                               | param `commentId`                    | default    |
+| GET    | `/comments/:type/:id`                                      | any of `processes.read`, `docs.read`                           | param `id`, param `type`             | default    |
+| POST   | `/comments/:type/:id`                                      | `comments.write`                                               | body, param `id`, param `type`       | default    |
+| GET    | `/control-tests`                                           | `grc.read`                                                     | query                                | default    |
+| POST   | `/control-tests`                                           | `grc.edit`                                                     | body                                 | default    |
+| DELETE | `/control-tests/:id`                                       | `grc.edit`                                                     | param `id`                           | default    |
+| GET    | `/control-tests/:id`                                       | any of `grc.read`, `controls.test`, `controls.review`          | param `id`                           | default    |
+| POST   | `/control-tests/:id/close`                                 | any of `grc.edit`, `controls.review`                           | param `id`                           | default    |
+| POST   | `/control-tests/:id/comments`                              | any of `grc.read`, `controls.test`, `controls.review`          | body, param `id`                     | default    |
+| POST   | `/control-tests/:id/files`                                 | `controls.test`                                                | file, param `id`                     | default    |
+| PUT    | `/control-tests/:id/results`                               | `controls.test`                                                | body, param `id`                     | default    |
+| POST   | `/control-tests/:id/review`                                | `controls.review`                                              | body, param `id`                     | default    |
+| POST   | `/control-tests/:id/start`                                 | `controls.test`                                                | param `id`                           | default    |
+| POST   | `/control-tests/:id/submit`                                | `controls.test`                                                | param `id`                           | default    |
+| GET    | `/control-tests/plans`                                     | `grc.read`                                                     | query                                | default    |
+| POST   | `/control-tests/plans`                                     | `grc.edit`                                                     | body                                 | default    |
+| DELETE | `/control-tests/plans/:id`                                 | `grc.edit`                                                     | param `id`                           | default    |
+| PATCH  | `/control-tests/plans/:id`                                 | `grc.edit`                                                     | body, param `id`                     | default    |
+| GET    | `/departments`                                             | `departments.read`                                             | —                                    | default    |
+| POST   | `/departments`                                             | `departments.manage`                                           | body                                 | default    |
+| DELETE | `/departments/:id`                                         | `departments.manage`                                           | param `id`                           | default    |
+| PATCH  | `/departments/:id`                                         | `departments.manage`                                           | body, param `id`                     | default    |
+| GET    | `/diagrams`                                                | `processes.read`                                               | query                                | default    |
+| POST   | `/diagrams`                                                | `processes.create`                                             | body                                 | default    |
+| DELETE | `/diagrams/:id`                                            | `processes.delete`                                             | param `id`                           | default    |
+| GET    | `/diagrams/:id`                                            | `processes.read`                                               | param `id`                           | default    |
+| PATCH  | `/diagrams/:id`                                            | any of `processes.edit`, `processes.edit_own`                  | body, param `id`                     | default    |
+| GET    | `/diagrams/:id/content`                                    | `processes.read`                                               | param `id`                           | default    |
+| PUT    | `/diagrams/:id/content`                                    | any of `models.edit`, `models.edit_own`                        | body, param `id`                     | default    |
+| POST   | `/diagrams/:id/convert-to-bpmn`                            | `processes.create`                                             | body, param `id`                     | default    |
+| GET    | `/diagrams/:id/links`                                      | `processes.read`                                               | param `id`                           | default    |
+| POST   | `/diagrams/:id/links`                                      | any of `models.edit`, `models.edit_own`, `grc.edit`            | body, param `id`                     | default    |
+| DELETE | `/diagrams/:id/links/:linkId`                              | any of `models.edit`, `models.edit_own`, `grc.edit`            | param `id`, param `linkId`           | default    |
+| GET    | `/diagrams/:id/versions`                                   | `processes.read`                                               | param `id`                           | default    |
+| POST   | `/diagrams/:id/versions`                                   | any of `models.edit`, `models.edit_own`                        | body, param `id`                     | default    |
+| GET    | `/diagrams/:id/versions/:versionId`                        | `processes.read`                                               | param `id`, param `versionId`        | default    |
+| PATCH  | `/diagrams/:id/versions/:versionId`                        | any of `models.edit`, `models.edit_own`                        | body, param `id`, param `versionId`  | default    |
+| POST   | `/diagrams/:id/versions/:versionId/restore`                | any of `models.edit`, `models.edit_own`                        | body, param `id`, param `versionId`  | default    |
+| GET    | `/diagrams/all`                                            | `processes.read`                                               | —                                    | default    |
+| GET    | `/diagrams/org-source`                                     | `processes.read`                                               | —                                    | default    |
+| GET    | `/diagrams/process-facts`                                  | `processes.read`                                               | query                                | default    |
+| GET    | `/diagrams/role-activities/:roleId`                        | `processes.read`                                               | param `roleId`                       | default    |
+| GET    | `/diagrams/where-used`                                     | `processes.read`                                               | query                                | default    |
+| POST   | `/dictionary/objects/:id/rename`                           | `objects.read` + `processes.read`                              | body, param `id`                     | default    |
+| POST   | `/dictionary/objects/:id/rename-preview`                   | `objects.read` + `processes.read`                              | body, param `id`                     | default    |
+| GET    | `/dictionary/suggest`                                      | `objects.read`                                                 | query                                | default    |
+| POST   | `/dictionary/terms`                                        | `dictionary.propose`                                           | body                                 | default    |
+| PATCH  | `/dictionary/terms/:id`                                    | `dictionary.propose`                                           | body, param `id`                     | default    |
+| POST   | `/dictionary/terms/:id/approve`                            | `dictionary.approve`                                           | param `id`                           | default    |
+| POST   | `/dictionary/terms/:id/reject`                             | `dictionary.approve`                                           | body, param `id`                     | default    |
+| GET    | `/ea/applications`                                         | `ea.read`                                                      | query                                | default    |
+| POST   | `/ea/applications`                                         | `ea.edit`                                                      | body                                 | default    |
+| DELETE | `/ea/applications/:id`                                     | `ea.admin`                                                     | param `id`                           | default    |
+| GET    | `/ea/applications/:id`                                     | `ea.read`                                                      | param `id`                           | default    |
+| PATCH  | `/ea/applications/:id`                                     | `ea.edit`                                                      | body, param `id`                     | default    |
+| GET    | `/ea/applications/:id/impact`                              | `ea.read`                                                      | param `id`                           | default    |
+| GET    | `/ea/applications/:id/impact/export`                       | `ea.read`                                                      | param `id`, query                    | default    |
+| GET    | `/ea/capabilities`                                         | `ea.read`                                                      | —                                    | default    |
+| POST   | `/ea/capabilities`                                         | `ea.edit`                                                      | body                                 | default    |
+| DELETE | `/ea/capabilities/:id`                                     | `ea.admin`                                                     | param `id`                           | default    |
+| GET    | `/ea/capabilities/:id`                                     | `ea.read`                                                      | param `id`                           | default    |
+| PATCH  | `/ea/capabilities/:id`                                     | `ea.edit`                                                      | body, param `id`                     | default    |
+| GET    | `/ea/capability-map`                                       | `ea.read`                                                      | —                                    | default    |
+| GET    | `/ea/data-objects`                                         | `ea.read`                                                      | query                                | default    |
+| POST   | `/ea/data-objects`                                         | `ea.edit`                                                      | body                                 | default    |
+| DELETE | `/ea/data-objects/:id`                                     | `ea.admin`                                                     | param `id`                           | default    |
+| GET    | `/ea/data-objects/:id`                                     | `ea.read`                                                      | param `id`                           | default    |
+| PATCH  | `/ea/data-objects/:id`                                     | `ea.edit`                                                      | body, param `id`                     | default    |
+| GET    | `/ea/export/:kind`                                         | `ea.read`                                                      | param `kind`, query                  | default    |
+| POST   | `/ea/import/:kind`                                         | `ea.edit`                                                      | file, param `kind`, query            | default    |
+| GET    | `/ea/interfaces`                                           | `ea.read`                                                      | query                                | default    |
+| POST   | `/ea/interfaces`                                           | `ea.edit`                                                      | body                                 | default    |
+| DELETE | `/ea/interfaces/:id`                                       | `ea.admin`                                                     | param `id`                           | default    |
+| GET    | `/ea/interfaces/:id`                                       | `ea.read`                                                      | param `id`                           | default    |
+| PATCH  | `/ea/interfaces/:id`                                       | `ea.edit`                                                      | body, param `id`                     | default    |
+| GET    | `/ea/landscape`                                            | `ea.read`                                                      | query                                | default    |
+| GET    | `/ea/template/:kind`                                       | `ea.edit`                                                      | param `kind`, query                  | default    |
+| GET    | `/ea/trace`                                                | `ea.read`                                                      | query                                | default    |
+| GET    | `/ea/trace/export`                                         | `ea.read`                                                      | query                                | default    |
+| GET    | `/feedback`                                                | authenticated                                                  | query                                | default    |
+| POST   | `/feedback`                                                | `portal.read`                                                  | body                                 | default    |
+| PATCH  | `/feedback/:id`                                            | authenticated                                                  | body, param `id`                     | default    |
+| GET    | `/governance/:type/:id`                                    | any of `processes.read`, `docs.read`                           | param `id`, param `type`             | default    |
+| PATCH  | `/governance/:type/:id`                                    | any of `processes.read`, `docs.read`                           | body, param `id`, param `type`       | default    |
+| POST   | `/governance/:type/:id/archive`                            | any of `processes.read`, `docs.read`                           | body, param `id`, param `type`       | default    |
+| POST   | `/governance/:type/:id/confirm-review`                     | any of `processes.read`, `docs.read`                           | param `id`, param `type`             | default    |
+| GET    | `/governance/:type/:id/publications`                       | any of `processes.read`, `docs.read`                           | param `id`, param `type`             | default    |
+| POST   | `/governance/:type/:id/publish`                            | any of `processes.read`, `docs.read`                           | body, param `id`, param `type`       | default    |
+| POST   | `/governance/:type/:id/restore`                            | any of `processes.read`, `docs.read`                           | param `id`, param `type`             | default    |
+| GET    | `/governance/:type/:id/reviews`                            | any of `processes.read`, `docs.read`                           | param `id`, param `type`             | default    |
+| POST   | `/governance/:type/:id/submit`                             | any of `processes.read`, `docs.read`                           | body, param `id`, param `type`       | default    |
+| POST   | `/governance/:type/:id/withdraw`                           | any of `processes.read`, `docs.read`                           | param `id`, param `type`             | default    |
+| GET    | `/governance/dashboard`                                    | `governance.dashboard`                                         | —                                    | default    |
+| POST   | `/governance/reminders/run`                                | `governance.manage`                                            | —                                    | default    |
+| GET    | `/governance/settings`                                     | any of `governance.manage`, `processes.read`, `docs.read`      | —                                    | default    |
+| PUT    | `/governance/settings`                                     | `governance.manage`                                            | body                                 | default    |
+| PUT    | `/governance/spaces/:spaceId/workflow`                     | any of `governance.manage`, `docs.read`                        | body, param `spaceId`                | default    |
+| GET    | `/grc/changes`                                             | `grc.read`                                                     | query                                | default    |
+| GET    | `/grc/changes/:id`                                         | `grc.read`                                                     | param `id`                           | default    |
+| POST   | `/grc/changes/:id/decision`                                | `grc.read` + `reviews.decide`                                  | body, param `id`                     | default    |
+| POST   | `/grc/changes/:id/withdraw`                                | `grc.edit`                                                     | param `id`                           | default    |
+| POST   | `/grc/changes/batches/:batchId/decision`                   | `grc.read` + `reviews.decide`                                  | body, param `batchId`                | default    |
+| GET    | `/grc/controls`                                            | `grc.read`                                                     | query                                | default    |
+| POST   | `/grc/controls`                                            | any of `grc.edit`, `grc.propose`                               | body                                 | default    |
+| DELETE | `/grc/controls/:id`                                        | any of `grc.edit`, `grc.propose`                               | param `id`                           | default    |
+| GET    | `/grc/controls/:id`                                        | `grc.read`                                                     | param `id`                           | default    |
+| PATCH  | `/grc/controls/:id`                                        | any of `grc.edit`, `grc.propose`                               | body, param `id`                     | default    |
+| GET    | `/grc/dashboard`                                           | `grc.read`                                                     | query                                | default    |
+| GET    | `/grc/dashboard/uncovered-steps`                           | `grc.read`                                                     | query                                | default    |
+| GET    | `/grc/export/:kind`                                        | `grc.read`                                                     | param `kind`, query                  | default    |
+| POST   | `/grc/import/:kind`                                        | `grc.edit`                                                     | file, param `kind`, query            | default    |
+| POST   | `/grc/items/:id/comments`                                  | `grc.read` + `comments.write`                                  | body, param `id`                     | default    |
+| GET    | `/grc/items/:id/timeline`                                  | `grc.read`                                                     | param `id`                           | default    |
+| GET    | `/grc/processes/:id`                                       | `grc.read` + `processes.read`                                  | param `id`                           | default    |
+| GET    | `/grc/processes/:id/gaps`                                  | `grc.read` + `processes.read`                                  | param `id`                           | default    |
+| GET    | `/grc/rcm`                                                 | `grc.read`                                                     | query                                | default    |
+| GET    | `/grc/requirements`                                        | `grc.read`                                                     | query                                | default    |
+| POST   | `/grc/requirements`                                        | `grc.edit`                                                     | body                                 | default    |
+| DELETE | `/grc/requirements/:id`                                    | `grc.admin`                                                    | param `id`                           | default    |
+| GET    | `/grc/requirements/:id`                                    | `grc.read`                                                     | param `id`                           | default    |
+| PATCH  | `/grc/requirements/:id`                                    | `grc.edit`                                                     | body, param `id`                     | default    |
+| GET    | `/grc/risks`                                               | `grc.read`                                                     | query                                | default    |
+| POST   | `/grc/risks`                                               | any of `grc.edit`, `grc.propose`                               | body                                 | default    |
+| DELETE | `/grc/risks/:id`                                           | any of `grc.edit`, `grc.propose`                               | param `id`                           | default    |
+| GET    | `/grc/risks/:id`                                           | `grc.read`                                                     | param `id`                           | default    |
+| PATCH  | `/grc/risks/:id`                                           | any of `grc.edit`, `grc.propose`                               | body, param `id`                     | default    |
+| GET    | `/grc/settings`                                            | any of `grc.read`, `processes.read`                            | —                                    | default    |
+| PUT    | `/grc/settings`                                            | `grc.admin`                                                    | body                                 | default    |
+| GET    | `/grc/template/:kind`                                      | `grc.edit`                                                     | param `kind`, query                  | default    |
+| GET    | `/health`                                                  | **public**                                                     | —                                    | skip       |
+| GET    | `/imports`                                                 | any of `import.manage`, `import.own`                           | query                                | default    |
+| POST   | `/imports`                                                 | any of `import.manage`, `import.own`                           | body                                 | default    |
+| DELETE | `/imports/:id`                                             | any of `import.manage`, `import.own`                           | param `id`                           | default    |
+| GET    | `/imports/:id`                                             | any of `import.manage`, `import.own`                           | param `id`                           | default    |
+| POST   | `/imports/:id/apply`                                       | any of `import.manage`, `import.own`                           | param `id`                           | default    |
+| POST   | `/imports/:id/cancel`                                      | any of `import.manage`, `import.own`                           | param `id`                           | default    |
+| GET    | `/imports/:id/files/:fileId`                               | any of `import.manage`, `import.own`                           | param `fileId`, param `id`           | default    |
+| GET    | `/imports/:id/items`                                       | any of `import.manage`, `import.own`                           | param `id`, query                    | default    |
+| PUT    | `/imports/:id/items/:ref`                                  | any of `import.manage`, `import.own`                           | body, param `id`, param `ref`        | default    |
+| PUT    | `/imports/:id/options`                                     | any of `import.manage`, `import.own`                           | body, param `id`                     | default    |
+| GET    | `/imports/:id/records`                                     | any of `import.manage`, `import.own`                           | param `id`, query                    | default    |
+| GET    | `/imports/:id/report`                                      | any of `import.manage`, `import.own`                           | param `id`, query                    | default    |
+| PUT    | `/imports/:id/suggestions`                                 | any of `import.manage`, `import.own`                           | body, param `id`                     | default    |
+| GET    | `/imports/:id/undo`                                        | any of `import.manage`, `import.own`                           | param `id`                           | default    |
+| POST   | `/imports/:id/undo`                                        | any of `import.manage`, `import.own`                           | param `id`                           | default    |
+| GET    | `/imports/kinds`                                           | any of `import.manage`, `import.own`                           | —                                    | default    |
+| GET    | `/imports/settings`                                        | any of `import.manage`, `import.own`, `settings.manage`        | —                                    | default    |
+| PUT    | `/imports/settings`                                        | `settings.manage`                                              | body                                 | default    |
+| GET    | `/imports/templates/:kind`                                 | any of `import.manage`, `import.own`                           | param `kind`, query                  | default    |
+| GET    | `/integrations/api-keys`                                   | any of `settings.manage`, `integrations.read`                  | —                                    | default    |
+| POST   | `/integrations/api-keys`                                   | `settings.manage`                                              | body                                 | default    |
+| GET    | `/integrations/api-keys/:id`                               | any of `settings.manage`, `integrations.read`                  | param `id`                           | default    |
+| PATCH  | `/integrations/api-keys/:id`                               | `settings.manage`                                              | body, param `id`                     | default    |
+| POST   | `/integrations/api-keys/:id/revoke`                        | `settings.manage`                                              | param `id`                           | default    |
+| POST   | `/integrations/api-keys/:id/rotate`                        | `settings.manage`                                              | param `id`                           | default    |
+| GET    | `/integrations/api-keys/:id/usage`                         | any of `settings.manage`, `integrations.read`                  | param `id`, query                    | default    |
+| GET    | `/integrations/api-settings`                               | any of `settings.manage`, `integrations.read`                  | —                                    | default    |
+| PUT    | `/integrations/api-settings`                               | `settings.manage`                                              | body                                 | default    |
+| GET    | `/integrations/git`                                        | `settings.manage`                                              | —                                    | default    |
+| PUT    | `/integrations/git`                                        | `settings.manage`                                              | body                                 | default    |
+| POST   | `/integrations/git/items/:id/retry`                        | `settings.manage`                                              | param `id`                           | default    |
+| GET    | `/integrations/git/status`                                 | `settings.manage`                                              | —                                    | default    |
+| POST   | `/integrations/git/sync`                                   | `settings.manage`                                              | body                                 | default    |
+| POST   | `/integrations/git/test`                                   | `settings.manage`                                              | body                                 | default    |
+| GET    | `/integrations/renderer`                                   | any of `settings.manage`, `integrations.read`                  | —                                    | default    |
+| GET    | `/integrations/salesforce`                                 | any of `settings.manage`, `kpi.sync`                           | —                                    | default    |
+| PUT    | `/integrations/salesforce`                                 | `settings.manage`                                              | body                                 | default    |
+| GET    | `/integrations/salesforce/describe/:object`                | `settings.manage`                                              | param `object`                       | default    |
+| POST   | `/integrations/salesforce/preview`                         | any of `settings.manage`, `kpi.sync`                           | —                                    | default    |
+| GET    | `/integrations/salesforce/runs`                            | any of `settings.manage`, `kpi.sync`                           | —                                    | default    |
+| GET    | `/integrations/salesforce/runs/:id/warnings`               | any of `settings.manage`, `kpi.sync`                           | param `id`                           | default    |
+| POST   | `/integrations/salesforce/sync`                            | any of `settings.manage`, `kpi.sync`                           | —                                    | default    |
+| POST   | `/integrations/salesforce/test`                            | `settings.manage`                                              | —                                    | default    |
+| GET    | `/integrations/webhook-settings`                           | any of `settings.manage`, `integrations.read`                  | —                                    | default    |
+| PUT    | `/integrations/webhook-settings`                           | `settings.manage`                                              | body                                 | default    |
+| GET    | `/integrations/webhooks`                                   | any of `settings.manage`, `integrations.read`                  | query                                | default    |
+| POST   | `/integrations/webhooks`                                   | `settings.manage`                                              | body                                 | default    |
+| DELETE | `/integrations/webhooks/:id`                               | `settings.manage`                                              | param `id`                           | default    |
+| GET    | `/integrations/webhooks/:id`                               | any of `settings.manage`, `integrations.read`                  | param `id`                           | default    |
+| PATCH  | `/integrations/webhooks/:id`                               | `settings.manage`                                              | body, param `id`                     | default    |
+| GET    | `/integrations/webhooks/:id/deliveries`                    | any of `settings.manage`, `integrations.read`                  | param `id`, query                    | default    |
+| POST   | `/integrations/webhooks/:id/deliveries/:deliveryId/resend` | `settings.manage`                                              | param `deliveryId`, param `id`       | default    |
+| POST   | `/integrations/webhooks/:id/secret`                        | `settings.manage`                                              | param `id`                           | default    |
+| POST   | `/integrations/webhooks/:id/test`                          | `settings.manage`                                              | param `id`                           | default    |
+| GET    | `/issues`                                                  | any of `grc.read`, `issues.manage`                             | query                                | default    |
+| POST   | `/issues`                                                  | `issues.manage`                                                | body                                 | default    |
+| DELETE | `/issues/:id`                                              | `issues.manage` + `grc.admin`                                  | param `id`                           | default    |
+| GET    | `/issues/:id`                                              | authenticated                                                  | param `id`                           | default    |
+| PATCH  | `/issues/:id`                                              | authenticated                                                  | body, param `id`                     | default    |
+| POST   | `/issues/:id/actions`                                      | authenticated                                                  | body, param `id`                     | default    |
+| POST   | `/issues/:id/comments`                                     | authenticated                                                  | body, param `id`                     | default    |
+| POST   | `/issues/:id/files`                                        | authenticated                                                  | file, param `id`                     | default    |
+| POST   | `/issues/:id/transition`                                   | authenticated                                                  | body, param `id`                     | default    |
+| DELETE | `/issues/actions/:id`                                      | authenticated                                                  | param `id`                           | default    |
+| PATCH  | `/issues/actions/:id`                                      | authenticated                                                  | body, param `id`                     | default    |
+| POST   | `/issues/actions/:id/files`                                | authenticated                                                  | file, param `id`                     | default    |
+| GET    | `/kpis`                                                    | `kpi.read`                                                     | query                                | default    |
+| POST   | `/kpis`                                                    | `kpi.edit`                                                     | body                                 | default    |
+| DELETE | `/kpis/:id`                                                | `kpi.edit`                                                     | param `id`                           | default    |
+| GET    | `/kpis/:id`                                                | `kpi.read`                                                     | param `id`                           | default    |
+| PATCH  | `/kpis/:id`                                                | `kpi.edit`                                                     | body, param `id`                     | default    |
+| PUT    | `/kpis/:id/measurements`                                   | any of `kpi.edit`, `kpi.measure`                               | body, param `id`                     | default    |
+| DELETE | `/kpis/:id/measurements/:measurementId`                    | any of `kpi.edit`, `kpi.measure`                               | param `id`, param `measurementId`    | default    |
+| POST   | `/kpis/:id/recalculate`                                    | `kpi.edit`                                                     | param `id`                           | default    |
+| GET    | `/kpis/export/:kind`                                       | `kpi.read`                                                     | param `kind`, query                  | default    |
+| POST   | `/kpis/import/:kind`                                       | any of `kpi.edit`, `kpi.measure`                               | file, param `kind`, query            | default    |
+| POST   | `/kpis/measurements/:measurementId/files`                  | any of `kpi.edit`, `kpi.measure`                               | file, param `measurementId`          | default    |
+| GET    | `/kpis/objectives`                                         | `kpi.read`                                                     | —                                    | default    |
+| POST   | `/kpis/objectives`                                         | `kpi.edit`                                                     | body                                 | default    |
+| DELETE | `/kpis/objectives/:id`                                     | `kpi.edit`                                                     | param `id`                           | default    |
+| PATCH  | `/kpis/objectives/:id`                                     | `kpi.edit`                                                     | body, param `id`                     | default    |
+| GET    | `/kpis/processes/:processId`                               | `kpi.read`                                                     | param `processId`                    | default    |
+| GET    | `/kpis/scorecard`                                          | `kpi.read`                                                     | query                                | default    |
+| GET    | `/kpis/scorecard/export`                                   | `kpi.read`                                                     | query                                | default    |
+| GET    | `/kpis/settings`                                           | any of `kpi.read`, `portal.manage`                             | —                                    | default    |
+| PUT    | `/kpis/settings`                                           | `kpi.edit`                                                     | body                                 | default    |
+| GET    | `/kpis/tasks`                                              | any of `kpi.edit`, `kpi.measure`                               | —                                    | default    |
+| GET    | `/kpis/template/:kind`                                     | any of `kpi.edit`, `kpi.measure`                               | param `kind`, query                  | default    |
+| GET    | `/migration-ai/proposals`                                  | `import.manage`                                                | query                                | default    |
+| GET    | `/migration-ai/proposals/:id`                              | `import.manage`                                                | param `id`                           | default    |
+| POST   | `/migration-ai/proposals/:id/accept`                       | `import.manage`                                                | body, param `id`                     | default    |
+| POST   | `/migration-ai/proposals/:id/reject`                       | `import.manage`                                                | param `id`                           | default    |
+| POST   | `/migration-ai/run`                                        | `import.manage`                                                | body                                 | default    |
+| POST   | `/migration/bulk`                                          | `import.manage`                                                | body                                 | default    |
+| GET    | `/migration/dashboard`                                     | any of `import.manage`, `governance.dashboard`                 | query                                | default    |
+| GET    | `/migration/dashboard/export`                              | any of `import.manage`, `governance.dashboard`                 | query                                | default    |
+| GET    | `/migration/items`                                         | any of `import.manage`, `governance.dashboard`                 | query                                | default    |
+| GET    | `/migration/my-drafts`                                     | authenticated                                                  | —                                    | default    |
+| GET    | `/mining/jobs/:id`                                         | `mining.read`                                                  | param `id`, query                    | default    |
+| POST   | `/mining/jobs/:id/cancel`                                  | `mining.read`                                                  | param `id`                           | default    |
+| POST   | `/mining/kpis/:kpiId/recalculate`                          | `kpi.edit`                                                     | param `kpiId`                        | default    |
+| GET    | `/mining/logs`                                             | `mining.read`                                                  | query                                | default    |
+| DELETE | `/mining/logs/:id`                                         | `mining.manage`                                                | param `id`                           | default    |
+| GET    | `/mining/logs/:id`                                         | `mining.read`                                                  | param `id`                           | default    |
+| PATCH  | `/mining/logs/:id`                                         | `mining.manage`                                                | body, param `id`                     | default    |
+| GET    | `/mining/logs/:id/activities`                              | `mining.read`                                                  | param `id`                           | default    |
+| PUT    | `/mining/logs/:id/activities`                              | `mining.manage`                                                | body, param `id`                     | default    |
+| POST   | `/mining/logs/:id/activities/auto-match`                   | `mining.manage`                                                | param `id`                           | default    |
+| POST   | `/mining/logs/:id/analysis`                                | `mining.read`                                                  | body, param `id`                     | default    |
+| GET    | `/mining/logs/:id/cases/:caseId`                           | `mining.read`                                                  | param `caseId`, param `id`           | default    |
+| POST   | `/mining/logs/:id/conformance`                             | `mining.read`                                                  | body, param `id`                     | default    |
+| POST   | `/mining/logs/:id/discover`                                | `mining.manage` + `processes.create`                           | body, param `id`                     | default    |
+| POST   | `/mining/logs/:id/export`                                  | `mining.read`                                                  | body, param `id`                     | default    |
+| GET    | `/mining/logs/:id/grants`                                  | `mining.read`                                                  | param `id`                           | default    |
+| PUT    | `/mining/logs/:id/grants`                                  | `mining.manage`                                                | body, param `id`                     | default    |
+| POST   | `/mining/logs/:id/import`                                  | `mining.manage`                                                | param `id`                           | default    |
+| PUT    | `/mining/logs/:id/mapping`                                 | `mining.manage`                                                | body, param `id`                     | default    |
+| GET    | `/mining/logs/:id/presets`                                 | `mining.read`                                                  | param `id`                           | default    |
+| POST   | `/mining/logs/:id/presets`                                 | `mining.read`                                                  | body, param `id`                     | default    |
+| GET    | `/mining/logs/:id/preview`                                 | `mining.manage`                                                | param `id`, query                    | default    |
+| GET    | `/mining/logs/:id/step-suggestions`                        | `mining.read`                                                  | param `id`                           | default    |
+| POST   | `/mining/logs/:id/step-suggestions/apply`                  | `mining.read`                                                  | body, param `id`                     | default    |
+| POST   | `/mining/logs/:id/validate`                                | `mining.manage`                                                | param `id`                           | default    |
+| POST   | `/mining/logs/processhub`                                  | `mining.manage`                                                | body                                 | default    |
+| POST   | `/mining/logs/upload`                                      | `mining.manage`                                                | body, file                           | default    |
+| GET    | `/mining/portal/processes/:processId/performance`          | `portal.read`                                                  | param `processId`                    | default    |
+| DELETE | `/mining/presets/:id`                                      | `mining.read`                                                  | param `id`                           | default    |
+| GET    | `/mining/processes/:processId/logs`                        | `mining.read`                                                  | param `processId`                    | default    |
+| GET    | `/mining/settings`                                         | any of `mining.read`, `settings.manage`                        | —                                    | default    |
+| PUT    | `/mining/settings`                                         | `settings.manage`                                              | body                                 | default    |
+| GET    | `/mining/templates`                                        | `mining.manage`                                                | —                                    | default    |
+| POST   | `/mining/templates`                                        | `mining.manage`                                                | body                                 | default    |
+| DELETE | `/mining/templates/:id`                                    | `mining.manage`                                                | param `id`                           | default    |
+| GET    | `/notifications`                                           | authenticated                                                  | query                                | default    |
+| POST   | `/notifications/:id/read`                                  | authenticated                                                  | param `id`                           | default    |
+| GET    | `/notifications/preferences`                               | authenticated                                                  | —                                    | default    |
+| PUT    | `/notifications/preferences`                               | authenticated                                                  | body                                 | default    |
+| POST   | `/notifications/read-all`                                  | authenticated                                                  | —                                    | default    |
+| GET    | `/notifications/unread-count`                              | authenticated                                                  | —                                    | default    |
+| GET    | `/objects`                                                 | `objects.read`                                                 | query                                | default    |
+| POST   | `/objects`                                                 | `objects.manage`                                               | body                                 | default    |
+| DELETE | `/objects/:id`                                             | `objects.manage`                                               | param `id`                           | default    |
+| GET    | `/objects/:id`                                             | `objects.read`                                                 | param `id`                           | default    |
+| PATCH  | `/objects/:id`                                             | `objects.manage`                                               | body, param `id`                     | default    |
+| GET    | `/objects/:id/pages`                                       | `docs.read` + `objects.read`                                   | param `id`                           | default    |
+| GET    | `/objects/:id/usage`                                       | `objects.read` + `processes.read`                              | param `id`                           | default    |
+| DELETE | `/pages/:id`                                               | `docs.read` + `docs.edit`                                      | param `id`                           | default    |
+| GET    | `/pages/:id`                                               | `docs.read`                                                    | param `id`                           | default    |
+| PUT    | `/pages/:id`                                               | `docs.read` + `docs.edit`                                      | body, param `id`                     | default    |
+| GET    | `/pages/:id/attachments`                                   | `docs.read`                                                    | param `id`                           | default    |
+| POST   | `/pages/:id/attachments`                                   | `docs.read` + `docs.edit`                                      | file, param `id`                     | default    |
+| DELETE | `/pages/:id/draft`                                         | `docs.read` + `docs.edit`                                      | param `id`                           | default    |
+| GET    | `/pages/:id/draft`                                         | `docs.read` + `docs.edit`                                      | param `id`                           | default    |
+| PUT    | `/pages/:id/draft`                                         | `docs.read` + `docs.edit`                                      | body, param `id`                     | default    |
+| GET    | `/pages/:id/export/markdown`                               | `docs.read`                                                    | param `id`, query `lang`             | default    |
+| GET    | `/pages/:id/links`                                         | `docs.read`                                                    | param `id`                           | default    |
+| POST   | `/pages/:id/links`                                         | `docs.read` + `docs.edit`                                      | body, param `id`                     | default    |
+| DELETE | `/pages/:id/links/:linkId`                                 | `docs.read` + `docs.edit`                                      | param `id`, param `linkId`           | default    |
+| POST   | `/pages/:id/move`                                          | `docs.read` + `docs.edit`                                      | body, param `id`                     | default    |
+| DELETE | `/pages/:id/purge`                                         | `docs.read` + `docs.manage`                                    | param `id`                           | default    |
+| POST   | `/pages/:id/restore`                                       | `docs.read` + `docs.edit`                                      | param `id`                           | default    |
+| GET    | `/pages/:id/versions`                                      | `docs.read`                                                    | param `id`                           | default    |
+| GET    | `/pages/:id/versions/:versionId`                           | `docs.read`                                                    | param `id`, param `versionId`        | default    |
+| PATCH  | `/pages/:id/versions/:versionId`                           | `docs.read` + `docs.edit`                                      | body, param `id`, param `versionId`  | default    |
+| POST   | `/pages/:id/versions/:versionId/restore`                   | `docs.read` + `docs.edit`                                      | body, param `id`, param `versionId`  | default    |
+| GET    | `/portal/:type/:id/feedback`                               | `portal.read`                                                  | param `id`, param `type`             | default    |
+| GET    | `/portal/attachments/:id/content`                          | `portal.read`                                                  | param `id`                           | default    |
+| GET    | `/portal/diagrams`                                         | `portal.read`                                                  | query                                | default    |
+| GET    | `/portal/diagrams/:id`                                     | `portal.read`                                                  | param `id`                           | default    |
+| GET    | `/portal/home`                                             | `portal.read`                                                  | —                                    | default    |
+| GET    | `/portal/my`                                               | `portal.read`                                                  | —                                    | default    |
+| GET    | `/portal/pages/:id`                                        | `portal.read`                                                  | param `id`                           | default    |
+| GET    | `/portal/processes`                                        | `portal.read`                                                  | —                                    | default    |
+| GET    | `/portal/processes/:id`                                    | `portal.read`                                                  | param `id`                           | default    |
+| GET    | `/portal/search`                                           | `portal.read`                                                  | query                                | default    |
+| GET    | `/portal/settings`                                         | `portal.manage`                                                | —                                    | default    |
+| PUT    | `/portal/settings`                                         | `portal.manage`                                                | body                                 | default    |
+| GET    | `/portal/spaces`                                           | `portal.read`                                                  | —                                    | default    |
+| GET    | `/portal/spaces/:id/pages`                                 | `portal.read`                                                  | param `id`                           | default    |
+| GET    | `/processes`                                               | `processes.read`                                               | query                                | default    |
+| POST   | `/processes`                                               | `processes.create`                                             | body                                 | default    |
+| DELETE | `/processes/:id`                                           | `processes.delete`                                             | param `id`                           | default    |
+| GET    | `/processes/:id`                                           | `processes.read`                                               | param `id`                           | default    |
+| PATCH  | `/processes/:id`                                           | any of `processes.edit`, `processes.edit_own`                  | body, param `id`                     | default    |
+| GET    | `/processes/:id/links`                                     | `processes.read`                                               | param `id`                           | default    |
+| POST   | `/processes/:id/links`                                     | any of `models.edit`, `models.edit_own`, `grc.edit`            | body, param `id`                     | default    |
+| DELETE | `/processes/:id/links/:linkId`                             | any of `models.edit`, `models.edit_own`, `grc.edit`            | param `id`, param `linkId`           | default    |
+| GET    | `/processes/:id/model`                                     | `processes.read`                                               | param `id`                           | default    |
+| PUT    | `/processes/:id/model`                                     | any of `models.edit`, `models.edit_own`                        | body, param `id`                     | default    |
+| POST   | `/processes/:id/move`                                      | `processes.edit`                                               | body, param `id`                     | default    |
+| GET    | `/processes/:id/pages`                                     | `docs.read` + `processes.read`                                 | param `id`                           | default    |
+| GET    | `/processes/:id/versions`                                  | `processes.read`                                               | param `id`                           | default    |
+| POST   | `/processes/:id/versions`                                  | any of `models.edit`, `models.edit_own`                        | body, param `id`                     | default    |
+| GET    | `/processes/:id/versions/:versionId`                       | `processes.read`                                               | param `id`, param `versionId`        | default    |
+| PATCH  | `/processes/:id/versions/:versionId`                       | any of `models.edit`, `models.edit_own`                        | body, param `id`, param `versionId`  | default    |
+| POST   | `/processes/:id/versions/:versionId/restore`               | any of `models.edit`, `models.edit_own`                        | body, param `id`, param `versionId`  | default    |
+| GET    | `/processes/tree`                                          | `processes.read`                                               | —                                    | default    |
+| POST   | `/reports/handbook`                                        | any of `processes.read`, `portal.read`                         | body                                 | default    |
+| POST   | `/reports/handbook/plan`                                   | any of `processes.read`, `portal.read`                         | body                                 | default    |
+| GET    | `/reports/objects/:id`                                     | `objects.read` + `processes.read`                              | param `id`, query                    | default    |
+| GET    | `/reports/raci/:processId`                                 | any of `processes.read`, `portal.read`                         | param `processId`, query             | default    |
+| GET    | `/repository-export`                                       | `export.full`                                                  | —                                    | default    |
+| GET    | `/reviews/:id`                                             | authenticated                                                  | param `id`                           | default    |
+| POST   | `/reviews/:id/decision`                                    | authenticated                                                  | body, param `id`                     | default    |
+| GET    | `/roles`                                                   | any of `roles.read`, `users.manage`                            | —                                    | default    |
+| GET    | `/search`                                                  | any of `docs.read`, `processes.read`                           | query                                | default    |
+| GET    | `/settings`                                                | `settings.manage`                                              | —                                    | default    |
+| PATCH  | `/settings`                                                | `settings.manage`                                              | body                                 | default    |
+| GET    | `/settings/auth`                                           | `settings.manage`                                              | —                                    | default    |
+| PUT    | `/settings/auth`                                           | `settings.manage`                                              | body                                 | default    |
+| POST   | `/settings/auth/test`                                      | `settings.manage`                                              | body                                 | default    |
+| DELETE | `/settings/diagram-theme`                                  | `settings.manage`                                              | —                                    | default    |
+| PUT    | `/settings/diagram-theme`                                  | `settings.manage`                                              | body                                 | default    |
+| POST   | `/settings/diagram-theme/apply`                            | `settings.manage`                                              | body                                 | default    |
+| GET    | `/settings/diagram-theme/notice`                           | `settings.manage`                                              | —                                    | default    |
+| POST   | `/settings/diagram-theme/notice/dismiss`                   | `settings.manage`                                              | —                                    | default    |
+| GET    | `/settings/email`                                          | `settings.manage`                                              | —                                    | default    |
+| PUT    | `/settings/email`                                          | `settings.manage`                                              | body                                 | default    |
+| POST   | `/settings/email/test`                                     | `settings.manage`                                              | body                                 | default    |
+| DELETE | `/settings/logo`                                           | `settings.manage`                                              | —                                    | default    |
+| GET    | `/settings/logo`                                           | **public**                                                     | —                                    | default    |
+| POST   | `/settings/logo`                                           | `settings.manage`                                              | file                                 | default    |
+| GET    | `/settings/modeling-conventions`                           | `processes.read`                                               | —                                    | default    |
+| PUT    | `/settings/modeling-conventions`                           | `conventions.manage`                                           | body                                 | default    |
+| GET    | `/settings/public`                                         | **public**                                                     | —                                    | default    |
+| GET    | `/simulations`                                             | `mining.read`                                                  | query                                | default    |
+| POST   | `/simulations`                                             | `mining.manage`                                                | body                                 | default    |
+| DELETE | `/simulations/:id`                                         | `mining.manage`                                                | param `id`                           | default    |
+| GET    | `/simulations/:id`                                         | `mining.read`                                                  | param `id`                           | default    |
+| PATCH  | `/simulations/:id`                                         | `mining.manage`                                                | body, param `id`                     | default    |
+| POST   | `/simulations/:id/ai/explain`                              | `mining.read`                                                  | param `id`                           | default    |
+| POST   | `/simulations/:id/ai/suggest`                              | `mining.read`                                                  | param `id`                           | default    |
+| GET    | `/simulations/:id/export`                                  | `mining.read`                                                  | param `id`                           | default    |
+| POST   | `/simulations/:id/run`                                     | `mining.manage`                                                | body, param `id`                     | default    |
+| POST   | `/simulations/:id/scenarios`                               | `mining.manage`                                                | body, param `id`                     | default    |
+| DELETE | `/simulations/:id/scenarios/:scenarioId`                   | `mining.manage`                                                | param `id`, param `scenarioId`       | default    |
+| PATCH  | `/simulations/:id/scenarios/:scenarioId`                   | `mining.manage`                                                | body, param `id`, param `scenarioId` | default    |
+| GET    | `/simulations/defaults`                                    | `mining.read`                                                  | query                                | default    |
+| GET    | `/simulations/holidays`                                    | any of `mining.read`, `settings.manage`                        | —                                    | default    |
+| PUT    | `/simulations/holidays`                                    | any of `settings.manage`, `departments.manage`                 | body                                 | default    |
+| GET    | `/spaces`                                                  | `docs.read`                                                    | —                                    | default    |
+| POST   | `/spaces`                                                  | `docs.manage`                                                  | body                                 | default    |
+| DELETE | `/spaces/:id`                                              | `docs.manage`                                                  | param `id`                           | default    |
+| GET    | `/spaces/:id`                                              | `docs.read`                                                    | param `id`                           | default    |
+| PATCH  | `/spaces/:id`                                              | `docs.read`                                                    | body, param `id`                     | default    |
+| GET    | `/spaces/:id/permissions`                                  | `docs.read`                                                    | param `id`                           | default    |
+| PUT    | `/spaces/:id/permissions`                                  | `docs.read`                                                    | body, param `id`                     | default    |
+| GET    | `/spaces/:spaceId/pages`                                   | `docs.read`                                                    | param `spaceId`                      | default    |
+| POST   | `/spaces/:spaceId/pages`                                   | `docs.read` + `docs.edit`                                      | body, param `spaceId`                | default    |
+| GET    | `/spaces/:spaceId/trash`                                   | `docs.read` + `docs.edit`                                      | param `spaceId`                      | default    |
+| GET    | `/surveys/campaigns`                                       | any of `surveys.manage`, `processes.read`                      | query                                | default    |
+| POST   | `/surveys/campaigns`                                       | `surveys.manage`                                               | body                                 | default    |
+| DELETE | `/surveys/campaigns/:id`                                   | `surveys.manage`                                               | param `id`                           | default    |
+| GET    | `/surveys/campaigns/:id`                                   | any of `surveys.manage`, `processes.read`                      | param `id`                           | default    |
+| PATCH  | `/surveys/campaigns/:id`                                   | `surveys.manage`                                               | body, param `id`                     | default    |
+| POST   | `/surveys/campaigns/:id/close`                             | any of `surveys.manage`, `processes.read`                      | param `id`                           | default    |
+| GET    | `/surveys/campaigns/:id/export`                            | any of `surveys.manage`, `processes.read`                      | param `id`, query                    | default    |
+| POST   | `/surveys/campaigns/:id/launch`                            | any of `surveys.manage`, `processes.read`                      | param `id`                           | default    |
+| GET    | `/surveys/campaigns/:id/proposals`                         | any of `surveys.manage`, `grc.edit`                            | param `id`                           | default    |
+| GET    | `/surveys/campaigns/:id/results`                           | any of `surveys.manage`, `processes.read`                      | param `id`                           | default    |
+| POST   | `/surveys/feedback-requests`                               | `processes.read`                                               | body                                 | default    |
+| POST   | `/surveys/proposals/:id/decision`                          | `grc.edit`                                                     | body, param `id`                     | default    |
+| GET    | `/surveys/questionnaires`                                  | `surveys.manage`                                               | —                                    | default    |
+| POST   | `/surveys/questionnaires`                                  | `surveys.manage`                                               | body                                 | default    |
+| DELETE | `/surveys/questionnaires/:id`                              | `surveys.manage`                                               | param `id`                           | default    |
+| GET    | `/surveys/questionnaires/:id`                              | `surveys.manage`                                               | param `id`                           | default    |
+| PATCH  | `/surveys/questionnaires/:id`                              | `surveys.manage`                                               | body, param `id`                     | default    |
+| GET    | `/surveys/responses/:id`                                   | `surveys.respond`                                              | param `id`                           | default    |
+| PUT    | `/surveys/responses/:id`                                   | `surveys.respond`                                              | body, param `id`                     | default    |
+| GET    | `/surveys/responses/:id/diagram`                           | `surveys.respond`                                              | param `id`                           | default    |
+| POST   | `/surveys/responses/:id/files`                             | `surveys.respond`                                              | file, param `id`                     | default    |
+| GET    | `/tasks`                                                   | authenticated                                                  | —                                    | default    |
+| GET    | `/templates`                                               | `docs.read`                                                    | —                                    | default    |
+| POST   | `/templates`                                               | `docs.manage`                                                  | body                                 | default    |
+| DELETE | `/templates/:id`                                           | `docs.manage`                                                  | param `id`                           | default    |
+| GET    | `/templates/:id`                                           | `docs.read`                                                    | param `id`                           | default    |
+| PUT    | `/templates/:id`                                           | `docs.manage`                                                  | body, param `id`                     | default    |
+| GET    | `/users`                                                   | `users.read`                                                   | query                                | default    |
+| POST   | `/users`                                                   | `users.manage`                                                 | body                                 | default    |
+| GET    | `/users/:id`                                               | `users.read`                                                   | param `id`                           | default    |
+| PATCH  | `/users/:id`                                               | `users.manage`                                                 | body, param `id`                     | default    |
+| POST   | `/users/:id/invitation`                                    | `users.manage`                                                 | param `id`                           | default    |
+| POST   | `/users/:id/mfa/reset`                                     | `users.manage`                                                 | param `id`                           | default    |
+| POST   | `/users/:id/reset-password`                                | `users.manage`                                                 | body, param `id`                     | default    |
+| POST   | `/users/:id/unlock`                                        | `users.manage`                                                 | param `id`                           | default    |
+| GET    | `/users/directory`                                         | any of `comments.write`, `governance.manage`                   | query                                | default    |
+| GET    | `/workflow/cases`                                          | authenticated                                                  | query                                | default    |
+| GET    | `/workflow/cases/:id`                                      | authenticated                                                  | param `id`                           | default    |
+| POST   | `/workflow/cases/:id/cancel`                               | `workflow.admin`                                               | body, param `id`                     | default    |
+| POST   | `/workflow/cases/:id/comments`                             | authenticated                                                  | body, param `id`                     | default    |
+| POST   | `/workflow/cases/:id/retry`                                | `workflow.admin`                                               | param `id`                           | default    |
+| POST   | `/workflow/cases/:id/withdraw`                             | authenticated                                                  | body, param `id`                     | default    |
+| GET    | `/workflow/catalogue`                                      | `workflow.start`                                               | —                                    | default    |
+| GET    | `/workflow/catalogue/:processId`                           | `workflow.start`                                               | param `processId`                    | default    |
+| POST   | `/workflow/catalogue/:processId/start`                     | `workflow.start`                                               | body, param `processId`              | default    |
+| GET    | `/workflow/dashboard`                                      | any of `workflow.monitor`, `workflow.admin`                    | query                                | default    |
+| GET    | `/workflow/dashboard/export`                               | any of `workflow.monitor`, `workflow.admin`                    | query                                | default    |
+| GET    | `/workflow/departments`                                    | authenticated                                                  | —                                    | default    |
+| POST   | `/workflow/files`                                          | authenticated                                                  | body, file                           | default    |
+| GET    | `/workflow/files/:id`                                      | authenticated                                                  | param `id`                           | default    |
+| GET    | `/workflow/monitor`                                        | any of `workflow.monitor`, `workflow.admin`                    | —                                    | default    |
+| GET    | `/workflow/out-of-office`                                  | authenticated                                                  | —                                    | default    |
+| PUT    | `/workflow/out-of-office`                                  | authenticated                                                  | body                                 | default    |
+| POST   | `/workflow/processes/:id/check`                            | `processes.read`                                               | body, param `id`                     | default    |
+| GET    | `/workflow/processes/:id/config`                           | `processes.read`                                               | param `id`                           | default    |
+| PUT    | `/workflow/processes/:id/config`                           | any of `workflow.design`, `workflow.admin`                     | body, param `id`                     | default    |
+| POST   | `/workflow/processes/:id/deploy`                           | any of `workflow.design`, `workflow.admin`                     | param `id`                           | default    |
+| GET    | `/workflow/settings`                                       | any of `workflow.admin`, `workflow.design`, `workflow.monitor` | —                                    | default    |
+| PUT    | `/workflow/settings`                                       | `workflow.admin`                                               | body                                 | default    |
+| GET    | `/workflow/tasks`                                          | authenticated                                                  | query                                | default    |
+| GET    | `/workflow/tasks/:id`                                      | authenticated                                                  | param `id`                           | default    |
+| POST   | `/workflow/tasks/:id/claim`                                | authenticated                                                  | param `id`                           | default    |
+| POST   | `/workflow/tasks/:id/complete`                             | authenticated                                                  | body, param `id`                     | default    |
+| POST   | `/workflow/tasks/:id/delegate`                             | authenticated                                                  | body, param `id`                     | default    |
+| PUT    | `/workflow/tasks/:id/draft`                                | authenticated                                                  | body, param `id`                     | default    |
+| POST   | `/workflow/tasks/:id/reassign`                             | `workflow.admin`                                               | body, param `id`                     | default    |
+| POST   | `/workflow/tasks/:id/unclaim`                              | authenticated                                                  | param `id`                           | default    |
+| GET    | `/workflow/tasks/counts`                                   | authenticated                                                  | —                                    | default    |
+| GET    | `/workflow/users`                                          | authenticated                                                  | query                                | default    |
+| GET    | `/workflows`                                               | any of `governance.manage`, `processes.read`, `docs.read`      | —                                    | default    |
+| POST   | `/workflows`                                               | `governance.manage`                                            | body                                 | default    |
+| DELETE | `/workflows/:id`                                           | `governance.manage`                                            | param `id`                           | default    |
+| GET    | `/workflows/:id`                                           | any of `governance.manage`, `processes.read`, `docs.read`      | param `id`                           | default    |
+| PUT    | `/workflows/:id`                                           | `governance.manage`                                            | body, param `id`                     | default    |
 
 <!-- route-table:end -->
 

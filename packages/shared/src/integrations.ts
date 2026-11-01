@@ -177,3 +177,181 @@ export const publicSvgQuerySchema = publicBpmnQuerySchema.extend({
 export const publicPageContentQuerySchema = z.object({
   format: z.enum(['html', 'text']).default('html'),
 });
+
+// ---------- Webhooks and Microsoft Teams destinations (D-174, D-176) ----------
+
+/** Events a webhook or Teams destination can subscribe to. */
+export const WEBHOOK_EVENTS = [
+  'process.published',
+  'process.archived',
+  'page.published',
+  'page.archived',
+  'diagram.published',
+  'diagram.archived',
+  'review.submitted',
+  'review.approved',
+  'review.rejected',
+  'workflow.case.started',
+  'workflow.case.completed',
+  'workflow.case.overdue',
+  'issue.raised',
+  'issue.overdue',
+  'kpi.red',
+  'import.completed',
+] as const;
+export type WebhookEventType = (typeof WEBHOOK_EVENTS)[number];
+
+export const WEBHOOK_KINDS = ['WEBHOOK', 'TEAMS'] as const;
+export type WebhookKind = (typeof WEBHOOK_KINDS)[number];
+
+export const TEAMS_LANGUAGES = ['EN', 'AR', 'BOTH'] as const;
+export type TeamsLanguage = (typeof TEAMS_LANGUAGES)[number];
+
+/** Signature headers of webhook deliveries (see docs/integrations/WEBHOOKS.md). */
+export const WEBHOOK_SIGNATURE_HEADER = 'x-processhub-signature';
+export const WEBHOOK_TIMESTAMP_HEADER = 'x-processhub-timestamp';
+export const WEBHOOK_EVENT_HEADER = 'x-processhub-event';
+export const WEBHOOK_DELIVERY_HEADER = 'x-processhub-delivery';
+
+/** Retry schedule (minutes after the first attempt fails): 1, 5, 15 minutes, 1, 4, 12, 24 hours. */
+export const WEBHOOK_RETRY_MINUTES = [1, 5, 15, 60, 240, 720, 1440] as const;
+/** A destination is switched off after this many failed attempts in a row (any event). */
+export const WEBHOOK_DISABLE_AFTER = 10;
+
+/**
+ * Destination URL. The server allows only HTTPS (plain http just for hosts in
+ * OUTBOUND_ALLOWED_HOSTS, e.g. a test receiver) and checks the host (SSRF rules, D-174).
+ */
+const httpsUrl = z
+  .string()
+  .trim()
+  .max(2000)
+  .refine((v) => {
+    try {
+      const u = new URL(v);
+      return (u.protocol === 'https:' || u.protocol === 'http:') && !u.username && !u.password;
+    } catch {
+      return false;
+    }
+  }, 'WEBHOOK_URL_INVALID');
+
+export const webhookCreateSchema = z.object({
+  kind: z.enum(WEBHOOK_KINDS).default('WEBHOOK'),
+  name: z.string().trim().min(1).max(120),
+  url: httpsUrl,
+  events: z.array(z.enum(WEBHOOK_EVENTS)).min(1).max(WEBHOOK_EVENTS.length),
+  departmentIds: z.array(z.uuid()).max(50).default([]),
+  /** Process-house branch: only events of this process and the processes below it. */
+  processBranchId: z.uuid().nullable().default(null),
+  language: z.enum(TEAMS_LANGUAGES).default('BOTH'),
+  active: z.boolean().default(true),
+});
+export type WebhookCreateInput = z.infer<typeof webhookCreateSchema>;
+
+/** The URL may be left out on update (it is stored encrypted and never shown again in full). */
+export const webhookUpdateSchema = webhookCreateSchema.omit({ kind: true }).partial();
+export type WebhookUpdateInput = z.infer<typeof webhookUpdateSchema>;
+
+export type WebhookDeliveryStatus = 'PENDING' | 'SUCCEEDED' | 'FAILED' | 'GAVE_UP';
+
+export interface WebhookDto {
+  id: string;
+  kind: WebhookKind;
+  name: string;
+  /** Scheme, host and path only (the query string of a Teams URL carries its signature). */
+  urlDisplay: string;
+  events: WebhookEventType[];
+  departmentIds: string[];
+  processBranch: { id: string; code: string; nameEn: string; nameAr: string } | null;
+  language: TeamsLanguage;
+  active: boolean;
+  disabledAt: string | null;
+  disabledReason: string | null;
+  consecutiveFailures: number;
+  hasSecret: boolean;
+  lastDelivery: { status: WebhookDeliveryStatus; at: string; statusCode: number | null } | null;
+  createdAt: string;
+}
+
+/** Returned on create / new secret of a generic webhook: the signing secret, shown once. */
+export interface WebhookSecretDto {
+  webhook: WebhookDto;
+  secret: string | null;
+}
+
+export interface WebhookDeliveryDto {
+  id: string;
+  eventId: string;
+  eventType: WebhookEventType | 'test';
+  status: WebhookDeliveryStatus;
+  attempts: number;
+  nextAttemptAt: string | null;
+  lastStatusCode: number | null;
+  lastError: string | null;
+  responseSnippet: string | null;
+  durationMs: number | null;
+  test: boolean;
+  payload: unknown;
+  createdAt: string;
+  deliveredAt: string | null;
+}
+
+export const webhookDeliveryQuerySchema = z.object({
+  page: z.coerce.number().int().min(1).default(1),
+  pageSize: z.coerce.number().int().min(1).max(100).default(20),
+  status: z.enum(['PENDING', 'SUCCEEDED', 'FAILED', 'GAVE_UP']).optional(),
+});
+export type WebhookDeliveryQuery = z.infer<typeof webhookDeliveryQuerySchema>;
+
+/** Setting `integrations.webhooks`. */
+export const webhookSettingsSchema = z.object({
+  /**
+   * Optional allow-list of host names for generic webhooks (exact host or `*.domain`); empty = any
+   * public host. Teams destinations always use TEAMS_DEFAULT_HOSTS plus `teamsHosts`.
+   */
+  allowedHosts: z.array(z.string().trim().toLowerCase().min(1).max(253)).max(100).default([]),
+  /** Extra hosts allowed for Teams destinations (e.g. a regional Power Automate host). */
+  teamsHosts: z.array(z.string().trim().toLowerCase().min(1).max(253)).max(50).default([]),
+  /** Days the delivery log is kept. */
+  retentionDays: z.number().int().min(7).max(365).default(30),
+});
+export type WebhookSettings = z.infer<typeof webhookSettingsSchema>;
+export const DEFAULT_WEBHOOK_SETTINGS: WebhookSettings = {
+  allowedHosts: [],
+  teamsHosts: [],
+  retentionDays: 30,
+};
+
+/** Hosts of Teams "Workflows" webhooks (Power Automate) allowed by default. */
+export const TEAMS_DEFAULT_HOSTS = [
+  '*.logic.azure.com',
+  '*.environment.api.powerplatform.com',
+  '*.webhook.office.com',
+] as const;
+
+/** Whether a host matches an entry (`example.com` exactly or `*.example.com` for sub-domains). */
+export function hostMatches(host: string, pattern: string): boolean {
+  const h = host.toLowerCase().replace(/\.$/, '');
+  const p = pattern.toLowerCase().trim();
+  if (p.startsWith('*.')) return h.endsWith(p.slice(1)) && h.length > p.length - 1;
+  return h === p;
+}
+
+/** The common part of every webhook payload (D-174). */
+export interface WebhookPayload {
+  id: string;
+  type: WebhookEventType | 'test';
+  /** ISO time the event happened. */
+  occurredAt: string;
+  entity: {
+    type: string;
+    id: string;
+    code: string | null;
+    nameEn: string;
+    nameAr: string;
+  } | null;
+  /** Absolute links back to ProcessHub (workspace / portal) and the public API. */
+  links: Record<string, string>;
+  /** Small event-specific facts (status, version, outcome …) — never form data or secrets. */
+  data: Record<string, string | number | boolean | null>;
+}

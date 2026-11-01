@@ -6,6 +6,14 @@ import type {
   ApiKeyUpdateInput,
   ApiKeyUsageDto,
   ApiSettings,
+  Paginated,
+  WebhookCreateInput,
+  WebhookDeliveryDto,
+  WebhookDto,
+  WebhookKind,
+  WebhookSecretDto,
+  WebhookSettings,
+  WebhookUpdateInput,
 } from '@processhub/shared';
 import { api } from './client';
 
@@ -17,6 +25,10 @@ export const integrationKeys = {
     ['integrations', 'api-keys', id, 'usage', errors] as const,
   apiSettings: ['integrations', 'api-settings'] as const,
   renderer: ['integrations', 'renderer'] as const,
+  webhooks: (kind: WebhookKind) => ['integrations', 'webhooks', kind] as const,
+  deliveries: (id: string, page: number, status?: string) =>
+    ['integrations', 'deliveries', id, page, status] as const,
+  webhookSettings: ['integrations', 'webhook-settings'] as const,
 };
 
 export const useApiKeys = () =>
@@ -93,6 +105,95 @@ export function useUpdateApiSettings() {
   return useMutation({
     mutationFn: (body: ApiSettings) =>
       api<ApiSettings>('/integrations/api-settings', { method: 'PUT', body }),
+    onSuccess: invalidate,
+  });
+}
+
+// ---------- Webhooks and Teams destinations ----------
+
+export const useWebhooks = (kind: WebhookKind) =>
+  useQuery({
+    queryKey: integrationKeys.webhooks(kind),
+    queryFn: () => api<WebhookDto[]>('/integrations/webhooks', { query: { kind } }),
+  });
+
+export const useWebhookDeliveries = (id: string | undefined, page: number, status?: string) =>
+  useQuery({
+    queryKey: integrationKeys.deliveries(id ?? '', page, status),
+    queryFn: () =>
+      api<Paginated<WebhookDeliveryDto>>(`/integrations/webhooks/${id}/deliveries`, {
+        query: { page, pageSize: 20, status },
+      }),
+    enabled: !!id,
+    refetchInterval: 10_000,
+  });
+
+export const useWebhookSettings = () =>
+  useQuery({
+    queryKey: integrationKeys.webhookSettings,
+    queryFn: () => api<WebhookSettings>('/integrations/webhook-settings'),
+  });
+
+export function useCreateWebhook() {
+  const invalidate = useInvalidate();
+  return useMutation({
+    mutationFn: (body: WebhookCreateInput) =>
+      api<WebhookSecretDto>('/integrations/webhooks', { method: 'POST', body }),
+    onSuccess: invalidate,
+  });
+}
+
+export function useUpdateWebhook() {
+  const invalidate = useInvalidate();
+  return useMutation({
+    mutationFn: ({ id, body }: { id: string; body: WebhookUpdateInput }) =>
+      api<WebhookDto>(`/integrations/webhooks/${id}`, { method: 'PATCH', body }),
+    onSuccess: invalidate,
+  });
+}
+
+export function useDeleteWebhook() {
+  const invalidate = useInvalidate();
+  return useMutation({
+    mutationFn: (id: string) => api<void>(`/integrations/webhooks/${id}`, { method: 'DELETE' }),
+    onSuccess: invalidate,
+  });
+}
+
+export function useRotateWebhookSecret() {
+  const invalidate = useInvalidate();
+  return useMutation({
+    mutationFn: (id: string) =>
+      api<WebhookSecretDto>(`/integrations/webhooks/${id}/secret`, { method: 'POST' }),
+    onSuccess: invalidate,
+  });
+}
+
+export function useTestWebhook() {
+  const invalidate = useInvalidate();
+  return useMutation({
+    mutationFn: (id: string) =>
+      api<WebhookDeliveryDto>(`/integrations/webhooks/${id}/test`, { method: 'POST' }),
+    onSuccess: invalidate,
+  });
+}
+
+export function useResendDelivery() {
+  const invalidate = useInvalidate();
+  return useMutation({
+    mutationFn: ({ id, deliveryId }: { id: string; deliveryId: string }) =>
+      api<WebhookDeliveryDto>(`/integrations/webhooks/${id}/deliveries/${deliveryId}/resend`, {
+        method: 'POST',
+      }),
+    onSuccess: invalidate,
+  });
+}
+
+export function useUpdateWebhookSettings() {
+  const invalidate = useInvalidate();
+  return useMutation({
+    mutationFn: (body: WebhookSettings) =>
+      api<WebhookSettings>('/integrations/webhook-settings', { method: 'PUT', body }),
     onSuccess: invalidate,
   });
 }

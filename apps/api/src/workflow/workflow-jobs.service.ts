@@ -21,7 +21,13 @@ import { StorageService } from '../storage/storage.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { AppException } from '../common/app-exception';
 import { WorkflowConfigService } from './workflow-config.service';
-import { WorkflowRunnerService, caseTitleParams, taskLink } from './workflow-runner.service';
+import {
+  WorkflowRunnerService,
+  caseEvent,
+  caseTitleParams,
+  taskLink,
+} from './workflow-runner.service';
+import { DomainEvents } from '../events/domain-events';
 import { WorkflowCasesService } from './workflow-cases.service';
 import { WorkflowSettingsService } from './workflow-settings.service';
 import { WorkflowTimersService } from './workflow-timers.service';
@@ -55,6 +61,7 @@ export class WorkflowJobsService implements OnApplicationBootstrap, OnModuleDest
     private readonly settings: WorkflowSettingsService,
     private readonly timers: WorkflowTimersService,
     @Inject(APP_CONFIG) private readonly appConfig: AppConfig,
+    private readonly domainEvents: DomainEvents,
   ) {}
 
   onApplicationBootstrap() {
@@ -487,6 +494,9 @@ export class WorkflowJobsService implements OnApplicationBootstrap, OnModuleDest
             titleEn: true,
             titleAr: true,
             definitionId: true,
+            processId: true,
+            departmentId: true,
+            parentCaseId: true,
             process: { select: { ownerId: true } },
           },
         },
@@ -542,6 +552,14 @@ export class WorkflowJobsService implements OnApplicationBootstrap, OnModuleDest
     // Nobody escalates to themselves.
     if (t.assigneeId) recipients.delete(t.assigneeId);
     const stamp = now.toISOString().slice(0, 13);
+    if (!t.case.parentCaseId) {
+      this.domainEvents.emit(
+        caseEvent('workflow.case.overdue', t.case, {
+          step: t.nameEn || t.nameAr,
+          due: t.dueAt.toISOString(),
+        }),
+      );
+    }
     await this.notifications.notify({
       userIds: people,
       type: 'WORKFLOW',

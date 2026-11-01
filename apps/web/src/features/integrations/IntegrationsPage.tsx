@@ -8,6 +8,7 @@ import { useAuth } from '@/auth/AuthProvider';
 import { PageHeader } from '@/components/PageHeader';
 import { useErrorMessage } from '@/components/i18n-helpers';
 import { ApiKeysTab } from './ApiKeysTab';
+import { DestinationsTab } from './DestinationsTab';
 
 function ApiSettingsCard() {
   const { t } = useTranslation();
@@ -99,6 +100,16 @@ export function IntegrationsPage() {
                 <ApiSettingsCard />
               </Space>
             ),
+          },
+          {
+            key: 'webhooks',
+            label: t('integrations:tabs.webhooks'),
+            children: <DestinationsTab kind="WEBHOOK" />,
+          },
+          {
+            key: 'teams',
+            label: t('integrations:tabs.teams'),
+            children: <DestinationsTab kind="TEAMS" />,
           },
         ]}
       />

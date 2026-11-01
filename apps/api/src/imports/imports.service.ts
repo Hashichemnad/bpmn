@@ -34,6 +34,7 @@ import {
   type Locale,
   type Paginated,
 } from '@processhub/shared';
+import { DomainEvents } from '../events/domain-events';
 import { PrismaService } from '../prisma/prisma.service';
 import { AuditService } from '../audit/audit.service';
 import { StorageService } from '../storage/storage.service';
@@ -110,6 +111,7 @@ export class ImportsService implements OnModuleInit {
     private readonly users: AuthUserLoader,
     private readonly docsAccess: DocsAccessService,
     @Inject(IMPORTER) importers: Importer[],
+    private readonly domainEvents: DomainEvents,
   ) {
     for (const imp of importers) for (const k of imp.kinds) this.registry.set(k, imp);
   }
@@ -874,6 +876,21 @@ export class ImportsService implements OnModuleInit {
           progress: 1,
           message: '',
           result: result as unknown as Prisma.InputJsonValue,
+        },
+      });
+      this.domainEvents.emit({
+        type: 'integration',
+        event: 'import.completed',
+        entity: { type: 'IMPORT_BATCH', id: batchId, code: number, nameEn: kind, nameAr: kind },
+        departmentId: null,
+        processId: null,
+        ownerId: b.createdById,
+        link: `/admin/imports/${batchId}`,
+        data: {
+          kind,
+          created: result.created,
+          updated: result.updated,
+          failed: result.failed,
         },
       });
       return result;

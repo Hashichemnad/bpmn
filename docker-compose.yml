@@ -50,6 +50,22 @@ services:
     ports:
       - '${MAILPIT_UI_PORT:-8025}:8025'
 
+  # Local webhook test receiver (Phase 4.4): records what ProcessHub sends; requests are listed at
+  # http://localhost:8090/received. Development / CI only — remove it for real installations.
+  webhook-receiver:
+    image: node:22-alpine
+    restart: unless-stopped
+    command: ['node', '/receiver/server.mjs']
+    volumes:
+      - ./apps/e2e/receiver:/receiver:ro
+    ports:
+      - '${WEBHOOK_RECEIVER_PORT:-8090}:8090'
+    healthcheck:
+      test: ['CMD', 'wget', '-q', '-O', '/dev/null', 'http://127.0.0.1:8090/health']
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
   api: &api
     build:
       context: .
@@ -92,7 +108,8 @@ services:
       SEED_SMTP_PORT: ${SEED_SMTP_PORT:-1025}
       # Internal hosts the Git / SMTP integrations may reach (SSRF protection blocks all others).
       # Mailpit is internal; add your own GitLab / SMTP server here if it runs in a private network.
-      OUTBOUND_ALLOWED_HOSTS: ${OUTBOUND_ALLOWED_HOSTS-mailpit}
+      # webhook-receiver: the local test receiver below (demo webhook, e2e tests).
+      OUTBOUND_ALLOWED_HOSTS: ${OUTBOUND_ALLOWED_HOSTS-mailpit,webhook-receiver}
       # Emergency switch: password sign-in for everyone (see Settings → Authentication).
       AUTH_FORCE_LOCAL_LOGIN: ${AUTH_FORCE_LOCAL_LOGIN:-false}
       SSO_HTTP_TIMEOUT_MS: ${SSO_HTTP_TIMEOUT_MS:-15000}

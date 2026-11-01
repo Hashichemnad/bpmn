@@ -17,6 +17,7 @@ import {
   type WorkflowModel,
 } from '@processhub/shared';
 import { PrismaService } from '../prisma/prisma.service';
+import { DomainEvents, type IntegrationEvent } from '../events/domain-events';
 import { NotificationsService, type NotifyInput } from '../notifications/notifications.service';
 import { AppException, conflict } from '../common/app-exception';
 import { HttpStatus } from '@nestjs/common';
@@ -51,6 +52,38 @@ export interface RunOptions {
 export class AfterCommit {
   notifications: NotifyInput[] = [];
   jobs = false;
+  /** Webhook / Teams events (Phase 4.4), emitted after the commit. */
+  events: IntegrationEvent[] = [];
+}
+
+/** Webhook event of a case (started / completed / overdue): ids, number, title, no form data. */
+export function caseEvent(
+  event: 'workflow.case.started' | 'workflow.case.completed' | 'workflow.case.overdue',
+  c: {
+    id: string;
+    number: string;
+    titleEn: string;
+    titleAr: string;
+    processId: string;
+    departmentId: string | null;
+  },
+  data: Record<string, string | number | null> = {},
+): IntegrationEvent {
+  return {
+    type: 'integration',
+    event,
+    entity: {
+      type: 'WORKFLOW_CASE',
+      id: c.id,
+      code: c.number,
+      nameEn: c.titleEn,
+      nameAr: c.titleAr || c.titleEn,
+    },
+    departmentId: c.departmentId,
+    processId: c.processId,
+    link: caseLink(c.id),
+    data: { number: c.number, ...data },
+  };
 }
 
 export const caseLink = (id: string) => `/workflow/cases/${id}`;
@@ -82,6 +115,7 @@ export class WorkflowRunnerService {
     private readonly timers: WorkflowTimersService,
     private readonly eventLog: WorkflowEventLogService,
     private readonly notifications: NotificationsService,
+    private readonly domainEvents: DomainEvents,
   ) {}
 
   /** Runs `work` in a transaction, retrying on lost optimistic locks; then the after-commit work. */
@@ -187,7 +221,12 @@ export class WorkflowRunnerService {
           : {}),
       },
     });
-    if (ended) await this.onEnded(tx, c, r.vars, ended, after);
+    if (ended) {
+      await this.onEnded(tx, c, r.vars, ended, after);
+      if (!c.parentCaseId) {
+        after.events.push(caseEvent('workflow.case.completed', c, { outcome: ended.kind }));
+      }
+    }
   }
 
   private async event(
@@ -647,6 +686,7 @@ export class WorkflowRunnerService {
         this.logger.warn(`Workflow notification failed: ${(e as Error).message}`);
       }
     }
+    for (const e of after.events) this.domainEvents.emit(e);
     if (after.jobs) this.onJobs?.();
   }
 }

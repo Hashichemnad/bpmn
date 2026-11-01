@@ -31,6 +31,9 @@ describe('isInternalAddress', () => {
     'fe80::1',
     '::ffff:127.0.0.1',
     '::ffff:10.0.0.1',
+    '::ffff:a9fe:a9fe', // mapped metadata address, hex form
+    '::127.0.0.1', // deprecated IPv4-compatible form
+    '64:ff9b::a9fe:a9fe', // NAT64 of the metadata address
   ])('blocks %s', (ip) => expect(isInternalAddress(ip)).toBe(true));
 
   it.each(['140.82.112.3', '8.8.8.8', '2606:4700:4700::1111', '::ffff:8.8.8.8'])(
