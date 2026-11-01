@@ -1,3 +1,4 @@
+import { withDeadline } from './deadline';
 import { request as httpRequest, type IncomingMessage } from 'node:http';
 import { request as httpsRequest } from 'node:https';
 import { OutboundBlockedError, type OutboundPolicy } from './outbound';
@@ -67,6 +68,7 @@ export function safeFetch(opts: SafeFetchOptions) {
         },
       );
       req.on('timeout', () => req.destroy(new Error('timeout')));
+      withDeadline(req, opts.timeoutMs * 3);
       req.on('error', reject);
       req.end(body);
     });

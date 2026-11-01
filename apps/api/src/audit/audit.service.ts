@@ -17,7 +17,7 @@ export interface AuditEntry {
 type Client = PrismaService | Prisma.TransactionClient;
 
 const SECRET_KEYS =
-  /password|token|secret|hash|apikey|api_key|sealed|privatekey|private_key|credential/i;
+  /password|token|secret|hash|apikey|api_key|sealed|privatekey|private_key/i;
 /** Values sealed by SecretBox, whatever their key is called (SEC-45). */
 const SEALED_VALUE = /^v1\.[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]*$/;
 

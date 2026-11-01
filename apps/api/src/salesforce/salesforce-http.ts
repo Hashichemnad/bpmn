@@ -1,3 +1,4 @@
+import { withDeadline } from '../common/deadline';
 import { Inject, Injectable } from '@nestjs/common';
 import { request as httpsRequest } from 'node:https';
 import { request as httpRequest, type IncomingMessage } from 'node:http';
@@ -116,6 +117,7 @@ export class SalesforceHttp {
         },
       );
       r.on('timeout', () => r.destroy(new Error('timeout')));
+      withDeadline(r, this.config.SALESFORCE_HTTP_TIMEOUT_MS * 4);
       r.on('error', reject);
       r.end(payload);
     });

@@ -44,6 +44,10 @@ export class MailTransport {
       servername: smtp.host,
       port: smtp.port,
       secure: smtp.secure,
+      // Without implicit TLS the connection must be upgraded with STARTTLS: an attacker on the path
+      // cannot strip the offer and read the password (SEC-42). Plain SMTP only for internal relays
+      // listed in OUTBOUND_ALLOWED_HOSTS.
+      requireTLS: !smtp.secure && !this.policy.allowsHost(smtp.host),
       auth: smtp.username ? { user: smtp.username, pass: smtp.password ?? '' } : undefined,
       connectionTimeout: this.config.SMTP_TIMEOUT_MS,
       greetingTimeout: this.config.SMTP_TIMEOUT_MS,

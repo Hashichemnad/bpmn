@@ -20,9 +20,13 @@ describe('Secrets stay out of logs and audit entries (SEC-45)', () => {
       scrubSecrets({
         host: 'smtp.example.com',
         privateKeySealed: sealed,
-        clientCredential: 'x',
+        credentialChanged: true,
         changes: { mystery: { from: sealed, to: 'ok' } },
       }),
-    ).toEqual({ host: 'smtp.example.com', changes: { mystery: { to: 'ok' } } });
+    ).toEqual({
+      host: 'smtp.example.com',
+      credentialChanged: true,
+      changes: { mystery: { to: 'ok' } },
+    });
   });
 });
