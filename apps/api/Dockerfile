@@ -43,9 +43,11 @@ RUN pnpm --filter @processhub/api deploy --prod --legacy /out \
        c12@* jiti@* giget@* nypm@* @types+* \
   && find . -path '*/@prisma/client/runtime/*.wasm*' -delete \
   && find . -path '*/.prisma/client/*' \( -name '*.wasm' -o -name 'wasm*' -o -name 'query_engine_bg.js' \) -delete
-# The Prisma CLI in the version of the lockfile, for the migrate image only.
+# The Prisma CLI in the version of the lockfile, for the migrate image only. deepmerge-ts is raised to 8
+# (CVE-2026-40345, found by the Trivy gate; the CLI works with it — checked with `prisma migrate status`).
 RUN PRISMA_VERSION="$(node -p "require('/app/apps/api/node_modules/prisma/package.json').version")" \
-  && mkdir -p /prisma-cli && cd /prisma-cli && echo '{"private":true}' > package.json \
+  && mkdir -p /prisma-cli && cd /prisma-cli \
+  && echo '{"private":true,"overrides":{"deepmerge-ts":"^8.0.2"}}' > package.json \
   && npm install --no-audit --no-fund --omit=dev "prisma@${PRISMA_VERSION}"
 
 # ---- App: compiled code + production dependencies (shared by the two images below) ----

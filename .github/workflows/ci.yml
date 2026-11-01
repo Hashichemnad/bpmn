@@ -104,11 +104,12 @@ jobs:
           if [ "$(printf '%s\n' $images | grep -c .)" -lt 4 ]; then echo 'Expected the four built images'; exit 1; fi
           status=0
           for image in $images; do
+            report="$(printf '%s' "${image##*/}" | tr ':' '_')"
             docker run --rm -v /var/run/docker.sock:/var/run/docker.sock -v "$PWD:/work" -w /work \
               -v trivy-cache:/root/.cache/trivy aquasec/trivy:0.67.2 image \
               --scanners vuln --severity HIGH,CRITICAL --ignore-unfixed --ignorefile .trivyignore \
-              --exit-code 1 --format table --output "trivy-reports/${image##*/}.txt" "$image" || status=1
-            cat "trivy-reports/${image##*/}.txt"
+              --exit-code 1 --format table --output "trivy-reports/${report}.txt" "$image" || status=1
+            cat "trivy-reports/${report}.txt"
           done
           exit $status
       - uses: actions/upload-artifact@v6
