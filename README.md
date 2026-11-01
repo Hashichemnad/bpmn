@@ -67,7 +67,7 @@
 | Diagrams | Value chain, organisation chart, DMN, EPC, SIPOC | ✅ |
 | 5.1 / 5.2 | Process mining and simulation, workflow execution | ✅ |
 | Import | Import tools / migration | ✅ |
-| 4.4 | Integrations & export: public API with keys, webhooks, Power BI feed, Teams, HTML / PowerPoint export, scheduled report e-mails | 🟡 review on `integrations-exports` |
+| 4.4 | Integrations & export: public API with keys, webhooks, Power BI feed, Teams, HTML / PowerPoint export, scheduled report e-mails | ✅ merged into `main` |
 | 6 | Hardening: security review, production deployment, SSO / 2FA, performance, accessibility, images, restore drill | 🟡 final security review (part B) after 4.4 |
 
 ## Quick start (Docker)
