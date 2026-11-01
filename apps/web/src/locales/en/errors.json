@@ -331,5 +331,6 @@
   "API_KEY_IP_NOT_ALLOWED": "Requests with this API key are not allowed from this IP address.",
   "NO_IMAGE_FOR_TYPE": "No image is available for this type of content.",
   "ROLE_NOT_FOUND": "The selected role was not found.",
-  "DEMO_STILL_ACTIVE": "Deactivate the demo users and revoke the demo API key first."
+  "DEMO_STILL_ACTIVE": "Deactivate the demo users and revoke the demo API key first.",
+  "EXPORT_TOO_LARGE": "The space has too many pages for one export (at most 300). Export a smaller space."
 }
