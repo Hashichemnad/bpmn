@@ -200,6 +200,49 @@ in the environment); the file storage and the database come from the environment
   and the migration bulk actions stay with Admins. Every batch step is audited
   (`CREATE`, `IMPORT`, `UNDO`, `EXPORT`, and each created / updated entity with the batch number).
 
+### Integrations and exports (Phase 4.4, D-172 – D-179)
+
+New attack surface and its controls:
+
+- **Public REST API** (`/api/public/v1`, D-173): read-only, its own prefix and guard. Only API keys
+  authenticate (`X-API-Key` / `Authorization: Bearer`), session cookies are ignored there (no CSRF surface) and
+  keys are never accepted on `/api/v1`. Keys carry 256 random bits; only a SHA-256 hash and a 12-character id
+  are stored, compared in constant time; the full key is shown once. Every key has an owner (deactivated owner
+  → key refused), an expiry (≤ `integrations.api.maxKeyDays`), optional IP / CIDR allow-list, a per-key rate
+  limit, read-only scopes (one per endpoint; `route-security.e2e-spec.ts` lists every public route with its
+  scope) and a content filter (published by default; drafts only for workspace keys) plus department filter;
+  view-restricted wiki spaces are never served; case-level workflow data needs its own scope. Every call of a
+  known key — refused ones included — is logged (route template, status, duration, address; no ids or query
+  strings), kept 90 days; key create / change / rotate / revoke audited without the secret. JSON body limit
+  16 KB; ETag / Last-Modified; the OpenAPI document `/api/public/docs` is off in production unless
+  `ENABLE_PUBLIC_API_DOCS=true`.
+- **Webhooks and Teams** (D-174, D-176): Super Admins only; URLs and signing secrets encrypted at rest
+  (AES-256-GCM), URLs shown without query string. **SSRF:** HTTPS only, no credentials in URLs, Teams limited
+  to Power Automate hosts, optional allow-list for webhooks, every resolved address must be public (loopback,
+  private, link-local / cloud metadata, CGNAT, NAT64, IPv4-mapped and -compatible IPv6 refused; `::/96` added to
+  the shared block list) — checked when saving and before every delivery; the sender connects to the checked
+  address (no DNS rebinding), never follows redirects, 10 s timeout, 64 KB response limit. Only hosts in
+  `OUTBOUND_ALLOWED_HOSTS` may be internal or plain http (test receivers). Payloads carry ids, names, links and
+  a few facts — never form data, descriptions or secrets; HMAC-SHA256 signature over timestamp + body (replay
+  window enforced by receivers, sample in `docs/integrations/WEBHOOKS.md`). Persisted retries with backoff,
+  switch-off after 10 failed attempts with a notification; delivery log 30 days. Teams card texts are cleaned
+  (control / bidi characters removed, Markdown links broken up; only ProcessHub links become buttons).
+- **Reporting feed** (D-175): same key rules (scope `reporting:read`); workflow tables aggregated without names.
+- **Renderer** (D-172): headless Chromium in its own container on an internal network (no internet, nothing
+  published), shared token, read-only file system, no capabilities, `no-new-privileges`, memory / CPU / PID
+  limits; every browser request is intercepted (only the bundle's own files are served, all else aborted, proxy
+  to a closed port); PDFs are printed with `script-src 'none'`. Chromium runs with `--no-sandbox` (no user
+  namespaces in an unprivileged container) — the container boundary replaces the browser sandbox; the content
+  it draws is ProcessHub's own (BPMN / diagram JSON drawn by bpmn-js, report HTML built and escaped by the API).
+- **Exports** (D-177, D-178): same visibility as the screens (published by default; drafts only with workspace
+  access, watermarked); offline HTML pages forbid every network request (CSP `default-src 'none'`), all text is
+  escaped, wiki HTML re-sanitised, images embedded as `data:` (SVG sanitised); PowerPoint text is plain text.
+  Audited (`EXPORT`).
+- **Scheduled report e-mails** (D-179): built with each **recipient's** permissions at send time (no permission
+  → nothing sent); role / department audiences only by Admins; by default the e-mail holds a summary and a
+  secure link (sign-in as the recipient, 30 days), attachments only when Settings allow them; unsubscribe tokens
+  are HMACs (`JWT_ACCESS_SECRET`), the public endpoint has the login rate limit.
+
 ## 4. Rate limits
 
 | Scope                                                                                 | Limit (default)                                     | Setting                                                |
@@ -209,6 +252,9 @@ in the environment); the file storage and the database come from the environment
 | Failed logins per account (wrong password or 2FA code)                                | lock for 15 min after 5 failures                    | `LOGIN_MAX_ATTEMPTS`, `LOGIN_LOCKOUT_MINUTES`          |
 | AI features                                                                           | per-user daily and organisation monthly requests    | Settings → AI                                          |
 | Request bodies                                                                        | JSON 6 MB, forms 100 KB, attachments / logo by type | `BODY_LIMIT`, `ATTACHMENT_MAX_BYTES`, `LOGO_MAX_BYTES` |
+| Public API, per API key (Phase 4.4)                                                   | 120 requests / minute (per key, up to 2,000)        | API key → Rate limit                                   |
+| Public API request bodies                                                             | JSON 16 KB                                          | —                                                      |
+| Unsubscribe link of report e-mails, per client IP                                     | as login                                            | `LOGIN_RATE_LIMIT_MAX`                                 |
 
 Client IPs come from `X-Forwarded-For` with `TRUST_PROXY` hops — set it to the number of proxies in front
 of the API, or clients can spoof their IP and evade per-IP limits.
@@ -803,6 +849,10 @@ zod / UUID pipe; file uploads are checked in the service (allow-list, content sn
 | CSP allows inline styles (`style-src 'unsafe-inline'`, required by Ant Design).                                                                  | Scripts stay `'self'` only; rich text strips `style` attributes. Revisit with Ant Design's CSS-variables mode.                                                                                                                                                                                                                             |
 | AI: published or draft content sent to the provider could contain prompt-injection text.                                                         | Answers are text only, only from content the user may read; generated BPMN / pages are validated, sanitised and only saved after a human accepts the preview.                                                                                                                                                                              |
 | Logs contain recipient email addresses of failed notification emails.                                                                            | Personal data, not secrets; keep log retention short.                                                                                                                                                                                                                                                                                      |
+| Renderer: Chromium without its own sandbox (`--no-sandbox`).                                                                                     | Separate unprivileged, read-only container without capabilities and without network; requests intercepted; draws only ProcessHub's own content (D-172).                                                                                                                                                                                    |
+| Public API: a leaked key reads what its scopes allow until revoked.                                                                              | Narrow scopes, published content by default, IP allow-list, expiry, call log with last use, owner deactivation stops the key; rotate / revoke in Settings → Integrations.                                                                                                                                                                  |
+| Per-key rate limits are in memory (one API instance).                                                                                            | Fine for one instance; Redis in BACKLOG before scaling out.                                                                                                                                                                                                                                                                                |
+| Webhook receivers must check signatures and timestamps themselves.                                                                               | Documented with Node / Python samples (`docs/integrations/WEBHOOKS.md`); payloads hold no sensitive data.                                                                                                                                                                                                                                  |
 | TLS and HSTS: the trial stack (`docker-compose.yml`) serves plain HTTP on port 8080.                                                             | **Resolved for production** (part 2): `docker-compose.prod.yml` puts Caddy in front (automatic certificates, http → https, HSTS); see `docs/DEPLOYMENT.md`.                                                                                                                                                                                |
 
 ## 7. Go-live configuration checklist
@@ -846,6 +896,18 @@ already the default; check them anyway if you changed the setup.
 - [ ] Settings → Knowledge Portal → Start page: empty until the real enterprise value chain is approved and
       published, then set to it (DEPLOYMENT.md §6 step 10, D-127). A production install without demo data starts
       with it off.
+
+- [ ] **Integrations** (Phase 4.4): Settings → Integrations → API keys reviewed — the demo key revoked, every
+      key with an owner, the narrowest scopes, published content unless drafts are needed, an IP allow-list for
+      servers with fixed addresses, expiry ≤ 1 year; `ENABLE_PUBLIC_API_DOCS` off unless wanted.
+- [ ] Webhooks: only HTTPS receivers of known systems; the optional **allowed hosts** list set if the receivers
+      are known; the demo webhook deleted; `OUTBOUND_ALLOWED_HOSTS` without `webhook-receiver`.
+- [ ] Microsoft Teams destinations: each workflow created with a service account, the channel and events agreed
+      with the channel owner; the demo destination deleted.
+- [ ] Settings → Integrations → Report e-mail settings: **"Attach PDF / Excel files" off** (the default) unless
+      DOF agrees that report files may travel by e-mail; link lifetime agreed (default 30 days).
+- [ ] The renderer container is running (`docker compose ps`), `RENDERER_TOKEN` generated, and Settings →
+      Integrations shows "Diagram renderer: Running".
 
 ## 8. External penetration test checklist
 

@@ -106,8 +106,31 @@ Steps (tick as they are committed; a new session continues at the first unticked
       runner with recipient rights + secure link + unsubscribe, PDF / attachments / fallback / failure
       notification, all six reports), Playwright (subscription → send now → log; Mailpit link in CI; passed
       locally with an SMTP sink and the real renderer).
-- [ ] 8. Demo data, e2e, screenshots, docs (`docs/integrations/API.md`, `WEBHOOKS.md`), SECURITY /
-      DEPLOYMENT, README, PR and CI.
+- [x] 8. Demo data, tests, docs, screenshots: `prisma/seed-integrations.ts` (demo only, once: read-only API key
+      for published content — printed in README "A short tour of Phase 4.4", revoke before go-live —, webhook to
+      the Compose `webhook-receiver`, switched-off Teams channel, weekly KPI report e-mail for the performance
+      officer; `seed.e2e` covers it); authorization matrix knows `/report-subscriptions`; Playwright
+      `integrations.spec.ts` (6 flows: key → API → revoke → 401; publish → signed webhook → log → test event;
+      Teams Arabic card; offline HTML site opened from disk with zero requests + Arabic deck; scheduled report →
+      send now → log / Mailpit link) and `screenshots-integrations.spec.ts`; screenshots EN / AR in
+      `docs/screenshots/integrations/` (API keys, webhook delivery log, Teams destination + rendered Teams cards,
+      subscriptions list and form, offline HTML export, PowerPoint diagram and step slides). Docs:
+      `docs/integrations/API.md`, `WEBHOOKS.md`, `TEAMS.md`, `POWER-BI.md`; SECURITY (integrations section, rate
+      limits, remaining risks, go-live checklist, route table), DEPLOYMENT (renderer in the architecture, go-live
+      step 13), README (feature row, docs, tour, phases), BACKLOG, CLAUDE.md (phase table, data model).
+
+Local verification on 2026-11-01: format, lint, translations (5,408 keys), type-check (all workspaces), the full
+`pnpm test` (shared, web unit 30 files / 231 tests, API unit + e2e — two suites failed only under parallel load
+from a Playwright run: `imports-documents` (timeout) and `authorization-matrix` (the new viewer-readable
+`/report-subscriptions`, fixed); both re-run green), `pnpm build` incl. the renderer page, bundle budget,
+`pnpm audit --audit-level high --prod` (no high / critical); Playwright `integrations.spec.ts` against API + Vite
+
+- the real renderer (local Chromium) + s3rver + an SMTP sink; renderer checked with Arabic BPMN SVG / PNG,
+  Arabic RTL PDF, offline site, PowerPoint opened in LibreOffice. No Docker daemon here — CI builds the four images
+  and runs the Compose stack (renderer, webhook receiver, Mailpit) with the full Playwright suite.
+
+Next: merge review of PR [Hashichemnad/bpmn#23](https://github.com/Hashichemnad/bpmn/pull/23); then Final Part B
+(security review), which should include the Phase 4.4 surface (SECURITY.md "Integrations and exports").
 
 ## Previous state — 2026-11-01 (Final session, Part A — performance, reliability and polish, branch `final-a-performance`)
 
