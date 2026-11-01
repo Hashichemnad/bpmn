@@ -7,12 +7,13 @@ import { ExportDataService } from './export-data.service';
 import { ExportsController } from './exports.controller';
 import { HtmlExportService } from './html-export.service';
 import { PptxExportService } from './pptx-export.service';
+import { KpiSettingsService } from '../kpi/kpi-settings.service';
 
 /** Static HTML and PowerPoint exports (Phase 4.4, D-177, D-178). */
 @Module({
   imports: [GovernanceModule, DocsModule, GrcModule, ReportsModule],
   controllers: [ExportsController],
-  providers: [ExportDataService, HtmlExportService, PptxExportService],
+  providers: [ExportDataService, HtmlExportService, PptxExportService, KpiSettingsService],
   exports: [ExportDataService, PptxExportService],
 })
 export class ExportsModule {}

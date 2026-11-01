@@ -230,4 +230,42 @@ describe('HTML and PowerPoint exports (e2e)', () => {
       'RISK_SUMMARY',
     ]);
   });
+  it('PowerPoint decks of portal readers show risks, controls and KPIs only as the portal does (SEC-34)', async () => {
+    const pub = await ctx.prisma.publication.findFirstOrThrow({
+      where: { entityType: 'PROCESS', entityId: processId },
+    });
+    const riskObj = await ctx.prisma.repoObject.create({
+      data: { type: 'RISK', code: 'R-SECRET', nameEn: 'Hidden fraud risk', nameAr: 'خطر مخفي' },
+    });
+    await ctx.prisma.objectLink.create({
+      data: {
+        processId,
+        bpmnElementId: '#process',
+        repoObjectId: riskObj.id,
+        relation: 'SUPPORTS',
+      },
+    });
+    await ctx.prisma.publishedLink.create({
+      data: {
+        publicationId: pub.id,
+        bpmnElementId: '#process',
+        repoObjectId: riskObj.id,
+        relation: 'SUPPORTS',
+      },
+    });
+    const text = async (c: Client) => {
+      const res = await binary(
+        c.post('/exports/pptx').send({ scope: 'PROCESS', id: processId, locale: 'en' }),
+      ).expect(200);
+      const deck = await JSZip.loadAsync(res.body as Buffer);
+      const slides = Object.keys(deck.files).filter((n) => /^ppt\/slides\/slide\d+\.xml$/.test(n));
+      return (await Promise.all(slides.map((s) => deck.file(s)!.async('string')))).join('');
+    };
+    // Viewer (portal): risks are hidden by default (Settings → Risk & Compliance, D-092).
+    expect(await text(viewer)).not.toContain('Hidden fraud risk');
+    // Risk & Compliance reader: shown.
+    expect(await text(risk)).toContain('Hidden fraud risk');
+    await ctx.prisma.publishedLink.deleteMany({ where: { repoObjectId: riskObj.id } });
+    await ctx.prisma.objectLink.deleteMany({ where: { repoObjectId: riskObj.id } });
+  });
 });
