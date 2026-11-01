@@ -13,6 +13,7 @@ import {
   UploadedFile,
   UseInterceptors,
 } from '@nestjs/common';
+import { UploadSlots } from '../common/upload-slots.interceptor';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { ApiTags } from '@nestjs/swagger';
 import { z } from 'zod';
@@ -197,6 +198,7 @@ export class MiningController {
   @Post('logs/upload')
   @RequirePermissions(MANAGE)
   @UseInterceptors(
+    UploadSlots('event log', 1, 2),
     FileInterceptor('file', {
       limits: {
         fileSize: Number(process.env.MINING_UPLOAD_MAX_MB || MINING_UPLOAD_MAX_MB) * 1024 * 1024,

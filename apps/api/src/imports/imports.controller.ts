@@ -13,6 +13,7 @@ import {
   UploadedFiles,
   UseInterceptors,
 } from '@nestjs/common';
+import { UploadSlots } from '../common/upload-slots.interceptor';
 import { FilesInterceptor } from '@nestjs/platform-express';
 import { ApiTags } from '@nestjs/swagger';
 import type { Response } from 'express';
@@ -129,6 +130,7 @@ export class ImportsController {
   @Post()
   @RequireAnyPermission(MANAGE, OWN)
   @UseInterceptors(
+    UploadSlots('import', 2, 6),
     FilesInterceptor('files', IMPORT_LIMITS.files, {
       limits: { fileSize: IMPORT_LIMITS.fileBytes, files: IMPORT_LIMITS.files, fields: 10 },
     }),
