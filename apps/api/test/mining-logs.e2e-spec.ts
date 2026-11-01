@@ -463,4 +463,32 @@ describe('Mining — event logs (e2e)', () => {
     expect((await ctx.app.get(MiningJobsService).wait(job.id, 20_000)).status).toBe('DONE');
     expect(await ctx.prisma.miningEvent.count()).toBe(0);
   });
+
+  it('purges unused analysis results and old finished jobs (SEC-18)', async () => {
+    const log = (await upload(analyst, CSV, 'c.csv', { nameEn: 'Cache' }).expect(201)).body;
+    const old = new Date('2026-01-01');
+    await ctx.prisma.miningResultCache.create({
+      data: {
+        key: 'old',
+        logId: log.id,
+        dataVersion: 1,
+        kind: 'ANALYSE',
+        result: {},
+        lastUsedAt: old,
+      },
+    });
+    await ctx.prisma.miningResultCache.create({
+      data: { key: 'fresh', logId: log.id, dataVersion: 1, kind: 'ANALYSE', result: {} },
+    });
+    await ctx.prisma.miningJob.create({
+      data: { kind: 'ANALYSE', status: 'DONE', finishedAt: old, logId: log.id },
+    });
+    const res = await ctx.app.get(MiningScheduler).purgeCache(new Date('2026-03-01'));
+    expect(res).toMatchObject({ cacheRows: 1 });
+    expect(res.jobRows).toBeGreaterThanOrEqual(1);
+    expect(
+      await ctx.prisma.miningResultCache.findUnique({ where: { key: 'fresh' } }),
+    ).not.toBeNull();
+    expect(await ctx.prisma.miningResultCache.findUnique({ where: { key: 'old' } })).toBeNull();
+  });
 });

@@ -38,6 +38,17 @@ export interface WorkerOptions {
   useWorker?: boolean;
   /** Heap limit of the worker in MB. */
   maxHeapMb?: number;
+  /** Hard time limit; the worker is terminated when it is reached (SEC-16). Default 30 minutes. */
+  timeoutMs?: number;
+}
+
+/** Longest a mining / simulation / import worker may run before it is stopped (SEC-16). */
+export const WORKER_TIMEOUT_MS = 30 * 60_000;
+
+export class MiningTimeoutError extends Error {
+  constructor() {
+    super('The job took too long and was stopped');
+  }
 }
 
 export async function runInWorker<T>(
@@ -56,12 +67,21 @@ export async function runInWorker<T>(
     const worker = new Worker(WORKER_SOURCE, {
       eval: true,
       workerData: { entry: SHARED_ENTRY, task, input },
-      resourceLimits: { maxOldGenerationSizeMb: opts.maxHeapMb ?? 2048 },
+      resourceLimits: {
+        maxOldGenerationSizeMb: opts.maxHeapMb ?? 2048,
+        maxYoungGenerationSizeMb: 64,
+      },
     });
     let settled = false;
+    const timer = setTimeout(
+      () => finish(() => reject(new MiningTimeoutError())),
+      opts.timeoutMs ?? WORKER_TIMEOUT_MS,
+    );
+    timer.unref();
     const finish = (fn: () => void) => {
       if (settled) return;
       settled = true;
+      clearTimeout(timer);
       opts.signal?.removeEventListener('abort', onAbort);
       fn();
       void worker.terminate();
