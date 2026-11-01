@@ -68,8 +68,12 @@ Steps (tick as they are committed; a new session continues at the first unticked
       values, flat rows, filters); route list updated. `docs/integrations/POWER-BI.md`: key, tables, M paging
       function + table queries, relationships, DAX measures, scheduled refresh through the gateway, Excel, field
       names EN / AR, troubleshooting (a .pbit is not shipped, D-175).
-- [ ] 4. Microsoft Teams channel notifications (Workflows webhook URL, Adaptive Cards AR / EN, same delivery
-      log / retries / SSRF, host allow-list) + `docs/integrations/TEAMS.md`.
+- [x] 4. Microsoft Teams channel notifications (D-176): destinations of kind `TEAMS` in the webhook machinery
+      (step 2) — Adaptive Card 1.5 (`payloads.ts` `teamsCard`: EN / AR / both, Arabic `rtl`, sanitised texts,
+      own links only), Power Automate host allow-list + `teamsHosts`, encrypted URL shown without its
+      signature; web tab "Microsoft Teams" (card language). Tests: unit (card), Playwright (non-Teams host
+      refused, Arabic RTL test card at the receiver, URL signature hidden; passed locally). Docs:
+      `docs/integrations/TEAMS.md`; personal Teams notifications → BACKLOG.
 - [ ] 5. Static HTML export (process, branch, value chain path, wiki space → offline ZIP site).
 - [ ] 6. PowerPoint export (`pptxgenjs`).
 - [ ] 7. Scheduled report e-mails (subscriptions, recipient permissions, PDF / Excel / link, Asia/Dubai

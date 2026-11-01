@@ -2560,3 +2560,22 @@ only when a filter is set).
 A Power BI template (.pbit) is a binary, versioned file that cannot be produced and tested reliably here, so
 `docs/integrations/POWER-BI.md` ships a step-by-step guide with the M queries (a paging function plus one query
 per table), relationships and the field names in English and Arabic.
+
+## D-176 — Microsoft Teams channel notifications through Teams Workflows webhooks (Phase 4.4)
+
+**Decision:** Teams channels are destinations of kind `TEAMS` in the webhook machinery (D-174: same events,
+filters, persisted retries, switch-off, delivery log, SSRF rules) posting to a **Teams "Workflows" webhook URL**
+("When a Teams webhook request is received" → "Post card in a chat or channel"), the replacement of the retired
+Office 365 connectors. No Teams app, no Graph permissions.
+
+- Body: `{ type: "message", attachments: [ Adaptive Card 1.5 ] }` — title of the event, code and name of the
+  item, owner, facts (version, status, outcome, severity, period, value), buttons "Open in ProcessHub" /
+  "Open in the Knowledge Portal". Language per destination: English, Arabic (card `rtl: true`) or both (two
+  containers, the Arabic one `rtl`). Texts are sanitised (control and bidi-override characters removed, one
+  line, length-limited, Markdown link syntax broken up); only ProcessHub's own absolute links become buttons.
+  The card stored in the delivery log is exactly what was sent.
+- The URL (its query string holds the workflow's signature) is stored encrypted and shown without the query;
+  no extra signing secret. Hosts allowed by default: `*.logic.azure.com`, `*.environment.api.powerplatform.com`,
+  `*.webhook.office.com`; more in `integrations.webhooks.teamsHosts`.
+- Personal Teams chats / activity feed need a Teams app with Graph permissions → BACKLOG; personal
+  notifications stay e-mail (and in-app).

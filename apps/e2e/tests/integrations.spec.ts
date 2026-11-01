@@ -159,3 +159,39 @@ test('publishing a process delivers a signed webhook, shown in the delivery log'
   await page.getByRole('dialog').getByRole('button', { name: 'Save' }).click();
   await expect(row.getByText('Inactive')).toBeVisible();
 });
+
+test('a Teams channel gets an Adaptive Card in Arabic (right to left)', async ({
+  page,
+  request,
+}) => {
+  await request.delete(`${RECEIVER}/received`);
+  await loginAdmin(page);
+  await page.goto('/settings/integrations?tab=teams');
+  await page.getByRole('button', { name: 'Add Teams channel' }).click();
+  const dialog = page.getByRole('dialog');
+  await dialog.getByLabel('Name').fill(`E2E Teams ${stamp}`);
+  // Only Power Automate hosts are accepted for Teams …
+  await dialog.getByLabel('Teams Workflows webhook URL').fill('https://example.com/hook');
+  await dialog.getByRole('button', { name: 'Save' }).click();
+  await expect(page.getByText('This host is not on the allow-list')).toBeVisible();
+  // … except internal test receivers listed in OUTBOUND_ALLOWED_HOSTS.
+  await dialog.getByLabel('Teams Workflows webhook URL').fill(`${RECEIVER_TARGET}?sig=teams`);
+  await dialog.getByText('العربية').click();
+  await dialog.getByRole('button', { name: 'Save' }).click();
+  await expect(dialog).toBeHidden();
+  const row = page.getByRole('row', { name: new RegExp(`E2E Teams ${stamp}`) });
+  // The signature part of the URL is never shown again.
+  await expect(row).not.toContainText('sig=teams');
+  await row.getByRole('button', { name: 'Send test event' }).click();
+  await expect(page.getByText(/Test event delivered/)).toBeVisible();
+
+  const list = (await (await request.get(`${RECEIVER}/received`)).json()) as Received[];
+  const card = JSON.parse(list.at(-1)!.body);
+  expect(card.type).toBe('message');
+  const content = card.attachments[0].content;
+  expect(content).toMatchObject({ type: 'AdaptiveCard', version: '1.5', rtl: true });
+  expect(JSON.stringify(content)).toContain('رسالة تجريبية من ProcessHub');
+  await row.getByRole('button', { name: 'Delete' }).click();
+  await page.getByRole('tooltip').getByRole('button', { name: 'OK' }).click();
+  await expect(row).toBeHidden();
+});
