@@ -2811,3 +2811,8 @@ imported BPMN may carry execution settings (deploying needs workflow rights).
    - Logs with e-mail / IP addresses: **log retention ≤ 90 days** is a go-live checklist item.
    - Cookies without the `__Host-` prefix: accepted **on condition that ProcessHub has its own host name**
      (e.g. `processhub.dof.ajman.ae`) — go-live checklist item.
+   - CodeQL on the whole repository (push runs; pull-request runs only analyse changed code) found two more
+     results: a type check of the uploaded `files` parameter (fixed) and "clear-text storage" of the session
+     tokens in cookies — the intended design (httpOnly, Secure, SameSite=Strict), accepted by rule and file
+     in `.github/codeql/accepted-results.json`, which the SARIF gate reads (each entry needs a reason; stale
+     entries are reported).

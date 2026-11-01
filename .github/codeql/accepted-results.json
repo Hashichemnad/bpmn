@@ -1,0 +1,7 @@
+[
+  {
+    "rule": "js/clear-text-storage-of-sensitive-data",
+    "path": "apps/api/src/auth/cookies.ts",
+    "reason": "Session tokens are meant to be stored in cookies: httpOnly, Secure, SameSite=Strict, path-scoped (CLAUDE.md §7, docs/SECURITY.md §3 A02, D-191)."
+  }
+]
