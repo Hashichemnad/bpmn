@@ -101,7 +101,10 @@ export const execConfigSchema = z.object({
   set: z
     .array(
       z.object({
-        key: z.string().regex(/^[A-Za-z_][A-Za-z0-9_]{0,59}$/),
+        key: z
+          .string()
+          .regex(/^[A-Za-z_][A-Za-z0-9_]{0,59}$/)
+          .refine((k) => !['__proto__', 'constructor', 'prototype'].includes(k), 'RESERVED_KEY'),
         expression: z.string().max(2000),
       }),
     )
@@ -184,11 +187,26 @@ export function parseCycle(
   return { repeat, start, minutes };
 }
 
+/**
+ * Timer limits (final session part B, SEC-29): a timer start event or a non-interrupting boundary
+ * timer with `R/PT1S` would start cases or send notifications on every scheduler run without end.
+ */
+export const MIN_TIMER_DURATION_MINUTES = 1;
+export const MIN_TIMER_CYCLE_MINUTES = 5;
+export const MAX_TIMER_REPEAT = 1000;
+
 export function timerError(t: TimerDef | null): string | null {
   if (!t || !t.value.trim()) return 'MISSING';
-  if (t.kind === 'duration') return parseIsoDurationMinutes(t.value) === null ? 'INVALID' : null;
+  if (t.kind === 'duration') {
+    const minutes = parseIsoDurationMinutes(t.value);
+    if (minutes === null) return 'INVALID';
+    return minutes < MIN_TIMER_DURATION_MINUTES ? 'TOO_SHORT' : null;
+  }
   if (t.kind === 'date') return Number.isNaN(Date.parse(t.value)) ? 'INVALID' : null;
-  return parseCycle(t.value) ? null : 'INVALID';
+  const c = parseCycle(t.value);
+  if (!c) return 'INVALID';
+  if (c.minutes < MIN_TIMER_CYCLE_MINUTES) return 'TOO_SHORT';
+  return c.repeat !== null && c.repeat > MAX_TIMER_REPEAT ? 'TOO_MANY' : null;
 }
 
 // ---------- Workflow model ----------

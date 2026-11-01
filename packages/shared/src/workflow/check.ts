@@ -43,6 +43,8 @@ export const EXEC_ISSUE_CODES = [
   'NOTIFY_TEXT_MISSING',
   'TIMER_MISSING',
   'TIMER_INVALID',
+  'TIMER_TOO_SHORT',
+  'TIMER_TOO_MANY',
   'TIMER_CYCLE_INTERMEDIATE',
   'BOUNDARY_HOST',
   'BOUNDARY_EVENT_KIND',
@@ -226,6 +228,8 @@ function checkEvent(n: WfNode, model: WorkflowModel, add: Add) {
       return add('UNSUPPORTED_EVENT', n.id, 'error', 'timer');
     const err = timerError(n.timer);
     if (err === 'MISSING') add('TIMER_MISSING', n.id);
+    else if (err === 'TOO_SHORT') add('TIMER_TOO_SHORT', n.id, 'error', n.timer?.value);
+    else if (err === 'TOO_MANY') add('TIMER_TOO_MANY', n.id, 'error', n.timer?.value);
     else if (err) add('TIMER_INVALID', n.id, 'error', n.timer?.value);
     if (n.type === 'intermediateCatchEvent' && n.timer?.kind === 'cycle')
       add('TIMER_CYCLE_INTERMEDIATE', n.id);

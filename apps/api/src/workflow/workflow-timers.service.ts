@@ -1,6 +1,9 @@
 import { Injectable } from '@nestjs/common';
 import type { Prisma } from '@prisma/client';
 import {
+  MAX_TIMER_REPEAT,
+  MIN_TIMER_CYCLE_MINUTES,
+  MIN_TIMER_DURATION_MINUTES,
   parseCycle,
   parseIsoDurationMinutes,
   timerStarts,
@@ -39,10 +42,23 @@ export class WorkflowTimersService {
     if (t.kind === 'duration') {
       const minutes = parseIsoDurationMinutes(t.value);
       if (minutes === null) return null;
-      return { dueAt: await this.add(from, minutes, node.exec.workingTime), cycle: null };
+      return {
+        dueAt: await this.add(
+          from,
+          Math.max(minutes, MIN_TIMER_DURATION_MINUTES),
+          node.exec.workingTime,
+        ),
+        cycle: null,
+      };
     }
-    const c = parseCycle(t.value);
-    if (!c) return null;
+    const parsed = parseCycle(t.value);
+    if (!parsed) return null;
+    // Deployed models from before the deploy check existed are clamped too (SEC-29).
+    const c = {
+      ...parsed,
+      minutes: Math.max(parsed.minutes, MIN_TIMER_CYCLE_MINUTES),
+      repeat: parsed.repeat === null ? null : Math.min(parsed.repeat, MAX_TIMER_REPEAT),
+    };
     let due =
       c.start && c.start > from ? c.start : await this.add(from, c.minutes, node.exec.workingTime);
     if (c.start && c.start <= from) {

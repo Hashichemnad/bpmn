@@ -367,8 +367,8 @@ describe('Authorisation matrix (e2e)', () => {
     /^DELETE \/mining\/presets\/:id$/,
     /^POST \/mining\/jobs\/:id\/cancel$/,
     /^POST \/simulations\/:id\/ai\/(explain|suggest)$/,
-    // Phase 5.2: the executable check is read-only; out of office is one's own profile.
-    /^POST \/workflow\/processes\/:id\/check$/,
+    // Phase 5.2: out of office is one's own profile (the executable check needs workflow design
+    // rights since final session part B, SEC-47).
     /^PUT \/workflow\/out-of-office$/,
   ];
   /** Reviewers comment and decide on review steps assigned to them (governance tests cover it). */
