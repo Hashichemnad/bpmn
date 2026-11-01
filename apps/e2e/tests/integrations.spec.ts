@@ -293,6 +293,8 @@ test('a scheduled KPI report is set up, sent and logged', async ({ page, request
     const link = /\/reports\/deliveries\/[0-9a-f-]{36}/.exec(body.Text)![0];
     const [download] = await Promise.all([page.waitForEvent('download'), page.goto(link)]);
     expect(download.suggestedFilename()).toMatch(/\.pdf$/);
+    // Back to the list (the secure link opened the delivery page).
+    await page.goto('/reports/subscriptions');
   }
   await row.getByRole('button', { name: 'Delete' }).click();
   await page.getByRole('tooltip').getByRole('button', { name: 'OK' }).click();

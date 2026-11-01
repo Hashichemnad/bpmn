@@ -55,6 +55,16 @@ import { useErrorMessage, useFormatDate, useLocalized } from '@/components/i18n-
 import { useDepartmentTreeData } from '@/features/admin/useDepartmentTreeData';
 import { useProcessTreeOptions } from '@/features/modeler/process-tree-options';
 
+/** An absolute http(s) URL without credentials. */
+function isHttpUrl(value: string): boolean {
+  try {
+    const u = new URL(value);
+    return (u.protocol === 'https:' || u.protocol === 'http:') && !u.username && !u.password;
+  } catch {
+    return false;
+  }
+}
+
 const DELIVERY_COLOR: Record<WebhookDeliveryStatus, string> = {
   PENDING: 'gold',
   SUCCEEDED: 'green',
@@ -214,7 +224,18 @@ function DestinationForm({
               ? t('integrations:webhooks.urlKeep', { url: editing.urlDisplay })
               : t(kind === 'TEAMS' ? 'integrations:teams.urlHint' : 'integrations:webhooks.urlHint')
           }
-          rules={[{ required: !editing }, { type: 'url' }, { max: 2000 }]}
+          rules={[
+            { required: !editing },
+            { max: 2000 },
+            {
+              // Not Ant Design's `type: 'url'`: it refuses host names without a dot (internal
+              // hosts of OUTBOUND_ALLOWED_HOSTS); the server checks the destination fully.
+              validator: (_, value?: string) =>
+                !value || isHttpUrl(value)
+                  ? Promise.resolve()
+                  : Promise.reject(new Error(t('errors:WEBHOOK_URL_INVALID'))),
+            },
+          ]}
         >
           <Input dir="ltr" placeholder="https://" />
         </Form.Item>
