@@ -79,6 +79,12 @@ jobs:
           cp .env.example.prod .env
           ./scripts/generate-secrets.sh
           docker compose config --quiet
+      - name: Caddy and nginx configuration are valid
+        run: |
+          docker run --rm -e DOMAIN=processhub.example.com -e CADDY_TLS=internal \
+            -v "$PWD/deploy/Caddyfile:/etc/caddy/Caddyfile:ro" caddy:2.11-alpine \
+            caddy validate --config /etc/caddy/Caddyfile --adapter caddyfile
+          docker run --rm --entrypoint nginx "$(docker compose config --images | grep -E -- '-web$' | head -1)" -t
       - name: Shell scripts (shellcheck)
         run: shellcheck -x -s sh scripts/*.sh
       # Trivy (pinned release image, not the GitHub action) on the four images built above: OS packages
