@@ -1,0 +1,2 @@
+# Accepted Trivy findings (docs/SECURITY.md §9): one CVE id per line with a comment giving the reason and
+# a review date. Empty means every High / Critical finding with a fix fails the build.

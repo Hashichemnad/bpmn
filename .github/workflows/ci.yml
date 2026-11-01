@@ -62,6 +62,8 @@ jobs:
         run: node apps/web/scripts/bundle-report.mjs --budget=250
       - name: Dependency audit (high/critical)
         run: pnpm audit --audit-level high --prod
+      - name: Licence check (no copyleft in the shipped app, docs/SECURITY.md §9)
+        run: node scripts/check-licenses.mjs
 
   docker:
     name: Docker images
@@ -79,6 +81,29 @@ jobs:
           docker compose config --quiet
       - name: Shell scripts (shellcheck)
         run: shellcheck -x -s sh scripts/*.sh
+      # Trivy (pinned release image, not the GitHub action) on the four images built above: OS packages
+      # and Node dependencies, High / Critical with a fixed version available fail the job; accepted
+      # findings are listed with a reason in .trivyignore (docs/SECURITY.md §9).
+      - name: Image scan (Trivy, High / Critical with a fix)
+        run: |
+          mkdir -p trivy-reports
+          images="$(docker compose config --images | grep -E -- '-(api|migrate|web|renderer)$' | sort -u)"
+          echo "Scanning: $images"
+          status=0
+          for image in $images; do
+            docker run --rm -v /var/run/docker.sock:/var/run/docker.sock -v "$PWD:/work" -w /work \
+              -v trivy-cache:/root/.cache/trivy aquasec/trivy:0.67.2 image \
+              --scanners vuln --severity HIGH,CRITICAL --ignore-unfixed --ignorefile .trivyignore \
+              --exit-code 1 --format table --output "trivy-reports/${image##*/}.txt" "$image" || status=1
+            cat "trivy-reports/${image##*/}.txt"
+          done
+          exit $status
+      - uses: actions/upload-artifact@v6
+        if: always()
+        with:
+          name: trivy-reports
+          path: trivy-reports
+          retention-days: 14
 
   e2e:
     name: End-to-end (Docker Compose + Playwright)
@@ -132,6 +157,19 @@ jobs:
         run: pnpm --filter @processhub/e2e exec playwright install --with-deps chromium
       - name: Playwright smoke tests
         run: pnpm e2e
+      # OWASP ZAP baseline (passive scan of the running stack, pinned release). Rules that must hold are
+      # FAIL in .zap/rules.tsv; the rest are reported as warnings (-I). Report kept as an artifact.
+      - name: OWASP ZAP baseline scan
+        run: |
+          chmod 777 .zap
+          docker run --rm --network host -v "$PWD/.zap:/zap/wrk:rw" ghcr.io/zaproxy/zaproxy:2.16.1 \
+            zap-baseline.py -t "$E2E_BASE_URL" -c rules.tsv -I -r zap-report.html -J zap-report.json
+      - uses: actions/upload-artifact@v6
+        if: always()
+        with:
+          name: zap-report
+          path: .zap/zap-report.*
+          retention-days: 14
       - name: Backup / restore drill (database, files, encryption key; timings in the log)
         run: ./scripts/backup-drill.sh --yes
       - name: Stack logs

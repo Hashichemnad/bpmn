@@ -24,7 +24,10 @@ RUN pnpm --filter @processhub/web build:render \
 
 FROM node:22-alpine AS runtime
 # Alpine's Chromium; the diagram fonts (Inter, IBM Plex Sans Arabic) come with the bundle.
-RUN apk add --no-cache chromium ttf-freefont
+# OS security fixes first; npm / corepack removed (not used at runtime, final session part B).
+RUN apk upgrade --no-cache && apk add --no-cache chromium ttf-freefont \
+  && rm -rf /usr/local/lib/node_modules/npm /usr/local/lib/node_modules/corepack \
+    /usr/local/bin/npm /usr/local/bin/npx /usr/local/bin/corepack
 ENV NODE_ENV=production BUNDLE_DIR=/app/bundle PORT=3100 HOME=/tmp
 WORKDIR /app
 COPY --from=build --chown=root:root /out /app

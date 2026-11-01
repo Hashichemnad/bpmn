@@ -14,7 +14,12 @@ RUN pnpm --filter @processhub/web build && node apps/web/scripts/precompress.mjs
 
 # Unprivileged nginx (NGINX's official image variant): runs as user nginx (uid 101) and listens on
 # 8080, so the container needs no root and no extra capabilities (final session, part A).
-FROM nginxinc/nginx-unprivileged:1.27-alpine AS runtime
+# nginx 1.28 = the current stable branch (1.27 mainline is end-of-life); OS packages upgraded for security
+# fixes, then back to the unprivileged user (final session part B, Trivy gate).
+FROM nginxinc/nginx-unprivileged:1.28-alpine AS runtime
+USER root
+RUN apk upgrade --no-cache
+USER 101
 COPY apps/web/nginx.conf /etc/nginx/conf.d/default.conf
 COPY apps/web/nginx-security-headers.conf /etc/nginx/snippets/security-headers.conf
 COPY --from=build /app/apps/web/dist /usr/share/nginx/html

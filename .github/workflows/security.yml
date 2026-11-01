@@ -1,0 +1,83 @@
+name: Security scans
+
+# Static analysis (CodeQL) and secret scanning (gitleaks) — final session part B (docs/SECURITY.md §9).
+# The image scan (Trivy), the licence check and the OWASP ZAP baseline run in ci.yml next to the jobs that
+# build the images / start the stack. Every gate fails on High / Critical; the reports are kept as artifacts.
+on:
+  push:
+    branches: [main, 'phase-*', 'final-*']
+  pull_request:
+  schedule:
+    # Weekly, so new CodeQL queries and advisories are seen without a code change (Sunday 03:17 UTC).
+    - cron: '17 3 * * 0'
+
+concurrency:
+  group: security-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  codeql:
+    name: CodeQL static analysis
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    permissions:
+      contents: read
+      security-events: write
+    steps:
+      - uses: actions/checkout@v5
+      - uses: github/codeql-action/init@v4
+        with:
+          languages: javascript-typescript
+          config-file: ./.github/codeql/codeql-config.yml
+      - uses: github/codeql-action/analyze@v4
+        with:
+          category: '/language:javascript-typescript'
+          output: codeql-results
+          # Code scanning alerts need GitHub Advanced Security on private repositories; the gate below works
+          # without it (SARIF file), the upload is best effort.
+          upload: never
+      - name: Upload to code scanning (where available)
+        if: always()
+        continue-on-error: true
+        uses: github/codeql-action/upload-sarif@v4
+        with:
+          sarif_file: codeql-results
+          category: '/language:javascript-typescript'
+      - name: Gate — no High / Critical results
+        run: node scripts/sarif-gate.mjs codeql-results --fail-at 7.0
+      - uses: actions/upload-artifact@v6
+        if: always()
+        with:
+          name: codeql-sarif
+          path: codeql-results
+          retention-days: 14
+
+  gitleaks:
+    name: Secret scanning (gitleaks)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      # The working tree (everything that ships) and the full history; test fixtures with fake keys are
+      # allow-listed in .gitleaks.toml. The container is pinned to a release.
+      - name: Scan working tree
+        run: >-
+          docker run --rm -v "$PWD:/repo" -w /repo zricethezav/gitleaks:v8.28.0
+          dir /repo --config /repo/.gitleaks.toml --redact --no-banner --exit-code 1
+          --report-format sarif --report-path /repo/gitleaks-tree.sarif
+      - name: Scan history
+        run: >-
+          docker run --rm -v "$PWD:/repo" -w /repo zricethezav/gitleaks:v8.28.0
+          git /repo --config /repo/.gitleaks.toml --redact --no-banner --exit-code 1
+          --report-format sarif --report-path /repo/gitleaks-history.sarif
+      - uses: actions/upload-artifact@v6
+        if: always()
+        with:
+          name: gitleaks-reports
+          path: gitleaks-*.sarif
+          retention-days: 14
