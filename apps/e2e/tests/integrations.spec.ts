@@ -130,7 +130,10 @@ test('publishing a process delivers a signed webhook, shown in the delivery log'
       async () => {
         const list = (await (await request.get(`${RECEIVER}/received`)).json()) as Received[];
         delivery = list.find(
-          (r) => r.headers['x-processhub-event'] === 'process.published' && r.body.includes(id),
+          (r) =>
+            r.path === '/hook' &&
+            r.headers['x-processhub-event'] === 'process.published' &&
+            r.body.includes(id),
         );
         return !!delivery;
       },
@@ -188,7 +191,10 @@ test('a Teams channel gets an Adaptive Card in Arabic (right to left)', async ({
   await expect(page.getByText(/Test event delivered/)).toBeVisible();
 
   const list = (await (await request.get(`${RECEIVER}/received`)).json()) as Received[];
-  const card = JSON.parse(list.at(-1)!.body);
+  // The seeded demo webhook (/demo) posts to the same receiver: take the Teams request.
+  const teams = list.filter((r) => r.path === '/hook?sig=teams');
+  expect(teams.length).toBeGreaterThan(0);
+  const card = JSON.parse(teams.at(-1)!.body);
   expect(card.type).toBe('message');
   const content = card.attachments[0].content;
   expect(content).toMatchObject({ type: 'AdaptiveCard', version: '1.5', rtl: true });
