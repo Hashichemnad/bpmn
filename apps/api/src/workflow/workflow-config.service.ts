@@ -177,7 +177,12 @@ export class WorkflowConfigService {
         before.startMode !== input.startMode ||
         [...before.startRoles].sort().join() !== [...input.startRoles].sort().join() ||
         [...before.startDepartmentIds].sort().join() !==
-          [...input.startDepartmentIds].sort().join())
+          [...input.startDepartmentIds].sort().join() ||
+        // Data protection settings of live cases (SEC-31): who monitors case data, how long form
+        // data is kept and whether the live event log is pseudonymised.
+        [...before.monitorUserIds].sort().join() !== [...input.monitorUserIds].sort().join() ||
+        before.retentionDays !== input.retentionDays ||
+        before.pseudonymiseLog !== input.pseudonymiseLog)
     )
       throw forbidden('DEPLOY_RIGHTS_REQUIRED');
     const clash = await this.prisma.workflowProcessConfig.findFirst({
@@ -251,6 +256,8 @@ export class WorkflowConfigService {
     user: AuthUser,
   ): Promise<ExecCheckDto> {
     const p = await this.process(processId);
+    // The check parses the posted model and reads the linked decision tables: designers only (SEC-47).
+    if (!canDesignWorkflow(user, p)) throw forbidden();
     let bpmnXml = xml;
     let versionNumber: number | null = null;
     if (source === 'published') {
@@ -263,7 +270,6 @@ export class WorkflowConfigService {
       bpmnXml = m?.bpmnXml ?? '';
     }
     const { issues } = await this.fullCheck(p.id, bpmnXml ?? '');
-    void user;
     return {
       issues,
       versionNumber,

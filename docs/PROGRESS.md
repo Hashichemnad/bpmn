@@ -2,7 +2,60 @@
 
 Read this together with `CLAUDE.md` at the start of every session.
 
-## Current state — 2026-11-01 (Phase 4.4 — Integrations and exports, branch `integrations-exports`)
+## Current state — 2026-11-01 (Final Part B — security review and go-live readiness, branch `final-b-security`)
+
+Phase 4.4 and Final Part A are merged into `main`. This session does the final adversarial security review
+(Phase 6 part B). It works on the harness branch `claude/youthful-brahmagupta-fmitm8` and pushes the same commits
+to `final-b-security` (draft PR #25). Findings are numbered SEC-12 … in `docs/SECURITY.md` §2.
+
+Local setup: PostgreSQL 16 (`service postgresql start`; role `processhub` / `devpassword`, databases
+`processhub`, `processhub_test`), `pnpm install`, `pnpm --filter @processhub/api prisma:generate`, build the shared
+package. **Always run the API e2e tests with `--runInBand`** (they share one database).
+
+Steps (tick as they are committed; a new session continues at the first unticked one):
+
+- [x] 1. CI security scans: `security.yml` (CodeQL with SARIF gate `scripts/sarif-gate.mjs`, gitleaks tree + history
+      with `.gitleaks.toml`), `ci.yml` (licence check `scripts/check-licenses.mjs`, Trivy on the four images with
+      `.trivyignore`, OWASP ZAP baseline with `.zap/rules.tsv`); Dockerfiles: `apk upgrade`, npm / corepack removed
+      from runtime images, nginx 1.30 (Alpine 3.24). CodeQL findings fixed (rich-text check, BPMN namespace).
+- [x] 2. Uploads: real uncompressed size of Office packages (SEC-12), restore package untrusted (SEC-13), parallel
+      upload slots (SEC-14), macro check for Office attachments (SEC-17).
+- [x] 3. Authorisation: assurance comments / issue fields / audit verification / control-test four-eyes / diagram
+      placement / case comments (SEC-23 – SEC-27, SEC-30); PowerPoint export visibility (SEC-34); AI on imported
+      documents (SEC-35); simulations, ProcessHub logs, job cancel (SEC-19, SEC-20, SEC-46).
+- [x] 4. Workflow engine limits (SEC-28, SEC-29, SEC-31, SEC-33, SEC-47).
+- [x] 5. Abuse limits: per-user rate limits + job quota (SEC-15), worker time limit and cache purge (SEC-16, SEC-18).
+- [x] 6. Auth / sessions: atomic lockout counter (SEC-36), sessions revoked on role / 2FA changes + refresh check
+      (SEC-37), sign out everywhere + admin revoke (SEC-38), Caddy log redaction (SEC-39).
+- [x] 7. Secrets: key rotation (`INTEGRATIONS_ENCRYPTION_KEY_PREVIOUS`, re-encrypt script, docs, SEC-40), exception
+      filter logging, audit scrub (SEC-45); outbound total timeouts (SEC-41), SMTP requireTLS (SEC-42), renderer PDF
+      without JavaScript (SEC-43), HTML export CSP hash (SEC-44); AI limit reservation (SEC-21); space export cap
+      (SEC-22); nodemailer update.
+- [x] 8. Antivirus (ClamAV container, scan in `StorageService.put` + Excel imports; decision D-183).
+- [x] 9. Docs: SECURITY.md (findings table, UAE context, CSP, licences, scans), DEPLOYMENT.md (consolidated go-live
+      checklist, key rotation, pen-test readiness note), DECISIONS (D-183 …), README, CLAUDE.md (Phase 6 done).
+
+**Result:** 37 findings (SEC-12 – SEC-48), no High, 22 Medium, 15 Low / Info — all High / Medium fixed, the
+rest fixed or accepted (`docs/SECURITY.md` §2, §6; DECISIONS D-183 – D-190). Go-live checklist and pen-test
+readiness note: `docs/DEPLOYMENT.md` §13 – §14. Phase 6 is marked done in CLAUDE.md.
+
+**Product owner answers (D-191), done:** antivirus firewall / private mirror / health alert
+(`/api/v1/health/antivirus`), files per case in Settings → Workflow execution, SEC-08 resolved, CSP rows merged,
+go-live checklist: log retention ≤ 90 days and ProcessHub's own host name. Trivy's first real run: web image moved
+to nginx 1.30 (Alpine 3.24), Prisma CLI deepmerge-ts 8.
+
+**Next:** merge PR #25 after CI is green (CodeQL, gitleaks, Trivy, ZAP baseline, Playwright); then work through
+the go-live checklist with IT. Later items: `docs/BACKLOG.md` "From the final security review".
+
+**Known issues / notes**
+
+- ClamAV is not part of the trial stack (`docker-compose.yml`) or the tests (fake clamd in unit tests); the
+  production compose file runs it. Its first start downloads signatures (minutes) — uploads answer
+  "virus scanner not available" until it is healthy.
+- Trivy, ZAP and gitleaks run only in CI (no Docker daemon in the development sandbox).
+- Rate limits, lockout counters, upload slots and AI in-flight counts are per API instance (in memory).
+
+## Previous state — 2026-11-01 (Phase 4.4 — Integrations and exports, branch `integrations-exports`)
 
 All feature phases and Final Part A are merged into `main`. This branch builds the integration and export scope
 the product owner decided (in: public API with API keys, webhooks, Power BI / reporting feed, Microsoft Teams

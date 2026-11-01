@@ -81,6 +81,8 @@ services:
       # Required in production (generate-secrets.sh), so they live in .env and are backed up with it.
       JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET:?Set JWT_ACCESS_SECRET in .env (scripts/generate-secrets.sh)}
       INTEGRATIONS_ENCRYPTION_KEY: ${INTEGRATIONS_ENCRYPTION_KEY:?Set INTEGRATIONS_ENCRYPTION_KEY in .env (scripts/generate-secrets.sh)}
+      # Only during a key rotation (docs/DEPLOYMENT.md "Key rotation", SEC-40).
+      INTEGRATIONS_ENCRYPTION_KEY_PREVIOUS: ${INTEGRATIONS_ENCRYPTION_KEY_PREVIOUS:-}
       COOKIE_SECURE: 'true'
       APP_URL: https://${DOMAIN}
       CORS_ORIGINS: ${CORS_ORIGINS:-https://${DOMAIN}}
@@ -106,6 +108,11 @@ services:
       # Internal diagram / PDF renderer (D-172); empty RENDERER_URL turns server-side images off.
       RENDERER_URL: ${RENDERER_URL-http://renderer:3100}
       RENDERER_TOKEN: ${RENDERER_TOKEN:?Set RENDERER_TOKEN in .env (scripts/generate-secrets.sh)}
+      # Every upload is scanned by ClamAV before it is stored (D-184); uploads are refused while the
+      # scanner is not reachable (ANTIVIRUS_FAIL_OPEN=false).
+      ANTIVIRUS: ${ANTIVIRUS:-clamav}
+      CLAMAV_HOST: clamav
+      ANTIVIRUS_FAIL_OPEN: ${ANTIVIRUS_FAIL_OPEN:-false}
     volumes:
       - api-data:/app/data
     networks: [backend, egress, render]
@@ -116,6 +123,8 @@ services:
         condition: service_healthy
       storage:
         condition: service_healthy
+      clamav:
+        condition: service_started
     # Health check: see apps/api/Dockerfile (GET /api/v1/health, checks the database).
     deploy:
       resources:
@@ -141,6 +150,31 @@ services:
         condition: service_healthy
       storage:
         condition: service_healthy
+
+  # Antivirus (ClamAV daemon, D-184): the API streams every upload to clamd (INSTREAM, port 3310 on the
+  # internal network) before storing it. freshclam updates the signatures through `egress` (from
+  # database.clamav.net, or the mirror set in /etc/clamav/freshclam.conf). The first start downloads
+  # the signatures (a few minutes, ~300 MB); uploads wait for "healthy". Needs about 1.5 GB of RAM.
+  clamav:
+    image: ${CLAMAV_IMAGE:-clamav/clamav:1.4}
+    restart: unless-stopped
+    environment:
+      CLAMAV_NO_MILTERD: 'true'
+    volumes:
+      - clamav-db:/var/lib/clamav
+      # Private signature mirror (no outbound access, docs/DEPLOYMENT.md §10 "Antivirus"):
+      # - ./deploy/freshclam.conf:/etc/clamav/freshclam.conf:ro
+    networks: [backend, egress]
+    healthcheck:
+      test: ['CMD', 'clamdcheck.sh']
+      interval: 60s
+      timeout: 10s
+      retries: 3
+      start_period: 10m
+    deploy:
+      resources:
+        limits: { cpus: '${CLAMAV_CPUS:-1}', memory: '${CLAMAV_MEMORY:-2G}' }
+    logging: *logging
 
   # Diagram / PDF renderer (headless Chromium, D-172): only on the internal `render` network (no
   # internet, nothing published), read-only, unprivileged, without capabilities.
@@ -240,6 +274,7 @@ networks:
     internal: true
 
 volumes:
+  clamav-db:
   postgres-data:
   storage-data:
   api-data:

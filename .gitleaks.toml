@@ -1,0 +1,25 @@
+# gitleaks configuration (final session part B, docs/SECURITY.md §9): the default rules, minus test
+# fixtures and documentation that hold obviously fake values (e.g. 'sk-ant-secret-ai-key-…', 'glpat-secret',
+# 'devpassword'). Real secrets live only in the server's .env (see docs/DEPLOYMENT.md), never in Git.
+title = "ProcessHub gitleaks config"
+
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Test fixtures, examples and documentation with fake values"
+paths = [
+  '''(^|/)apps/api/test/''',
+  '''(^|/)apps/e2e/''',
+  '''\.spec\.tsx?$''',
+  '''\.test\.tsx?$''',
+  '''\.e2e-spec\.ts$''',
+  '''(^|/)\.env\.example(\.prod)?$''',
+  '''(^|/)docs/''',
+  '''(^|/)README\.md$''',
+  '''(^|/)pnpm-lock\.yaml$''',
+  '''(^|/)docker-compose\.yml$''',
+  '''(^|/)apps/api/prisma/seed[^/]*\.ts$''',
+  '''(^|/)packages/shared/src/.*fixtures?''',
+  '''(^|/)apps/web/src/locales/''',
+]

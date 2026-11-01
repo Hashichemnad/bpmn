@@ -331,4 +331,62 @@ describe('Two-factor authentication (e2e)', () => {
     expect((await other.login('user@test.local', '')).status).toBe(400);
     expect((await other.login('user@test.local')).body.code).toBe('INVALID_CREDENTIALS');
   });
+  describe('sessions (SEC-37, SEC-38)', () => {
+    it('a role that requires 2FA ends a session without 2FA at the next refresh', async () => {
+      const c = await loggedIn(ctx.app, 'user@test.local');
+      await ctx.prisma.setting.update({
+        where: { key: SETTING_KEYS.AUTH },
+        data: { value: { ...AUTH_DEFAULTS, mfaRequiredRoles: ['MODELER'] } },
+      });
+      expect((await c.post('/auth/refresh')).status).toBe(401);
+      expect(
+        await ctx.prisma.refreshToken.count({
+          where: { user: { email: 'user@test.local' }, revokedAt: null },
+        }),
+      ).toBe(0);
+    });
+
+    it('signs out everywhere, ending access tokens at once', async () => {
+      const a = await loggedIn(ctx.app, 'user@test.local');
+      const b = await loggedIn(ctx.app, 'user@test.local');
+      await new Promise((r) => setTimeout(r, 1100)); // tokens of an earlier second
+      await a.post('/auth/sessions/revoke-all').expect(204);
+      await b.get('/auth/me').expect(401);
+      expect((await b.post('/auth/refresh')).status).toBe(401);
+      const audit = await ctx.prisma.auditLog.findFirst({
+        where: { action: 'LOGOUT', summary: { path: ['everywhere'], equals: true } },
+      });
+      expect(audit).not.toBeNull();
+      // A new sign-in (a later second) works.
+      await new Promise((r) => setTimeout(r, 1100));
+      const again = await loggedIn(ctx.app, 'user@test.local');
+      await again.get('/auth/me').expect(200);
+    });
+
+    it('administrators end the sessions of a user; only Super Admins those of a Super Admin', async () => {
+      await createUser(ctx.prisma, 'admin2@test.local', ['ADMIN']);
+      const victim = await loggedIn(ctx.app, 'user@test.local');
+      const admin = await loggedIn(ctx.app, 'admin2@test.local');
+      const userId = (
+        await ctx.prisma.user.findUniqueOrThrow({ where: { email: 'user@test.local' } })
+      ).id;
+      const superId = (
+        await ctx.prisma.user.findUniqueOrThrow({ where: { email: 'admin@test.local' } })
+      ).id;
+      await new Promise((r) => setTimeout(r, 1100));
+      await admin.post(`/users/${userId}/sessions/revoke`).expect(204);
+      await victim.get('/auth/me').expect(401);
+      await admin.post(`/users/${superId}/sessions/revoke`).expect(403);
+      // An Admin cannot reset another administrator's password (account takeover).
+      const peer = (
+        await ctx.prisma.user.findUniqueOrThrow({ where: { email: 'admin2@test.local' } })
+      ).id;
+      await createUser(ctx.prisma, 'admin3@test.local', ['ADMIN']);
+      const admin3 = await loggedIn(ctx.app, 'admin3@test.local');
+      await admin3
+        .post(`/users/${peer}/reset-password`)
+        .send({ newPassword: 'Another-Password1' })
+        .expect(403);
+    });
+  });
 });

@@ -47,7 +47,11 @@
     "invite": "Send invitation again",
     "invited": "Invitation sent.",
     "inviteFailed": "The invitation e-mail could not be sent.",
-    "noPassword": "Invited"
+    "noPassword": "Invited",
+    "revokeSessions": "End sessions",
+    "revokeSessionsTitle": "End all sessions of {{name}}?",
+    "revokeSessionsText": "The user is signed out on every device at once and has to sign in again. Use this for a lost device or suspected misuse.",
+    "sessionsRevoked": "All sessions ended."
   },
   "departments": {
     "title": "Departments",

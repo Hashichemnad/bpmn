@@ -35,6 +35,7 @@ import { randomUUID } from 'node:crypto';
 import { PrismaService } from '../prisma/prisma.service';
 import { AuditService } from '../audit/audit.service';
 import { badRequest } from '../common/app-exception';
+import { assertSafeWorkbook } from '../common/excel';
 import type { AuthUser, RequestMeta } from '../common/auth-user';
 import { GrcService } from './grc.service';
 import { GrcSettingsService } from './grc-settings.service';
@@ -432,6 +433,7 @@ export class GrcExcelService {
     // xlsx is a ZIP archive: check the signature, not the name or the declared type.
     if (file.buffer.subarray(0, 4).toString('hex') !== '504b0304')
       throw badRequest('INVALID_FILE_TYPE');
+    await assertSafeWorkbook(file.buffer);
     const wb = new ExcelJS.Workbook();
     try {
       await wb.xlsx.load(file.buffer as unknown as ArrayBuffer);

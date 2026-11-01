@@ -62,6 +62,8 @@ jobs:
         run: node apps/web/scripts/bundle-report.mjs --budget=250
       - name: Dependency audit (high/critical)
         run: pnpm audit --audit-level high --prod
+      - name: Licence check (no copyleft in the shipped app, docs/SECURITY.md §9)
+        run: node scripts/check-licenses.mjs
 
   docker:
     name: Docker images
@@ -77,8 +79,45 @@ jobs:
           cp .env.example.prod .env
           ./scripts/generate-secrets.sh
           docker compose config --quiet
+      - name: Caddy and nginx configuration are valid
+        run: |
+          docker run --rm -e DOMAIN=processhub.example.com -e CADDY_TLS=internal \
+            -v "$PWD/deploy/Caddyfile:/etc/caddy/Caddyfile:ro" caddy:2.11-alpine \
+            caddy validate --config /etc/caddy/Caddyfile --adapter caddyfile
+          project="$(docker compose config --format json | jq -r .name)"
+          web_image="${project}-web"
+          docker image inspect "$web_image" > /dev/null
+          echo "nginx -t in $web_image"
+          docker run --rm --add-host api:127.0.0.1 --entrypoint nginx "$web_image" -t
       - name: Shell scripts (shellcheck)
         run: shellcheck -x -s sh scripts/*.sh
+      # Trivy (pinned release image, not the GitHub action) on the four images built above: OS packages
+      # and Node dependencies, High / Critical with a fixed version available fail the job; accepted
+      # findings are listed with a reason in .trivyignore (docs/SECURITY.md §9).
+      - name: Image scan (Trivy, High / Critical with a fix)
+        run: |
+          mkdir -p trivy-reports
+          # Compose names built images <project>-<service>.
+          project="$(docker compose config --format json | jq -r .name)"
+          images="$(docker images --format '{{.Repository}}:{{.Tag}}' | grep -E "^${project}-(api|migrate|web|renderer):" | sort -u)"
+          echo "Scanning: $images"
+          if [ "$(printf '%s\n' $images | grep -c .)" -lt 4 ]; then echo 'Expected the four built images'; exit 1; fi
+          status=0
+          for image in $images; do
+            report="$(printf '%s' "${image##*/}" | tr ':' '_')"
+            docker run --rm -v /var/run/docker.sock:/var/run/docker.sock -v "$PWD:/work" -w /work \
+              -v trivy-cache:/root/.cache/trivy aquasec/trivy:0.67.2 image \
+              --scanners vuln --severity HIGH,CRITICAL --ignore-unfixed --ignorefile .trivyignore \
+              --exit-code 1 --format table --output "trivy-reports/${report}.txt" "$image" || status=1
+            cat "trivy-reports/${report}.txt"
+          done
+          exit $status
+      - uses: actions/upload-artifact@v6
+        if: always()
+        with:
+          name: trivy-reports
+          path: trivy-reports
+          retention-days: 14
 
   e2e:
     name: End-to-end (Docker Compose + Playwright)
@@ -109,7 +148,7 @@ jobs:
         # The mock Salesforce of the e2e suite runs on the runner (host.docker.internal); secrets
         # of the Salesforce settings need an encryption key.
         run: |
-          printf 'LOGIN_RATE_LIMIT_MAX=1000\nRATE_LIMIT_MAX=5000\n' > .env
+          printf 'LOGIN_RATE_LIMIT_MAX=1000\nRATE_LIMIT_MAX=5000\nUSER_RATE_LIMIT_SCALE=100\n' > .env
           printf 'OUTBOUND_ALLOWED_HOSTS=mailpit,host.docker.internal,webhook-receiver\n' >> .env
           printf 'INTEGRATIONS_ENCRYPTION_KEY=%s\n' "$(openssl rand -base64 32)" >> .env
       - name: Start the stack
@@ -132,6 +171,19 @@ jobs:
         run: pnpm --filter @processhub/e2e exec playwright install --with-deps chromium
       - name: Playwright smoke tests
         run: pnpm e2e
+      # OWASP ZAP baseline (passive scan of the running stack, pinned release). Rules that must hold are
+      # FAIL in .zap/rules.tsv; the rest are reported as warnings (-I). Report kept as an artifact.
+      - name: OWASP ZAP baseline scan
+        run: |
+          chmod 777 .zap
+          docker run --rm --network host -v "$PWD/.zap:/zap/wrk:rw" ghcr.io/zaproxy/zaproxy:2.16.1 \
+            zap-baseline.py -t "$E2E_BASE_URL" -c rules.tsv -I -r zap-report.html -J zap-report.json
+      - uses: actions/upload-artifact@v6
+        if: always()
+        with:
+          name: zap-report
+          path: .zap/zap-report.*
+          retention-days: 14
       - name: Backup / restore drill (database, files, encryption key; timings in the log)
         run: ./scripts/backup-drill.sh --yes
       - name: Stack logs

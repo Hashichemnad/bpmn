@@ -57,6 +57,19 @@ const envSchema = z.object({
       (v) => v === '' || Buffer.from(v, 'base64').length === 32,
       'INTEGRATIONS_ENCRYPTION_KEY must be 32 bytes, base64-encoded (openssl rand -base64 32)',
     ),
+  /** Previous keys (comma-separated) still accepted for decryption during a key rotation (SEC-40). */
+  INTEGRATIONS_ENCRYPTION_KEY_PREVIOUS: z
+    .string()
+    .default('')
+    .refine(
+      (v) =>
+        v
+          .split(',')
+          .map((k) => k.trim())
+          .filter(Boolean)
+          .every((k) => Buffer.from(k, 'base64').length === 32),
+      'INTEGRATIONS_ENCRYPTION_KEY_PREVIOUS must list 32-byte base64 keys, separated by commas',
+    ),
   /** Timeout for calls to GitHub / GitLab, in milliseconds. */
   GIT_HTTP_TIMEOUT_MS: z.coerce.number().int().min(1000).default(20000),
   /** Timeout for calls to Salesforce (KPI link), in milliseconds. */
@@ -77,6 +90,25 @@ const envSchema = z.object({
   WORKFLOW_POLL_SECONDS: z.coerce.number().int().min(0).max(3600).default(15),
   /** Timeout for one SMTP delivery, in milliseconds. */
   SMTP_TIMEOUT_MS: z.coerce.number().int().min(1000).default(15000),
+  /**
+   * Antivirus scan of uploads before they are stored (final session part B, D-184): `clamav` = the
+   * ClamAV daemon of the production stack (clamd INSTREAM), `off` = no scan (trial stack, tests).
+   */
+  ANTIVIRUS: z.enum(['off', 'clamav']).default('off'),
+  CLAMAV_HOST: z.string().default('clamav'),
+  CLAMAV_PORT: z.coerce.number().int().min(1).max(65535).default(3310),
+  ANTIVIRUS_TIMEOUT_MS: z.coerce.number().int().min(1000).default(60000),
+  /** Files above this size are not sent to the scanner (clamd StreamMaxLength, default 25 MB). */
+  ANTIVIRUS_MAX_BYTES: z.coerce
+    .number()
+    .int()
+    .min(1024)
+    .default(25 * 1024 * 1024),
+  /** true = store uploads when the scanner cannot be reached (not recommended). */
+  ANTIVIRUS_FAIL_OPEN: z
+    .enum(['true', 'false'])
+    .default('false')
+    .transform((v) => v === 'true'),
   /** Timeout for one call to the AI provider, in milliseconds (generation can take a while). */
   AI_HTTP_TIMEOUT_MS: z.coerce.number().int().min(1000).default(180000),
   /**

@@ -184,7 +184,11 @@ export const normaliseEntryPath = (p: string) => p.replace(/\\/g, '/').replace(/
  * entry count, declared total size, ratio per entry, encrypted entries, unsafe paths
  * (absolute, drive letters, "..", NUL — ZIP-slip) and symbolic links.
  */
-export function inspectZip(buf: Buffer, file = ''): ZipEntryInfo[] {
+export function inspectZip(
+  buf: Buffer,
+  file = '',
+  maxTotal: number = IMPORT_LIMITS.zipUncompressedBytes,
+): ZipEntryInfo[] {
   // End of central directory: last 22 bytes + up to 64 KB comment.
   let eocd = -1;
   for (let i = buf.length - 22; i >= Math.max(0, buf.length - 22 - 0xffff); i--) {
@@ -226,10 +230,10 @@ export function inspectZip(buf: Buffer, file = ''): ZipEntryInfo[] {
       throw new ImportFileError('ZIP_UNSAFE_PATH', { file, entry: name });
     if (name.endsWith('/')) continue;
     total += size;
-    if (total > IMPORT_LIMITS.zipUncompressedBytes)
+    if (total > maxTotal)
       throw new ImportFileError('ZIP_TOO_LARGE', {
         file,
-        max: Math.round(IMPORT_LIMITS.zipUncompressedBytes / 1024 / 1024),
+        max: Math.round(maxTotal / 1024 / 1024),
       });
     if (size > 1024 * 1024 && size / Math.max(1, compressedSize) > IMPORT_LIMITS.zipRatio)
       throw new ImportFileError('ZIP_RATIO', { file, entry: name });
@@ -242,8 +246,12 @@ export function inspectZip(buf: Buffer, file = ''): ZipEntryInfo[] {
  * Opens a ZIP after `inspectZip`. Reads stream the entry and stop as soon as it grows beyond its
  * declared size or the archive's budget — a lying header cannot inflate past the limits.
  */
-export async function openSafeZip(buf: Buffer, file = ''): Promise<SafeZip> {
-  const entries = inspectZip(buf, file);
+export async function openSafeZip(
+  buf: Buffer,
+  file = '',
+  maxBytes: number = IMPORT_LIMITS.zipUncompressedBytes,
+): Promise<SafeZip> {
+  const entries = inspectZip(buf, file, maxBytes);
   let zip: JSZip;
   try {
     zip = await JSZip.loadAsync(buf, { checkCRC32: true });
@@ -255,7 +263,7 @@ export async function openSafeZip(buf: Buffer, file = ''): Promise<SafeZip> {
   zip.forEach((path, obj) => {
     if (!obj.dir) objects.set(normaliseEntryPath(path), obj);
   });
-  let budget = IMPORT_LIMITS.zipUncompressedBytes;
+  let budget = maxBytes;
   const read = (path: string) =>
     new Promise<Buffer>((resolve, reject) => {
       const info = byPath.get(path);
@@ -286,22 +294,59 @@ export async function openSafeZip(buf: Buffer, file = ''): Promise<SafeZip> {
   };
 }
 
+/** True when a ZIP's entry list contains a VBA project (renamed .docm / .xlsm / .pptm). */
+export const hasMacroParts = (entries: { path: string }[]) =>
+  entries.some((e) => /vbaProject\.bin$|vbaData\.xml$/i.test(e.path));
+
 /**
  * Office Open XML package checks (docx / xlsx / vsdx): the main part must exist and the package
  * must not contain VBA macros (a renamed .docm / .xlsm).
+ *
+ * Every entry is decompressed once through the budgeted reader (final session part B, SEC-12):
+ * ExcelJS and mammoth open the buffer again with their own unzip, which trusts the declared sizes
+ * and inflates an entry completely — a lying header ("1 KB" that inflates to gigabytes) would
+ * exhaust the API's memory. After this check the real uncompressed size is known to be within
+ * `maxBytes`.
  */
 export async function checkOfficePackage(
   buf: Buffer,
   file: string,
   mainPart: string,
+  maxBytes: number = IMPORT_LIMITS.zipUncompressedBytes,
 ): Promise<SafeZip> {
-  const zip = await openSafeZip(buf, file);
-  if (zip.entries.some((e) => /vbaProject\.bin$|vbaData\.xml$/i.test(e.path)))
-    throw new ImportFileError('MACRO_NOT_ALLOWED', { file });
+  const zip = await openSafeZip(buf, file, maxBytes);
+  for (const entry of zip.entries) await zip.read(entry.path);
+  if (hasMacroParts(zip.entries)) throw new ImportFileError('MACRO_NOT_ALLOWED', { file });
   if (zip.has('[Content_Types].xml')) {
     const types = await zip.readText('[Content_Types].xml');
     if (/macroEnabled/i.test(types)) throw new ImportFileError('MACRO_NOT_ALLOWED', { file });
   }
   if (!zip.has(mainPart)) throw new ImportFileError('FILE_TYPE_MISMATCH', { file });
   return zip;
+}
+
+/**
+ * Excel workbook uploads parsed outside the Import Center (GRC / EA / KPI Excel imports): the same
+ * structure, macro and real-size checks as `checkOfficePackage`, with a smaller budget because the
+ * whole workbook is loaded into memory by ExcelJS in the request (SEC-12).
+ */
+export const WORKBOOK_UNCOMPRESSED_BYTES = 60 * 1024 * 1024;
+export async function checkWorkbookUpload(buf: Buffer, file = 'upload.xlsx'): Promise<void> {
+  await checkOfficePackage(buf, file, 'xl/workbook.xml', WORKBOOK_UNCOMPRESSED_BYTES);
+}
+
+/**
+ * Event-log workbooks (process mining) can be large — the sheets are streamed row by row — so the
+ * total budget is wider, but the archive structure, macros and the one part ExcelJS keeps in memory
+ * (`xl/sharedStrings.xml`) are checked with the budgeted reader (SEC-12).
+ */
+export async function checkMiningWorkbook(buf: Buffer, file: string): Promise<void> {
+  const zip = await openSafeZip(buf, file, 4 * 1024 * 1024 * 1024 - 1);
+  if (hasMacroParts(zip.entries)) throw new ImportFileError('MACRO_NOT_ALLOWED', { file });
+  if (!zip.has('xl/workbook.xml')) throw new ImportFileError('FILE_TYPE_MISMATCH', { file });
+  const shared = zip.entries.find((e) => e.path === 'xl/sharedStrings.xml');
+  if (shared) {
+    if (shared.size > 256 * 1024 * 1024) throw new ImportFileError('ZIP_TOO_LARGE', { file });
+    await zip.read(shared.path);
+  }
 }

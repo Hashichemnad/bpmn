@@ -1,0 +1,16 @@
+# CodeQL configuration (final session part B, docs/SECURITY.md §9).
+# Shipped code only: tests, end-to-end suites, fixtures and build output are not analysed.
+name: ProcessHub CodeQL
+paths:
+  - apps/api/src
+  - apps/api/prisma
+  - apps/web/src
+  - apps/renderer/src
+  - packages/shared/src
+paths-ignore:
+  - '**/*.spec.ts'
+  - '**/*.test.ts'
+  - '**/*.test.tsx'
+  - '**/__tests__/**'
+  - '**/dist/**'
+  - '**/node_modules/**'

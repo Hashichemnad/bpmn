@@ -16,7 +16,9 @@ export interface AuditEntry {
 
 type Client = PrismaService | Prisma.TransactionClient;
 
-const SECRET_KEYS = /password|token|secret|hash|apikey|api_key/i;
+const SECRET_KEYS = /password|token|secret|hash|apikey|api_key|sealed|privatekey|private_key/i;
+/** Values sealed by SecretBox, whatever their key is called (SEC-45). */
+const SEALED_VALUE = /^v1\.[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]*$/;
 
 /** Removes secret-looking keys recursively so they never reach the audit table. */
 export function scrubSecrets(value: unknown): unknown {
@@ -24,7 +26,9 @@ export function scrubSecrets(value: unknown): unknown {
   if (value && typeof value === 'object' && !(value instanceof Date)) {
     return Object.fromEntries(
       Object.entries(value as Record<string, unknown>)
-        .filter(([k]) => !SECRET_KEYS.test(k))
+        .filter(
+          ([k, v]) => !SECRET_KEYS.test(k) && !(typeof v === 'string' && SEALED_VALUE.test(v)),
+        )
         .map(([k, v]) => [k, scrubSecrets(v)]),
     );
   }

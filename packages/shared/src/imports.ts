@@ -368,7 +368,7 @@ export const importDecisionSchema = z.object({
 export type ImportDecisionInput = z.infer<typeof importDecisionSchema>;
 
 export const importListQuerySchema = z.object({
-  page: z.coerce.number().int().min(1).default(1),
+  page: z.coerce.number().int().min(1).max(10_000).default(1),
   pageSize: z.coerce.number().int().min(1).max(100).default(20),
   kind: z.enum(IMPORT_KINDS).optional(),
   status: z.enum(IMPORT_BATCH_STATUSES).optional(),
@@ -387,7 +387,7 @@ export const IMPORT_ITEM_FILTERS = [
 export type ImportItemFilter = (typeof IMPORT_ITEM_FILTERS)[number];
 
 export const importItemsQuerySchema = z.object({
-  page: z.coerce.number().int().min(1).default(1),
+  page: z.coerce.number().int().min(1).max(10_000).default(1),
   pageSize: z.coerce.number().int().min(1).max(200).default(50),
   filter: z.enum(IMPORT_ITEM_FILTERS).default('all'),
   q: z.string().trim().max(200).optional(),
@@ -787,7 +787,7 @@ export const migrationAiRunSchema = z
 export type MigrationAiRunInput = z.infer<typeof migrationAiRunSchema>;
 
 export const migrationProposalQuerySchema = z.object({
-  page: z.coerce.number().int().min(1).default(1),
+  page: z.coerce.number().int().min(1).max(10_000).default(1),
   pageSize: z.coerce.number().int().min(1).max(100).default(20),
   kind: z.enum(MIGRATION_PROPOSAL_KINDS).optional(),
   status: z.enum(MIGRATION_PROPOSAL_STATUSES).optional(),
@@ -923,7 +923,7 @@ export const migrationQuerySchema = z.object({
 
 export const migrationItemsQuerySchema = z.object({
   scope: z.enum(MIGRATION_SCOPES).default('IMPORTED'),
-  page: z.coerce.number().int().min(1).default(1),
+  page: z.coerce.number().int().min(1).max(10_000).default(1),
   pageSize: z.coerce.number().int().min(1).max(200).default(50),
   type: z.enum(MIGRATION_ITEM_TYPES).optional(),
   status: z.enum(['DRAFT', 'IN_REVIEW', 'APPROVED', 'PUBLISHED', 'ARCHIVED']).optional(),

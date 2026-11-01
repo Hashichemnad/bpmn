@@ -197,6 +197,8 @@ model User {
   lockedUntil       DateTime?
   lastLoginAt       DateTime?
   passwordChangedAt DateTime?
+  /// Sign out everywhere / admin revocation: tokens issued before this time are invalid (SEC-38).
+  sessionsRevokedAt DateTime?
   /// Per notification type: { inApp, email }. Missing types use the defaults (both on).
   notificationPrefs Json        @default("{}")
   /// Single sign-on identity (OIDC issuer + subject); set on the first SSO sign-in.

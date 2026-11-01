@@ -60,10 +60,23 @@ const MULTI_WORD = [
   'is defined',
 ];
 
+/** Bracket nesting limit (the recursive-descent parser would otherwise overflow the stack). */
+const MAX_NESTING = 64;
+
 function lex(src: string): Tok[] {
   const out: Tok[] = [];
   let i = 0;
   if (src.length > 4000) throw new FeelError('FEEL_SYNTAX', 'Expression too long');
+  let nesting = 0;
+  let quoted = false;
+  for (let j = 0; j < src.length; j++) {
+    const ch = src[j];
+    if (ch === '"' && src[j - 1] !== '\\') quoted = !quoted;
+    if (quoted) continue;
+    if (ch === '(' || ch === '[' || ch === '{') nesting++;
+    else if (ch === ')' || ch === ']' || ch === '}') nesting--;
+    if (nesting > MAX_NESTING) throw new FeelError('FEEL_SYNTAX', 'Expression nested too deeply');
+  }
   while (i < src.length) {
     const c = src[i];
     if (/\s/.test(c)) {
@@ -346,7 +359,8 @@ class Parser {
         }
         this.expectOp(')');
         const fn = t.v.toLowerCase();
-        if (!FUNCTIONS[fn]) throw new FeelError('FEEL_SYNTAX', `Unknown function "${t.v}"`);
+        if (!Object.hasOwn(FUNCTIONS, fn))
+          throw new FeelError('FEEL_SYNTAX', `Unknown function "${t.v}"`);
         return { k: 'call', fn, args };
       }
       return { k: 'name', path: [t.v] };
@@ -493,11 +507,51 @@ const FUNCTIONS: Record<string, Fn> = {
   'date and time': ([v]) => (typeof v === 'string' && !Number.isNaN(Date.parse(v)) ? v : null),
   today: () => todayIso(),
   now: () => new Date().toISOString(),
+  // Own properties only: never Object.prototype members such as "constructor" or "__proto__".
   __get: ([o, k]) =>
-    o && typeof o === 'object' && !Array.isArray(o) && typeof k === 'string'
+    o &&
+    typeof o === 'object' &&
+    !Array.isArray(o) &&
+    typeof k === 'string' &&
+    !k.startsWith('__') &&
+    Object.hasOwn(o, k)
       ? ((o as Record<string, FeelValue>)[k] ?? null)
       : null,
 };
+
+/**
+ * Work budget of one evaluation (final session part B, SEC-28): every variable read copies its
+ * value, so expressions such as `[x, x]` repeated in "set data" assignments could otherwise grow
+ * exponentially and exhaust the API's memory. The budget counts copied value nodes and string
+ * characters; exceeding it raises FEEL_EVAL (an incident), never an out-of-memory crash.
+ */
+const MAX_UNITS = 2_000_000;
+const MAX_STRING = 200_000;
+let units = 0;
+
+function spend(n: number) {
+  units += n;
+  if (units > MAX_UNITS) throw new FeelError('FEEL_EVAL', 'Expression result too large');
+}
+
+function limitString(v: FeelValue): FeelValue {
+  if (typeof v === 'string' && v.length > MAX_STRING)
+    throw new FeelError('FEEL_EVAL', 'Text value too long');
+  return v;
+}
+
+function copyCounted(v: unknown): FeelValue {
+  if (v === undefined || v === null) return null;
+  if (typeof v === 'string') {
+    spend(1 + (v.length >> 6));
+    return v;
+  }
+  spend(1);
+  if (Array.isArray(v)) return v.map(copyCounted);
+  if (typeof v === 'object' && !(v instanceof Date))
+    return Object.fromEntries(Object.entries(v as object).map(([k, x]) => [k, copyCounted(x)]));
+  return toFeel(v);
+}
 
 function lookup(ctx: FeelContext, path: string[]): FeelValue {
   let cur: unknown = ctx;
@@ -506,7 +560,7 @@ function lookup(ctx: FeelContext, path: string[]): FeelValue {
     if (!Object.prototype.hasOwnProperty.call(cur, seg)) return null;
     cur = (cur as Record<string, unknown>)[seg];
   }
-  return toFeel(cur);
+  return copyCounted(cur);
 }
 
 function evalNode(n: FeelNode, ctx: FeelContext, depth = 0): FeelValue {
@@ -527,13 +581,16 @@ function evalNode(n: FeelNode, ctx: FeelContext, depth = 0): FeelValue {
       return c === true ? ev(n.t) : ev(n.e);
     }
     case 'list':
+      spend(n.items.length);
       return n.items.map(ev);
     case 'ctx':
       return Object.fromEntries(n.entries.map(([k, v]) => [k, ev(v)]));
     case 'range':
       return { range: true, lo: ev(n.lo), hi: ev(n.hi), loIn: n.loIn, hiIn: n.hiIn };
     case 'call':
-      return FUNCTIONS[n.fn](n.args.map(ev));
+      if (!Object.hasOwn(FUNCTIONS, n.fn))
+        throw new FeelError('FEEL_SYNTAX', `Unknown function "${n.fn}"`);
+      return limitString(FUNCTIONS[n.fn](n.args.map(ev)));
     case 'between': {
       const v = ev(n.a);
       return inRange(v, ev(n.lo), ev(n.hi), true, true);
@@ -572,7 +629,7 @@ function evalNode(n: FeelNode, ctx: FeelContext, depth = 0): FeelValue {
         }
         case '+':
           if (isNum(a) && isNum(b)) return a + b;
-          if (typeof a === 'string' && typeof b === 'string') return a + b;
+          if (typeof a === 'string' && typeof b === 'string') return limitString(a + b);
           return null;
         case '-':
           return isNum(a) && isNum(b) ? a - b : null;
@@ -642,6 +699,7 @@ function testAll(tests: UnaryTest[], v: FeelValue, ctx: FeelContext): boolean {
 /** Evaluates an expression against a context (form data / case variables). */
 export function evaluateFeel(src: string | FeelNode, ctx: FeelContext = {}): FeelValue {
   const n = typeof src === 'string' ? parseFeel(src) : src;
+  units = 0;
   return evalNode(n, ctx);
 }
 
@@ -652,6 +710,7 @@ export function evaluateUnaryTests(
   ctx: FeelContext = {},
 ): boolean {
   const tests = typeof src === 'string' ? parseUnaryTests(src) : src;
+  units = 0;
   return testAll(tests, toFeel(value), ctx);
 }
 

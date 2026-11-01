@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { revokeUserSessions } from '../auth/sessions';
 import { Prisma } from '@prisma/client';
 import type {
   CreateUserInput,
@@ -224,8 +225,14 @@ export class UsersService {
 
   async resetPassword(id: string, input: ResetPasswordInput, actor: AuthUser, meta: RequestMeta) {
     const target = await this.get(id);
-    if (target.roles.includes('SUPER_ADMIN') && !actor.roles.includes('SUPER_ADMIN')) {
-      throw forbidden('Only a Super Admin can reset a Super Admin password');
+    // Administrators cannot take over each other's accounts (SEC-38): resetting the password of an
+    // Admin or Super Admin needs a Super Admin.
+    if (
+      target.id !== actor.id &&
+      target.roles.some((r) => r === 'SUPER_ADMIN' || r === 'ADMIN') &&
+      !actor.roles.includes('SUPER_ADMIN')
+    ) {
+      throw forbidden('Only a Super Admin can reset the password of an administrator');
     }
     this.passwords.assertPolicy(input.newPassword);
     const passwordHash = await this.passwords.hash(input.newPassword);
@@ -246,6 +253,27 @@ export class UsersService {
       });
       await this.audit.log(
         { action: 'PASSWORD_RESET', entityType: 'User', entityId: id, userId: actor.id, meta },
+        tx,
+      );
+    });
+  }
+
+  /** Ends all sessions of a user (lost device, suspected misuse) — SEC-38. */
+  async revokeSessions(id: string, actor: AuthUser, meta: RequestMeta) {
+    const target = await this.get(id);
+    if (target.roles.includes('SUPER_ADMIN') && !actor.roles.includes('SUPER_ADMIN'))
+      throw forbidden('Only a Super Admin can end the sessions of a Super Admin');
+    await this.prisma.$transaction(async (tx) => {
+      await revokeUserSessions(tx, id);
+      await this.audit.log(
+        {
+          action: 'REVOKE',
+          entityType: 'User',
+          entityId: id,
+          userId: actor.id,
+          summary: { sessions: 'all' },
+          meta,
+        },
         tx,
       );
     });

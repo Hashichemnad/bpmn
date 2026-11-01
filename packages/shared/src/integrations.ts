@@ -297,7 +297,7 @@ export interface WebhookDeliveryDto {
 }
 
 export const webhookDeliveryQuerySchema = z.object({
-  page: z.coerce.number().int().min(1).default(1),
+  page: z.coerce.number().int().min(1).max(10_000).default(1),
   pageSize: z.coerce.number().int().min(1).max(100).default(20),
   status: z.enum(['PENDING', 'SUCCEEDED', 'FAILED', 'GAVE_UP']).optional(),
 });

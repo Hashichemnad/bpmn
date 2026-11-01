@@ -263,7 +263,7 @@ const boolParam = z
   .optional();
 
 export const controlTestListQuerySchema = z.object({
-  page: z.coerce.number().int().min(1).default(1),
+  page: z.coerce.number().int().min(1).max(10_000).default(1),
   pageSize: z.coerce.number().int().min(1).max(100).default(20),
   sort: z.enum(['dueAt', 'status', 'control', 'conclusion']).default('dueAt'),
   order: z.enum(['asc', 'desc']).default('asc'),
@@ -568,7 +568,7 @@ export const issueActionSchema = z
 export type IssueActionInput = z.infer<typeof issueActionSchema>;
 
 export const issueListQuerySchema = z.object({
-  page: z.coerce.number().int().min(1).default(1),
+  page: z.coerce.number().int().min(1).max(10_000).default(1),
   pageSize: z.coerce.number().int().min(1).max(100).default(20),
   sort: z.enum(['code', 'severity', 'status', 'dueAt', 'createdAt']).default('createdAt'),
   order: z.enum(['asc', 'desc']).default('desc'),

@@ -14,6 +14,18 @@ import {
   type PackageTable,
 } from '../repository-package';
 import { issue } from './tabular';
+import { sanitizeRichText } from '../../docs/rich-text';
+import { detectAttachmentType, safeFileName } from '../../docs/attachment-type';
+
+/** Setting keys a package may carry (the export's allow-list — never auth, AI, e-mail or integrations). */
+const PACKAGE_SETTING_KEYS = new Set<string>(
+  ((PACKAGE_TABLES.find((t) => t.model === 'Setting')?.where?.key as { in?: string[] })?.in ??
+    []) as string[],
+);
+/** Models whose `contentEn` / `contentAr` hold wiki HTML (sanitised again on restore). */
+const RICH_TEXT_MODELS = new Set(['Page', 'PageVersion', 'PageTemplate']);
+/** Roles a package never grants: Super Admin is assigned by hand after a restore (SEC-13). */
+const ROLES_NOT_RESTORED = new Set(['SUPER_ADMIN']);
 
 type Row = Record<string, unknown>;
 type AnyDelegate = {
@@ -127,6 +139,8 @@ export class PackageImporter implements Importer {
     const [file] = await ctx.files();
     const { zip } = await this.open(file.data, file.fileName);
     const ids = new Map<string, string>();
+    /** Users inserted by this package (role assignments only for them, SEC-13). */
+    const createdUsers = new Set<string>();
     const remap = (row: Row, t: PackageTable | null): Row => {
       const out: Row = {};
       const json = t ? JSON_FIELDS.get(t.model) : undefined;
@@ -146,8 +160,11 @@ export class PackageImporter implements Importer {
         if (model === 'UserRole') {
           const roles = new Map((await tx.role.findMany()).map((r) => [r.key, r.id]));
           const rows = (await read(USER_ROLES_FILE)) as { userId: string; roleKey: string }[];
+          // The package is untrusted input (SEC-13): roles only for users this package created —
+          // never for existing accounts — and never Super Admin.
           const data = rows
-            .map((r) => ({ userId: ids.get(r.userId) ?? r.userId, roleId: roles.get(r.roleKey) }))
+            .filter((r) => createdUsers.has(r.userId) && !ROLES_NOT_RESTORED.has(r.roleKey))
+            .map((r) => ({ userId: r.userId, roleId: roles.get(r.roleKey) }))
             .filter((r): r is { userId: string; roleId: string } => !!r.roleId);
           const res = await tx.userRole.createMany({ data, skipDuplicates: true });
           return {
@@ -174,8 +191,46 @@ export class PackageImporter implements Importer {
             return !hit;
           });
         }
-        if (model === 'User') rows = rows.map((r) => ({ ...r, passwordHash: '' }));
+        // Columns the export never writes (credentials, 2FA, SSO links, lockout state) are dropped
+        // on restore too, whatever the package contains (SEC-13).
+        if (t.omit?.length)
+          rows = rows.map((r) =>
+            Object.fromEntries(Object.entries(r).filter(([k]) => !t.omit!.includes(k))),
+          );
+        if (model === 'User') {
+          // A package row whose id is already taken would be skipped by createMany; it must not
+          // receive the package's roles either.
+          const taken = new Set(
+            (
+              await d.findMany({
+                where: { id: { in: rows.map((r) => r.id) } },
+                select: { id: true },
+              })
+            ).map((u) => u.id as string),
+          );
+          rows = rows.filter((r) => !taken.has(r.id as string));
+          rows = rows.map((r) => ({ ...r, passwordHash: '' }));
+          for (const r of rows) createdUsers.add(r.id as string);
+        }
+        if (RICH_TEXT_MODELS.has(model))
+          rows = rows.map((r) => ({
+            ...r,
+            ...(typeof r.contentEn === 'string'
+              ? { contentEn: sanitizeRichText(r.contentEn) }
+              : {}),
+            ...(typeof r.contentAr === 'string'
+              ? { contentAr: sanitizeRichText(r.contentAr) }
+              : {}),
+          }));
+        if (model === 'Attachment')
+          rows = rows.map((r) => ({
+            ...r,
+            fileName: safeFileName(String(r.fileName ?? 'file')),
+            // Rebuilt, never taken from the package: a crafted key could overwrite any stored object.
+            storageKey: `attachments/${String(r.pageId)}/${String(r.id)}`,
+          }));
         if (model === 'Setting') {
+          rows = rows.filter((r) => PACKAGE_SETTING_KEYS.has(String(r.key)));
           for (const r of rows)
             await tx.setting.upsert({
               where: { key: r.key as string },
@@ -203,10 +258,15 @@ export class PackageImporter implements Importer {
           count += res.count;
         }
         if (model === 'Attachment')
-          for (const a of rows as { id: string; storageKey: string; contentType: string }[]) {
+          for (const a of rows as { id: string; storageKey: string; fileName: string }[]) {
             const path = `files/attachments/${a.id}`;
-            if (zip.has(path))
-              await this.storage.put(a.storageKey, await zip.read(path), a.contentType);
+            if (!zip.has(path)) continue;
+            const data = await zip.read(path);
+            // The type is detected from the content, as for an upload; unknown types are skipped.
+            const type = detectAttachmentType(data, a.fileName);
+            if (!type) continue;
+            await tx.attachment.updateMany({ where: { id: a.id }, data: { contentType: type } });
+            await this.storage.put(a.storageKey, data, type);
           }
         return {
           entity: 'MODULE_ROWS',

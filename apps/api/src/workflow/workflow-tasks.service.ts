@@ -595,7 +595,11 @@ export class WorkflowTasksService {
   async users(q: string, user: AuthUser, ids?: string[]): Promise<UserRef[]> {
     if (ids) {
       const valid = ids.filter((i) => /^[0-9a-f-]{36}$/i.test(i));
-      return this.prisma.user.findMany({ where: { id: { in: valid } }, select: userRefSelect });
+      // Names of the given ids only — not of deleted accounts (SEC-48).
+      return this.prisma.user.findMany({
+        where: { id: { in: valid.slice(0, 100) }, deletedAt: null },
+        select: userRefSelect,
+      });
     }
     if (q.trim().length < 2 && !user.permissions.has(PERMISSIONS.USERS_READ)) return [];
     return this.prisma.user.findMany({

@@ -94,7 +94,7 @@ export class RendererService {
       const res = await this.post('/render', input);
       const data = Buffer.from(await res.arrayBuffer());
       const image = { data, contentType, ...imageSize(data, input.format) } as RenderedImage;
-      await this.storage.put(key, data, contentType).catch((e: Error) => {
+      await this.storage.put(key, data, contentType, { generated: true }).catch((e: Error) => {
         this.logger.warn(`Render cache write failed: ${e.message}`);
       });
       return this.remember(key, image);

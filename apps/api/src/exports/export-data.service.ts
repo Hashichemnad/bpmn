@@ -44,6 +44,8 @@ export interface ExportPage {
 }
 
 const MAX_IMAGE_BYTES = 2 * 1024 * 1024;
+/** Pages of one space export (built in the request, images embedded) — SEC-22. */
+export const SPACE_EXPORT_MAX_PAGES = 300;
 const RASTER = new Set(['image/png', 'image/jpeg', 'image/gif', 'image/webp']);
 const ATTACHMENT = /^\/api\/v1\/attachments\/([0-9a-f-]{36})\/content$/i;
 
@@ -223,6 +225,7 @@ export class ExportDataService {
         where: { spaceId, deletedAt: null },
         orderBy: [{ sortOrder: 'asc' }, { titleEn: 'asc' }],
       });
+      if (pages.length > SPACE_EXPORT_MAX_PAGES) throw badRequest('EXPORT_TOO_LARGE');
       return {
         space,
         pages: pages.map((p) => ({
@@ -243,6 +246,7 @@ export class ExportDataService {
       select: { id: true, parentId: true },
     });
     if (!rows.length) throw new AppException(HttpStatus.NOT_FOUND, 'NOT_PUBLISHED');
+    if (rows.length > SPACE_EXPORT_MAX_PAGES) throw badRequest('EXPORT_TOO_LARGE');
     const pubOf = new Map(pubs.map((p) => [p.entityId, p]));
     const versions = await this.prisma.pageVersion.findMany({
       where: {

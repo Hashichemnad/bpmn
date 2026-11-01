@@ -520,7 +520,7 @@ export class SubscriptionsService implements OnModuleInit, OnModuleDestroy {
       }
       const fileName = `${s.report.toLowerCase()}_${new Date().toISOString().slice(0, 10)}_${l}.${file.ext}`;
       const fileKey = `report-deliveries/${id}/${fileName}`;
-      await this.storage.put(fileKey, file.data, file.contentType);
+      await this.storage.put(fileKey, file.data, file.contentType, { generated: true });
       const attach =
         settings.allowAttachments && s.format !== 'LINK' && file.data.length <= MAX_ATTACHMENT;
       const delivery = {

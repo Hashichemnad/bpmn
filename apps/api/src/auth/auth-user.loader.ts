@@ -26,6 +26,14 @@ export class AuthUserLoader {
     ) {
       return null;
     }
+    // … and after "sign out everywhere" / an administrator ending the user's sessions (SEC-38).
+    if (
+      tokenIssuedAt !== undefined &&
+      user.sessionsRevokedAt &&
+      Math.floor(user.sessionsRevokedAt.getTime() / 1000) > tokenIssuedAt
+    ) {
+      return null;
+    }
     const permissions = new Set<Permission>();
     for (const ur of user.roles) {
       for (const rp of ur.role.permissions) permissions.add(rp.permission.key as Permission);

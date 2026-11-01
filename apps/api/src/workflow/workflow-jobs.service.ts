@@ -14,6 +14,7 @@ import {
   type FormField,
   type Locale,
   type WorkflowModel,
+  MIN_TIMER_CYCLE_MINUTES,
 } from '@processhub/shared';
 import { APP_CONFIG, type AppConfig } from '../config/config';
 import { PrismaService } from '../prisma/prisma.service';
@@ -24,6 +25,7 @@ import { WorkflowConfigService } from './workflow-config.service';
 import {
   WorkflowRunnerService,
   caseEvent,
+  caseLink,
   caseTitleParams,
   taskLink,
 } from './workflow-runner.service';
@@ -42,6 +44,9 @@ const DOCX = 'application/vnd.openxmlformats-officedocument.wordprocessingml.doc
  * marks it done. Jobs are idempotent (they act only if their token / task is still waiting) and survive
  * restarts: stale RUNNING jobs are released. Also the daily retention of form data (D-152).
  */
+/** Deepest chain of call activities (parent → child cases), SEC-29. */
+const MAX_CALL_DEPTH = 5;
+
 @Injectable()
 export class WorkflowJobsService implements OnApplicationBootstrap, OnModuleDestroy {
   private readonly logger = new Logger(WorkflowJobsService.name);
@@ -255,7 +260,11 @@ export class WorkflowJobsService implements OnApplicationBootstrap, OnModuleDest
             caseId: job.caseId,
             tokenId: job.tokenId,
             elementId: job.elementId,
-            dueAt: await this.timers.add(now, cycle.minutes, !!node?.exec.workingTime),
+            dueAt: await this.timers.add(
+              now,
+              Math.max(cycle.minutes, MIN_TIMER_CYCLE_MINUTES),
+              !!node?.exec.workingTime,
+            ),
             data: {
               cycle: { minutes: cycle.minutes, left: cycle.left === null ? null : cycle.left - 1 },
             },
@@ -294,7 +303,11 @@ export class WorkflowJobsService implements OnApplicationBootstrap, OnModuleDest
           kind: 'START_TIMER',
           definitionId: job.definitionId,
           elementId: job.elementId,
-          dueAt: await this.timers.add(now, c.minutes, !!node?.exec.workingTime),
+          dueAt: await this.timers.add(
+            now,
+            Math.max(c.minutes, MIN_TIMER_CYCLE_MINUTES),
+            !!node?.exec.workingTime,
+          ),
           data: {
             processId: data.processId,
             cycle: { minutes: c.minutes, left: c.left === null ? null : c.left - 1 },
@@ -382,7 +395,7 @@ export class WorkflowJobsService implements OnApplicationBootstrap, OnModuleDest
       .slice(0, 100);
     const id = randomUUID();
     const storageKey = `workflow/${c.id}/${id}`;
-    await this.storage.put(storageKey, buffer, DOCX);
+    await this.storage.put(storageKey, buffer, DOCX, { generated: true });
     await this.runner.execute(
       c.id,
       { type: 'JOB_DONE', tokenId: job.tokenId, variables: { [`${job.elementId}_document`]: id } },
@@ -424,6 +437,23 @@ export class WorkflowJobsService implements OnApplicationBootstrap, OnModuleDest
     const parent = await this.prisma.workflowCase.findUniqueOrThrow({ where: { id: job.caseId } });
     const node = (await this.config.model(parent.definitionId)).nodes[job.elementId];
     if (!node?.linkedProcessId) throw new AppException(400, 'NOT_EXECUTABLE', 'No linked process');
+    // Call chains are bounded (SEC-29): at most MAX_CALL_DEPTH levels, and a process never calls
+    // itself through other processes (A → B → A would start cases without end).
+    let ancestor: { processId: string; parentCaseId: string | null } | null = parent;
+    for (let depth = 1; ancestor; depth++) {
+      if (ancestor.processId === node.linkedProcessId || depth >= MAX_CALL_DEPTH)
+        throw new AppException(
+          400,
+          'CALL_FAILED',
+          'Call activity refused: recursive call or more than 5 nested calls',
+        );
+      ancestor = ancestor.parentCaseId
+        ? await this.prisma.workflowCase.findUnique({
+            where: { id: ancestor.parentCaseId },
+            select: { processId: true, parentCaseId: true },
+          })
+        : null;
+    }
     const vars = { ...((parent.variables ?? {}) as Record<string, unknown>) };
     delete vars.case;
     delete vars.process;
@@ -633,10 +663,13 @@ export class WorkflowJobsService implements OnApplicationBootstrap, OnModuleDest
           completedAt: { lt: before },
           dataPurgedAt: null,
         },
-        select: { id: true, variables: true },
+        select: { id: true, variables: true, number: true },
         take: 500,
       });
       for (const c of cases) {
+        const taskIds = (
+          await this.prisma.workflowTask.findMany({ where: { caseId: c.id }, select: { id: true } })
+        ).map((t) => t.id);
         const files = await this.prisma.workflowFile.findMany({
           where: { caseId: c.id },
           select: { storageKey: true },
@@ -661,6 +694,10 @@ export class WorkflowJobsService implements OnApplicationBootstrap, OnModuleDest
                   'TASK_REASSIGNED',
                   'COMMENT',
                   'FILE_ADDED',
+                  // Rendered notification texts and free-text reasons hold form data too (SEC-32).
+                  'NOTIFICATION_SENT',
+                  'WITHDRAWN',
+                  'CANCELLED',
                 ],
               },
             },
@@ -673,8 +710,16 @@ export class WorkflowJobsService implements OnApplicationBootstrap, OnModuleDest
                 case: v.case ?? null,
                 process: v.process ?? null,
               } as Prisma.InputJsonValue,
+              // The title is the first text field of the start form; the case number stays.
+              titleEn: c.number,
+              titleAr: c.number,
+              closedReason: null,
               dataPurgedAt: now,
             },
+          }),
+          // In-app notifications about the case and its tasks carry rendered form data (SEC-32).
+          this.prisma.notification.deleteMany({
+            where: { link: { in: [caseLink(c.id), ...taskIds.map(taskLink)] } },
           }),
         ]);
         purged++;

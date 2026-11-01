@@ -440,7 +440,7 @@ export const updateRequirementSchema = z.object(requirementFields).superRefine(r
 export type UpdateRequirementInput = z.infer<typeof updateRequirementSchema>;
 
 const listBase = z.object({
-  page: z.coerce.number().int().min(1).default(1),
+  page: z.coerce.number().int().min(1).max(10_000).default(1),
   pageSize: z.coerce.number().int().min(1).max(100).default(20),
   sort: trimmed(50).optional(),
   order: z.enum(['asc', 'desc']).default('asc'),

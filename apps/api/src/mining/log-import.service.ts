@@ -22,6 +22,7 @@ import { StorageService } from '../storage/storage.service';
 import { AuditService } from '../audit/audit.service';
 import type { AuthUser, RequestMeta } from '../common/auth-user';
 import { badRequest, conflict } from '../common/app-exception';
+import { ImportFileError, checkMiningWorkbook } from '../imports/safe-upload';
 import { EventLogsService } from './event-logs.service';
 import { MiningJobsService, type JobContext } from './jobs/mining-jobs.service';
 import { SnapshotService } from './snapshot.service';
@@ -109,6 +110,19 @@ export class LogImportService implements OnModuleInit {
     if (file.size > this.maxBytes) throw badRequest('FILE_TOO_LARGE');
     const format = detectFileFormat(file.buffer.subarray(0, 4096), file.originalname);
     if (!format) throw badRequest('UNSUPPORTED_FILE_TYPE', 'CSV, Excel (.xlsx) or XES files only');
+    if (format === 'XLSX') {
+      // Archive structure, macros and the real size of the shared strings (SEC-12).
+      try {
+        await checkMiningWorkbook(file.buffer, file.originalname);
+      } catch (e) {
+        if (!(e instanceof ImportFileError)) throw e;
+        throw badRequest(
+          e.code === 'ZIP_TOO_LARGE' || e.code === 'ZIP_RATIO'
+            ? 'FILE_TOO_LARGE'
+            : 'UNSUPPORTED_FILE_TYPE',
+        );
+      }
+    }
     const log = await this.logs.create(
       input,
       {
@@ -338,7 +352,17 @@ export class LogImportService implements OnModuleInit {
     language: 'en' | 'ar';
   }): AsyncGenerator<MiningEventInput> {
     const ar = params.language === 'ar';
-    const reviews = await this.prisma.review.findMany({
+    // Pages of view-restricted spaces never go into a log (SEC-20): the log is shared with the
+    // owner's department and grantees, who may not see those pages or their review history.
+    const restricted = new Set(
+      (
+        await this.prisma.page.findMany({
+          where: { space: { viewRestricted: true } },
+          select: { id: true },
+        })
+      ).map((p) => p.id),
+    );
+    const allReviews = await this.prisma.review.findMany({
       where: {
         entityType: { in: params.itemTypes },
         submittedAt: {
@@ -349,6 +373,9 @@ export class LogImportService implements OnModuleInit {
       include: { tasks: true, publications: { select: { publishedAt: true } } },
       orderBy: { submittedAt: 'asc' },
     });
+    const reviews = allReviews.filter(
+      (r) => !(r.entityType === 'PAGE' && restricted.has(r.entityId)),
+    );
     const userIds = new Set<string>();
     for (const r of reviews) {
       if (r.submittedById) userIds.add(r.submittedById);

@@ -203,6 +203,7 @@ export class ProcessAiService {
     if (!user.permissions.has(PERMISSIONS.PROCESSES_CREATE))
       throw forbidden('You cannot create processes');
     const { page } = await this.docsAccess.page(input.pageId, user, 'view');
+    await this.context.assertAllowedOn('PAGE', page.id);
     const pick = (l: 'en' | 'ar') =>
       l === 'en'
         ? { title: page.titleEn, html: page.contentEn }

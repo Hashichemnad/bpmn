@@ -2,6 +2,7 @@ import { Inject, Injectable, Logger } from '@nestjs/common';
 import { Client } from 'minio';
 import type { Readable } from 'node:stream';
 import { APP_CONFIG, type AppConfig } from '../config/config';
+import { AntivirusService } from './antivirus.service';
 
 /** Thin wrapper around MinIO (S3-compatible) object storage. */
 @Injectable()
@@ -10,7 +11,10 @@ export class StorageService {
   private readonly client: Client;
   private bucketReady?: Promise<void>;
 
-  constructor(@Inject(APP_CONFIG) private readonly config: AppConfig) {
+  constructor(
+    @Inject(APP_CONFIG) private readonly config: AppConfig,
+    private readonly antivirus: AntivirusService,
+  ) {
     this.client = new Client({
       endPoint: config.MINIO_ENDPOINT,
       port: config.MINIO_PORT,
@@ -32,7 +36,18 @@ export class StorageService {
     return this.bucketReady;
   }
 
-  async put(key: string, data: Buffer, contentType: string): Promise<void> {
+  /**
+   * Stores an object. Every upload is scanned for malware first (D-184); only files ProcessHub
+   * generates itself (rendered images, snapshots, report files, generated documents) pass
+   * `{ generated: true }` and skip the scan.
+   */
+  async put(
+    key: string,
+    data: Buffer,
+    contentType: string,
+    opts: { generated?: boolean } = {},
+  ): Promise<void> {
+    if (!opts.generated) await this.antivirus.assertClean(data, key);
     await this.ensureBucket();
     await this.client.putObject(this.config.MINIO_BUCKET, key, data, data.length, {
       'Content-Type': contentType,

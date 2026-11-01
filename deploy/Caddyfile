@@ -39,8 +39,16 @@
 	# Server-Sent Events (AI assistant) are streamed without buffering automatically.
 	reverse_proxy web:8080
 
+	# Access log without secrets (final session part B, SEC-39): Caddy already hides Cookie,
+	# Set-Cookie and Authorization; the public API key, the CSRF token and the one-time tokens of
+	# invitation and unsubscribe links are removed as well.
 	log {
 		output stdout
-		format json
+		format filter {
+			wrap json
+			request>headers>X-Api-Key delete
+			request>headers>X-Csrf-Token delete
+			request>uri regexp "(/(?:invitations?|unsubscribe)/)[^/?#]+" "${1}REDACTED"
+		}
 	}
 }

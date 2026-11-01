@@ -78,6 +78,25 @@ export interface EngineStepResult {
   ended: { kind: EndKind; errorCode: string | null } | null;
 }
 
+/** Largest serialised size of a case's variables (final session part B, SEC-28). */
+export const MAX_VARIABLES_BYTES = 1_000_000;
+const UNSAFE_KEYS = new Set(['__proto__', 'constructor', 'prototype']);
+
+/**
+ * Copies values into the case variables: object internals are never used as names (SEC-33) and the
+ * result must stay within MAX_VARIABLES_BYTES, otherwise the step fails (incident) and nothing is
+ * changed.
+ */
+export function assignVariables(target: Record<string, unknown>, values: Record<string, unknown>) {
+  const merged: Record<string, unknown> = { ...target };
+  for (const [k, v] of Object.entries(values)) if (!UNSAFE_KEYS.has(k)) merged[k] = v;
+  if (JSON.stringify(merged).length > MAX_VARIABLES_BYTES)
+    throw Object.assign(new Error('Case variables exceed the size limit'), {
+      code: 'VARIABLES_TOO_LARGE',
+    });
+  for (const [k, v] of Object.entries(values)) if (!UNSAFE_KEYS.has(k)) target[k] = v;
+}
+
 export class EngineError extends Error {
   constructor(
     public readonly code:
@@ -218,7 +237,7 @@ class Run {
     try {
       if (!this.services.decide) throw new Error('No decision service');
       const out = this.services.decide(n, this.vars);
-      Object.assign(this.vars, out);
+      assignVariables(this.vars, out);
     } catch (e) {
       const err = e as { code?: string; message?: string };
       return this.throwError(t, n, err.code ?? 'DECISION_FAILED', err.message ?? String(e), true);
@@ -231,7 +250,12 @@ class Run {
     this.effect({ type: 'ACTIVITY', phase: 'START', tokenId: t.id, nodeId: n.id });
     if (n.exec.kind === 'SET_DATA') {
       try {
-        for (const a of n.exec.set) this.vars[a.key] = evaluateFeel(a.expression, this.vars);
+        // Evaluated on a copy; the case variables change only when the result stays within the size
+        // limit (SEC-28), so an incident never stores an oversized value.
+        const next: Record<string, unknown> = { ...this.vars };
+        for (const a of n.exec.set)
+          assignVariables(next, { [a.key]: evaluateFeel(a.expression, next) });
+        assignVariables(this.vars, next);
       } catch (e) {
         return this.throwError(t, n, 'SET_DATA_FAILED', (e as Error).message, true);
       }

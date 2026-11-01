@@ -1,4 +1,5 @@
 import { randomUUID } from 'node:crypto';
+import { WorkflowSettingsService } from './workflow-settings.service';
 import { Injectable } from '@nestjs/common';
 import type { Prisma } from '@prisma/client';
 import {
@@ -90,6 +91,7 @@ export class WorkflowCasesService {
     private readonly notifications: NotificationsService,
     private readonly config: WorkflowConfigService,
     private readonly runner: WorkflowRunnerService,
+    private readonly settings: WorkflowSettingsService,
   ) {}
 
   // ---------- Users ----------
@@ -500,7 +502,12 @@ export class WorkflowCasesService {
       user.permissions.has(PERMISSIONS.WORKFLOW_MONITOR) &&
       ((!!c.process.departmentId && c.process.departmentId === user.departmentId) ||
         (cfg?.monitorUserIds ?? []).includes(user.id));
-    const canAct = participant || isWorkflowAdmin(user) || deptMonitor;
+    // Read-only monitors (Auditor: workflow.monitor without comment rights) see cases but neither
+    // comment nor upload (SEC-30).
+    const canAct =
+      participant ||
+      isWorkflowAdmin(user) ||
+      (deptMonitor && user.permissions.has(PERMISSIONS.COMMENTS_WRITE));
     return { c, cfg, involved, canAct, admin: isWorkflowAdmin(user) };
   }
 
@@ -814,6 +821,10 @@ export class WorkflowCasesService {
         });
         if (!t) throw notFound('Task');
       }
+      // Files per case are limited (SEC-48; Settings → Workflow execution, default 100, D-191).
+      const { maxFilesPerCase } = await this.settings.get();
+      if ((await this.prisma.workflowFile.count({ where: { caseId } })) >= maxFilesPerCase)
+        throw badRequest('TOO_MANY_FILES');
     } else {
       // Draft upload for a start form: at most 20 unattached files per user.
       const drafts = await this.prisma.workflowFile.count({

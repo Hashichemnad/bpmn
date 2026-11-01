@@ -41,6 +41,7 @@ describe('Route security declarations', () => {
       'GET /auth/sso/callback',
       'GET /auth/sso/start',
       'GET /health',
+      'GET /health/antivirus',
       'GET /settings/logo',
       'GET /settings/public',
       'POST /auth/invitations/accept',

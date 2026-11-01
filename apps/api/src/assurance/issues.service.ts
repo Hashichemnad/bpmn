@@ -214,7 +214,14 @@ export class IssuesService implements OnModuleInit {
     const status = i.status as IssueStatus;
     const ownerOrManager = this.manages(user) || i.ownerId === user.id;
     // Four-eyes: whoever owns the fix never verifies it or accepts the risk.
-    const verifier = (i.createdById === user.id || this.officer(user)) && i.ownerId !== user.id;
+    // Issues raised from an audit finding are created by the management response owner: their
+    // verification belongs to Risk & Compliance or Internal Audit, never to the creator (SEC-25).
+    const fromAudit = i.sourceType === 'AUDIT_FINDING';
+    const verifier =
+      ((!fromAudit && i.createdById === user.id) ||
+        this.officer(user) ||
+        (fromAudit && user.permissions.has(PERMISSIONS.AUDIT_MANAGE))) &&
+      i.ownerId !== user.id;
     const out: IssueAction[] = [];
     const can = (a: IssueAction, ok: boolean) => ok && issueTransition(status, a) && out.push(a);
     can('START', ownerOrManager);
@@ -639,9 +646,22 @@ export class IssuesService implements OnModuleInit {
     const before = await this.row(id);
     if (!this.canReadRow(before, actor)) throw notFound('Issue');
     if (!this.canEdit(before, actor)) throw forbidden();
-    // Owners update the content of their issue; only issue managers move ownership and severity.
-    if (!this.manages(actor) && (input.ownerId !== undefined || input.severity !== undefined))
-      throw forbidden('Only issue managers change the owner or the severity');
+    // Owners update the title and description of their issue; only issue managers move ownership,
+    // severity, the due date (which restarts escalation) and the links / department that put the
+    // issue on dashboards (SEC-24).
+    const managerOnly = [
+      'ownerId',
+      'severity',
+      'dueAt',
+      'processId',
+      'bpmnElementId',
+      'riskId',
+      'controlId',
+      'requirementId',
+      'departmentId',
+    ] as const;
+    if (!this.manages(actor) && managerOnly.some((k) => input[k] !== undefined))
+      throw forbidden('Only issue managers change the owner, severity, due date or links');
     const settings = await this.settings.get();
     await this.assertRefs(
       input,
@@ -918,7 +938,8 @@ export class IssuesService implements OnModuleInit {
   async removeAction(actionId: string, actor: AuthUser, meta: RequestMeta) {
     const { a, i } = await this.actionRow(actionId);
     if (!this.canReadRow(i, actor)) throw notFound('Action');
-    if (!this.canEdit(i, actor)) throw forbidden();
+    // Agreed actions (e.g. from an audit finding) are removed by issue managers only (SEC-24).
+    if (!this.canEdit(i, actor) || !this.manages(actor)) throw forbidden();
     await this.prisma.$transaction(async (tx) => {
       await tx.issueAction.update({ where: { id: actionId }, data: { deletedAt: new Date() } });
       await this.audit.log(
@@ -973,6 +994,13 @@ export class IssuesService implements OnModuleInit {
   async comment(id: string, body: string, actor: AuthUser, meta: RequestMeta) {
     const i = await this.row(id);
     if (!this.canReadRow(i, actor)) throw notFound('Issue');
+    // Read-only GRC readers (Auditor) do not comment: comment rights or involvement (SEC-23).
+    const involved =
+      this.manages(actor) ||
+      i.ownerId === actor.id ||
+      i.createdById === actor.id ||
+      i.actions.some((x) => !x.deletedAt && x.ownerId === actor.id);
+    if (!involved && !actor.permissions.has(PERMISSIONS.COMMENTS_WRITE)) throw forbidden();
     await this.prisma.$transaction(async (tx) => {
       const e = await this.events.add(tx, ENTITY, id, 'COMMENT', {}, body, actor.id);
       await this.audit.log(

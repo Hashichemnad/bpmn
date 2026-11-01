@@ -46,7 +46,7 @@
 | Document | For |
 | --- | --- |
 | [`docs/DEPLOYMENT.md`](./docs/DEPLOYMENT.md) | IT: server sizing, installation step by step, HTTPS, single sign-on, backups, restore and the restore drill, updates from the container registry, monitoring |
-| [`docs/SECURITY.md`](./docs/SECURITY.md) | Security review, controls (OWASP Top 10), every endpoint with its guards, remaining risks, go-live checklist, penetration-test checklist |
+| [`docs/SECURITY.md`](./docs/SECURITY.md) | Security reviews (part 1 and final part B, findings SEC-01 – SEC-48), controls (OWASP Top 10), every endpoint with its guards, accepted risks, CI security scans, UAE data-protection context, penetration-test checklist |
 | [`docs/WORKFLOWS.md`](./docs/WORKFLOWS.md) | Process owners and admins: making a process executable, forms, assignments, SLAs, monitoring |
 | [`docs/MIGRATION.md`](./docs/MIGRATION.md) | Migration team: preparing files, import order, review queue, go-live checklist |
 | [`docs/AI-DEMO.md`](./docs/AI-DEMO.md) | A guided demo of the AI assistant |
@@ -68,7 +68,7 @@
 | 5.1 / 5.2 | Process mining and simulation, workflow execution | ✅ |
 | Import | Import tools / migration | ✅ |
 | 4.4 | Integrations & export: public API with keys, webhooks, Power BI feed, Teams, HTML / PowerPoint export, scheduled report e-mails | ✅ merged into `main` |
-| 6 | Hardening: security review, production deployment, SSO / 2FA, performance, accessibility, images, restore drill | 🟡 final security review (part B) after 4.4 |
+| 6 | Hardening: security review, production deployment, SSO / 2FA, performance, accessibility, images, restore drill | ✅ incl. final security review (part B) |
 
 ## Quick start (Docker)
 
@@ -543,6 +543,8 @@ scripts/                  generate-secrets, backup, restore, backup-drill, migra
 - The SMTP password is encrypted like the Git tokens; email content is HTML-escaped; tests never send email.
 - An audit log records every change and every sign-in, with secrets scrubbed.
 - The Git and SMTP integrations cannot reach internal addresses (loopback, private networks, cloud metadata) unless allowed with `OUTBOUND_ALLOWED_HOSTS`.
+- Final security review (part B): antivirus (ClamAV) on every upload in production, zip-bomb and macro checks for Office files, untrusted handling of restore packages, per-user rate limits and job quotas, workflow expression and timer limits, "sign out everywhere" and admin session revocation, atomic lockout, encryption-key rotation (`reencrypt-secrets`), secrets filtered from access logs.
+- CI security scans: CodeQL, gitleaks, Trivy (images), OWASP ZAP baseline, `pnpm audit`, licence check (no copyleft in the shipped app).
 
 The security review, the table of every endpoint with its guards, remaining risks and a penetration-test
 checklist are in [`docs/SECURITY.md`](./docs/SECURITY.md). More detail in [`docs/DECISIONS.md`](./docs/DECISIONS.md).

@@ -34,6 +34,11 @@ export const RESERVED_VARIABLES = [
   'process',
   'today',
   'now',
+  // JavaScript object internals: a variable with one of these names would change the prototype of
+  // the case variables object instead of storing a value (SEC-33).
+  '__proto__',
+  'constructor',
+  'prototype',
 ];
 
 const text = (max: number) => z.string().trim().max(max).default('');

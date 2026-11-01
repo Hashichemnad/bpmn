@@ -11,6 +11,7 @@ Object.assign(process.env, {
   CORS_ORIGINS: 'http://localhost:5173',
   RATE_LIMIT_MAX: '100000',
   LOGIN_RATE_LIMIT_MAX: '100000',
+  USER_RATE_LIMIT_SCALE: '1000',
   LOGIN_MAX_ATTEMPTS: '3',
   LOGIN_LOCKOUT_MINUTES: '15',
   ENABLE_SWAGGER: 'false',

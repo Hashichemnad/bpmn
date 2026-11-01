@@ -75,7 +75,7 @@ function requireOneName(v: { nameEn?: string; nameAr?: string }, ctx: z.Refineme
 
 // ---------- Pagination ----------
 export const paginationQuerySchema = z.object({
-  page: z.coerce.number().int().min(1).default(1),
+  page: z.coerce.number().int().min(1).max(10_000).default(1),
   pageSize: z.coerce.number().int().min(1).max(MAX_PAGE_SIZE).default(DEFAULT_PAGE_SIZE),
   sort: trimmed(50).optional(),
   order: z.enum(['asc', 'desc']).default('asc'),
@@ -515,7 +515,7 @@ export const searchQuerySchema = z.object({
   type: z.enum(SEARCH_TYPES).default('all'),
   spaceId: uuidSchema.optional(),
   authorId: uuidSchema.optional(),
-  page: z.coerce.number().int().min(1).default(1),
+  page: z.coerce.number().int().min(1).max(10_000).default(1),
   pageSize: z.coerce.number().int().min(1).max(50).default(20),
 });
 export type SearchQuery = z.infer<typeof searchQuerySchema>;
@@ -711,7 +711,7 @@ export const notificationListQuerySchema = z.object({
     .enum(['true', 'false'])
     .optional()
     .transform((v) => v === 'true'),
-  page: z.coerce.number().int().min(1).default(1),
+  page: z.coerce.number().int().min(1).max(10_000).default(1),
   pageSize: z.coerce.number().int().min(1).max(100).default(20),
 });
 export type NotificationListQuery = z.infer<typeof notificationListQuerySchema>;
@@ -804,7 +804,7 @@ export const portalSearchQuerySchema = z.object({
   type: z.enum(PORTAL_SEARCH_TYPES).default('all'),
   category: z.enum(PROCESS_CATEGORIES).optional(),
   spaceId: uuidSchema.optional(),
-  page: z.coerce.number().int().min(1).default(1),
+  page: z.coerce.number().int().min(1).max(10_000).default(1),
   pageSize: z.coerce.number().int().min(1).max(50).default(20),
 });
 export type PortalSearchQuery = z.infer<typeof portalSearchQuerySchema>;

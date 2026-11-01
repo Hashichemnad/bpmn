@@ -27,6 +27,11 @@ describe('Auth (e2e)', () => {
     await new Client(ctx.app).get('/health').expect(200, { status: 'ok' });
   });
 
+  it('GET /health/antivirus is public and reports off in the trial stack (D-191)', async () => {
+    const res = await request(ctx.app.getHttpServer()).get('/api/v1/health/antivirus').expect(200);
+    expect(res.body).toMatchObject({ enabled: false, status: 'off' });
+  });
+
   it('sets security headers and hides x-powered-by', async () => {
     const res = await new Client(ctx.app).get('/health');
     expect(res.headers['x-content-type-options']).toBe('nosniff');
@@ -102,6 +107,21 @@ describe('Auth (e2e)', () => {
     expect(res.status).toBe(401);
     expect(res.body.code).toBe('ACCOUNT_LOCKED');
     expect(await ctx.prisma.auditLog.count({ where: { action: 'LOCKOUT' } })).toBe(1);
+  });
+
+  it('parallel guesses cannot exceed the lockout limit (SEC-36)', async () => {
+    const clients = await Promise.all(Array.from({ length: 12 }, () => new Client(ctx.app).init()));
+    const results = await Promise.all(
+      clients.map((c) => c.login('admin@test.local', 'Wrong-Password1')),
+    );
+    expect(results.every((r) => r.status === 401)).toBe(true);
+    // At most LOGIN_MAX_ATTEMPTS (3) passwords were actually checked; the rest were refused as locked.
+    const checked = await ctx.prisma.auditLog.count({
+      where: { action: 'LOGIN_FAILED', summary: { path: ['reason'], equals: 'BAD_PASSWORD' } },
+    });
+    expect(checked).toBeLessThanOrEqual(3);
+    const res = await (await new Client(ctx.app).init()).login('admin@test.local');
+    expect(res.body.code).toBe('ACCOUNT_LOCKED');
   });
 
   it('inactive users cannot log in', async () => {

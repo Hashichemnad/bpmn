@@ -186,13 +186,16 @@ export class ImportsService implements OnModuleInit {
     this.assertKind(kind, actor);
     const info = IMPORT_KIND_INFO[kind];
     if (!ImportsService.isManager(actor)) options = { ...options, defaultOwnerId: actor.id };
-    if (!files.length) throw badRequest('FILE_REQUIRED');
+    // Multer hands over an array; anything else (a tampered multipart field) is refused (CodeQL
+    // js/type-confusion-through-parameter-tampering).
+    if (!Array.isArray(files) || !files.length) throw badRequest('FILE_REQUIRED');
     if (files.length > (info.multiple ? IMPORT_LIMITS.files : 1))
       throw badRequest('TOO_MANY_FILES');
     const total = files.reduce((s, f) => s + f.size, 0);
     if (total > IMPORT_LIMITS.batchBytes) throw badRequest('FILE_TOO_LARGE');
     const checked = files.map((f) => {
-      const fileName = safeFileName(f.originalname);
+      // Multer reads the multipart file name as latin1: Arabic names need the UTF-8 decoding.
+      const fileName = safeFileName(Buffer.from(f.originalname, 'latin1').toString('utf8'));
       try {
         const { type } = checkUpload(fileName, f.buffer, info.extensions);
         return { fileName, data: f.buffer, type };

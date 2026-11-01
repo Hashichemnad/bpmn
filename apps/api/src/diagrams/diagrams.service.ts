@@ -207,7 +207,7 @@ export class DiagramsService {
   }
 
   async create(input: CreateDiagramInput, actor: AuthUser, meta: RequestMeta) {
-    await this.assertRefs(input.processId, input.ownerId, input.departmentId);
+    await this.assertRefs(input.processId, input.ownerId, input.departmentId, actor);
     const content =
       input.content ??
       (input.type === 'DMN'
@@ -289,7 +289,12 @@ export class DiagramsService {
       !actor.permissions.has(PERMISSIONS.PROCESSES_EDIT)
     )
       throw forbidden('Only editors can change the diagram owner');
-    await this.assertRefs(input.processId, input.ownerId, input.departmentId);
+    await this.assertRefs(
+      input.processId !== before.processId ? input.processId : undefined,
+      input.ownerId,
+      input.departmentId,
+      actor,
+    );
     const nameEn = input.nameEn ?? before.nameEn;
     const nameAr = input.nameAr ?? before.nameAr;
     if (!nameEn && !nameAr) throw badRequest('NAME_REQUIRED');
@@ -358,10 +363,15 @@ export class DiagramsService {
     processId?: string | null,
     ownerId?: string | null,
     departmentId?: string | null,
+    actor?: AuthUser,
   ) {
     if (processId) {
       const p = await this.prisma.process.findFirst({ where: { id: processId, deletedAt: null } });
       if (!p) throw badRequest('PROCESS_NOT_FOUND');
+      // A diagram is placed under a process only by someone who may edit that process (SEC-27):
+      // owners with processes.edit_own cannot attach diagrams to other departments' processes.
+      if (actor && !canEditProcess(actor, p))
+        throw forbidden('You cannot attach a diagram to this process');
     }
     if (ownerId) {
       const u = await this.prisma.user.findFirst({ where: { id: ownerId, deletedAt: null } });

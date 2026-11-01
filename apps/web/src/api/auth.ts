@@ -63,6 +63,13 @@ export function useResetUserMfa() {
   });
 }
 
+/** Admin: end all sessions of a user on every device (SEC-38). */
+export function useRevokeUserSessions() {
+  return useMutation({
+    mutationFn: (id: string) => api<void>(`/users/${id}/sessions/revoke`, { method: 'POST' }),
+  });
+}
+
 // ---------- Settings → Authentication (Super Admin) ----------
 
 export const useAuthSettings = () =>

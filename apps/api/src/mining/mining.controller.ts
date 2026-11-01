@@ -13,6 +13,9 @@ import {
   UploadedFile,
   UseInterceptors,
 } from '@nestjs/common';
+import { UseGuards } from '@nestjs/common';
+import { UserRateLimit } from '../common/user-rate-limit.guard';
+import { UploadSlots } from '../common/upload-slots.interceptor';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { ApiTags } from '@nestjs/swagger';
 import { z } from 'zod';
@@ -179,7 +182,12 @@ export class MiningController {
   @RequirePermissions(READ)
   async cancel(@Param('id', UuidPipe()) id: string, @CurrentUser() user: AuthUser) {
     const job = await this.assertJobAccess(id, user);
-    if (job.createdById !== user.id && !user.permissions.has(MANAGE)) throw forbidden();
+    if (job.createdById !== user.id) {
+      if (!user.permissions.has(MANAGE)) throw forbidden();
+      // Someone else's job on a log: only who may manage that log (not read-only grantees, SEC-46).
+      if (job.logId && !this.logs.canManage(await this.logs.visible(job.logId, user), user))
+        throw forbidden();
+    }
     return toJobDto(await this.jobs.cancel(id));
   }
 
@@ -197,6 +205,7 @@ export class MiningController {
   @Post('logs/upload')
   @RequirePermissions(MANAGE)
   @UseInterceptors(
+    UploadSlots('event log', 1, 2),
     FileInterceptor('file', {
       limits: {
         fileSize: Number(process.env.MINING_UPLOAD_MAX_MB || MINING_UPLOAD_MAX_MB) * 1024 * 1024,
@@ -357,6 +366,7 @@ export class MiningController {
   // ---------- Analysis (step 2) ----------
 
   /** Map, variants, statistics and bottlenecks of the filtered log (cached; a job when large). */
+  @UseGuards(UserRateLimit('mining analysis', 30))
   @Post('logs/:id/analysis')
   @HttpCode(200)
   @RequirePermissions(READ)
@@ -368,6 +378,7 @@ export class MiningController {
     return this.analysis.analyse(id, body, user);
   }
 
+  @UseGuards(UserRateLimit('mining analysis', 30))
   @Post('logs/:id/export')
   @HttpCode(200)
   @RequirePermissions(READ)
@@ -405,6 +416,7 @@ export class MiningController {
   }
 
   /** "Generate BPMN from log": heuristics miner → a new draft process for review. */
+  @UseGuards(UserRateLimit('mining analysis', 30))
   @Post('logs/:id/discover')
   @RequirePermissions(MANAGE, PERMISSIONS.PROCESSES_CREATE)
   discover(
@@ -418,6 +430,7 @@ export class MiningController {
 
   // ---------- Conformance (step 3) ----------
 
+  @UseGuards(UserRateLimit('mining analysis', 30))
   @Post('logs/:id/conformance')
   @HttpCode(200)
   @RequirePermissions(READ)

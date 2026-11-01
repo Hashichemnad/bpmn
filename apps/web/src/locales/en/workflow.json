@@ -116,6 +116,8 @@
       "TIMER_CYCLE_INTERMEDIATE": "A waiting timer cannot repeat; use a duration or a date.",
       "TIMER_INVALID": "The timer value is not valid: {{detail}}",
       "TIMER_MISSING": "Set when the timer fires.",
+      "TIMER_TOO_SHORT": "The timer is too frequent ({{detail}}): durations at least 1 minute, repeating timers at least every 5 minutes.",
+      "TIMER_TOO_MANY": "The timer repeats too often ({{detail}}): at most 1,000 repetitions.",
       "UNSUPPORTED_ELEMENT": "This element type cannot be executed — use “{{detail}}” instead.",
       "UNSUPPORTED_EVENT": "This event type cannot be executed ({{detail}}). Supported: start (plain, timer), timers, error and terminate end events."
     },
@@ -461,7 +463,9 @@
       "MON_FRI": "Monday – Friday",
       "SUN_THU": "Sunday – Thursday"
     },
-    "workingHours": "working hours"
+    "workingHours": "working hours",
+    "maxFilesPerCase": "Files per case",
+    "maxFilesPerCaseHint": "Most files one case may hold (uploads by participants, 1–1,000). Default 100."
   },
   "start": {
     "hint": "After you submit, the request gets a number ({{prefix}}-…) and appears under “My requests”.",

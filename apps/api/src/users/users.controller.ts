@@ -98,6 +98,18 @@ export class UsersController {
     await this.users.resetPassword(id, body, user, meta);
   }
 
+  /** Ends all sessions of the user on every device (SEC-38). */
+  @Post(':id/sessions/revoke')
+  @RequirePermissions(PERMISSIONS.USERS_MANAGE)
+  @HttpCode(204)
+  async revokeSessions(
+    @Param('id', UuidPipe()) id: string,
+    @CurrentUser() user: AuthUser,
+    @ReqMeta() meta: RequestMeta,
+  ) {
+    await this.users.revokeSessions(id, user, meta);
+  }
+
   @Post(':id/unlock')
   @RequirePermissions(PERMISSIONS.USERS_MANAGE)
   @HttpCode(200)

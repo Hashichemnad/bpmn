@@ -45,7 +45,7 @@
     "marked": "^16.4.2",
     "minio": "^8.0.5",
     "multer": "^2.5.0",
-    "nodemailer": "^10.0.16",
+    "nodemailer": "^10.1.7",
     "openid-client": "6.8.8",
     "otpauth": "9.5.2",
     "pptxgenjs": "4.0.1",

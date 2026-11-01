@@ -3,6 +3,7 @@ import PptxGenJS from 'pptxgenjs';
 import {
   PERMISSIONS,
   kpiRag,
+  portalHiddenTypes,
   rateRisk,
   thresholdsFor,
   type Locale,
@@ -12,6 +13,7 @@ import {
 import { PrismaService } from '../prisma/prisma.service';
 import { AuditService } from '../audit/audit.service';
 import { GrcSettingsService } from '../grc/grc-settings.service';
+import { KpiSettingsService } from '../kpi/kpi-settings.service';
 import { forbidden } from '../common/app-exception';
 import type { AuthUser, RequestMeta } from '../common/auth-user';
 import type { ReportProcess } from '../reports/report-data.service';
@@ -108,6 +110,7 @@ export class PptxExportService {
     private readonly audit: AuditService,
     private readonly data: ExportDataService,
     private readonly grcSettings: GrcSettingsService,
+    private readonly kpiSettings: KpiSettingsService,
   ) {}
 
   async export(input: PptxExportInput, user: AuthUser, meta: RequestMeta): Promise<ExportFile> {
@@ -125,7 +128,7 @@ export class PptxExportService {
       title = `${p.code} ${name(p, l)}`;
       fileBase = p.code;
       deck.titleSlide(title, categoryText(l, p.category));
-      await this.processSlides(deck, p, l);
+      await this.processSlides(deck, p, l, user);
     } else if (input.scope === 'VALUE_CHAIN') {
       entityType = 'Diagram';
       const vc = await this.data.valueChain(input.id!, user, input.drafts);
@@ -180,7 +183,7 @@ export class PptxExportService {
     };
   }
 
-  private async processSlides(deck: Deck, p: ReportProcess, l: Locale) {
+  private async processSlides(deck: Deck, p: ReportProcess, l: Locale, user: AuthUser) {
     const t = reportTexts(l);
     const img = await this.data.bpmnImage(p.bpmnXml, l, 'png', 2400);
     deck.imageSlide(t.diagram, img);
@@ -215,8 +218,16 @@ export class PptxExportService {
       ]),
       [0.6, 4.6, 2.8, 2.2, 2.4],
     );
-    // Risks / controls / KPIs linked to the process and its steps.
-    const grc = p.links.filter((x) => x.object.type === 'RISK' || x.object.type === 'CONTROL');
+    // Risks / controls / KPIs linked to the process and its steps — as the portal shows them
+    // (SEC-34): readers without Risk & Compliance / KPI rights see only what Settings → Risk &
+    // Compliance and Settings → KPIs show in the portal (default: none, D-092, D-113).
+    const hidden: string[] = user.permissions.has(PERMISSIONS.GRC_READ)
+      ? []
+      : [...portalHiddenTypes((await this.grcSettings.get()).portalVisibility)];
+    if (!user.permissions.has(PERMISSIONS.KPI_READ) && !(await this.kpiSettings.get()).showInPortal)
+      hidden.push('KPI');
+    const links = p.links.filter((x) => !hidden.includes(x.object.type));
+    const grc = links.filter((x) => x.object.type === 'RISK' || x.object.type === 'CONTROL');
     const objects = [...new Map(grc.map((x) => [x.object.id, x.object])).values()];
     deck.tableSlides(
       T[l].linkedRisks,
@@ -225,7 +236,7 @@ export class PptxExportService {
       [2, 2, 8.6],
     );
     const kpiIds = [
-      ...new Set(p.links.filter((x) => x.object.type === 'KPI').map((x) => x.object.id)),
+      ...new Set(links.filter((x) => x.object.type === 'KPI').map((x) => x.object.id)),
     ];
     if (kpiIds.length) await this.kpiSlides(deck, l, undefined, kpiIds, T[l].linkedKpis);
   }

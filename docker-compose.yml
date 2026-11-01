@@ -88,6 +88,8 @@ services:
       # Empty = generate a key on first start (stored in the api-data volume). Back it up with the
       # database: without it stored GitHub/GitLab tokens and the SMTP password cannot be decrypted.
       INTEGRATIONS_ENCRYPTION_KEY: ${INTEGRATIONS_ENCRYPTION_KEY:-}
+      # Only during a key rotation (docs/DEPLOYMENT.md "Key rotation", SEC-40).
+      INTEGRATIONS_ENCRYPTION_KEY_PREVIOUS: ${INTEGRATIONS_ENCRYPTION_KEY_PREVIOUS:-}
       COOKIE_SECURE: ${COOKIE_SECURE:-true}
       CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:8080}
       TRUST_PROXY: ${TRUST_PROXY:-1}

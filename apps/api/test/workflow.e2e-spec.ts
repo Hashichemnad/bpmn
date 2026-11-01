@@ -931,6 +931,19 @@ describe('Workflow execution (e2e)', () => {
       .field('caseId', running.id)
       .attach('file', pdf, 'x.pdf')
       .expect(404);
+    // Files per case are limited by Settings → Workflow execution (D-191).
+    await ctx.prisma.setting.upsert({
+      where: { key: 'workflow' },
+      create: { key: 'workflow', value: { maxFilesPerCase: 1 } },
+      update: { value: { maxFilesPerCase: 1 } },
+    });
+    const full = await requester
+      .post('/workflow/files')
+      .field('caseId', running.id)
+      .attach('file', pdf, 'second.pdf')
+      .expect(400);
+    expect(full.body.code).toBe('TOO_MANY_FILES');
+    await ctx.prisma.setting.delete({ where: { key: 'workflow' } });
   });
 
   it('retention removes form data of closed cases after the period', async () => {
@@ -947,5 +960,12 @@ describe('Workflow execution (e2e)', () => {
     const purged = (await requester.get(`/workflow/cases/${caseId}`).expect(200)).body;
     expect(purged).toMatchObject({ dataPurged: true, startData: null, files: [] });
     expect(purged.tasks.every((t: { data: unknown }) => t.data === null)).toBe(true);
+    // The title (first text field of the start form) and notifications about the case go too (SEC-32).
+    const row = await ctx.prisma.workflowCase.findUniqueOrThrow({ where: { id: caseId } });
+    expect(row.titleEn).toBe(row.number);
+    expect(row.closedReason).toBeNull();
+    expect(
+      await ctx.prisma.notification.count({ where: { link: `/workflow/cases/${caseId}` } }),
+    ).toBe(0);
   });
 });

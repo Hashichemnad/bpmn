@@ -26,3 +26,7 @@ deploy/certs/*.pem
 
 # Renderer unit test build
 .test-dist/
+.zap/zap-report.*
+trivy-reports/
+gitleaks-*.sarif
+codeql-results/

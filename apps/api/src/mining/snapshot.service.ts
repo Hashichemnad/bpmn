@@ -29,7 +29,7 @@ export class SnapshotService {
   async save(logId: string, version: number, bytes: Uint8Array): Promise<string> {
     const key = snapshotKey(logId, version);
     const gz = await gzipAsync(bytes, { level: 6 });
-    await this.storage.put(key, gz, 'application/gzip');
+    await this.storage.put(key, gz, 'application/gzip', { generated: true });
     this.remember(key, bytes);
     return key;
   }
