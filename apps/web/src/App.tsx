@@ -9,6 +9,18 @@ import { RequirePermission } from '@/components/RequirePermission';
 const AppLayout = lazyPage(() => import('@/layout/AppLayout'), 'AppLayout');
 const LoginPage = lazyPage(() => import('@/features/auth/LoginPage'), 'LoginPage');
 const InvitationPage = lazyPage(() => import('@/features/auth/InvitationPage'), 'InvitationPage');
+const UnsubscribePage = lazyPage(
+  () => import('@/features/subscriptions/UnsubscribePage'),
+  'UnsubscribePage',
+);
+const SubscriptionsPage = lazyPage(
+  () => import('@/features/subscriptions/SubscriptionsPage'),
+  'SubscriptionsPage',
+);
+const DeliveryDownloadPage = lazyPage(
+  () => import('@/features/subscriptions/DeliveryDownloadPage'),
+  'DeliveryDownloadPage',
+);
 const ProfilePage = lazyPage(() => import('@/features/profile/ProfilePage'), 'ProfilePage');
 const UsersPage = lazyPage(() => import('@/features/admin/UsersPage'), 'UsersPage');
 const DepartmentsPage = lazyPage(
@@ -291,6 +303,7 @@ export const routes: RouteObject[] = [
     children: [
       { path: '/login', element: <LoginPage /> },
       { path: '/invitation/:token', element: <InvitationPage /> },
+      { path: '/unsubscribe/:token', element: <UnsubscribePage /> },
       {
         element: <RequireAuth />,
         children: [
@@ -959,6 +972,8 @@ export const routes: RouteObject[] = [
                     ),
                   },
                   { path: 'profile', element: <ProfilePage /> },
+                  { path: 'reports/subscriptions', element: <SubscriptionsPage /> },
+                  { path: 'reports/deliveries/:id', element: <DeliveryDownloadPage /> },
                   { path: '*', element: <NotFound /> },
                 ],
               },

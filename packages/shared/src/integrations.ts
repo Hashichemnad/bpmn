@@ -435,3 +435,163 @@ export const DEFAULT_EXPORT_TEMPLATE: ExportTemplate = {
   accentColor: '#B28704',
   logoOnEverySlide: true,
 };
+
+// ---------- Scheduled report e-mails (D-179) ----------
+
+export const SCHEDULED_REPORTS = [
+  'KPI_DASHBOARD',
+  'OVERDUE_REVIEWS',
+  'OPEN_ISSUES',
+  'WORKFLOW_SLA',
+  'MIGRATION_PROGRESS',
+  'PROCESS_HANDBOOK',
+] as const;
+export type ScheduledReport = (typeof SCHEDULED_REPORTS)[number];
+
+export const REPORT_FORMATS = ['PDF', 'EXCEL', 'LINK'] as const;
+export type ReportFormat = (typeof REPORT_FORMATS)[number];
+export const REPORT_FREQUENCIES = ['DAILY', 'WEEKLY', 'MONTHLY'] as const;
+export type ReportFrequency = (typeof REPORT_FREQUENCIES)[number];
+export const REPORT_AUDIENCES = ['SELF', 'ROLE', 'DEPARTMENT'] as const;
+export type ReportAudience = (typeof REPORT_AUDIENCES)[number];
+/** Schedules are wall-clock times in Dubai (product owner decision). */
+export const REPORT_TIME_ZONE = 'Asia/Dubai';
+
+const reportTime = z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/, 'INVALID_TIME');
+
+export const reportSubscriptionSchema = z
+  .object({
+    name: z.string().trim().min(1).max(120),
+    report: z.enum(SCHEDULED_REPORTS),
+    filters: z
+      .object({
+        departmentId: z.uuid().nullable().optional(),
+        /** Process handbook: the branch's root process. */
+        processId: z.uuid().nullable().optional(),
+      })
+      .default({}),
+    format: z.enum(REPORT_FORMATS).default('LINK'),
+    frequency: z.enum(REPORT_FREQUENCIES).default('WEEKLY'),
+    /** Weekly: ISO weekday 1 (Monday) … 7 (Sunday). */
+    weekday: z.number().int().min(1).max(7).default(7),
+    /** Monthly: day of the month 1 … 28. */
+    monthDay: z.number().int().min(1).max(28).default(1),
+    time: reportTime.default('07:00'),
+    /** Move a run that falls on a weekend / public holiday to the next working day (daily: skip it). */
+    skipHolidays: z.boolean().default(true),
+    /** Null: each recipient's own language. */
+    locale: z.enum(['en', 'ar']).nullable().default(null),
+    audience: z.enum(REPORT_AUDIENCES).default('SELF'),
+    roleId: z.uuid().nullable().default(null),
+    audienceDepartmentId: z.uuid().nullable().default(null),
+    active: z.boolean().default(true),
+  })
+  .superRefine((v, ctx) => {
+    if (v.report === 'PROCESS_HANDBOOK' && !v.filters.processId)
+      ctx.addIssue({ code: 'custom', path: ['filters', 'processId'], message: 'PROCESS_REQUIRED' });
+    if (v.audience === 'ROLE' && !v.roleId)
+      ctx.addIssue({ code: 'custom', path: ['roleId'], message: 'ROLE_REQUIRED' });
+    if (v.audience === 'DEPARTMENT' && !v.audienceDepartmentId)
+      ctx.addIssue({
+        code: 'custom',
+        path: ['audienceDepartmentId'],
+        message: 'DEPARTMENT_REQUIRED',
+      });
+  });
+export type ReportSubscriptionInput = z.infer<typeof reportSubscriptionSchema>;
+
+export interface ReportSubscriptionDto extends ReportSubscriptionInput {
+  id: string;
+  owner: { id: string; nameEn: string; nameAr: string; email: string } | null;
+  /** The signed-in user unsubscribed from this (role / department) subscription. */
+  unsubscribed: boolean;
+  nextRunAt: string | null;
+  lastRunAt: string | null;
+  canEdit: boolean;
+  createdAt: string;
+}
+
+export type ReportDeliveryStatus = 'SENT' | 'FAILED' | 'SKIPPED';
+
+export interface ReportDeliveryDto {
+  id: string;
+  user: { id: string; nameEn: string; nameAr: string; email: string } | null;
+  status: ReportDeliveryStatus;
+  error: string | null;
+  format: ReportFormat;
+  attached: boolean;
+  fileName: string | null;
+  createdAt: string;
+}
+
+/** Setting `reports`: what scheduled e-mails may carry. */
+export const reportSettingsSchema = z.object({
+  /** Attach the PDF / Excel file to the e-mail (off: summary and a secure link only). */
+  allowAttachments: z.boolean().default(false),
+  /** Days the secure download link of a delivery works. */
+  linkDays: z.number().int().min(1).max(90).default(30),
+});
+export type ReportSettings = z.infer<typeof reportSettingsSchema>;
+export const DEFAULT_REPORT_SETTINGS: ReportSettings = { allowAttachments: false, linkDays: 30 };
+
+export const unsubscribeSchema = z.object({ token: z.string().min(10).max(300) });
+
+/**
+ * Next run of a schedule after `after` (D-179): the wall-clock `time` in Dubai on every day, on the
+ * ISO `weekday`, or on `monthDay`. With `skipHolidays`, a weekly / monthly run on a non-working day
+ * (`isWorkDay`, ISO date in Dubai) moves to the next working day and daily runs skip such days.
+ */
+export function nextReportRun(
+  s: Pick<ReportSubscriptionInput, 'frequency' | 'weekday' | 'monthDay' | 'time' | 'skipHolidays'>,
+  after: Date,
+  isWorkDay: (isoDate: string) => boolean = () => true,
+): Date {
+  const [hh, mm] = s.time.split(':').map(Number);
+  const offsetOf = (d: Date) => {
+    const parts = new Intl.DateTimeFormat('en-US', {
+      timeZone: REPORT_TIME_ZONE,
+      hourCycle: 'h23',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+    })
+      .formatToParts(d)
+      .reduce<Record<string, string>>((a, p) => ((a[p.type] = p.value), a), {});
+    const wall = Date.UTC(
+      +parts.year,
+      +parts.month - 1,
+      +parts.day,
+      +parts.hour % 24,
+      +parts.minute,
+    );
+    return Math.round((wall - Math.floor(d.getTime() / 60000) * 60000) / 60000);
+  };
+  const offset = offsetOf(after);
+  const DAY = 86_400_000;
+  // Local (Dubai) calendar day of `after`, as a UTC midnight timestamp.
+  const startDay = Math.floor((after.getTime() + offset * 60000) / DAY) * DAY;
+  const iso = (t: number) => new Date(t).toISOString().slice(0, 10);
+  const matches = (t: number) => {
+    const d = new Date(t);
+    if (s.frequency === 'DAILY') return true;
+    if (s.frequency === 'WEEKLY') return ((d.getUTCDay() + 6) % 7) + 1 === s.weekday;
+    return d.getUTCDate() === s.monthDay;
+  };
+  for (let i = 0; i < 800; i++) {
+    const day = startDay + i * DAY;
+    if (!matches(day)) continue;
+    let target = day;
+    if (s.skipHolidays) {
+      if (s.frequency === 'DAILY') {
+        if (!isWorkDay(iso(day))) continue;
+      } else {
+        for (let k = 0; k < 30 && !isWorkDay(iso(target)); k++) target += DAY;
+      }
+    }
+    const instant = new Date(target + (hh * 60 + mm - offsetOf(new Date(target))) * 60000);
+    if (instant > after) return instant;
+  }
+  throw new Error('No run found within two years');
+}

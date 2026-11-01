@@ -219,5 +219,96 @@
     "primary": "Main colour",
     "accent": "Accent colour",
     "logoOnEverySlide": "Logo on every slide"
+  },
+  "reports": {
+    "KPI_DASHBOARD": "KPI dashboard",
+    "OVERDUE_REVIEWS": "Governance: overdue reviews",
+    "OPEN_ISSUES": "Assurance: open issues",
+    "WORKFLOW_SLA": "Workflow SLA per step",
+    "MIGRATION_PROGRESS": "Migration progress",
+    "PROCESS_HANDBOOK": "Process handbook of a branch"
+  },
+  "formats": {
+    "PDF": "PDF",
+    "EXCEL": "Excel",
+    "LINK": "Link only"
+  },
+  "frequency": {
+    "DAILY": "Daily",
+    "WEEKLY": "Weekly",
+    "MONTHLY": "Monthly"
+  },
+  "weekdays": {
+    "1": "Monday",
+    "2": "Tuesday",
+    "3": "Wednesday",
+    "4": "Thursday",
+    "5": "Friday",
+    "6": "Saturday",
+    "7": "Sunday"
+  },
+  "audience": {
+    "SELF": "Me",
+    "ROLE": "A role",
+    "DEPARTMENT": "A department"
+  },
+  "schedule": {
+    "daily": "Daily at {{time}}",
+    "weekly": "Every {{day}} at {{time}}",
+    "monthly": "Monthly on day {{day}} at {{time}}"
+  },
+  "deliveryStatus": {
+    "SENT": "Sent",
+    "FAILED": "Failed",
+    "SKIPPED": "Not sent"
+  },
+  "deliveryErrors": {
+    "NO_PERMISSION": "Recipient may not see this report",
+    "SMTP_NOT_CONFIGURED": "E-mail is not configured",
+    "USER_INACTIVE": "Recipient inactive",
+    "RENDERER_UNAVAILABLE_EXCEL_SENT": "PDF not available: Excel sent instead"
+  },
+  "subscriptions": {
+    "menu": "My report e-mails",
+    "title": "Report subscriptions",
+    "subtitle": "Reports e-mailed on a schedule (times in Dubai). They always show only what each recipient may see in ProcessHub.",
+    "create": "New subscription",
+    "edit": "Edit subscription",
+    "empty": "No subscriptions yet.",
+    "name": "Name",
+    "report": "Report",
+    "department": "Department filter",
+    "branch": "Process-house branch",
+    "format": "Format",
+    "frequency": "Frequency",
+    "weekday": "Day",
+    "monthDay": "Day of the month",
+    "time": "Time",
+    "timeZone": "Asia/Dubai",
+    "skipHolidays": "Skip weekends and public holidays",
+    "language": "Language",
+    "recipientLanguage": "Each recipient's language",
+    "audience": "Recipients",
+    "schedule": "Schedule",
+    "nextRun": "Next e-mail",
+    "sendNow": "Send to me now",
+    "sent": "Report sent to your e-mail",
+    "deleteConfirm": "Delete this subscription?",
+    "resubscribe": "Subscribe again",
+    "unsubscribedTag": "Unsubscribed",
+    "logTitle": "Delivery log – {{name}}",
+    "recipient": "Recipient",
+    "note": "Note",
+    "attached": "File attached",
+    "settingsTitle": "Report e-mail settings",
+    "allowAttachments": "Attach PDF / Excel files to e-mails",
+    "linkDays": "Download link valid (days)",
+    "unsubscribed": "You are unsubscribed",
+    "unsubscribedHint": "You will no longer receive “{{name}}”.",
+    "unsubscribeFailed": "The link could not be used",
+    "manage": "Manage my report e-mails",
+    "downloaded": "The report has been downloaded",
+    "downloadAgain": "Download again",
+    "downloadFailed": "The report could not be downloaded"
   }
 }

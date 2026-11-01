@@ -317,5 +317,10 @@
   "WEBHOOK_HOST_BLOCKED": "يشير هذا العنوان إلى شبكة داخلية وهو محظور.",
   "WEBHOOK_HOST_UNRESOLVED": "تعذّر التعرف على اسم المضيف.",
   "NO_SECRET_FOR_TEAMS": "لا تستخدم وجهات Teams سر توقيع.",
-  "RENDERER_UNAVAILABLE": "صور المخططات غير متاحة (خدمة الرسم لا تعمل)."
+  "RENDERER_UNAVAILABLE": "صور المخططات غير متاحة (خدمة الرسم لا تعمل).",
+  "REPORT_LINK_EXPIRED": "انتهت صلاحية رابط التقرير. استخدم «أرسله إليّ الآن» في الاشتراك.",
+  "INVALID_TOKEN": "هذا الرابط غير صالح.",
+  "PROCESS_REQUIRED": "اختر عملية.",
+  "ROLE_REQUIRED": "اختر دوراً.",
+  "DEPARTMENT_REQUIRED": "اختر إدارة."
 }

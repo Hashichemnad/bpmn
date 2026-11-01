@@ -30,6 +30,7 @@ import {
   ReadOutlined,
   SearchOutlined,
   LogoutOutlined,
+  MailOutlined,
   MenuFoldOutlined,
   MenuUnfoldOutlined,
   SettingOutlined,
@@ -564,6 +565,12 @@ export function AppLayout() {
       icon: <UserOutlined />,
       label: t('nav.profile'),
       onClick: () => navigate('/profile'),
+    },
+    {
+      key: 'subscriptions',
+      icon: <MailOutlined />,
+      label: t('integrations:subscriptions.menu'),
+      onClick: () => navigate('/reports/subscriptions'),
     },
     { type: 'divider' },
     {

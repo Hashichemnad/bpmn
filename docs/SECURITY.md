@@ -647,6 +647,17 @@ zod / UUID pipe; file uploads are checked in the service (allow-list, content sn
 | PATCH  | `/processes/:id/versions/:versionId`                       | any of `models.edit`, `models.edit_own`                        | body, param `id`, param `versionId`  | default    |
 | POST   | `/processes/:id/versions/:versionId/restore`               | any of `models.edit`, `models.edit_own`                        | body, param `id`, param `versionId`  | default    |
 | GET    | `/processes/tree`                                          | `processes.read`                                               | —                                    | default    |
+| GET    | `/report-subscriptions`                                    | authenticated                                                  | —                                    | default    |
+| POST   | `/report-subscriptions`                                    | authenticated                                                  | body                                 | default    |
+| DELETE | `/report-subscriptions/:id`                                | authenticated                                                  | param `id`                           | default    |
+| PUT    | `/report-subscriptions/:id`                                | authenticated                                                  | body, param `id`                     | default    |
+| GET    | `/report-subscriptions/:id/deliveries`                     | authenticated                                                  | param `id`                           | default    |
+| POST   | `/report-subscriptions/:id/resubscribe`                    | authenticated                                                  | param `id`                           | default    |
+| POST   | `/report-subscriptions/:id/send-now`                       | authenticated                                                  | param `id`                           | default    |
+| GET    | `/report-subscriptions/deliveries/:id/file`                | authenticated                                                  | param `id`                           | default    |
+| GET    | `/report-subscriptions/settings`                           | any of `settings.manage`, `integrations.read`                  | —                                    | default    |
+| PUT    | `/report-subscriptions/settings`                           | `settings.manage`                                              | body                                 | default    |
+| POST   | `/report-subscriptions/unsubscribe`                        | **public**                                                     | body                                 | login      |
 | POST   | `/reports/handbook`                                        | any of `processes.read`, `portal.read`                         | body                                 | default    |
 | POST   | `/reports/handbook/plan`                                   | any of `processes.read`, `portal.read`                         | body                                 | default    |
 | GET    | `/reports/objects/:id`                                     | `objects.read` + `processes.read`                              | param `id`, query                    | default    |

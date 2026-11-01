@@ -249,3 +249,46 @@ test('a process exports as an offline website that opens without network, and as
   const slide = await pptx.file('ppt/slides/slide1.xml')!.async('string');
   expect(slide).toContain('rtl="1"');
 });
+
+/** Mailpit of the Compose stack (every e-mail ProcessHub sends); optional when running elsewhere. */
+const MAILPIT = process.env.E2E_MAILPIT_URL ?? 'http://localhost:8025';
+
+test('a scheduled KPI report is set up, sent and logged', async ({ page, request }) => {
+  await login(page, DEMO.performance);
+  await page.goto('/reports/subscriptions');
+  await page.getByRole('button', { name: 'New subscription' }).click();
+  const dialog = page.getByRole('dialog');
+  await dialog.getByLabel('Name').fill(`E2E KPIs ${stamp}`);
+  await dialog.getByText('PDF', { exact: true }).click();
+  await dialog.getByRole('button', { name: 'Save' }).click();
+  await expect(dialog).toBeHidden();
+  const row = page.getByRole('row', { name: new RegExp(`E2E KPIs ${stamp}`) });
+  await expect(row).toContainText('Every Sunday at 07:00');
+  await row.getByRole('button', { name: 'Send to me now' }).click();
+  await expect(page.getByText('Report sent to your e-mail')).toBeVisible({ timeout: 60_000 });
+  await row.getByRole('button', { name: 'Delivery log' }).click();
+  await expect(page.locator('.ant-drawer').getByText('Sent').first()).toBeVisible();
+  await page.keyboard.press('Escape');
+
+  // The e-mail (Mailpit in the Compose stack): summary and a secure link, no attachment by default.
+  const mailpit = await request
+    .get(`${MAILPIT}/api/v1/search?query=${encodeURIComponent(`to:${DEMO.performance}`)}`)
+    .catch(() => null);
+  if (mailpit?.ok()) {
+    const found = (await mailpit.json()) as {
+      messages: { ID: string; Subject: string; Attachments: number }[];
+    };
+    const msg = found.messages.find((m) => m.Subject.includes(`E2E KPIs ${stamp}`));
+    expect(msg).toBeTruthy();
+    expect(msg!.Attachments).toBe(0);
+    const body = (await (await request.get(`${MAILPIT}/api/v1/message/${msg!.ID}`)).json()) as {
+      Text: string;
+    };
+    const link = /\/reports\/deliveries\/[0-9a-f-]{36}/.exec(body.Text)![0];
+    const [download] = await Promise.all([page.waitForEvent('download'), page.goto(link)]);
+    expect(download.suggestedFilename()).toMatch(/\.pdf$/);
+  }
+  await row.getByRole('button', { name: 'Delete' }).click();
+  await page.getByRole('tooltip').getByRole('button', { name: 'OK' }).click();
+  await expect(row).toBeHidden();
+});

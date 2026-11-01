@@ -2618,3 +2618,34 @@ pptxgenjs). File names are ASCII (process / diagram code). Audited.
 - `pptxgenjs` depends on `image-size` 1.x, which has high advisories (DoS in exotic formats); the library never
   calls it for our in-memory images, and a pnpm override pins `image-size` ≥ 2.0.3 (`pnpm audit` clean).
 - Its lazy `import('node:fs')` needs Jest to compile the package to CommonJS (`transformIgnorePatterns`).
+
+## D-179 — Scheduled report e-mails on the job runner, with the recipient's permissions (Phase 4.4)
+
+**Decision:** `ReportSubscription` (report, filters, format, schedule, language, audience), `ReportDelivery`
+(one row per recipient and run = delivery log + secure link) and `ReportUnsubscribe`.
+
+- **Reports:** KPI dashboard, governance overdue reviews (approval reviews past due + overdue periodic
+  reviews), open issues, workflow SLA per step, migration progress, process handbook of a branch. Each report
+  needs its permission (`kpi.read`, `governance.dashboard`, `grc.read` / `issues.manage`, `workflow.monitor` /
+  `workflow.admin`, `import.manage`, `processes.read` / `portal.read`) and is **built with the recipient's
+  permissions** at send time: a recipient without the permission gets no e-mail (`SKIPPED`, `NO_PERMISSION`),
+  issues are limited to the recipient's own unless they manage issues, workflow monitors see their department's
+  processes, the handbook follows the handbook's visibility (published content for portal users).
+- **Audience:** every user subscribes themselves (only to reports they may see); role and department audiences
+  need `users.manage` (Admins). Recipients see role / department subscriptions in their list and can
+  unsubscribe / subscribe again.
+- **Schedule:** daily / weekly (ISO weekday, default Sunday) / monthly (day 1–28) at a wall-clock time in
+  **Asia/Dubai** (`nextReportRun`, shared and unit-tested); "skip holidays" moves weekly / monthly runs on a
+  non-working day (workflow working week + central holiday list) to the next working day and skips such days
+  for daily runs. A one-minute scheduler claims due subscriptions by moving `nextRunAt` and enqueues
+  `REPORT_SEND` on the existing job runner (D-128), which generates and mails per recipient.
+- **Formats:** PDF (HTML printed by the renderer, D-172; falls back to Excel with a note when the renderer is
+  off), Excel (exceljs, right-to-left sheets in Arabic) or link only (an Excel file behind the link). The file is
+  stored (`report-deliveries/<id>/…`) and the e-mail carries the summary and a **secure link**
+  (`/reports/deliveries/<id>`: sign-in required, only the recipient, valid `reports.linkDays` = 30, then the
+  file is purged); attachments only when Setting `reports.allowAttachments` is on (default off) and the file is
+  ≤ 10 MB. Every e-mail has an unsubscribe link (HMAC token from `JWT_ACCESS_SECRET`, public endpoint with the
+  login rate limit) and a `List-Unsubscribe` header. "Send to me now" sends a run to the signed-in user only.
+- **Failures:** `FAILED` delivery with the error; the subscription owner gets an `INTEGRATION` notification
+  (`reportFailed`, once per hour and subscription). No SMTP configured → `SKIPPED` (`SMTP_NOT_CONFIGURED`).
+- Audit: create / update / delete of subscriptions, unsubscribe, file downloads (`EXPORT`).

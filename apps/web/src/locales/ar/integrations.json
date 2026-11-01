@@ -231,5 +231,96 @@
     "primary": "اللون الرئيسي",
     "accent": "لون التمييز",
     "logoOnEverySlide": "الشعار في كل شريحة"
+  },
+  "reports": {
+    "KPI_DASHBOARD": "لوحة مؤشرات الأداء",
+    "OVERDUE_REVIEWS": "الحوكمة: المراجعات المتأخرة",
+    "OPEN_ISSUES": "التأكيد: الملاحظات المفتوحة",
+    "WORKFLOW_SLA": "مستوى الخدمة لكل مرحلة في سير العمل",
+    "MIGRATION_PROGRESS": "تقدم الترحيل",
+    "PROCESS_HANDBOOK": "دليل العمليات لفرع"
+  },
+  "formats": {
+    "PDF": "ملف PDF",
+    "EXCEL": "ملف Excel",
+    "LINK": "رابط فقط"
+  },
+  "frequency": {
+    "DAILY": "يومي",
+    "WEEKLY": "أسبوعي",
+    "MONTHLY": "شهري"
+  },
+  "weekdays": {
+    "1": "الاثنين",
+    "2": "الثلاثاء",
+    "3": "الأربعاء",
+    "4": "الخميس",
+    "5": "الجمعة",
+    "6": "السبت",
+    "7": "الأحد"
+  },
+  "audience": {
+    "SELF": "أنا",
+    "ROLE": "دور",
+    "DEPARTMENT": "إدارة"
+  },
+  "schedule": {
+    "daily": "يومياً الساعة {{time}}",
+    "weekly": "كل {{day}} الساعة {{time}}",
+    "monthly": "شهرياً في اليوم {{day}} الساعة {{time}}"
+  },
+  "deliveryStatus": {
+    "SENT": "أُرسل",
+    "FAILED": "فشل",
+    "SKIPPED": "لم يُرسل"
+  },
+  "deliveryErrors": {
+    "NO_PERMISSION": "لا يحق للمستلم الاطلاع على هذا التقرير",
+    "SMTP_NOT_CONFIGURED": "البريد الإلكتروني غير مُعدّ",
+    "USER_INACTIVE": "المستلم غير نشط",
+    "RENDERER_UNAVAILABLE_EXCEL_SENT": "ملف PDF غير متاح: أُرسل ملف Excel بدلاً منه"
+  },
+  "subscriptions": {
+    "menu": "رسائل تقاريري",
+    "title": "اشتراكات التقارير",
+    "subtitle": "تقارير تُرسل بالبريد الإلكتروني حسب جدول (بتوقيت دبي). تعرض دائماً ما يحق لكل مستلم الاطلاع عليه في بروسس هب فقط.",
+    "create": "اشتراك جديد",
+    "edit": "تعديل الاشتراك",
+    "empty": "لا توجد اشتراكات بعد.",
+    "name": "الاسم",
+    "report": "التقرير",
+    "department": "تصفية حسب الإدارة",
+    "branch": "فرع في بيت العمليات",
+    "format": "الصيغة",
+    "frequency": "التكرار",
+    "weekday": "اليوم",
+    "monthDay": "يوم الشهر",
+    "time": "الوقت",
+    "timeZone": "توقيت دبي",
+    "skipHolidays": "تخطي عطلات نهاية الأسبوع والعطلات الرسمية",
+    "language": "اللغة",
+    "recipientLanguage": "لغة كل مستلم",
+    "audience": "المستلمون",
+    "schedule": "الجدول",
+    "nextRun": "الرسالة القادمة",
+    "sendNow": "أرسله إليّ الآن",
+    "sent": "أُرسل التقرير إلى بريدك الإلكتروني",
+    "deleteConfirm": "حذف هذا الاشتراك؟",
+    "resubscribe": "الاشتراك مجدداً",
+    "unsubscribedTag": "أُلغي الاشتراك",
+    "logTitle": "سجل الإرسال – {{name}}",
+    "recipient": "المستلم",
+    "note": "ملاحظة",
+    "attached": "الملف مرفق",
+    "settingsTitle": "إعدادات رسائل التقارير",
+    "allowAttachments": "إرفاق ملفات PDF / Excel بالرسائل",
+    "linkDays": "مدة صلاحية رابط التنزيل (بالأيام)",
+    "unsubscribed": "تم إلغاء اشتراكك",
+    "unsubscribedHint": "لن تصلك «{{name}}» بعد الآن.",
+    "unsubscribeFailed": "تعذّر استخدام الرابط",
+    "manage": "إدارة رسائل تقاريري",
+    "downloaded": "تم تنزيل التقرير",
+    "downloadAgain": "التنزيل مرة أخرى",
+    "downloadFailed": "تعذّر تنزيل التقرير"
   }
 }

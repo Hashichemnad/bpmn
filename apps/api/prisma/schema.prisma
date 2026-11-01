@@ -2780,3 +2780,69 @@ model WebhookDelivery {
   @@index([webhookId, createdAt])
   @@index([createdAt])
 }
+
+/// Scheduled report e-mail (D-179): a report, filters, format, schedule (Asia/Dubai) and audience.
+model ReportSubscription {
+  id                   String    @id @default(uuid()) @db.Uuid
+  name                 String
+  report               String
+  filters              Json      @default("{}")
+  format               String    @default("LINK")
+  frequency            String    @default("WEEKLY")
+  weekday              Int       @default(7)
+  monthDay             Int       @default(1)
+  time                 String    @default("07:00")
+  skipHolidays         Boolean   @default(true)
+  /// Null: each recipient's language.
+  locale               String?
+  /// SELF | ROLE | DEPARTMENT
+  audience             String    @default("SELF")
+  roleId               String?   @db.Uuid
+  audienceDepartmentId String?   @db.Uuid
+  ownerId              String    @db.Uuid
+  active               Boolean   @default(true)
+  nextRunAt            DateTime?
+  lastRunAt            DateTime?
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
+  createdById          String?   @db.Uuid
+  updatedById          String?   @db.Uuid
+  deletedAt            DateTime?
+
+  deliveries   ReportDelivery[]
+  unsubscribes ReportUnsubscribe[]
+
+  @@index([active, nextRunAt])
+  @@index([ownerId])
+}
+
+/// One e-mail of a run to one recipient; the generated file (secure link) is kept for `reports.linkDays`.
+model ReportDelivery {
+  id             String             @id @default(uuid()) @db.Uuid
+  subscriptionId String             @db.Uuid
+  subscription   ReportSubscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+  userId         String             @db.Uuid
+  /// SENT | FAILED | SKIPPED
+  status         String
+  error          String?
+  format         String
+  attached       Boolean            @default(false)
+  fileKey        String?
+  fileName       String?
+  contentType    String?
+  expiresAt      DateTime?
+  createdAt      DateTime           @default(now())
+
+  @@index([subscriptionId, createdAt])
+  @@index([userId, createdAt])
+}
+
+/// A recipient of a role / department subscription who opted out (unsubscribe link).
+model ReportUnsubscribe {
+  subscriptionId String             @db.Uuid
+  subscription   ReportSubscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+  userId         String             @db.Uuid
+  createdAt      DateTime           @default(now())
+
+  @@id([subscriptionId, userId])
+}

@@ -553,6 +553,8 @@ export const SETTING_KEYS = {
   INTEGRATIONS_WEBHOOKS: 'integrations.webhooks',
   /** Phase 4.4: colours of PowerPoint / offline HTML exports. */
   EXPORT_TEMPLATE: 'branding.exportTemplate',
+  /** Phase 4.4: scheduled report e-mails (attachments allowed, link lifetime). */
+  REPORTS: 'reports',
 } as const;
 
 /** Logo upload limits. */

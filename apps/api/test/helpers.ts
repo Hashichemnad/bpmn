@@ -324,6 +324,11 @@ export async function createApp(): Promise<TestContext> {
 }
 
 const TABLES = [
+  'ReportUnsubscribe',
+  'ReportDelivery',
+  'ReportSubscription',
+  'WebhookDelivery',
+  'Webhook',
   'ApiKeyUsage',
   'ApiKey',
   'ImportItem',

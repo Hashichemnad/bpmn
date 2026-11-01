@@ -91,8 +91,21 @@ Steps (tick as they are committed; a new session continues at the first unticked
       Jest compiles `pptxgenjs` (lazy `import()`). Tests: exports e2e (Arabic deck with `rtl="1"`, media, KPI /
       risk permissions, audit), Playwright (portal → Arabic deck). Checked: deck opened in LibreOffice (5
       slides, RTL tables).
-- [ ] 7. Scheduled report e-mails (subscriptions, recipient permissions, PDF / Excel / link, Asia/Dubai
-      schedule, unsubscribe, delivery log).
+- [x] 7. Scheduled report e-mails (D-179): migration `*_report_subscriptions` (`ReportSubscription`,
+      `ReportDelivery`, `ReportUnsubscribe`), shared schemas + `nextReportRun` (Asia/Dubai, skip holidays; unit
+      tests in `integrations.test.ts`), job kind `REPORT_SEND`, Setting `reports` (attachments, link days);
+      `apps/api/src/scheduled-reports/` — `report-builders.ts` (6 reports, recipient permissions),
+      `report-render.ts` (Excel, PDF HTML for the renderer, e-mail with summary / secure link / unsubscribe),
+      `subscriptions.service.ts` (CRUD, audiences, scheduler → job runner, per-recipient delivery, PDF fallback,
+      attachments setting, failure notification, secure download, unsubscribe tokens, purge) +
+      controller (public `POST /report-subscriptions/unsubscribe` with the login rate limit); mail transport
+      supports attachments / headers. Web: "My report e-mails" (`/reports/subscriptions`: list, form with
+      report / filters / format / schedule / language / audience, send now, delivery log, settings card),
+      public `/unsubscribe/:token`, `/reports/deliveries/:id` (secure download). Tests:
+      `test/report-subscriptions.e2e-spec.ts` (4: permissions and audiences, scheduled run through the job
+      runner with recipient rights + secure link + unsubscribe, PDF / attachments / fallback / failure
+      notification, all six reports), Playwright (subscription → send now → log; Mailpit link in CI; passed
+      locally with an SMTP sink and the real renderer).
 - [ ] 8. Demo data, e2e, screenshots, docs (`docs/integrations/API.md`, `WEBHOOKS.md`), SECURITY /
       DEPLOYMENT, README, PR and CI.
 

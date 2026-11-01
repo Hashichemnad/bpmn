@@ -50,6 +50,7 @@ describe('Route security declarations', () => {
       'POST /auth/login/mfa/setup/confirm',
       'POST /auth/logout',
       'POST /auth/refresh',
+      'POST /report-subscriptions/unsubscribe',
     ]);
   });
 
@@ -137,6 +138,7 @@ describe('Route security declarations', () => {
       'POST /auth/mfa/recovery-codes',
       'POST /auth/mfa/setup',
       'POST /auth/refresh',
+      'POST /report-subscriptions/unsubscribe',
     ]);
     expect(routes.filter((r) => r.rateLimit === 'skip').map((r) => r.path)).toEqual(['/health']);
   });

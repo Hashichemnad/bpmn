@@ -39,6 +39,7 @@ import { ImportsModule } from './imports/imports.module';
 import { ApiKeysModule, PublicApiModule } from './public-api/public-api.module';
 import { WebhooksModule } from './webhooks/webhooks.module';
 import { ExportsModule } from './exports/exports.module';
+import { ScheduledReportsModule } from './scheduled-reports/scheduled-reports.module';
 import { ApiKeyGuard } from './public-api/api-key.guard';
 import { HealthController } from './health/health.controller';
 import { CsrfGuard, JwtAuthGuard, PermissionsGuard } from './common/guards';
@@ -85,6 +86,7 @@ import { AllExceptionsFilter } from './common/http-exception.filter';
     ApiKeysModule,
     WebhooksModule,
     ExportsModule,
+    ScheduledReportsModule,
     PublicApiModule,
     DocsModule,
     SearchModule,

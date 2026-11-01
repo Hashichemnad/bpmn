@@ -41,6 +41,8 @@ export const MINING_JOB_KINDS = [
   'IMPORT_PARSE',
   'IMPORT_APPLY',
   'IMPORT_AI',
+  // Scheduled report e-mails (Phase 4.4, D-179).
+  'REPORT_SEND',
 ] as const;
 export type MiningJobKind = (typeof MINING_JOB_KINDS)[number];
 
