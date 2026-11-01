@@ -177,6 +177,48 @@ export class ContentService {
     };
   }
 
+  /**
+   * IDs of the given items the user may publish — `canRead && (canEdit || canManage)` of `find`,
+   * computed for many items with one query per type instead of `find` per item.
+   */
+  async publishableIds(
+    type: ContentType,
+    rows: { id: string; ownerId: string | null; spaceId?: string; spaceOwnerId?: string | null }[],
+    user: AuthUser,
+  ): Promise<Set<string>> {
+    const manage = user.permissions.has(PERMISSIONS.GOVERNANCE_MANAGE);
+    if (type !== 'PAGE') {
+      if (!user.permissions.has(PERMISSIONS.PROCESSES_READ)) return new Set();
+      return new Set(
+        rows
+          .filter(
+            (r) =>
+              canEditModel(user, r) ||
+              canEditProcess(user, r) ||
+              manage ||
+              r.ownerId === user.id ||
+              user.permissions.has(PERMISSIONS.PROCESSES_EDIT),
+          )
+          .map((r) => r.id),
+      );
+    }
+    const spaces = await this.prisma.space.findMany({
+      where: { id: { in: [...new Set(rows.map((r) => r.spaceId!))] }, deletedAt: null },
+      include: { grants: true },
+    });
+    const accessBySpace = new Map(spaces.map((sp) => [sp.id, this.docsAccess.access(user, sp)]));
+    return new Set(
+      rows
+        .filter((r) => {
+          const access = accessBySpace.get(r.spaceId!);
+          if (!access?.canView) return false;
+          const ownerId = r.ownerId ?? r.spaceOwnerId ?? null;
+          return access.canEdit || manage || access.canManage || (!!ownerId && ownerId === user.id);
+        })
+        .map((r) => r.id),
+    );
+  }
+
   /** Titles of many items at once (deleted items included, so history keeps its labels). */
   async refs(
     keys: { entityType: ContentType; entityId: string }[],

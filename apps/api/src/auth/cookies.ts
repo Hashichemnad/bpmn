@@ -17,7 +17,7 @@ export function setAuthCookies(res: Response, tokens: IssuedTokens, config: AppC
   res.cookie(ACCESS_COOKIE, tokens.accessToken, {
     ...base(config),
     path: '/api',
-    maxAge: config.JWT_ACCESS_TTL_SECONDS * 1000,
+    maxAge: tokens.accessTtlSeconds * 1000,
   });
   res.cookie(REFRESH_COOKIE, tokens.refreshToken, {
     ...base(config),

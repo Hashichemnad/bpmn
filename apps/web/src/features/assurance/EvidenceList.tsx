@@ -41,7 +41,13 @@ export function EvidenceList({
                     remove.mutate(f.id, { onError: (e) => message.error(errorMessage(e)) })
                   }
                 >
-                  <Button size="small" type="text" danger icon={<DeleteOutlined />} />
+                  <Button
+                    size="small"
+                    type="text"
+                    danger
+                    aria-label={t('delete')}
+                    icon={<DeleteOutlined />}
+                  />
                 </Popconfirm>
               )
             }

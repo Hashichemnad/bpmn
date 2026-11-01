@@ -37,6 +37,7 @@ import {
   type ExcelFile,
 } from '../common/excel';
 import { KpiService } from './kpi.service';
+import { compareNatural } from '../common/compare';
 
 interface MeasurementRow {
   kpi: string;
@@ -233,9 +234,7 @@ export class KpiExcelService {
 
   private async rows(kind: KpiImportKind): Promise<unknown[]> {
     if (kind === 'kpis')
-      return (await this.kpis.listAll()).sort((a, b) =>
-        (a.code ?? '').localeCompare(b.code ?? '', undefined, { numeric: true }),
-      );
+      return (await this.kpis.listAll()).sort((a, b) => compareNatural(a.code ?? '', b.code ?? ''));
     if (kind === 'objectives') return this.kpis.objectives();
     const rows = await this.prisma.kpiMeasurement.findMany({
       where: { kpi: { object: { deletedAt: null } } },

@@ -320,6 +320,8 @@
     "addMapping": "Add mapping",
     "syncRoles": "Update roles at every sign-in",
     "syncRolesHint": "Recommended: off — roles are managed in ProcessHub and the mappings only set the first role of a new user. On: the directory manages roles (changes made in ProcessHub are replaced at the next sign-in).",
+    "requireIdpMfa": "Require MFA from the identity provider",
+    "requireIdpMfaHint": "Refuse single sign-on when the identity provider does not report multi-factor authentication (\"mfa\" in the amr claim). Turn on only after IT confirms the Conditional Access MFA policy for ProcessHub; test with one account first.",
     "passwordSignIn": "Password sign-in",
     "localLogin": "Allow sign-in with a ProcessHub password",
     "localLoginHint": "Turn off when everyone uses single sign-on.",

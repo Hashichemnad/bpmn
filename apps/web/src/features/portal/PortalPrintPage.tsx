@@ -8,9 +8,10 @@ import { usePortalPage } from '@/api/portal';
 import { usePublicSettings } from '@/api/hooks';
 import { ErrorState, LoadingState } from '@/components/states';
 import { RichTextView } from '@/features/docs/RichTextView';
+import { withAllLanguages } from '@/components/withAllLanguages';
 
 /** Print layout of a published page in the requested language (browser "Save as PDF"). */
-export function PortalPrintPage() {
+function PortalPrintPageInner() {
   const { pageId } = useParams<{ pageId: string }>();
   const [params] = useSearchParams();
   const { i18n } = useTranslation();
@@ -81,3 +82,6 @@ export function PortalPrintPage() {
     </div>
   );
 }
+
+/** Needs the texts of both languages (bilingual labels / printing in either language). */
+export const PortalPrintPage = withAllLanguages(PortalPrintPageInner);

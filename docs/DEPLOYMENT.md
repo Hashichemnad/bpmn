@@ -387,6 +387,16 @@ Administrator) — about 15 minutes.
    Then sign in once in a private window: Microsoft must ask for the second factor. Note the policy name in
    the go-live checklist (SECURITY.md §7).
 
+   **Let ProcessHub check it too (D-166).** Once IT confirms the policy is **On**, sign in once with a test
+   account and open **Administration → Audit log**: the `LOGIN` entry of that sign-in lists the `amr` values
+   Entra ID sent — it must contain `mfa`. Then switch on **Settings → Authentication → Require MFA from the
+   identity provider**. From then on ProcessHub refuses single sign-on whose token does not report MFA (the
+   user sees "Your organisation requires multi-factor authentication…", the refusal is audited as
+   `LOGIN_FAILED` / `SSO_MFA_REQUIRED` with the `amr` values received), so a policy switched back to
+   report-only or excluded by mistake cannot silently let people in with a password only. If the test sign-in
+   shows no `amr` values, leave the setting off (the provider does not send the claim) and rely on Conditional
+   Access. The setting is off by default and does not affect password sign-in (ProcessHub's own 2FA, 6.2).
+
 **Other providers** (Google Workspace, Okta, Keycloak, ADFS, …): choose _Other OpenID Connect provider_ and
 enter the issuer URL (ProcessHub reads `<issuer>/.well-known/openid-configuration`), client ID and secret; the
 redirect URI is the same. The provider must send the `email` claim; for groups, set the claim name.
@@ -412,8 +422,10 @@ Admin).
 
 **Sessions** end after **24 hours without activity** (`REFRESH_TOKEN_TTL_HOURS` in `.env`, default 24):
 whoever has not used ProcessHub for a day signs in again (with single sign-on usually without typing
-anything). A session also ends at sign-out, a password change, a 2FA reset or when the user is deactivated.
-To change the lifetime, set the value in hours in `.env` and run `sudo docker compose up -d`. (Older `.env`
+anything). However active, a session also ends **7 days after sign-in** (`SESSION_MAX_HOURS`, default 168,
+D-165), so everybody signs in again at least once a week. A session also ends at sign-out, a password change,
+a 2FA reset or when the user is deactivated (immediately). To change a lifetime, set the value in hours in
+`.env` and run `sudo docker compose up -d`. (Older `.env`
 files contain `REFRESH_TOKEN_TTL_DAYS`; it is no longer used — replace it with `REFRESH_TOKEN_TTL_HOURS=24`.)
 
 **Leavers:** ProcessHub does not yet notice when an account is disabled in Entra ID (automatic
@@ -602,6 +614,21 @@ VM-level backups (Azure Backup) of the data disk are a good second layer, but do
 Once per quarter, restore the latest backup on a **separate test VM** (section 8, "new server") and sign in.
 A backup that has never been restored is not a backup.
 
+**Automated drill** (D-170): `scripts/backup-drill.sh` proves the round trip on a test installation and
+prints the timings. It seals a canary secret with the installation's encryption key, fingerprints the
+database (row counts and checksums of the main tables) and every stored file, runs `backup.sh`, damages the
+data on purpose, runs `restore.sh` and checks that the fingerprints match again and the canary still
+decrypts (database + files + key). CI runs it after every end-to-end test run. On the test VM:
+
+```bash
+sudo ./scripts/backup-drill.sh          # asks for DRILL; never on production during working hours
+```
+
+Measured in CI (demo data, 2 vCPU runner): see docs/PROGRESS.md (final session part A). Budget for
+production: backup grows with the data (the volume database of 2,000 processes, 5,000 pages and a 1M-event
+log — 554 MB in PostgreSQL — dumps to 81 MB in 12 s on the development machine), restore takes about as long
+as the dump plus about a minute for the restart.
+
 ## 8. Restore
 
 > **Disaster recovery = `scripts/backup.sh` / `scripts/restore.sh`** (database + files, with the keys from
@@ -650,21 +677,41 @@ sudo ./scripts/restore.sh /data/backups/processhub-2026-10-21_023000
 
 ### ProcessHub
 
-Read the release notes first. Then:
+Read the release notes first. Every release (git tag `v1.4.0`) publishes three ready-made images to the
+GitHub Container Registry (`.github/workflows/release.yml`, D-169), so the server **pulls** instead of
+building:
+
+| Image                                              | Contents                                                              |
+| -------------------------------------------------- | --------------------------------------------------------------------- |
+| `ghcr.io/<owner>/processhub-api:<version>`         | the API server (production dependencies only)                         |
+| `ghcr.io/<owner>/processhub-api-migrate:<version>` | database migrations and the seed; runs once on every `up`, then exits |
+| `ghcr.io/<owner>/processhub-web:<version>`         | the web app on unprivileged nginx (port 8080)                         |
+
+Once, in `.env`: `PROCESSHUB_IMAGE_PREFIX=ghcr.io/<owner>/processhub` (lower case). If the packages are
+private, sign the server in once with a GitHub token that may only read packages:
+`echo <token> | sudo docker login ghcr.io -u <github user> --password-stdin`. Then, for each update:
 
 ```bash
 cd /opt/processhub
-sudo ./scripts/backup.sh                       # always back up first
-sudo git fetch --tags
-sudo git checkout v1.1.0                       # the new release (or: sudo git pull)
-sudo docker compose up -d --build              # rebuilds and restarts; database updates run automatically
-sudo docker compose ps                         # wait until all are (healthy)
-sudo docker image prune -f                     # remove old image layers
+sudo ./scripts/backup.sh                                  # always back up first
+sudo git fetch --tags && sudo git checkout v1.4.0         # compose file, Caddyfile and scripts of the release
+sudo sed -i 's/^PROCESSHUB_VERSION=.*/PROCESSHUB_VERSION=1.4.0/' .env
+sudo docker compose pull                                  # api, api-migrate, web (and pinned base images)
+sudo docker compose up -d --no-build                      # migrate runs first, then the API starts
+sudo docker compose ps                                    # wait until all are (healthy); migrate shows "exited (0)"
+sudo docker image prune -f                                # remove old image layers
 ```
 
+Without a registry (no internet access to ghcr.io), build on the server as before:
+`sudo docker compose up -d --build` (leave `PROCESSHUB_IMAGE_PREFIX` empty).
+
+**Database updates** run in the separate `migrate` service before the API starts; if a migration fails, the
+API is not started and `sudo docker compose logs migrate` shows why (the previous version keeps its data:
+restore the backup made before the update or fix and run `sudo docker compose up -d` again).
+
 Users see a short interruption (about a minute). Compare `.env.example.prod` with your `.env` for new
-settings (`sudo diff .env.example.prod .env`). **Going back** to the previous version: check out the
-previous release, `sudo docker compose up -d --build`, then restore the backup made before the update
+settings (`sudo diff .env.example.prod .env`). **Going back** to the previous version: set the previous
+`PROCESSHUB_VERSION`, `sudo docker compose up -d --no-build`, then restore the backup made before the update
 (database changes of a newer version are not undone otherwise).
 
 ### Upgrading to the release with diagram colours (Modeler design, Part A)

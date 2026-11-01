@@ -658,6 +658,21 @@ export class ModelsService {
    * are recoloured in place (status kept, portal updated); otherwise they get a new draft like any
    * other edit (D-072). With `dryRun` nothing is written and only the counts are returned.
    */
+  private async *modelBatches(size = 100) {
+    let cursor: string | undefined;
+    for (;;) {
+      const rows = await this.prisma.processModel.findMany({
+        where: { process: { deletedAt: null }, ...(cursor ? { processId: { gt: cursor } } : {}) },
+        select: { processId: true, bpmnXml: true, process: { select: { status: true } } },
+        orderBy: { processId: 'asc' },
+        take: size,
+      });
+      yield* rows;
+      if (rows.length < size) return;
+      cursor = rows[rows.length - 1].processId;
+    }
+  }
+
   async applyTheme(
     dryRun: boolean,
     actor: AuthUser,
@@ -667,11 +682,9 @@ export class ModelsService {
       where: { key: SETTING_KEYS.DIAGRAM_THEME },
     });
     const theme = resolveDiagramTheme(setting?.value);
-    const rows = await this.prisma.processModel.findMany({
-      where: { process: { deletedAt: null } },
-      select: { processId: true, bpmnXml: true, process: { select: { status: true } } },
-      orderBy: { processId: 'asc' },
-    });
+    // Read in batches (thousands of diagrams of up to a few hundred KB each must not be in memory
+    // at once); the colour check skips the XML parse for diagrams that are coloured already.
+    const batches = this.modelBatches();
     const result: ApplyThemeResultDto = {
       dryRun,
       models: 0,
@@ -681,7 +694,7 @@ export class ModelsService {
       skipped: 0,
     };
     const recoloured: string[] = [];
-    for (const row of rows) {
+    for await (const row of batches) {
       const { xml, changed } = applyThemeToXml(row.bpmnXml, theme);
       if (!changed) continue;
       const status = row.process.status as ContentStatus;

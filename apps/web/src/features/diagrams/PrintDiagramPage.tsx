@@ -9,13 +9,14 @@ import { useLocale } from '@/app/LocaleProvider';
 import { ErrorState, LoadingState } from '@/components/states';
 import { BrandMark } from '@/layout/BrandMark';
 import { DiagramView } from './DiagramView';
+import { withAllLanguages } from '@/components/withAllLanguages';
 
 /**
  * Print layout of a diagram (A4 / A3 landscape): header, the diagram and its elements in both
  * languages. The browser's print dialog saves it as PDF. `portal`: the published version;
  * otherwise the working draft (workspace export).
  */
-export function PrintDiagramPage({ portal = false }: { portal?: boolean }) {
+function PrintDiagramPageInner({ portal = false }: { portal?: boolean }) {
   const { id } = useParams<{ id: string }>();
   // Printed in the reader's language (labels on the canvas follow it too).
   const { locale: lang } = useLocale();
@@ -108,3 +109,6 @@ export function PrintDiagramPage({ portal = false }: { portal?: boolean }) {
     </div>
   );
 }
+
+/** Needs the texts of both languages (bilingual labels / printing in either language). */
+export const PrintDiagramPage = withAllLanguages(PrintDiagramPageInner);

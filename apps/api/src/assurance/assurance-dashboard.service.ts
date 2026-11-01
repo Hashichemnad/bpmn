@@ -17,6 +17,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { AuditService } from '../audit/audit.service';
 import type { AuthUser, RequestMeta } from '../common/auth-user';
 import { AssuranceSettingsService } from './assurance-settings.service';
+import { compareNatural } from '../common/compare';
 
 const DAY = 86_400_000;
 
@@ -47,31 +48,53 @@ export class AssuranceDashboardService {
       : q.departmentId
         ? processes.filter((p) => p.departmentId === q.departmentId).map((p) => p.id)
         : null;
+    const scopeSet = scopeProcessIds ? new Set(scopeProcessIds) : null;
 
     // ----- Control tests -----
+    // Only tests that count this year: open (due / overdue / awaiting review) or done in the year.
+    const doneInYear = { gte: yearStart, lt: yearEnd };
     const tests = await this.prisma.controlTest.findMany({
-      where: { deletedAt: null, control: { object: { deletedAt: null } } },
+      where: {
+        deletedAt: null,
+        control: { object: { deletedAt: null } },
+        OR: [
+          { status: { in: [...OPEN_TEST_STATUSES, 'SUBMITTED'] } },
+          {
+            status: { in: ['REVIEWED', 'CLOSED'] },
+            OR: [{ reviewedAt: doneInYear }, { reviewedAt: null, updatedAt: doneInYear }],
+          },
+        ],
+      },
       include: {
         control: {
           select: {
             departmentId: true,
             department: { select: { id: true, code: true, nameEn: true, nameAr: true } },
-            object: {
-              select: {
-                links: { where: { process: { deletedAt: null } }, select: { processId: true } },
-              },
-            },
           },
         },
       },
     });
-    const procOf = (t: (typeof tests)[number]) => [
-      ...new Set(t.control.object.links.map((l) => l.processId)),
-    ];
+    // Processes of each control, read once per control (not once per test) and computed once per
+    // test (was rebuilt for every process × test pair).
+    const controlLinks = await this.prisma.objectLink.findMany({
+      where: {
+        repoObjectId: { in: [...new Set(tests.map((t) => t.controlId))] },
+        process: { deletedAt: null },
+      },
+      select: { repoObjectId: true, processId: true },
+    });
+    const procsOfControl = new Map<string, Set<string>>();
+    for (const l of controlLinks)
+      procsOfControl.set(
+        l.repoObjectId,
+        (procsOfControl.get(l.repoObjectId) ?? new Set()).add(l.processId),
+      );
+    const procsOf = new Map(tests.map((t) => [t.id, [...(procsOfControl.get(t.controlId) ?? [])]]));
+    const procOf = (t: (typeof tests)[number]) => procsOf.get(t.id)!;
     const inScope = (t: (typeof tests)[number]) =>
       !scopeProcessIds
         ? true
-        : procOf(t).some((p) => scopeProcessIds.includes(p)) ||
+        : procOf(t).some((p) => scopeSet!.has(p)) ||
           (!!q.departmentId && !q.processId && t.control.departmentId === q.departmentId);
     const scoped = tests.filter(inScope);
     const isDone = (t: (typeof tests)[number]) =>
@@ -108,9 +131,10 @@ export class AssuranceDashboardService {
     >();
     for (const t of scoped)
       if (t.control.department) depts.set(t.control.department.id, t.control.department);
-    const procIds = new Set(
-      scoped.flatMap(procOf).filter((p) => !scopeProcessIds || scopeProcessIds.includes(p)),
-    );
+    const testsByProcess = new Map<string, typeof tests>();
+    for (const t of scoped)
+      for (const p of procOf(t)) testsByProcess.set(p, [...(testsByProcess.get(p) ?? []), t]);
+    const procIds = new Set([...testsByProcess.keys()].filter((p) => !scopeSet || scopeSet.has(p)));
 
     // ----- Issues and actions -----
     const settings = await this.settings.get();
@@ -227,13 +251,8 @@ export class AssuranceDashboardService {
           .sort((a, b) => (a.code ?? a.nameEn).localeCompare(b.code ?? b.nameEn)),
         byProcess: processes
           .filter((p) => procIds.has(p.id))
-          .map((p) =>
-            row(
-              p,
-              scoped.filter((t) => procOf(t).includes(p.id)),
-            ),
-          )
-          .sort((a, b) => (a.code ?? '').localeCompare(b.code ?? '', undefined, { numeric: true })),
+          .map((p) => row(p, testsByProcess.get(p.id) ?? []))
+          .sort((a, b) => compareNatural(a.code ?? '', b.code ?? '')),
       },
       issues: {
         open: openIssues.length,

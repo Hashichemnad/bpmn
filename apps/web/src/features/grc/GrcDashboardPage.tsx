@@ -38,6 +38,7 @@ import { downloadBlob } from '@/features/modeler/export';
 import { RiskMatrix } from './RiskMatrix';
 import { grcItemPath, stepHref } from './grc-helpers';
 import { RatingTag } from './grc-tags';
+import { activateProps } from '@/components/a11y';
 
 type Matrix = 'inherent' | 'residual' | 'tested';
 
@@ -231,11 +232,11 @@ export function GrcDashboardPage() {
               size="small"
               hoverable
               data-testid={`grc-tile-${tile.key}`}
-              onClick={() =>
+              {...activateProps(() =>
                 tile.anchor
                   ? document.getElementById('grc-uncovered')?.scrollIntoView({ behavior: 'smooth' })
-                  : tile.to && navigate(tile.to)
-              }
+                  : tile.to && navigate(tile.to),
+              )}
             >
               <Statistic
                 title={t(`grc:dashboard.tiles.${tile.key}`)}

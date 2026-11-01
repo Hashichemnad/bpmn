@@ -50,10 +50,11 @@ services:
     ports:
       - '${MAILPIT_UI_PORT:-8025}:8025'
 
-  api:
+  api: &api
     build:
       context: .
       dockerfile: apps/api/Dockerfile
+      target: runtime
     restart: unless-stopped
     # Lets the API reach test doubles on the host (e2e mock Salesforce); only used when the host
     # is listed in OUTBOUND_ALLOWED_HOSTS.
@@ -103,6 +104,28 @@ services:
     volumes:
       - api-data:/app/data
     depends_on:
+      migrate:
+        condition: service_completed_successfully
+      postgres:
+        condition: service_healthy
+      storage:
+        condition: service_healthy
+      mailpit:
+        condition: service_started
+
+  # Database migrations and the seed, once before the API starts (image without the Prisma CLI in
+  # the API itself, final session A). `docker compose up` waits for it to finish successfully.
+  migrate:
+    <<: *api
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+      target: migrate
+    restart: 'no'
+    command: ['migrate']
+    healthcheck:
+      disable: true
+    depends_on:
       postgres:
         condition: service_healthy
       storage:
@@ -116,7 +139,7 @@ services:
       dockerfile: apps/web/Dockerfile
     restart: unless-stopped
     ports:
-      - '${WEB_PORT:-8080}:80'
+      - '${WEB_PORT:-8080}:8080'
     depends_on:
       api:
         condition: service_healthy

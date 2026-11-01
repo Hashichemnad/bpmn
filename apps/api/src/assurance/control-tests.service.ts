@@ -36,6 +36,7 @@ import type { AuthUser, RequestMeta } from '../common/auth-user';
 import { AssuranceFilesService } from './assurance-files.service';
 import { AssuranceEventsService } from './assurance-events.service';
 import { AssigneeResolver, isAssignee } from './assignees';
+import { compareNatural } from '../common/compare';
 
 const userSelect = { id: true, email: true, nameEn: true, nameAr: true } as const;
 const controlInclude = {
@@ -568,7 +569,7 @@ export class ControlTestsService implements OnModuleInit {
           : q.sort === 'control'
             ? (r.control.object.code ?? r.control.object.nameEn)
             : r.dueAt.toISOString();
-    rows.sort((a, b) => key(a).localeCompare(key(b), undefined, { numeric: true }) * dir);
+    rows.sort((a, b) => compareNatural(key(a), key(b)) * dir);
     const start = (q.page - 1) * q.pageSize;
     return {
       items: await this.toDtos(rows.slice(start, start + q.pageSize), user, now),

@@ -10,6 +10,7 @@ import { GrcSettingsService } from '../grc/grc-settings.service';
 import { ControlTestsService } from './control-tests.service';
 import { IssuesService } from './issues.service';
 import { SurveysService } from './surveys.service';
+import { startPeriodic, type Periodic } from '../common/periodic';
 
 /**
  * Periodic assurance work in this process (like the governance scheduler): control test cycles
@@ -19,8 +20,7 @@ import { SurveysService } from './surveys.service';
 @Injectable()
 export class AssuranceScheduler implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(AssuranceScheduler.name);
-  private timer?: ReturnType<typeof setInterval>;
-  private first?: ReturnType<typeof setTimeout>;
+  private periodic?: Periodic;
 
   constructor(
     private readonly tests: ControlTestsService,
@@ -33,14 +33,18 @@ export class AssuranceScheduler implements OnModuleInit, OnModuleDestroy {
   onModuleInit() {
     const minutes = this.config.SCHEDULER_INTERVAL_MINUTES;
     if (!minutes || this.config.NODE_ENV === 'test') return;
-    const run = () => void this.runOnce().catch((e: Error) => this.logger.error(e.message));
-    this.first = setTimeout(run, 90_000);
-    this.timer = setInterval(run, minutes * 60_000);
+    // Never two runs at once (a slow run on a large repository skips the next tick).
+    this.periodic = startPeriodic(
+      'Assurance reminders',
+      () => this.runOnce(),
+      90_000,
+      minutes * 60_000,
+      this.logger,
+    );
   }
 
   onModuleDestroy() {
-    clearTimeout(this.first);
-    clearInterval(this.timer);
+    this.periodic?.stop();
   }
 
   async runOnce(now = new Date()) {

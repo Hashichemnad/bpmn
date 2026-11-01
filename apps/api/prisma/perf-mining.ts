@@ -1,4 +1,3 @@
-/* eslint-disable no-console */
 import { Readable } from 'node:stream';
 import { gzipSync } from 'node:zlib';
 import { PrismaClient, type Prisma } from '@prisma/client';

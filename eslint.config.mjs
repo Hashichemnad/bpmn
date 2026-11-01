@@ -40,7 +40,7 @@ export default tseslint.config(
     },
   },
   {
-    files: ['apps/api/prisma/seed*.ts', 'apps/api/src/main.ts'],
+    files: ['apps/api/prisma/seed*.ts', 'apps/api/prisma/perf*.ts', 'apps/api/src/main.ts'],
     rules: { 'no-console': 'off' },
   },
   {
@@ -70,6 +70,12 @@ export default tseslint.config(
     files: ['apps/api/test/**/*.js'],
     languageOptions: { sourceType: 'commonjs', globals: globals.node },
     rules: { '@typescript-eslint/no-require-imports': 'off' },
+  },
+  {
+    // Build and CI scripts (Node, print their reports).
+    files: ['scripts/**/*.mjs', 'apps/web/scripts/**/*.mjs'],
+    languageOptions: { globals: globals.node },
+    rules: { 'no-console': 'off' },
   },
   {
     files: ['packages/shared/**/*.ts'],

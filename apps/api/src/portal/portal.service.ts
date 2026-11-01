@@ -46,7 +46,11 @@ import { AuditService } from '../audit/audit.service';
 import { StorageService } from '../storage/storage.service';
 import { badRequest, notFound } from '../common/app-exception';
 import type { AuthUser, RequestMeta } from '../common/auth-user';
-import { PortalAccessService } from '../governance/portal-access.service';
+import {
+  PortalAccessService,
+  type PubFilter,
+  type VisibleItems,
+} from '../governance/portal-access.service';
 import { ContentService } from '../governance/content.service';
 import { WorkflowsService } from '../governance/workflows.service';
 import { escapeLike, toPrefixTsQuery } from '../search/search-query';
@@ -58,6 +62,13 @@ const HEADLINE = `StartSel=${HIGHLIGHT_START}, StopSel=${HIGHLIGHT_END}, MaxWord
 const dir = (v: string): TextDirection => (v === 'rtl' ? 'rtl' : 'ltr');
 const key = (type: ContentType, id: string) => `${type}:${id}`;
 const LINKED_PROCESS = /ph:linkedProcessId="([0-9a-f-]{36})"/gi;
+/** Process versions whose labels are kept in memory (a few KB each). */
+const LABEL_CACHE_SIZE = 3000;
+interface StepLabel {
+  nameEn: string;
+  nameAr: string;
+}
+
 const excerpt = (text: string) => (text.length > 220 ? `${text.slice(0, 217).trimEnd()}…` : text);
 
 /**
@@ -67,6 +78,8 @@ const excerpt = (text: string) => (text.length > 220 ? `${text.slice(0, 217).tri
  */
 @Injectable()
 export class PortalService {
+  private readonly labelCache = new Map<string, Map<string, StepLabel>>();
+
   constructor(
     private readonly prisma: PrismaService,
     private readonly audit: AuditService,
@@ -118,58 +131,11 @@ export class PortalService {
   // ---------- Building blocks ----------
 
   /** Visible current publications with the live items they belong to. */
-  private async visible(user: AuthUser, where: Prisma.PublicationWhereInput = {}) {
-    const pubs = await this.access.publications(user, where);
-    const ids = (t: ContentType) => pubs.filter((p) => p.entityType === t).map((p) => p.entityId);
-    const [processes, pages, diagrams] = await Promise.all([
-      this.prisma.process.findMany({
-        where: { id: { in: ids('PROCESS') } },
-        select: {
-          id: true,
-          parentId: true,
-          category: true,
-          sortOrder: true,
-          level: true,
-          ownerId: true,
-          departmentId: true,
-        },
-      }),
-      this.prisma.page.findMany({
-        where: { id: { in: ids('PAGE') } },
-        select: {
-          id: true,
-          spaceId: true,
-          parentId: true,
-          sortOrder: true,
-          ownerId: true,
-          space: {
-            select: {
-              id: true,
-              key: true,
-              nameEn: true,
-              nameAr: true,
-              icon: true,
-              ownerId: true,
-              departmentId: true,
-            },
-          },
-        },
-      }),
-      this.prisma.diagram.findMany({
-        where: { id: { in: ids('DIAGRAM') } },
-        select: { id: true, type: true, processId: true, ownerId: true, departmentId: true },
-      }),
-    ]);
-    return {
-      pubs,
-      byKey: new Map(pubs.map((p) => [key(p.entityType, p.entityId), p])),
-      processes: new Map(processes.map((p) => [p.id, p])),
-      pages: new Map(pages.map((p) => [p.id, p])),
-      diagrams: new Map(diagrams.map((d) => [d.id, d])),
-    };
+  private visible(user: AuthUser, filter: PubFilter = {}): Promise<VisibleItems> {
+    return this.access.visibleItems(user, filter);
   }
 
-  private toItem(pub: Pub, v: Awaited<ReturnType<PortalService['visible']>>): PortalItemDto | null {
+  private toItem(pub: Pub, v: VisibleItems): PortalItemDto | null {
     const base = {
       type: pub.entityType,
       id: pub.entityId,
@@ -238,8 +204,10 @@ export class PortalService {
   async home(user: AuthUser): Promise<PortalHomeDto> {
     const settings = await this.access.assertAccess(user);
     const v = await this.visible(user);
-    const items = (pubs: Pub[]) =>
-      pubs.map((p) => this.toItem(p, v)).filter((i): i is PortalItemDto => !!i);
+    const items = async (pubs: Pub[]) =>
+      (await this.access.withText(pubs))
+        .map((p) => this.toItem(p, v))
+        .filter((i): i is PortalItemDto => !!i);
     const featured = settings.featured
       .map((f) => v.byKey.get(key(f.entityType, f.entityId)))
       .filter((p): p is Pub => !!p);
@@ -256,8 +224,8 @@ export class PortalService {
       taglineEn: settings.taglineEn,
       taglineAr: settings.taglineAr,
       quickLinks: settings.quickLinks,
-      featured: items(featured),
-      recent: items(v.pubs.slice(0, 8)),
+      featured: await items(featured),
+      recent: await items(v.pubs.slice(0, 8)),
       counts: { processes: v.processes.size, pages: v.pages.size, diagrams: v.diagrams.size },
       startDiagram,
       canManage: user.permissions.has(PERMISSIONS.PORTAL_MANAGE),
@@ -268,7 +236,7 @@ export class PortalService {
 
   async processTree(user: AuthUser): Promise<PortalProcessNodeDto[]> {
     await this.access.assertAccess(user);
-    const v = await this.visible(user, { entityType: 'PROCESS' });
+    const v = await this.visible(user, { types: ['PROCESS'] });
     const all = await this.prisma.process.findMany({
       where: { deletedAt: null },
       select: { id: true, parentId: true },
@@ -393,11 +361,10 @@ export class PortalService {
       select: { pageId: true },
     });
     if (!links.length) return [];
-    const v = await this.visible(user, {
-      entityType: 'PAGE',
-      entityId: { in: links.map((l) => l.pageId) },
-    });
-    return v.pubs.map((p) => this.toItem(p, v)).filter((i): i is PortalItemDto => !!i);
+    const v = await this.visible(user, { ids: { PAGE: links.map((l) => l.pageId) } });
+    return (await this.access.withText(v.pubs))
+      .map((p) => this.toItem(p, v))
+      .filter((i): i is PortalItemDto => !!i);
   }
 
   // ---------- Diagrams (value chain, org chart, DMN, EPC, SIPOC — D-120) ----------
@@ -405,7 +372,7 @@ export class PortalService {
   /** Published diagrams, optionally of one type. */
   async diagrams(user: AuthUser, type?: DiagramType): Promise<PortalItemDto[]> {
     await this.access.assertAccess(user);
-    const v = await this.visible(user, { entityType: 'DIAGRAM' });
+    const v = await this.visible(user, { types: ['DIAGRAM'] });
     return v.pubs
       .map((p) => this.toItem(p, v))
       .filter((i): i is PortalItemDto => !!i && (!type || i.diagramType === type))
@@ -450,10 +417,7 @@ export class PortalService {
     const refs = diagramRefs(type, content);
     const processIds = [...refs.processIds, ...(d.processId ? [d.processId] : [])];
     const v = await this.visible(user, {
-      OR: [
-        { entityType: 'PROCESS', entityId: { in: processIds } },
-        { entityType: 'DIAGRAM', entityId: { in: refs.diagramIds } },
-      ],
+      ids: { PROCESS: processIds, DIAGRAM: refs.diagramIds },
     });
     const processRef = (pid: string) => {
       const p = v.byKey.get(key('PROCESS', pid));
@@ -504,7 +468,7 @@ export class PortalService {
   async spaces(user: AuthUser): Promise<PortalSpaceDto[]> {
     await this.access.assertAccess(user);
     const spaces = await this.access.visibleSpaces(user);
-    const v = await this.visible(user, { entityType: 'PAGE' });
+    const v = await this.visible(user, { types: ['PAGE'] });
     const counts = new Map<string, number>();
     for (const p of v.pages.values()) counts.set(p.spaceId, (counts.get(p.spaceId) ?? 0) + 1);
     return spaces
@@ -533,12 +497,15 @@ export class PortalService {
   }
 
   private async pageNodes(spaceId: string, user: AuthUser): Promise<PortalPageNodeDto[]> {
-    const v = await this.visible(user, { entityType: 'PAGE' });
+    const v = await this.visible(user, { types: ['PAGE'] });
     const all = await this.prisma.page.findMany({
       where: { spaceId, deletedAt: null },
       select: { id: true, parentId: true },
     });
-    const nodes = v.pubs.flatMap((pub) => {
+    const inSpace = await this.access.withText(
+      v.pubs.filter((pub) => v.pages.get(pub.entityId)?.spaceId === spaceId),
+    );
+    const nodes = inSpace.flatMap((pub) => {
       const p = v.pages.get(pub.entityId);
       if (!p || p.spaceId !== spaceId) return [];
       return [
@@ -580,9 +547,7 @@ export class PortalService {
       parent = a.parentId;
     }
     const processIds = links.map((l) => l.processId!);
-    const v = processIds.length
-      ? await this.visible(user, { entityType: 'PROCESS', entityId: { in: processIds } })
-      : null;
+    const v = processIds.length ? await this.visible(user, { ids: { PROCESS: processIds } }) : null;
     return {
       ...node,
       space: this.spaceDto(space!, nodes.length),
@@ -677,13 +642,47 @@ export class PortalService {
       this.prisma.$queryRaw<{ total: bigint }[]>`${withQuery}
         SELECT count(*) AS total FROM "Publication" p, q WHERE ${where}`,
     ]);
-    const pubById = new Map(v.pubs.map((p) => [p.id, p]));
+    const found = new Set(rows.map((r) => r.id));
+    const pubById = new Map(
+      (await this.access.withText(v.pubs.filter((p) => found.has(p.id)))).map((p) => [p.id, p]),
+    );
     const items = rows.flatMap((r) => {
       const pub = pubById.get(r.id);
       const item = pub ? this.toItem(pub, v) : null;
       return item ? [{ ...item, snippet: r.snippet ?? '', rank: Number(r.rank) }] : [];
     });
     return { items, total: Number(count[0]?.total ?? 0), page: q.page, pageSize: q.pageSize };
+  }
+
+  /**
+   * Element labels (English with the plain name as fallback, Arabic) of process versions. A
+   * version's XML never changes once saved, so the labels are kept in a bounded in-memory cache
+   * (final session A: "My processes" parsed hundreds of published diagrams per request).
+   */
+  private async stepLabels(keys: { processId: string; versionNumber: number }[]) {
+    const out = new Map<string, Map<string, StepLabel>>();
+    const missing = keys.filter((k) => {
+      const hit = this.labelCache.get(`${k.processId}|${k.versionNumber}`);
+      if (hit) out.set(`${k.processId}|${k.versionNumber}`, hit);
+      return !hit;
+    });
+    for (let i = 0; i < missing.length; i += 200) {
+      const rows = await this.prisma.processVersion.findMany({
+        where: { OR: missing.slice(i, i + 200) },
+        select: { processId: true, versionNumber: true, bpmnXml: true },
+      });
+      for (const r of rows) {
+        const labels = new Map<string, StepLabel>();
+        for (const [id, l] of extractBpmnLabels(r.bpmnXml))
+          labels.set(id, { nameEn: l.nameEn || l.name || '', nameAr: l.nameAr ?? '' });
+        const key = `${r.processId}|${r.versionNumber}`;
+        out.set(key, labels);
+        this.labelCache.set(key, labels);
+        if (this.labelCache.size > LABEL_CACHE_SIZE)
+          this.labelCache.delete(this.labelCache.keys().next().value!);
+      }
+    }
+    return out;
   }
 
   // ---------- My processes ----------
@@ -721,6 +720,12 @@ export class PortalService {
         l.bpmnElementId,
       ]);
 
+    // Step labels of the published versions with performed steps (cached: versions never change).
+    const labelsOf = await this.stepLabels(
+      processPubs
+        .filter((pub) => stepsByPub.has(pub.id))
+        .map((pub) => ({ processId: pub.entityId, versionNumber: pub.versionNumber })),
+    );
     const processes: MyPortalItemDto[] = [];
     const reasonsByProcess = new Map<string, InvolvementReason[]>();
     for (const pub of processPubs) {
@@ -734,14 +739,10 @@ export class PortalService {
       reasonsByProcess.set(p.id, reasons);
       let steps: MyPortalItemDto['steps'] = [];
       if (stepIds.length) {
-        const ver = await this.prisma.processVersion.findUnique({
-          where: { processId_versionNumber: { processId: p.id, versionNumber: pub.versionNumber } },
-          select: { bpmnXml: true },
-        });
-        const labels = extractBpmnLabels(ver?.bpmnXml ?? '');
+        const labels = labelsOf.get(`${p.id}|${pub.versionNumber}`) ?? new Map();
         steps = [...new Set(stepIds)].map((id) => {
           const l = labels.get(id);
-          return { bpmnElementId: id, nameEn: l?.nameEn || l?.name || '', nameAr: l?.nameAr ?? '' };
+          return { bpmnElementId: id, nameEn: l?.nameEn ?? '', nameAr: l?.nameAr ?? '' };
         });
       }
       processes.push({ ...this.toItem(pub, v)!, reasons, steps });
@@ -756,19 +757,30 @@ export class PortalService {
         ],
       },
     });
-    const pages: MyPortalItemDto[] = [];
+    const linksByPage = new Map<string, typeof pageLinks>();
+    for (const l of pageLinks) linksByPage.set(l.pageId, [...(linksByPage.get(l.pageId) ?? []), l]);
+    const pagePubs: Pub[] = [];
+    const pageReasons = new Map<string, InvolvementReason[]>();
     for (const pub of v.pubs.filter((p) => p.entityType === 'PAGE')) {
       const p = v.pages.get(pub.entityId)!;
       const reasons = new Set<InvolvementReason>();
       if ((p.ownerId ?? p.space.ownerId) === user.id) reasons.add('OWNER');
       if (user.departmentId && p.space.departmentId === user.departmentId)
         reasons.add('DEPARTMENT');
-      for (const l of pageLinks.filter((x) => x.pageId === p.id)) {
+      for (const l of linksByPage.get(p.id) ?? []) {
         if (l.repoObjectId) reasons.add('ROLE');
         if (l.processId) for (const r of reasonsByProcess.get(l.processId) ?? []) reasons.add(r);
       }
-      if (reasons.size) pages.push({ ...this.toItem(pub, v)!, reasons: [...reasons], steps: [] });
+      if (reasons.size) {
+        pagePubs.push(pub);
+        pageReasons.set(pub.id, [...reasons]);
+      }
     }
+    const pages: MyPortalItemDto[] = (await this.access.withText(pagePubs)).map((pub) => ({
+      ...this.toItem(pub, v)!,
+      reasons: pageReasons.get(pub.id)!,
+      steps: [],
+    }));
     return { processes, pages, jobRoles: jobRoles.map((j) => j.repoObject), department };
   }
 }

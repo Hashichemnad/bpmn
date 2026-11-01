@@ -50,6 +50,7 @@ import { useComments, useGovernance } from '@/api/governance';
 import { GovernancePanel } from '@/features/governance/GovernancePanel';
 import { CommentsPanel } from '@/features/comments/CommentsPanel';
 import { RequestFeedbackModal } from '@/features/assurance/CampaignFormModal';
+import { activateProps } from '@/components/a11y';
 
 type Tab = 'overview' | 'subprocesses' | 'objects' | 'docs' | 'comments' | 'model' | 'execution';
 
@@ -279,7 +280,7 @@ export function ProcessDetailPage() {
                   <Tag
                     key={l.id}
                     className="ph-clickable"
-                    onClick={() => openModelAt(l.bpmnElementId)}
+                    {...activateProps(() => openModelAt(l.bpmnElementId))}
                     color="blue"
                   >
                     {loc(l.element) || <span dir="ltr">{l.bpmnElementId}</span>} ·{' '}

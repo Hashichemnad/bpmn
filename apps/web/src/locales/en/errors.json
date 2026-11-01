@@ -116,6 +116,7 @@
   "SSO_USER_NOT_FOUND": "You do not have a ProcessHub account yet. Ask an administrator to create one.",
   "SSO_USER_INACTIVE": "Your ProcessHub account is deactivated. Contact an administrator.",
   "SSO_ACCOUNT_CONFLICT": "This e-mail address is already linked to another sign-in. Contact an administrator.",
+  "SSO_MFA_REQUIRED": "Your organisation requires multi-factor authentication for ProcessHub, but your sign-in did not use it. Sign in again with your second factor, or contact IT.",
   "NOT_A_TERM": "This object is not a dictionary term.",
   "TERM_ALREADY_APPROVED": "The term is already approved.",
   "TERM_NOT_PROPOSED": "Only proposed (draft) terms can be rejected.",

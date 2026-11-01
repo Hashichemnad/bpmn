@@ -19,6 +19,7 @@ import { AiButton, AiError, AiIcon, AiWorking } from '@/features/ai/AiParts';
 import { useAi, useAiRun } from '@/features/ai/useAi';
 import { GrcFormModal } from './GrcFormModal';
 import { useGrcAccess } from './grc-helpers';
+import { activateProps } from '@/components/a11y';
 
 const SEVERITY_COLOR = { HIGH: 'red', MEDIUM: 'orange', LOW: 'blue' } as const;
 
@@ -94,7 +95,7 @@ export function ControlGapsDrawer({
   };
 
   const elementTag = (id: string) => (
-    <Tag key={id} className="ph-ai-element" onClick={() => onFocusElement(id)} role="button">
+    <Tag key={id} className="ph-ai-element" {...activateProps(() => onFocusElement(id))}>
       {nameOf(id) || id}
     </Tag>
   );

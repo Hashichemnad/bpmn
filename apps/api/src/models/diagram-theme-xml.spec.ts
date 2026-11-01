@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { DEFAULT_DIAGRAM_THEME } from '@processhub/shared';
-import { applyThemeToXml, differsOnlyInColours } from './diagram-theme-xml';
+import { applyThemeToXml, differsOnlyInColours, mayNeedColours } from './diagram-theme-xml';
 
 const SAMPLE = readFileSync(
   join(__dirname, '../../../../docs/samples/PMS-01-Program-Request-Approval.bpmn'),
@@ -108,5 +108,19 @@ describe('differsOnlyInColours', () => {
       ),
     ).toBe(false);
     expect(differsOnlyInColours('<bpmn:definitions', SAMPLE)).toBe(false);
+  });
+});
+
+describe('mayNeedColours', () => {
+  it('is false only when every themeable shape carries a colour', () => {
+    const coloured = applyThemeToXml(UNCOLOURED, DEFAULT_DIAGRAM_THEME).xml;
+    expect(mayNeedColours(UNCOLOURED)).toBe(true);
+    expect(mayNeedColours(coloured)).toBe(false);
+    expect(applyThemeToXml(coloured, DEFAULT_DIAGRAM_THEME)).toEqual({ xml: coloured, changed: 0 });
+    // One shape without colours is enough to parse the diagram.
+    const oneMissing = coloured.replace(/<(?:\w+:)?BPMNShape\b[^>]*color:[^>]*>/, (tag) =>
+      tag.replace(/\s[\w.-]+:(?:background-color|border-color|fill|stroke)="[^"]*"/g, ''),
+    );
+    expect(mayNeedColours(oneMissing)).toBe(true);
   });
 });

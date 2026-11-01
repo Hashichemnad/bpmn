@@ -108,6 +108,7 @@ export function ControlTestingCard({ control }: { control: ControlDto }) {
                     <Button
                       key="edit"
                       size="small"
+                      aria-label={t('edit')}
                       icon={<EditOutlined />}
                       onClick={() => setEditing(p)}
                     />,
@@ -118,7 +119,12 @@ export function ControlTestingCard({ control }: { control: ControlDto }) {
                         removePlan.mutate(p.id, { onError: (e) => message.error(errorMessage(e)) })
                       }
                     >
-                      <Button size="small" danger icon={<DeleteOutlined />} />
+                      <Button
+                        size="small"
+                        danger
+                        aria-label={t('delete')}
+                        icon={<DeleteOutlined />}
+                      />
                     </Popconfirm>,
                   ]
                 : []

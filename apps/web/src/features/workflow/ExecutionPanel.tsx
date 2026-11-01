@@ -63,6 +63,7 @@ import {
   writeTimer,
   type TimerKey,
 } from './modeler-exec';
+import { activateProps } from '@/components/a11y';
 
 interface Props {
   instance: BpmnInstance | null;
@@ -469,7 +470,10 @@ function ExpressionInput({
           <Tag
             key={k}
             style={{ cursor: disabled ? undefined : 'pointer' }}
-            onClick={() => !disabled && setV((x) => `${x}${x && !x.endsWith(' ') ? ' ' : ''}${k}`)}
+            {...activateProps(
+              () => setV((x) => `${x}${x && !x.endsWith(' ') ? ' ' : ''}${k}`),
+              disabled,
+            )}
           >
             <span dir="ltr">{k}</span>
           </Tag>

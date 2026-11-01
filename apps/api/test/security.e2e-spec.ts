@@ -187,6 +187,7 @@ describe('Security hardening (e2e)', () => {
           groupsClaim: 'groups',
           groupMappings: [],
           syncRolesOnLogin: false,
+          requireIdpMfa: false,
           localLoginEnabled: true,
           breakGlassUserId: null,
           mfaRequiredRoles: [],

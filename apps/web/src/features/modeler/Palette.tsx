@@ -12,6 +12,7 @@ import {
   type PaletteEntry,
   type ReadyStep,
 } from './palette-entries';
+import { withAllLanguages } from '@/components/withAllLanguages';
 
 interface Props {
   instance: BpmnInstance | null;
@@ -26,7 +27,7 @@ interface Props {
  * with icons and labels, searchable, collapsible to icons only. Click an entry and click the
  * canvas, or drag it onto the canvas.
  */
-export function Palette({ instance, collapsed, onCollapsedChange, onReadyStep }: Props) {
+function PaletteInner({ instance, collapsed, onCollapsedChange, onReadyStep }: Props) {
   const { t, i18n } = useTranslation();
   const { locale } = useLocale();
   const [query, setQuery] = useState('');
@@ -112,3 +113,6 @@ export function Palette({ instance, collapsed, onCollapsedChange, onReadyStep }:
     </nav>
   );
 }
+
+/** Needs the texts of both languages (bilingual labels / printing in either language). */
+export const Palette = withAllLanguages(PaletteInner, 'none');

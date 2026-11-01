@@ -36,10 +36,10 @@ export function LocaleProvider({ children }: { children: ReactNode }) {
   useEffect(() => applyDocument(locale), [locale]);
 
   const setLocale = useCallback((next: Locale) => {
-    void i18n.changeLanguage(next);
     rememberLocale(next);
     setExplicit(true);
-    setLocaleState(next);
+    // The layout direction switches together with the texts, once the language is loaded.
+    void i18n.changeLanguage(next).finally(() => setLocaleState(next));
   }, []);
 
   const value = useMemo<LocaleContextValue>(

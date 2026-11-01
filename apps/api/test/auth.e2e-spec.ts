@@ -158,6 +158,43 @@ describe('Auth (e2e)', () => {
     expect(active).toBe(1);
   });
 
+  it('ends a session at the absolute limit (SESSION_MAX_HOURS) even when it is active', async () => {
+    const c = await loggedIn(ctx.app, 'admin@test.local');
+    const token = await ctx.prisma.refreshToken.findFirstOrThrow();
+    // Default 7 days: the refresh token never expires after the end of the session.
+    const limit = token.sessionStartedAt.getTime() + 168 * 3600 * 1000;
+    expect(token.expiresAt.getTime()).toBeLessThanOrEqual(limit);
+    // Six days and 23 hours ago: the rotated token is capped at the session end.
+    const started = new Date(Date.now() - (167 * 3600 + 1800) * 1000);
+    await ctx.prisma.refreshToken.updateMany({ data: { sessionStartedAt: started } });
+    await c.post('/auth/refresh').expect(200);
+    const rotated = await ctx.prisma.refreshToken.findFirstOrThrow({ where: { revokedAt: null } });
+    expect(rotated.sessionStartedAt.getTime()).toBe(started.getTime());
+    expect(rotated.expiresAt.getTime()).toBe(started.getTime() + 168 * 3600 * 1000);
+    // Past the limit: refused and the family is revoked although the idle limit is not reached.
+    await ctx.prisma.refreshToken.updateMany({
+      data: { sessionStartedAt: new Date(Date.now() - 169 * 3600 * 1000) },
+    });
+    const res = await c.post('/auth/refresh');
+    expect(res.status).toBe(401);
+    expect(res.body.code).toBe('SESSION_EXPIRED');
+    expect(await ctx.prisma.refreshToken.count({ where: { revokedAt: null } })).toBe(0);
+  });
+
+  it('deactivating a user ends their sessions immediately', async () => {
+    const viewer = await createUser(ctx.prisma, 'leaver@test.local', ['VIEWER']);
+    const session = await loggedIn(ctx.app, 'leaver@test.local');
+    await session.get('/auth/me').expect(200);
+    const admin = await loggedIn(ctx.app, 'admin@test.local');
+    await admin.patch(`/users/${viewer.id}`).send({ status: 'INACTIVE' }).expect(200);
+    // The still-valid access token is refused at once, and the refresh token is revoked.
+    await session.get('/auth/me').expect(401);
+    await session.post('/auth/refresh').expect(401);
+    expect(
+      await ctx.prisma.refreshToken.count({ where: { userId: viewer.id, revokedAt: null } }),
+    ).toBe(0);
+  });
+
   it('POST /auth/logout revokes the session and clears cookies', async () => {
     const c = await loggedIn(ctx.app, 'admin@test.local');
     await c.post('/auth/logout').expect(204);

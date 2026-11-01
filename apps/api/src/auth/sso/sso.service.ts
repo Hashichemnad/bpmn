@@ -23,6 +23,7 @@ import { AuthSettingsService, issuerOf, type StoredAuthSettings } from '../auth-
 import { OidcClient, type AuthorizationChecks } from './oidc-client';
 import {
   domainAllowed,
+  idpMfaPerformed,
   identityFromClaims,
   mapGroups,
   safeReturnTo,
@@ -154,10 +155,15 @@ export class SsoService {
     if (!domainAllowed(identity.email, s.allowedDomains)) {
       throw new SsoFailure('SSO_DOMAIN_NOT_ALLOWED', { email: identity.email });
     }
+    // Checked before any account is created or linked; the audit entry lists what was sent.
+    if (s.requireIdpMfa && !idpMfaPerformed(identity.amr)) {
+      throw new SsoFailure('SSO_MFA_REQUIRED', { email: identity.email, amr: identity.amr });
+    }
     const userId = await this.provision(s, issuer, identity, meta);
     const result = await this.auth.completeLogin(userId, meta, {
       method: 'SSO',
       issuer,
+      ...(identity.amr.length ? { amr: identity.amr } : {}),
       ...(identity.groupsOverage ? { groupsOverage: true } : {}),
     });
     return { ...result, returnTo: flow.returnTo };

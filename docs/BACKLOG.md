@@ -227,10 +227,8 @@ Other ideas from Part A:
 - Slim API runtime image (`pnpm deploy --prod` plus a separate migration step); unprivileged nginx image.
   (Node 22 LTS: done in part 4, D-066.)
 - From the part 4 decisions (D-061 – D-065): **automatic de-provisioning** (SCIM / back-channel logout, see
-  above) stays here — until then the leaver process deactivates users by hand; optionally an absolute session
-  limit (e.g. sign in again every 24 hours even when active; today the 24 hours are an idle timeout); check the
-  `amr` / `acrs` claim so ProcessHub refuses SSO sign-ins without MFA if Conditional Access is misconfigured;
-  a quarterly reminder to test the break-glass account; an admin-side report of who has 2FA turned on.
+  above) stays here — until then the leaver process deactivates users by hand (the absolute session limit and
+  the `amr` check are done: D-165, D-166); a quarterly reminder to test the break-glass account; an admin-side report of who has 2FA turned on.
 - Production follow-ups from part 2 (D-051 – D-053): publish versioned images to a registry (GHCR / ACR /
   ECR) so servers pull instead of build; rename the `MINIO_*` variables to `STORAGE_*` (keep the old names as
   aliases); replace the `minio` npm client with `@aws-sdk/client-s3` (also clears SEC-09); run the storage
@@ -252,7 +250,15 @@ Other ideas from Part A:
 - Optionally mark `ph_csrf` as a `__Host-` cookie when `COOKIE_SECURE=true` (the origin check, D-048,
   already covers cookie tossing).
 - Shorter retention or masking of email addresses in API logs (failed notification emails).
-- Code-split the wiki editor (TipTap) and the BPMN compare into lazy chunks.
+- (Done in the final session: every screen, incl. the wiki editor and the BPMN compare, is a lazy chunk, D-168.)
+- From the final session, part A (D-167 – D-171), not built: server-side paging of the governance dashboard
+  lists (in review / overdue / due soon; client-paged today, 530 KB on the volume seed) and a lighter process
+  tree payload (700 KB for 2,000 processes, 72 ms); Brotli for dynamic responses (needs an nginx Brotli
+  module or a Caddy plugin — static assets are precompressed already); multi-architecture (arm64) release
+  images; automated accessibility checks in Playwright (axe-core) and a screen-reader pass with NVDA / VoiceOver
+  in Arabic; a background job for "Apply theme" when thousands of diagrams have no colours yet (dry run on
+  2,000 coloured diagrams: 1.8 s); the governance reminder scheduler still reads all current publication IDs
+  (4.6 s per run on the volume seed, background job).
 
 ## Nice to have
 

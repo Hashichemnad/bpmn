@@ -40,11 +40,12 @@ import {
 import { ConfigProvider } from 'antd';
 import { LocaleOverride, useLocale } from '@/app/LocaleProvider';
 import { WorkflowForm } from './WorkflowForm';
+import { withAllLanguages } from '@/components/withAllLanguages';
 
 const HAS_OPTIONS: FormFieldType[] = ['select', 'radio', 'multiselect'];
 
 /** Field list editor of a workflow form (D-146): add, reorder, edit, preview in English and Arabic. */
-export function FormEditor({
+function FormEditorInner({
   value,
   onChange,
   disabled,
@@ -404,3 +405,6 @@ function FieldDrawer({
     </Drawer>
   );
 }
+
+/** Needs the texts of both languages (bilingual labels / printing in either language). */
+export const FormEditor = withAllLanguages(FormEditorInner);

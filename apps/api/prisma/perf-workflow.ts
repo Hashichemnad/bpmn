@@ -1,4 +1,3 @@
-/* eslint-disable no-console */
 /**
  * Workflow execution load measurement (Phase 5.2, D-153): 500 users, N open requests (default 10,000), then
  * timings of the hot paths — start, inbox, task completion, monitor, dashboard, the job poll.

@@ -30,9 +30,14 @@
 		max_size 12MB
 	}
 
+	# Compression of responses that are not compressed yet (API JSON, HTML); the app's JavaScript
+	# and CSS arrive precompressed (Brotli / gzip) from the web container and pass through as they
+	# are. zstd for current browsers, gzip for the rest.
+	encode zstd gzip
+
 	# Everything goes to the web container (nginx serves the app and forwards /api to the API).
 	# Server-Sent Events (AI assistant) are streamed without buffering automatically.
-	reverse_proxy web:80
+	reverse_proxy web:8080
 
 	log {
 		output stdout

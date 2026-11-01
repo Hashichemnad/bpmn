@@ -4,6 +4,7 @@
   "private": true,
   "description": "Shared types, zod validation schemas and constants for ProcessHub",
   "main": "dist/index.js",
+  "sideEffects": false,
   "types": "dist/index.d.ts",
   "files": [
     "dist"

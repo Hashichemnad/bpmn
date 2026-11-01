@@ -31,6 +31,7 @@ import { AssuranceFilesService } from './assurance-files.service';
 import { AssuranceEventsService } from './assurance-events.service';
 import { AssuranceSettingsService } from './assurance-settings.service';
 import { AssigneeResolver } from './assignees';
+import { compareNatural } from '../common/compare';
 
 const ENTITY = 'Issue';
 const userSelect = { id: true, email: true, nameEn: true, nameAr: true } as const;
@@ -420,7 +421,7 @@ export class IssuesService implements OnModuleInit {
       return (
         (typeof va === 'number' && typeof vb === 'number'
           ? va - vb
-          : String(va).localeCompare(String(vb), undefined, { numeric: true })) * dir
+          : compareNatural(String(va), String(vb))) * dir
       );
     });
     const start = (q.page - 1) * q.pageSize;
@@ -1038,6 +1039,20 @@ export class IssuesService implements OnModuleInit {
     });
     for (const i of issues) {
       const due = i.dueAt!;
+      // Overdue before escalated, in the same run: an issue first seen past the escalation date
+      // (e.g. after the server was down) gets both notices now, in order (final session A).
+      if (due <= now && !i.overdueNotifiedAt) {
+        sent += await this.notify(
+          i,
+          'overdue',
+          [i.ownerId],
+          null,
+          null,
+          undefined,
+          `ISSUE:overdue:${i.id}:${stamp(due)}`,
+        );
+        await this.prisma.issue.update({ where: { id: i.id }, data: { overdueNotifiedAt: now } });
+      }
       if (due < late && !i.escalatedAt) {
         sent += await this.notify(
           i,
@@ -1057,17 +1072,6 @@ export class IssuesService implements OnModuleInit {
             changes: { escalated: { from: null, to: stamp(now) } },
           },
         });
-      } else if (due <= now && !i.overdueNotifiedAt) {
-        sent += await this.notify(
-          i,
-          'overdue',
-          [i.ownerId],
-          null,
-          null,
-          undefined,
-          `ISSUE:overdue:${i.id}:${stamp(due)}`,
-        );
-        await this.prisma.issue.update({ where: { id: i.id }, data: { overdueNotifiedAt: now } });
       } else if (due > now && !i.dueNotifiedAt) {
         sent += await this.notify(
           i,
@@ -1092,18 +1096,7 @@ export class IssuesService implements OnModuleInit {
     });
     for (const a of actions) {
       const due = a.dueAt!;
-      if (due < late && !a.escalatedAt) {
-        sent += await this.notify(
-          a.issue,
-          'action_escalated',
-          await this.escalationTargets(a.ownerId, s.escalateTo),
-          null,
-          a,
-          undefined,
-          `ISSUE:action_escalated:${a.id}:${stamp(due)}`,
-        );
-        await this.prisma.issueAction.update({ where: { id: a.id }, data: { escalatedAt: now } });
-      } else if (due <= now && !a.overdueNotifiedAt) {
+      if (due <= now && !a.overdueNotifiedAt) {
         sent += await this.notify(
           a.issue,
           'action_overdue',
@@ -1117,6 +1110,18 @@ export class IssuesService implements OnModuleInit {
           where: { id: a.id },
           data: { overdueNotifiedAt: now },
         });
+      }
+      if (due < late && !a.escalatedAt) {
+        sent += await this.notify(
+          a.issue,
+          'action_escalated',
+          await this.escalationTargets(a.ownerId, s.escalateTo),
+          null,
+          a,
+          undefined,
+          `ISSUE:action_escalated:${a.id}:${stamp(due)}`,
+        );
+        await this.prisma.issueAction.update({ where: { id: a.id }, data: { escalatedAt: now } });
       } else if (due > now && !a.dueNotifiedAt) {
         sent += await this.notify(
           a.issue,

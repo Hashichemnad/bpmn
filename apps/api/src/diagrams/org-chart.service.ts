@@ -11,6 +11,7 @@ import {
 import { PrismaService } from '../prisma/prisma.service';
 import { notFound } from '../common/app-exception';
 import type { AuthUser } from '../common/auth-user';
+import { compareNatural } from '../common/compare';
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -112,8 +113,6 @@ export class OrgChartService {
         steps,
       });
     }
-    return out.sort((a, b) =>
-      a.process.code.localeCompare(b.process.code, undefined, { numeric: true }),
-    );
+    return out.sort((a, b) => compareNatural(a.process.code, b.process.code));
   }
 }

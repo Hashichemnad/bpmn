@@ -392,6 +392,7 @@ export function IssuePage({ portal = false }: { portal?: boolean }) {
                         <Button
                           size="small"
                           type="text"
+                          aria-label={t('edit')}
                           icon={<EditOutlined />}
                           onClick={() => openActionForm(a)}
                         />
@@ -401,7 +402,13 @@ export function IssuePage({ portal = false }: { portal?: boolean }) {
                             act.mutate({ kind: 'removeAction', actionId: a.id }, { onError })
                           }
                         >
-                          <Button size="small" type="text" danger icon={<DeleteOutlined />} />
+                          <Button
+                            size="small"
+                            type="text"
+                            danger
+                            aria-label={t('delete')}
+                            icon={<DeleteOutlined />}
+                          />
                         </Popconfirm>
                       </Space>
                     ),

@@ -209,8 +209,14 @@ export class ReportDataService {
       }),
       this.prisma.pageLink.findMany({ where: { processId: { in: ids } } }),
     ]);
+    const linkedPages = new Set(pageLinks.map((l) => l.pageId));
     const pagePubs = new Map(
-      visible.filter((p) => p.entityType === 'PAGE').map((p) => [p.entityId, p]),
+      (
+        await this.portal.withText(
+          visible.filter((p) => p.entityType === 'PAGE' && linkedPages.has(p.entityId)),
+          true,
+        )
+      ).map((p) => [p.entityId, p]),
     );
     const users = await this.content.users([
       ...rows.map((r) => r.ownerId),

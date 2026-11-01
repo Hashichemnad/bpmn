@@ -23,6 +23,8 @@ import { MfaService } from './mfa.service';
 
 export interface IssuedTokens {
   accessToken: string;
+  /** Access-token lifetime in seconds (shorter than the configured one near the session limit). */
+  accessTtlSeconds: number;
   refreshToken: string;
   refreshExpiresAt: Date;
 }
@@ -222,7 +224,7 @@ export class AuthService {
     });
     const authUser = await this.loader.load(userId);
     if (!authUser) throw invalidCredentials();
-    const tokens = await this.issueTokens(userId, randomUUID(), meta);
+    const tokens = await this.issueTokens(userId, randomUUID(), meta, new Date());
     return { user: toCurrentUser(authUser), ...tokens };
   }
 
@@ -312,6 +314,14 @@ export class AuthService {
       throw invalidSession();
     }
     if (record.expiresAt.getTime() <= Date.now()) throw invalidSession();
+    // Absolute limit: activity cannot keep a session alive past SESSION_MAX_HOURS after sign-in.
+    if (this.sessionEndsAt(record.sessionStartedAt).getTime() <= Date.now()) {
+      await this.prisma.refreshToken.updateMany({
+        where: { familyId: record.familyId, revokedAt: null },
+        data: { revokedAt: new Date() },
+      });
+      throw invalidSession();
+    }
     const user = await this.loader.load(record.userId);
     if (!user) throw invalidSession();
 
@@ -321,7 +331,7 @@ export class AuthService {
       data: { revokedAt: new Date() },
     });
     if (claimed.count !== 1) throw invalidSession();
-    return this.issueTokens(record.userId, record.familyId, meta);
+    return this.issueTokens(record.userId, record.familyId, meta, record.sessionStartedAt);
   }
 
   async logout(refreshToken: string | undefined, user: AuthUser | undefined, meta: RequestMeta) {
@@ -412,32 +422,50 @@ export class AuthService {
         tx,
       );
     });
-    return this.issueTokens(user.id, randomUUID(), meta);
+    // A new password starts a new session (and a new absolute limit).
+    return this.issueTokens(user.id, randomUUID(), meta, new Date());
   }
 
+  /** Absolute end of a session that started at `startedAt` (SESSION_MAX_HOURS, D-165). */
+  sessionEndsAt(startedAt: Date): Date {
+    return new Date(startedAt.getTime() + this.config.SESSION_MAX_HOURS * 3600 * 1000);
+  }
+
+  /**
+   * Refresh tokens expire after the idle limit (REFRESH_TOKEN_TTL_HOURS) or at the absolute
+   * session limit, whichever comes first; the access token never outlives the session either.
+   */
   private async issueTokens(
     userId: string,
     familyId: string,
     meta: RequestMeta,
+    sessionStartedAt: Date,
   ): Promise<IssuedTokens> {
+    const now = Date.now();
+    const sessionEnd = this.sessionEndsAt(sessionStartedAt).getTime();
+    const refreshExpiresAt = new Date(
+      Math.min(now + this.config.REFRESH_TOKEN_TTL_HOURS * 3600 * 1000, sessionEnd),
+    );
+    const accessTtlSeconds = Math.max(
+      1,
+      Math.min(this.config.JWT_ACCESS_TTL_SECONDS, Math.floor((sessionEnd - now) / 1000)),
+    );
     const accessToken = await this.jwt.signAsync(
       { sub: userId, typ: 'access' },
-      { expiresIn: this.config.JWT_ACCESS_TTL_SECONDS, algorithm: 'HS256' },
+      { expiresIn: accessTtlSeconds, algorithm: 'HS256' },
     );
     const refreshToken = randomBytes(48).toString('base64url');
-    const refreshExpiresAt = new Date(
-      Date.now() + this.config.REFRESH_TOKEN_TTL_HOURS * 3600 * 1000,
-    );
     await this.prisma.refreshToken.create({
       data: {
         userId,
         familyId,
+        sessionStartedAt,
         tokenHash: hashToken(refreshToken),
         expiresAt: refreshExpiresAt,
         ip: meta.ip,
         userAgent: meta.userAgent,
       },
     });
-    return { accessToken, refreshToken, refreshExpiresAt };
+    return { accessToken, accessTtlSeconds, refreshToken, refreshExpiresAt };
   }
 }

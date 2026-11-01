@@ -245,6 +245,7 @@ describe('Two-factor authentication (e2e)', () => {
       expect((await c.get('/settings/auth').expect(200)).body).toMatchObject({
         mfaRequiredRoles: ['SUPER_ADMIN', 'ADMIN'],
         syncRolesOnLogin: false,
+        requireIdpMfa: false,
         localLoginEnabled: true,
       });
     });

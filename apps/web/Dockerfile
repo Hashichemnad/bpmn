@@ -10,11 +10,13 @@ COPY apps/web/package.json apps/web/
 RUN pnpm install --frozen-lockfile --filter "@processhub/web..."
 COPY packages/shared packages/shared
 COPY apps/web apps/web
-RUN pnpm --filter @processhub/web build
+RUN pnpm --filter @processhub/web build && node apps/web/scripts/precompress.mjs
 
-FROM nginx:1.27-alpine AS runtime
+# Unprivileged nginx (NGINX's official image variant): runs as user nginx (uid 101) and listens on
+# 8080, so the container needs no root and no extra capabilities (final session, part A).
+FROM nginxinc/nginx-unprivileged:1.27-alpine AS runtime
 COPY apps/web/nginx.conf /etc/nginx/conf.d/default.conf
 COPY apps/web/nginx-security-headers.conf /etc/nginx/snippets/security-headers.conf
 COPY --from=build /app/apps/web/dist /usr/share/nginx/html
-EXPOSE 80
-HEALTHCHECK --interval=10s --timeout=3s --retries=5 CMD wget -q -O /dev/null http://127.0.0.1/healthz || exit 1
+EXPOSE 8080
+HEALTHCHECK --interval=10s --timeout=3s --retries=5 CMD wget -q -O /dev/null http://127.0.0.1:8080/healthz || exit 1

@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
+import { SuspenseOutlet } from '@/app/SuspenseOutlet';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { AiButton } from '@/features/ai/AiParts';
 import { PortalAssistantProvider } from '@/features/ai/PortalAssistant';
 import { useWfTaskCounts } from '@/api/workflow';
@@ -202,6 +203,9 @@ export function PortalLayout() {
   return (
     <PortalAssistantProvider>
       <Layout className="ph-portal">
+        <a className="ph-skip-link" href="#ph-main">
+          {t('skipToContent')}
+        </a>
         <Header className="ph-portal-header">
           <Flex align="center" gap={12} style={{ minInlineSize: 0 }}>
             <Button
@@ -278,8 +282,8 @@ export function PortalLayout() {
             onClick={() => setMenuOpen(false)}
           />
         </Drawer>
-        <Content className="ph-portal-content">
-          <Outlet />
+        <Content className="ph-portal-content" id="ph-main" tabIndex={-1}>
+          <SuspenseOutlet />
         </Content>
         <Footer className="ph-portal-footer">
           <Typography.Text type="secondary">

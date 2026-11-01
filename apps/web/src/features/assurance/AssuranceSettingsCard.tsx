@@ -108,6 +108,7 @@ export function AssuranceSettingsCard() {
                 size="small"
                 type="text"
                 danger
+                aria-label={t('delete')}
                 icon={<DeleteOutlined />}
                 disabled={value.severities.length <= 2}
                 onClick={() => patch({ severities: value.severities.filter((_x, j) => j !== i) })}

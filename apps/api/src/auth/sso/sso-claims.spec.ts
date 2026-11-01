@@ -1,4 +1,10 @@
-import { domainAllowed, identityFromClaims, mapGroups, safeReturnTo } from './sso-claims';
+import {
+  domainAllowed,
+  idpMfaPerformed,
+  identityFromClaims,
+  mapGroups,
+  safeReturnTo,
+} from './sso-claims';
 
 describe('identityFromClaims', () => {
   it('uses the email claim and the name', () => {
@@ -15,6 +21,7 @@ describe('identityFromClaims', () => {
       name: 'Ana Ali',
       groups: ['g1', 'g2'],
       groupsOverage: false,
+      amr: [],
     });
   });
 
@@ -100,5 +107,18 @@ describe('safeReturnTo', () => {
     ]) {
       expect(safeReturnTo(bad)).toBe('/');
     }
+  });
+});
+
+describe('amr (identity provider MFA)', () => {
+  it('reads the amr claim and recognises a multi-factor sign-in', () => {
+    const read = (amr: unknown) => identityFromClaims({ sub: 's', amr }, 'ENTRA', 'groups').amr;
+    expect(read(['pwd', 'MFA'])).toEqual(['pwd', 'mfa']);
+    expect(read('mfa')).toEqual(['mfa']);
+    expect(read(undefined)).toEqual([]);
+    expect(read([1, null])).toEqual([]);
+    expect(idpMfaPerformed(read(['pwd', 'mfa']))).toBe(true);
+    expect(idpMfaPerformed(read(['pwd', 'rsa']))).toBe(false);
+    expect(idpMfaPerformed([])).toBe(false);
   });
 });

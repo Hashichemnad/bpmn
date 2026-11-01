@@ -51,8 +51,8 @@ with no per-user licensing. Target: 50–500 users on a single server.
 | Design B1 | Modeler design — Part B1: full-screen workspace and modeling productivity (palette, ready-made steps, zoom/mini-map, align, auto-layout, lane roles, badges, portal diagram, print layout) | ✅ Done (merged into `main`, D-074 – D-081); Part B2 in BACKLOG |
 | Design B2 | Modeler design — Part B2: smarter modeling and reports (Playwright e2e in CI, Dictionary with label autocomplete, Quick Model, step attributes and "colour by", handbook / RACI / object reports, modeling conventions) | ✅ Done (merged into `main`, D-083 – D-088) |
 | Deps | zod 3 → 4 (high advisory GHSA-mrhx-c7xc-m3w5, D-082) | ✅ Done (merged into `main`) |
-| Import | M15 Import tools / migration: Import Center (batches, preview, dry run, undo, re-import, upload security), process house / departments / users from Excel, BPMN / Visio / ARIS / DMN diagrams, Word / PDF / Confluence / Markdown into the wiki, AI-assisted migration, migration tracker and review queue, full export package and round-trip | ✅ Done on branch `import-tools` (D-155 – D-164), awaiting review / merge into `main` |
-| 6 | Hardening: SSO, performance, security review fixes, deployment guide | 🟡 Parts 1–4 merged into `main` (security review `docs/SECURITY.md`, production stack and backups `docs/DEPLOYMENT.md`, SSO with Entra ID / OIDC and TOTP 2FA, product owner decisions: 2FA for admins, break-glass, roles in ProcessHub, 24 h sessions, Node 22). Remaining: final performance / polish session — moved to the end of the roadmap |
+| Import | M15 Import tools / migration: Import Center (batches, preview, dry run, undo, re-import, upload security), process house / departments / users from Excel, BPMN / Visio / ARIS / DMN diagrams, Word / PDF / Confluence / Markdown into the wiki, AI-assisted migration, migration tracker and review queue, full export package and round-trip | ✅ Done (merged into `main`, D-155 – D-164) |
+| 6 | Hardening: SSO, performance, security review fixes, deployment guide | 🟡 Parts 1–4 merged into `main` (security review `docs/SECURITY.md`, production stack and backups `docs/DEPLOYMENT.md`, SSO with Entra ID / OIDC and TOTP 2FA, product owner decisions: 2FA for admins, break-glass, roles in ProcessHub, 24 h sessions, Node 22). Final session part A (performance, reliability, accessibility, images, restore drill, D-165 – D-171) done on branch `final-a-performance`, awaiting review / merge |
 
 Update this table and `docs/PROGRESS.md` at the end of every session.
 
@@ -281,6 +281,15 @@ Import tools additions (M15, DECISIONS D-155 – D-164):
 - Product owner answers (D-164): permission `import.own` (Process Owner: diagrams / documents for own processes
   and editable spaces, own batches only); Setting `imports` (`ssoWelcomeEmail`, `allowAiOnImportedDocuments`
   off by default — DOF approval, `confirmExternal` per run); option `visioLayout` (`AUTO` | `KEEP`)
+
+Final session part A additions (DECISIONS D-165 – D-171):
+
+- `RefreshToken.sessionStartedAt` (absolute session limit `SESSION_MAX_HOURS`, default 168); Setting `auth.requireIdpMfa`
+  (`amr` must contain `mfa`, error `SSO_MFA_REQUIRED`)
+- `Process.searchVector` (generated tsvector, GIN index) for workspace search
+- Volume seed `apps/api/prisma/seed-volume.ts` + `perf-api.ts` / `perf-schedulers.ts`; images `processhub-api`,
+  `processhub-api-migrate` (compose service `migrate`), `processhub-web` (unprivileged, port 8080) published to GHCR on
+  version tags; `scripts/backup-drill.sh`, `scripts/check-i18n.mjs` in CI
 
 ## 10. Definition of Done (every phase)
 

@@ -176,7 +176,12 @@ export function TestPlanModal({
                         style={{ width: 300 }}
                       />
                     </Form.Item>
-                    <Button type="text" icon={<DeleteOutlined />} onClick={() => remove(f.name)} />
+                    <Button
+                      type="text"
+                      aria-label={t('delete')}
+                      icon={<DeleteOutlined />}
+                      onClick={() => remove(f.name)}
+                    />
                   </Space>
                 ))}
                 <Button icon={<PlusOutlined />} onClick={() => add({ en: '', ar: '' })}>

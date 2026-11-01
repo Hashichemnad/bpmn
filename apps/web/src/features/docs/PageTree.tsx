@@ -9,6 +9,7 @@ import { useErrorMessage, useLocalized } from '@/components/i18n-helpers';
 import { ErrorState, LoadingState } from '@/components/states';
 import { useLocale } from '@/app/LocaleProvider';
 import { computePageDrop } from './page-tree-dnd';
+import { useViewportHeight, virtualTreeHeight } from '@/components/useVirtualTreeHeight';
 
 function ancestorsOf(items: PageSummaryDto[], id: string): string[] {
   const byId = new Map(items.map((p) => [p.id, p]));
@@ -79,6 +80,7 @@ export function PageTree({
       .map(toNode)
       .filter((x): x is TreeDataNode => !!x);
   }, [items, matches, loc, locale, t]);
+  const viewport = useViewportHeight();
 
   useEffect(() => {
     if (!selectedId || !items.length) return;
@@ -127,6 +129,7 @@ export function PageTree({
         <Typography.Text type="secondary">{t('processes:tree.noMatches')}</Typography.Text>
       ) : (
         <Tree
+          height={virtualTreeHeight(treeData, viewport, 220)}
           blockNode
           showLine={{ showLeafIcon: false }}
           draggable={canDrag ? { icon: false } : false}

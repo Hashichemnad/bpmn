@@ -14,6 +14,11 @@ export function buildTheme(locale: Locale): ThemeConfig {
       colorError: '#b91c1c',
       colorBgLayout: '#f4f6fb',
       colorTextBase: '#0f172a',
+      // WCAG 2.1 AA (4.5:1) for hints, descriptions, empty states and placeholders on white and
+      // on the page background; Ant Design's defaults (45 % / 25 % black) are below 3:1.
+      colorTextTertiary: '#5b6472',
+      colorTextDescription: '#5b6472',
+      colorTextPlaceholder: '#5c6779',
       borderRadius: 8,
       fontFamily: locale === 'ar' ? FONT_AR : FONT_EN,
       fontSize: 14,

@@ -10,6 +10,7 @@ import { APP_CONFIG, type AppConfig } from '../config/config';
 import { PrismaService } from '../prisma/prisma.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { KpiSettingsService } from './kpi-settings.service';
+import { startPeriodic, type Periodic } from '../common/periodic';
 
 /** Hook for the Salesforce sync (step 5), registered by the integration so the module stays independent. */
 export interface ScheduledJob {
@@ -23,8 +24,7 @@ export interface ScheduledJob {
 @Injectable()
 export class KpiScheduler implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(KpiScheduler.name);
-  private timer?: ReturnType<typeof setInterval>;
-  private first?: ReturnType<typeof setTimeout>;
+  private periodic?: Periodic;
   private readonly jobs: ScheduledJob[] = [];
 
   constructor(
@@ -41,14 +41,18 @@ export class KpiScheduler implements OnModuleInit, OnModuleDestroy {
   onModuleInit() {
     const minutes = this.config.SCHEDULER_INTERVAL_MINUTES;
     if (!minutes || this.config.NODE_ENV === 'test') return;
-    const run = () => void this.runOnce().catch((e: Error) => this.logger.error(e.message));
-    this.first = setTimeout(run, 120_000);
-    this.timer = setInterval(run, minutes * 60_000);
+    // Never two runs at once (a slow run on a large repository skips the next tick).
+    this.periodic = startPeriodic(
+      'KPI scheduler',
+      () => this.runOnce(),
+      120_000,
+      minutes * 60_000,
+      this.logger,
+    );
   }
 
   onModuleDestroy() {
-    clearTimeout(this.first);
-    clearInterval(this.timer);
+    this.periodic?.stop();
   }
 
   async runOnce(now = new Date()) {

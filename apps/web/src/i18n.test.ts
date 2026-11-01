@@ -96,7 +96,7 @@ import {
   REQUIREMENT_LEVELS,
   RISK_RESPONSES,
 } from '@processhub/shared';
-import { resources } from './i18n';
+import { resources } from './locales/resources';
 import { BADGE_KINDS } from './features/modeler/badges';
 import { PALETTE_ENTRIES, PALETTE_GROUPS, READY_STEPS } from './features/modeler/palette-entries';
 import { PAPERS } from './features/portal/print-layout';
