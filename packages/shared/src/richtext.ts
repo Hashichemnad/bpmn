@@ -112,5 +112,7 @@ export function referencedAttachmentIds(html: string): string[] {
 /** True when the HTML has visible text or embedded content (an empty editor yields `<p></p>`). */
 export function hasRichContent(html: string): boolean {
   if (/<(img|table|hr|div[^>]+data-type="bpmn-diagram")/i.test(html)) return true;
-  return html.replace(/<[^>]*>/g, '').replace(/&nbsp;|\s/g, '').length > 0;
+  // Only measures whether text remains between the tags (not a sanitiser: rendering always goes
+  // through DOMPurify).
+  return html.split(/<[^>]*>/).some((text) => text.replace(/&nbsp;|\s/g, '').length > 0);
 }
