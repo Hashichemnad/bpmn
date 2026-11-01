@@ -2,7 +2,50 @@
 
 Read this together with `CLAUDE.md` at the start of every session.
 
-## Current state — 2026-11-01 (Final session, Part A — performance, reliability and polish, branch `final-a-performance`)
+## Current state — 2026-11-01 (Phase 4.4 — Integrations and exports, branch `integrations-exports`)
+
+All feature phases and Final Part A are merged into `main`. This branch builds the integration and export scope
+the product owner decided (in: public API with API keys, webhooks, Power BI / reporting feed, Microsoft Teams
+channel notifications, static HTML export, PowerPoint export, scheduled report e-mails; out — BACKLOG: SCIM,
+XPDL, SharePoint / OneDrive, Salesforce risk and Oracle connectors, workflow steps calling external systems,
+automatic event-log feeds, two-way Git sync; the Salesforce KPI sync stays as it is, off). It runs before Final
+Part B (security review), so that review covers this code. The session works on the harness branch
+`claude/dazzling-pascal-sgx8t7` and pushes the same commits to `integrations-exports`.
+
+Local setup: as in Final Part A below (PostgreSQL 16, role `processhub` / `devpassword`, databases `processhub`
+and `processhub_test`, build the shared package first). Renderer locally: `cd apps/web && npx vite build -c
+vite.render.config.ts`, then `cd apps/renderer && npx tsc && RENDERER_TOKEN=<16+ chars>
+BUNDLE_DIR=../web/dist-render CHROMIUM_PATH=<chrome> PORT=3100 node dist/server.js`; the API uses it with
+`RENDERER_URL=http://localhost:3100` and the same `RENDERER_TOKEN`. No Docker daemon in the sandbox — CI builds
+the images (now four: api, api-migrate, web, renderer) and runs the Playwright suite.
+
+Steps (tick as they are committed; a new session continues at the first unticked one):
+
+- [x] 0. Server-side rendering (D-172): `apps/renderer` (Node + Alpine Chromium via `playwright-core`;
+      `POST /render` SVG / PNG, `POST /pdf`, token, request interception, no network, limits), web renderer
+      page `apps/web/render.html` + `src/render/render-core.ts` (reuses the modeler / diagram kit code and
+      fonts; `vite.render.config.ts` → `dist-render/`, part of `pnpm build`), API `RendererService` with the
+      image cache in the file storage (`render-cache/<sha256>`) + unit test `renderer.service.spec.ts`;
+      Compose (dev and prod) service `renderer` on the internal network `render` (read-only, no capabilities,
+      limits), `RENDERER_URL` / `RENDERER_TOKEN` / `RENDERER_TIMEOUT_MS` (`generate-secrets.sh` creates the
+      token), release workflow publishes `processhub-renderer`. Checked locally: BPMN SVG (Arabic labels) and
+      PNG, Arabic RTL PDF, external image request blocked, wrong token → 401.
+- [ ] 1. Public REST API with API keys (`/api/public/v1`, scopes, content / department filter, IP allow-list,
+      expiry, rotate / revoke, per-key rate limit, usage log, `/api/public/docs`, Settings → Integrations →
+      API keys; scope test listing every public route).
+- [ ] 2. Webhooks (events, HMAC-SHA256 signature + timestamp, persisted retries with backoff, auto-disable,
+      delivery log, resend, test event, SSRF guard incl. redirects, allow-list).
+- [ ] 3. Power BI / reporting feed (`reporting:read`, flat paged JSON) + `docs/integrations/POWER-BI.md`.
+- [ ] 4. Microsoft Teams channel notifications (Workflows webhook URL, Adaptive Cards AR / EN, same delivery
+      log / retries / SSRF, host allow-list) + `docs/integrations/TEAMS.md`.
+- [ ] 5. Static HTML export (process, branch, value chain path, wiki space → offline ZIP site).
+- [ ] 6. PowerPoint export (`pptxgenjs`).
+- [ ] 7. Scheduled report e-mails (subscriptions, recipient permissions, PDF / Excel / link, Asia/Dubai
+      schedule, unsubscribe, delivery log).
+- [ ] 8. Demo data, e2e, screenshots, docs (`docs/integrations/API.md`, `WEBHOOKS.md`), SECURITY /
+      DEPLOYMENT, README, PR and CI.
+
+## Previous state — 2026-11-01 (Final session, Part A — performance, reliability and polish, branch `final-a-performance`)
 
 All feature phases (1 – 5.2, AI, diagram types, import tools) are merged into `main`. This branch is the Phase 6
 remainder: measurement-driven performance work, reliability, accessibility / polish and production images —

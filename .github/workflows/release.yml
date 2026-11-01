@@ -6,6 +6,7 @@ name: Release images
 #   ghcr.io/<owner>/processhub-api:<version>          API server (production dependencies only)
 #   ghcr.io/<owner>/processhub-api-migrate:<version>  migrations + seed, run once by docker compose
 #   ghcr.io/<owner>/processhub-web:<version>          web app (unprivileged nginx)
+#   ghcr.io/<owner>/processhub-renderer:<version>     internal diagram / PDF renderer (headless Chromium)
 # Tags: the full version (1.4.0), major.minor (1.4) and `latest` for releases without a suffix.
 on:
   push:
@@ -61,6 +62,7 @@ jobs:
           docker build $labels -f apps/api/Dockerfile --target runtime -t "$PREFIX-api:$VERSION" .
           docker build $labels -f apps/api/Dockerfile --target migrate -t "$PREFIX-api-migrate:$VERSION" .
           docker build $labels -f apps/web/Dockerfile -t "$PREFIX-web:$VERSION" .
+          docker build $labels -f apps/renderer/Dockerfile -t "$PREFIX-renderer:$VERSION" .
           docker images --format '{{.Repository}}:{{.Tag}}  {{.Size}}' | grep "$PREFIX" | tee -a "$GITHUB_STEP_SUMMARY"
       - name: Push
         env:
@@ -69,7 +71,7 @@ jobs:
           MINOR: ${{ steps.meta.outputs.minor }}
           STABLE: ${{ steps.meta.outputs.stable }}
         run: |
-          for image in api api-migrate web; do
+          for image in api api-migrate web renderer; do
             docker push "$PREFIX-$image:$VERSION"
             if [ "$STABLE" = "true" ]; then
               for tag in "$MINOR" latest; do

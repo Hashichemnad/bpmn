@@ -11,10 +11,12 @@ export default tseslint.config(
     ignores: [
       '**/node_modules/**',
       '**/dist/**',
+      '**/dist-render/**',
       '**/coverage/**',
       'apps/api/prisma/migrations/**',
       '**/*.config.{js,mjs,cjs}',
       '**/vite.config.ts',
+      '**/vite.render.config.ts',
       '**/vitest.config.ts',
     ],
   },

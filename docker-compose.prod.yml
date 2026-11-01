@@ -102,9 +102,12 @@ services:
       # Emergency switch: password sign-in for everyone (see Settings → Authentication).
       AUTH_FORCE_LOCAL_LOGIN: ${AUTH_FORCE_LOCAL_LOGIN:-false}
       SSO_HTTP_TIMEOUT_MS: ${SSO_HTTP_TIMEOUT_MS:-15000}
+      # Internal diagram / PDF renderer (D-172); empty RENDERER_URL turns server-side images off.
+      RENDERER_URL: ${RENDERER_URL-http://renderer:3100}
+      RENDERER_TOKEN: ${RENDERER_TOKEN:?Set RENDERER_TOKEN in .env (scripts/generate-secrets.sh)}
     volumes:
       - api-data:/app/data
-    networks: [backend, egress]
+    networks: [backend, egress, render]
     depends_on:
       migrate:
         condition: service_completed_successfully
@@ -137,6 +140,28 @@ services:
         condition: service_healthy
       storage:
         condition: service_healthy
+
+  # Diagram / PDF renderer (headless Chromium, D-172): only on the internal `render` network (no
+  # internet, nothing published), read-only, unprivileged, without capabilities.
+  renderer:
+    build:
+      context: .
+      dockerfile: apps/renderer/Dockerfile
+    image: ${PROCESSHUB_IMAGE_PREFIX:-processhub}-renderer:${PROCESSHUB_VERSION:-latest}
+    restart: unless-stopped
+    environment:
+      RENDERER_TOKEN: ${RENDERER_TOKEN:?Set RENDERER_TOKEN in .env (scripts/generate-secrets.sh)}
+    networks: [render]
+    read_only: true
+    tmpfs:
+      - /tmp:size=256m
+    cap_drop: [ALL]
+    security_opt: ['no-new-privileges:true']
+    shm_size: 256mb
+    deploy:
+      resources:
+        limits: { cpus: '${RENDERER_CPUS:-1.5}', memory: '${RENDERER_MEMORY:-1G}', pids: 512 }
+    logging: *logging
 
   postgres:
     image: ${POSTGRES_IMAGE:-postgres:16-alpine}
@@ -202,8 +227,11 @@ networks:
   # web, API, database and storage. No route to the internet and nothing published.
   backend:
     internal: true
-  # Outbound calls of the API (AI provider, Git, SMTP).
+  # Outbound calls of the API (AI provider, Git, SMTP, webhooks, Teams).
   egress: {}
+  # API ↔ renderer only; no route to the internet.
+  render:
+    internal: true
 
 volumes:
   postgres-data:

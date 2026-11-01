@@ -2426,3 +2426,36 @@ on their Node 24 majors and pnpm through Corepack (replaces `pnpm/action-setup`,
 translation check step. Schedulers never run twice at once (`common/periodic.ts`); issue reminders send the
 overdue notice before the escalation in the same run (an issue first seen past its escalation date — e.g.
 after downtime — used to get the overdue notice one run later).
+
+## D-172 — Server-side diagram rendering in a separate renderer container (Phase 4.4)
+
+**Context:** HTML / PowerPoint exports and scheduled report e-mails must draw BPMN and the other diagram types
+without a user's browser (until now every image was drawn client-side, D-087). bpmn-js / diagram-js need a real
+browser layout engine (text measurement), so Node-only rendering (jsdom) is not an option.
+
+**Decision:** a separate internal container `renderer` (`apps/renderer`, Node 22 + Alpine's Chromium driven by
+`playwright-core`) instead of Chromium inside the API image: the API image stays slim (553 MB, D-169), a
+browser crash or memory spike cannot take the API down, and the browser gets its own limits.
+
+- The page code is the web app's own renderer: `apps/web/render.html` → `src/render/render-core.ts` reuses
+  `createDiagram` / `translateModule` / `applyLanguage` (BPMN) and the diagram kit (value chain, organisation
+  chart, EPC) with the self-hosted Inter / IBM Plex Sans Arabic fonts embedded — exports look exactly like the
+  app, Arabic labels and RTL included. Built by `vite build -c vite.render.config.ts` into `dist-render/` and
+  copied into the image. DMN decision tables and SIPOC are tables, not drawings: exports render them as HTML /
+  slide tables from the stored content.
+- Endpoints `POST /render` (SVG or PNG) and `POST /pdf` (HTML → A4 / A3 PDF; used by scheduled reports), token
+  header `x-renderer-token` (`RENDERER_TOKEN`, constant-time compare), `GET /health`.
+- Isolation: only on the internal Compose network `render` (no internet, nothing published; the API joins it),
+  read-only root file system, `/tmp` tmpfs, all capabilities dropped, `no-new-privileges`, memory / CPU / PID
+  limits. Inside, every browser request is intercepted: files of the bundle are served from disk, everything
+  else is aborted, and Chromium's proxy points to a closed port. Documents printed to PDF get
+  `script-src 'none'`. Chromium runs with `--no-sandbox` (no user namespaces in an unprivileged container);
+  the container boundary above replaces it — noted in SECURITY.md.
+- Limits: 16 MB request body, 45 s per job, 2 jobs at a time, browser recycled after 200 jobs / relaunched after
+  a crash.
+- API side: `RendererService` (`apps/api/src/renderer/`) with `RENDERER_URL` / `RENDERER_TOKEN` /
+  `RENDERER_TIMEOUT_MS`. Images are cached in the file storage under `render-cache/<sha256>` of (cache
+  version, kind, language, format, width, theme for graph notations, source) — i.e. once per published
+  process version, language and format. When the renderer is off or fails, callers get `null`: exports show
+  "Diagram image not available", PDF report e-mails fall back to a link.
+- Release images: `processhub-renderer` is published with the other three.

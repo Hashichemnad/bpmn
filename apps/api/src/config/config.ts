@@ -87,6 +87,16 @@ const envSchema = z.object({
   AUTH_FORCE_LOCAL_LOGIN: bool(false),
   /** Timeout for calls to the single sign-on identity provider, in milliseconds. */
   SSO_HTTP_TIMEOUT_MS: z.coerce.number().int().min(1000).default(15000),
+  /**
+   * Internal diagram / PDF renderer (Phase 4.4, D-172), e.g. http://renderer:3100. Empty = no
+   * server-side diagram images (exports carry a note, PDF reports fall back to a link).
+   */
+  RENDERER_URL: z
+    .string()
+    .default('')
+    .transform((v) => v.replace(/\/+$/, '')),
+  RENDERER_TOKEN: z.string().default(''),
+  RENDERER_TIMEOUT_MS: z.coerce.number().int().min(1000).default(60000),
 });
 
 export type Env = z.infer<typeof envSchema>;

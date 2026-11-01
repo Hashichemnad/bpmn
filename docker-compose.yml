@@ -101,6 +101,10 @@ services:
       MINING_UPLOAD_MAX_MB: ${MINING_UPLOAD_MAX_MB:-200}
       MINING_WORKERS: ${MINING_WORKERS:-true}
       WORKFLOW_POLL_SECONDS: ${WORKFLOW_POLL_SECONDS:-15}
+      # Server-side diagram / PDF renderer (exports, report e-mails; D-172).
+      RENDERER_URL: ${RENDERER_URL-http://renderer:3100}
+      RENDERER_TOKEN: ${RENDERER_TOKEN:-processhub-local-renderer-token}
+    networks: [default, render]
     volumes:
       - api-data:/app/data
     depends_on:
@@ -133,6 +137,26 @@ services:
       mailpit:
         condition: service_started
 
+  # Internal renderer (headless Chromium, D-172): reachable only from the API on the `render`
+  # network, which has no internet access; read-only file system, no capabilities, resource limits.
+  renderer:
+    build:
+      context: .
+      dockerfile: apps/renderer/Dockerfile
+    restart: unless-stopped
+    environment:
+      RENDERER_TOKEN: ${RENDERER_TOKEN:-processhub-local-renderer-token}
+    networks: [render]
+    read_only: true
+    tmpfs:
+      - /tmp:size=256m
+    cap_drop: [ALL]
+    security_opt: ['no-new-privileges:true']
+    shm_size: 256m
+    mem_limit: ${RENDERER_MEMORY:-1g}
+    cpus: ${RENDERER_CPUS:-1.5}
+    pids_limit: 512
+
   web:
     build:
       context: .
@@ -143,6 +167,12 @@ services:
     depends_on:
       api:
         condition: service_healthy
+
+networks:
+  default:
+  # No internet: only the API and the renderer are on it.
+  render:
+    internal: true
 
 volumes:
   postgres-data:

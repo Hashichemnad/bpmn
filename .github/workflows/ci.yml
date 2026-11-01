@@ -71,7 +71,7 @@ jobs:
       - uses: actions/checkout@v5
       - run: docker compose build
       - name: Image sizes
-        run: docker images --format '{{.Repository}}:{{.Tag}}  {{.Size}}' | grep -E 'migrate|api|web' | tee -a "$GITHUB_STEP_SUMMARY"
+        run: docker images --format '{{.Repository}}:{{.Tag}}  {{.Size}}' | grep -E 'migrate|api|web|renderer' | tee -a "$GITHUB_STEP_SUMMARY"
       - name: Production compose file is valid
         run: |
           cp .env.example.prod .env

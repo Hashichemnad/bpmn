@@ -7,6 +7,7 @@ import { PrismaModule } from './prisma/prisma.module';
 import { AuditModule } from './audit/audit.module';
 import { AuthModule } from './auth/auth.module';
 import { StorageModule } from './storage/storage.module';
+import { RendererModule } from './renderer/renderer.module';
 import { UsersModule } from './users/users.module';
 import { RolesModule } from './roles/roles.module';
 import { DepartmentsModule } from './departments/departments.module';
@@ -57,6 +58,7 @@ import { AllExceptionsFilter } from './common/http-exception.filter';
     NotificationsModule,
     AuthModule,
     StorageModule,
+    RendererModule,
     UsersModule,
     RolesModule,
     DepartmentsModule,
