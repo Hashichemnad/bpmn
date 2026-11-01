@@ -44,7 +44,7 @@ with no per-user licensing. Target: 50–500 users on a single server.
 | 4.2 | M10 assurance: approval of GRC changes, control testing, issues and actions, audits, questionnaires, assurance dashboard | ✅ Done (merged into `main`, D-098 – D-106) |
 | 4.3 | M11 EA (application catalogue, interfaces, data objects, capability map, traceability); M12 KPIs, dashboards + Salesforce KPI link | ✅ Done (merged into `main`, D-107 – D-119); the Salesforce KPI sync stays in the code but is not used (KPIs and risks are managed in ProcessHub) |
 | Diagrams | More diagram types (ARIS / GBTEC / Signavio parity, DOF RFP modeling items): shared diagram framework (Diagram entity, versions, governance, portal, links), value chain, organisation chart, DMN decision tables, EPC (+ conversion to BPMN), SIPOC | ✅ Done (merged into `main`, D-120 – D-127) |
-| 4.4 | Integration & export (product owner scope): server-side diagram renderer, public REST API with API keys, webhooks, Power BI / reporting feed, Microsoft Teams channel notifications, static HTML export, PowerPoint export, scheduled report e-mails (D-172 – D-179). Out of scope (BACKLOG): SCIM, XPDL, SharePoint, Salesforce risk / Oracle connectors, external workflow calls, automatic event-log feeds, two-way Git sync | ✅ Done on branch `integrations-exports` (PR #23), awaiting review / merge |
+| 4.4 | Integration & export (product owner scope): server-side diagram renderer, public REST API with API keys, webhooks, Power BI / reporting feed, Microsoft Teams channel notifications, static HTML export, PowerPoint export, scheduled report e-mails (D-172 – D-182). Out of scope (BACKLOG): SCIM, XPDL, SharePoint, Salesforce risk / Oracle connectors, external workflow calls, automatic event-log feeds, two-way Git sync | ✅ Done on branch `integrations-exports` (PR #23), awaiting review / merge |
 | 5.1 | M13 Process mining and simulation: event log import (CSV / Excel / XES, ProcessHub reviews), discovery (process map, variants, filters, statistics, bottlenecks, heuristics miner → BPMN), conformance (token replay, overlay on BPMN, mining KPIs, step attribute suggestions), discrete-event simulation with scenarios | ✅ Done (merged into `main`, D-128 – D-143) |
 | 5.2 | M14 Workflow execution: run approved processes as task flows (forms, assignments, approvals, SLAs, monitoring, live event log) | ✅ Done (merged into `main`, D-144 – D-154) |
 | Design A | Modeler design upgrade — Part A: look and feel (colour theme as BPMN-in-Color, renderer, colour picker, fonts/RTL, apply theme) | ✅ Done (merged into `main`, D-067 – D-073) |
@@ -291,7 +291,7 @@ Final session part A additions (DECISIONS D-165 – D-171):
   `processhub-api-migrate` (compose service `migrate`), `processhub-web` (unprivileged, port 8080) published to GHCR on
   version tags; `scripts/backup-drill.sh`, `scripts/check-i18n.mjs` in CI
 
-Phase 4.4 additions (integrations and exports, DECISIONS D-172 – D-179):
+Phase 4.4 additions (integrations and exports, DECISIONS D-172 – D-182):
 
 - Container `renderer` (`apps/renderer`, headless Chromium, internal network, token) + web renderer page
   `apps/web/render.html` (`vite.render.config.ts`); API `RendererService` (`RENDERER_URL` / `RENDERER_TOKEN`,
@@ -307,6 +307,12 @@ Phase 4.4 additions (integrations and exports, DECISIONS D-172 – D-179):
   `branding.exportTemplate`
 - `ReportSubscription` + `ReportDelivery` + `ReportUnsubscribe`; job kind `REPORT_SEND`; Setting `reports`;
   shared `packages/shared/src/integrations.ts` (scopes, events, schemas, `nextReportRun`)
+- Product owner answers (D-180 – D-182): demo API key random, shown once in the seed output, only with
+  `SEED_DEMO_DATA=true`; Setting `system.demo` (demo marker) + `GET /settings/demo-status`, `POST
+  /settings/demo-status/clear` and the admin warning banner; renderer Chromium sandbox first
+  (`RENDERER_SANDBOX` auto | on | off, seccomp profile `deploy/renderer-seccomp.json`), hardened `--no-sandbox`
+  fallback as an accepted risk; report attachments off, public API read-only, Teams channel messages only
+
 
 ## 10. Definition of Done (every phase)
 

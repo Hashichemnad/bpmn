@@ -550,5 +550,21 @@
     "addValueLink": "Link a value",
     "systemActor": "Salesforce sync (system)",
     "configuredBy": "Configured by"
+  },
+  "demo": {
+    "title": "Demo data is installed",
+    "data": "Demo content (processes, pages, diagrams, risks, KPIs and more)",
+    "users_one": "{{count}} active demo user",
+    "users_other": "{{count}} active demo users",
+    "apiKeys_one": "{{count}} active demo API key",
+    "apiKeys_other": "{{count}} active demo API keys",
+    "hint": "Remove the demo before go-live (go-live checklist in docs/DEPLOYMENT.md).",
+    "openApiKeys": "API keys",
+    "openUsers": "Users",
+    "clear": "Confirm demo removed",
+    "clearBlocked": "Deactivate the demo users and revoke the demo API key first.",
+    "confirmTitle": "Demo content removed?",
+    "confirmText": "Confirm only after the demo content was deleted or the installation was started from an empty database.",
+    "cleared": "Demo warning cleared."
   }
 }

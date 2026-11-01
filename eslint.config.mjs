@@ -12,6 +12,7 @@ export default tseslint.config(
       '**/node_modules/**',
       '**/dist/**',
       '**/dist-render/**',
+      '**/.test-dist/**',
       '**/coverage/**',
       'apps/api/prisma/migrations/**',
       '**/*.config.{js,mjs,cjs}',

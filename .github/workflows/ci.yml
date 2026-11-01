@@ -114,6 +114,14 @@ jobs:
           printf 'INTEGRATIONS_ENCRYPTION_KEY=%s\n' "$(openssl rand -base64 32)" >> .env
       - name: Start the stack
         run: docker compose up -d --build --wait --wait-timeout 300
+      - name: Demo API key and renderer sandbox (D-180)
+        # The seed shows a random demo key once (never the old fixed one); the renderer reports
+        # whether Chromium's own sandbox is on (seccomp profile deploy/renderer-seccomp.json).
+        run: |
+          seed_log="$(docker compose logs --no-color migrate)"
+          grep -q 'Demo API key (shown only once)' <<< "$seed_log"
+          if grep -q 'phk_DemoKey' <<< "$seed_log"; then echo 'Fixed demo key found'; exit 1; fi
+          docker compose exec -T renderer wget -qO- http://127.0.0.1:3100/health | tee -a "$GITHUB_STEP_SUMMARY"
       - run: pnpm install --frozen-lockfile --filter @processhub/e2e
       - name: Cache Playwright browsers
         uses: actions/cache@v5

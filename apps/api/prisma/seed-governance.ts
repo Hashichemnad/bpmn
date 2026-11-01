@@ -17,7 +17,7 @@ import { hashPassword } from '../src/auth/argon';
 import { createPublication, type StepSnapshot } from '../src/governance/publication';
 import { linearXml } from './demo-diagrams';
 
-const DEMO_USERS: {
+export const DEMO_USERS: {
   key:
     | 'viewer'
     | 'reviewer'

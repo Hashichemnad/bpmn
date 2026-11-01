@@ -7,6 +7,7 @@
  * - The page code is the web app's own renderer bundle (`apps/web/render.html`, built into
  *   BUNDLE_DIR) served from disk through request interception; every other request is aborted and
  *   Chromium's proxy points to a closed port, so nothing can leave the container.
+ * - Chromium's own sandbox is used when the host allows it (RENDERER_SANDBOX, src/sandbox.ts).
  * - Limits: request body, source size, per-job timeout, concurrency; the browser is recycled after a
  *   number of jobs and relaunched after a crash.
  */
@@ -16,6 +17,7 @@ import { existsSync } from 'node:fs';
 import { extname, join, normalize, sep } from 'node:path';
 import { timingSafeEqual } from 'node:crypto';
 import { chromium, type Browser, type BrowserContext, type Route } from 'playwright-core';
+import { launchWithSandbox, parseSandboxMode } from './sandbox.js';
 
 const env = process.env;
 const PORT = Number(env.PORT ?? 3100);
@@ -29,6 +31,7 @@ const MAX_BODY_BYTES = Number(env.RENDERER_MAX_BODY_MB ?? 16) * 1024 * 1024;
 const JOB_TIMEOUT_MS = Number(env.RENDERER_JOB_TIMEOUT_MS ?? 45000);
 const CONCURRENCY = Math.max(1, Number(env.RENDERER_CONCURRENCY ?? 2));
 const RECYCLE_AFTER = Math.max(1, Number(env.RENDERER_RECYCLE_AFTER ?? 200));
+const SANDBOX_MODE = parseSandboxMode(env.RENDERER_SANDBOX);
 /** Fake origin the bundle is served from (never resolved: requests are intercepted). */
 const ORIGIN = 'http://renderer.local';
 
@@ -50,7 +53,21 @@ const TYPES: Record<string, string> = {
 
 // ---------- browser ----------
 
+const CHROMIUM_ARGS = [
+  '--disable-dev-shm-usage',
+  '--disable-gpu',
+  '--disable-extensions',
+  '--disable-background-networking',
+  '--no-first-run',
+  '--font-render-hinting=none',
+  // Defence in depth: anything not intercepted goes to a closed port.
+  '--proxy-server=http://127.0.0.1:9',
+  '--proxy-bypass-list=<-loopback>',
+];
+
 let browser: Browser | null = null;
+/** Whether the running browser has Chromium's sandbox (null until the first launch). */
+let sandboxActive: boolean | null = null;
 let launching: Promise<Browser> | null = null;
 let jobsOnBrowser = 0;
 let active = 0;
@@ -64,23 +81,17 @@ async function getBrowser(): Promise<Browser> {
     browser = null;
     // Recycled only when idle; running jobs keep their own reference.
     if (old) void old.close().catch(() => undefined);
-    const b = await chromium.launch({
-      executablePath: CHROMIUM_PATH,
-      args: [
-        // Containers without user namespaces cannot use Chromium's sandbox; the container itself is
-        // unprivileged, read-only, without capabilities and without network (DEPLOYMENT.md).
-        '--no-sandbox',
-        '--disable-dev-shm-usage',
-        '--disable-gpu',
-        '--disable-extensions',
-        '--disable-background-networking',
-        '--no-first-run',
-        '--font-render-hinting=none',
-        // Defence in depth: anything not intercepted goes to a closed port.
-        '--proxy-server=http://127.0.0.1:9',
-        '--proxy-bypass-list=<-loopback>',
-      ],
-    });
+    // Chromium's own sandbox first (needs user namespaces: deploy/renderer-seccomp.json in Docker);
+    // `auto` falls back to --no-sandbox inside the hardened container (D-180, SECURITY.md).
+    const launched = await launchWithSandbox(SANDBOX_MODE, (sandbox) =>
+      chromium.launch({
+        executablePath: CHROMIUM_PATH,
+        chromiumSandbox: sandbox,
+        args: CHROMIUM_ARGS,
+      }),
+    );
+    const b = launched.value;
+    sandboxActive = launched.sandbox;
     b.on('disconnected', () => {
       if (browser === b) browser = null;
     });
@@ -295,7 +306,12 @@ const server = createServer((req, res) => {
   void (async () => {
     try {
       if (req.method === 'GET' && req.url === '/health') {
-        return send(res, 200, '{"status":"ok"}', 'application/json');
+        return send(
+          res,
+          200,
+          JSON.stringify({ status: 'ok', sandbox: sandboxActive, sandboxMode: SANDBOX_MODE }),
+          'application/json',
+        );
       }
       if (req.method !== 'POST' || (req.url !== '/render' && req.url !== '/pdf')) {
         return send(res, 404, '{"error":"not found"}', 'application/json');
@@ -333,7 +349,14 @@ const server = createServer((req, res) => {
   })();
 });
 server.requestTimeout = JOB_TIMEOUT_MS + 15000;
-server.listen(PORT, () => console.warn(`ProcessHub renderer listening on ${PORT}`));
+server.listen(PORT, () => {
+  console.warn(`ProcessHub renderer listening on ${PORT} (sandbox mode ${SANDBOX_MODE})`);
+  // Warm-up: starts Chromium now, so /health reports the sandbox state and the first job is fast.
+  getBrowser().then(
+    () => console.warn(`Chromium started, sandbox ${sandboxActive ? 'on' : 'OFF'}`),
+    (err: Error) => console.error(`Chromium could not start: ${err.message.split('\n')[0]}`),
+  );
+});
 
 const shutdown = () => {
   server.close();

@@ -67,6 +67,7 @@ import { usePublicSettings } from '@/api/hooks';
 import { useLocalized } from '@/components/i18n-helpers';
 import { BrandMark } from './BrandMark';
 import { DiagramThemeNotice } from '@/features/settings/DiagramThemeNotice';
+import { DemoInstallationBanner } from '@/features/settings/DemoInstallationBanner';
 import { GlobalSearch } from '@/features/search/GlobalSearch';
 import { NotificationBell } from '@/features/notifications/NotificationBell';
 import { assuranceTaskCount, useAssuranceTasks } from '@/api/assurance';
@@ -650,6 +651,7 @@ export function AppLayout() {
           </Flex>
         </Header>
         <Content className="ph-content" id="ph-main" tabIndex={-1}>
+          <DemoInstallationBanner />
           <DiagramThemeNotice />
           <SuspenseOutlet />
         </Content>

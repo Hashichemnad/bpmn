@@ -3,7 +3,15 @@ import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import JSZip from 'jszip';
 import { expect, test, type Page } from '@playwright/test';
-import { DEMO, apiCall, createSampleProcess, login, loginAdmin, sample } from './helpers';
+import {
+  DEMO,
+  apiCall,
+  createSampleProcess,
+  login,
+  loginAdmin,
+  sample,
+  setLocale,
+} from './helpers';
 
 /** Test receiver (docker-compose.yml service webhook-receiver): read here, called by the API there. */
 const RECEIVER = process.env.E2E_RECEIVER_URL ?? 'http://localhost:8090';
@@ -299,4 +307,24 @@ test('a scheduled KPI report is set up, sent and logged', async ({ page, request
   await row.getByRole('button', { name: 'Delete' }).click();
   await page.getByRole('tooltip').getByRole('button', { name: 'OK' }).click();
   await expect(row).toBeHidden();
+});
+
+test('administrators see the demo installation warning; viewers do not (D-180)', async ({
+  page,
+}) => {
+  await loginAdmin(page);
+  await page.goto('/processes');
+  const banner = page.getByTestId('demo-banner');
+  await expect(banner).toContainText('Demo data is installed');
+  await expect(banner).toContainText(/active demo users/);
+  // Confirming is blocked while demo users / the demo key are active.
+  await expect(banner.getByRole('button', { name: 'Confirm demo removed' })).toBeDisabled();
+  // Arabic, right to left.
+  await setLocale(page, 'ar');
+  await page.reload();
+  await expect(page.getByTestId('demo-banner')).toContainText('البيانات التجريبية مثبتة');
+  await setLocale(page, 'en');
+  await login(page, DEMO.viewer);
+  await page.goto('/');
+  await expect(page.getByText('Demo data is installed')).toHaveCount(0);
 });

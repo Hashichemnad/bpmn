@@ -2649,3 +2649,50 @@ pptxgenjs). File names are ASCII (process / diagram code). Audited.
 - **Failures:** `FAILED` delivery with the error; the subscription owner gets an `INTEGRATION` notification
   (`reportFailed`, once per hour and subscription). No SMTP configured → `SKIPPED` (`SMTP_NOT_CONFIGURED`).
 - Audit: create / update / delete of subscriptions, unsubscribe, file downloads (`EXPORT`).
+
+## D-180 — No fixed demo API key: random key shown once, demo warning banner (product owner, Phase 4.4)
+
+**Decision (product owner):** published secrets get forgotten on real servers, so there is no fixed demo key.
+
+- The seed generates a **random** demo API key (same generator as real keys, only its SHA-256 is stored),
+  prints it **once** in the seed output (`docker compose logs migrate`, block "Demo API key (shown only
+  once)") and never writes it anywhere else; README points there. The demo webhook secret is random too.
+- **Never without `SEED_DEMO_DATA=true`:** `seedIntegrationsDemo` checks the flag itself (not only the caller),
+  so `NODE_ENV=production` without it can never create a demo key (tested for production with the flag unset,
+  `false` and empty).
+- **Demo marker** Setting `system.demo` (seeded at, demo user ids, demo API key ids). `GET
+/settings/demo-status` (`users.manage` or `settings.manage`) drives a **warning banner** for Admins and Super
+  Admins while demo content is not confirmed removed, a demo user is active or a demo key is active (not
+  revoked / expired). `POST /settings/demo-status/clear` (Super Admin) confirms the removal — refused
+  (`DEMO_STILL_ACTIVE`) while demo users or keys are active — and is audited. Re-running the seed keeps the
+  confirmation unless it creates new demo users or keys.
+- Go-live checklist (DEPLOYMENT, SECURITY): start production from an empty database without demo data; where
+  demo data was loaded, revoke the demo key, deactivate the demo users, remove the demo content and confirm in
+  the banner.
+
+## D-181 — Renderer: Chromium's own sandbox first, `--no-sandbox` only as a hardened fallback (product owner)
+
+**Decision (product owner):** try the Chromium sandbox first; keep `--no-sandbox` only where it is not reliable,
+with the container fully hardened, and record it as an accepted risk for Final Part B.
+
+- `deploy/renderer-seccomp.json` = Docker's default seccomp profile plus the namespace calls the sandbox needs
+  (`clone`, `unshare`, `setns`, `chroot`) **without any capability**; both compose files use it. With it,
+  Chromium's user-namespace sandbox runs as the non-root `node` user with `cap_drop: ALL`,
+  `no-new-privileges`, a read-only root (verified: diagram PNG and PDF rendered with `RENDERER_SANDBOX=on`).
+- `RENDERER_SANDBOX`: `auto` (default — sandbox first; when Chromium cannot start with it, e.g. a host whose
+  AppArmor blocks unprivileged user namespaces or a runtime without the profile, fall back to `--no-sandbox`
+  with a warning), `on` (sandbox required, no fallback — recommended once the host is confirmed), `off`.
+  `/health` reports `sandbox` and `sandboxMode`; CI records it in the job summary.
+- Hardening in every mode: non-root user, read-only root with tmpfs `/tmp`, `cap_drop: ALL`,
+  `no-new-privileges`, memory / CPU / process limits, internal network without outbound access, every request
+  inside the page answered from the bundle or aborted (request interception, proxy to a closed port), shared
+  token, per-render timeout and size limits. Running without the sandbox is an **accepted risk** in
+  docs/SECURITY.md for the Final Part B review.
+
+## D-182 — Product owner answers on the Phase 4.4 defaults
+
+- **Report e-mails:** attachments stay **off** by default — secure links that need sign-in; a Super Admin may
+  allow attachments (D-179 unchanged).
+- **Public API:** read-only. Write scopes only when a partner system needs them (BACKLOG).
+- **Teams:** channel messages through Teams Workflows only; personal messages stay in the BACKLOG.
+- Demo API key → D-180; renderer sandbox → D-181.

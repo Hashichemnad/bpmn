@@ -549,6 +549,8 @@ export const SETTING_KEYS = {
   WORKFLOW: 'workflow',
   /** Phase 4.4: public API (longest key lifetime, call log retention). */
   INTEGRATIONS_API: 'integrations.api',
+  /** Demo installation marker (D-180): seeded demo data, users and API keys. */
+  DEMO_INSTALLATION: 'system.demo',
   /** Phase 4.4: webhook / Teams host allow-lists, delivery log retention. */
   INTEGRATIONS_WEBHOOKS: 'integrations.webhooks',
   /** Phase 4.4: colours of PowerPoint / offline HTML exports. */
