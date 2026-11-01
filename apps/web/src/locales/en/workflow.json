@@ -463,7 +463,9 @@
       "MON_FRI": "Monday – Friday",
       "SUN_THU": "Sunday – Thursday"
     },
-    "workingHours": "working hours"
+    "workingHours": "working hours",
+    "maxFilesPerCase": "Files per case",
+    "maxFilesPerCaseHint": "Most files one case may hold (uploads by participants, 1–1,000). Default 100."
   },
   "start": {
     "hint": "After you submit, the request gets a number ({{prefix}}-…) and appears under “My requests”.",

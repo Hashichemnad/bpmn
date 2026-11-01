@@ -15,6 +15,7 @@ interface Values {
   escalation: WorkflowSettings['escalation'];
   escalationDelayHours: number;
   escalationRepeatHours: number;
+  maxFilesPerCase: number;
 }
 
 /**
@@ -40,6 +41,7 @@ export function WorkflowSettingsPage() {
         escalation: s.escalation,
         escalationDelayHours: Math.round((s.escalationDelayMinutes / 60) * 100) / 100,
         escalationRepeatHours: s.escalationRepeatHours,
+        maxFilesPerCase: s.maxFilesPerCase,
       });
   }, [settings.data, form]);
   const submit = async () => {
@@ -56,6 +58,7 @@ export function WorkflowSettingsPage() {
         escalation: v.escalation,
         escalationDelayMinutes: Math.round((v.escalationDelayHours ?? 0) * 60),
         escalationRepeatHours: v.escalationRepeatHours,
+        maxFilesPerCase: v.maxFilesPerCase,
       });
       message.success(t('workflow:settings.saved'));
     } catch (e) {
@@ -135,6 +138,14 @@ export function WorkflowSettingsPage() {
             extra={t('workflow:settings.repeatHint')}
           >
             <InputNumber min={0} max={720} addonAfter={t('workflow:settings.workingHours')} />
+          </Form.Item>
+          <Form.Item
+            name="maxFilesPerCase"
+            label={t('workflow:settings.maxFilesPerCase')}
+            extra={t('workflow:settings.maxFilesPerCaseHint')}
+            rules={[{ required: true }]}
+          >
+            <InputNumber min={1} max={1000} />
           </Form.Item>
           <Space>
             <Button type="primary" onClick={() => void submit()} loading={save.isPending}>

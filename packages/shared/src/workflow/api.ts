@@ -86,6 +86,8 @@ export const workflowSettingsSchema = z.object({
   escalationDelayMinutes: z.number().int().min(0).max(10_080).default(0),
   /** Repeat the escalation every N working hours while overdue (0 = once). */
   escalationRepeatHours: z.number().int().min(0).max(720).default(0),
+  /** Files one case may hold (uploads by participants; final session part B, D-191). */
+  maxFilesPerCase: z.number().int().min(1).max(1000).default(100),
 });
 export type WorkflowSettings = z.infer<typeof workflowSettingsSchema>;
 export const DEFAULT_WORKFLOW_SETTINGS: WorkflowSettings = workflowSettingsSchema.parse({});

@@ -1,4 +1,5 @@
 import { randomUUID } from 'node:crypto';
+import { WorkflowSettingsService } from './workflow-settings.service';
 import { Injectable } from '@nestjs/common';
 import type { Prisma } from '@prisma/client';
 import {
@@ -90,6 +91,7 @@ export class WorkflowCasesService {
     private readonly notifications: NotificationsService,
     private readonly config: WorkflowConfigService,
     private readonly runner: WorkflowRunnerService,
+    private readonly settings: WorkflowSettingsService,
   ) {}
 
   // ---------- Users ----------
@@ -819,8 +821,9 @@ export class WorkflowCasesService {
         });
         if (!t) throw notFound('Task');
       }
-      // At most 100 files per case (SEC-48): a participant cannot fill the storage without end.
-      if ((await this.prisma.workflowFile.count({ where: { caseId } })) >= 100)
+      // Files per case are limited (SEC-48; Settings → Workflow execution, default 100, D-191).
+      const { maxFilesPerCase } = await this.settings.get();
+      if ((await this.prisma.workflowFile.count({ where: { caseId } })) >= maxFilesPerCase)
         throw badRequest('TOO_MANY_FILES');
     } else {
       // Draft upload for a start form: at most 20 unattached files per user.
