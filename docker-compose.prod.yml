@@ -87,6 +87,7 @@ services:
       # Caddy and nginx are in front of the API.
       TRUST_PROXY: ${TRUST_PROXY:-2}
       ENABLE_SWAGGER: ${ENABLE_SWAGGER:-false}
+      ENABLE_PUBLIC_API_DOCS: ${ENABLE_PUBLIC_API_DOCS:-false}
       MINIO_ENDPOINT: storage
       MINIO_PORT: 7070
       MINIO_USE_SSL: 'false'

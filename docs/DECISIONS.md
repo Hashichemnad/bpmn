@@ -2459,3 +2459,40 @@ browser crash or memory spike cannot take the API down, and the browser gets its
   process version, language and format. When the renderer is off or fails, callers get `null`: exports show
   "Diagram image not available", PDF report e-mails fall back to a link.
 - Release images: `processhub-renderer` is published with the other three.
+
+## D-173 — Public REST API with API keys (Phase 4.4)
+
+**Decision:** a separate, versioned, read-only API under `/api/public/v1` (outside the internal `/api/v1`
+prefix, which keeps changing with the UI) authenticated only by API keys.
+
+- **Keys:** `phk_<12-character id>_<43-character secret>` (256 random bits). Only the SHA-256 hash and the id
+  are stored; the full key is shown once on create / rotate. Rotate issues a new id and secret (the old key stops
+  at once); revoke is permanent (no delete, so the audit trail and call log stay). Every key has a responsible
+  **owner** (active user — a deactivated owner disables the key), an **expiry** (default 1 year, at most
+  `integrations.api.maxKeyDays`, default 730), optional **IP / CIDR allow-list**, a **per-key rate limit**
+  (default 120 / minute, fixed one-minute windows in memory — single API instance; the IP-based global limit
+  still applies), **scopes** and a **content filter** (published content only — default — or workspace
+  drafts) plus an optional **department filter** (items without a department are then left out).
+- **Scopes (read-only):** `processes:read`, `pages:read`, `diagrams:read`, `objects:read`, `grc:read`, `ea:read`,
+  `kpis:read`, `workflow:read` (aggregated statistics), `workflow:cases:read` (case list with requester names —
+  personal data, separate on purpose), `reporting:read` (step 3). No write scopes: none was listed by the product
+  owner; they can be added later per endpoint.
+- **Guards:** routes declare `@RequireApiScope(scope)`. `JwtAuthGuard` ignores those routes (a browser session
+  never authenticates the public API — no CSRF surface), the global `ApiKeyGuard` checks the key, address,
+  owner, rate limit and scope, `PermissionsGuard` keeps deny-by-default. `route-security.e2e-spec.ts` lists every
+  public route with its scope and fails when one is added, changed or not read-only.
+- **Content rules:** published mode reads the current publication (title / description snapshot, BPMN of the
+  published version, page / diagram version); GRC and KPIs only `ACTIVE`, dictionary terms only `APPROVED`;
+  wiki pages of view-restricted spaces are never returned (spaces have per-user grants that keys cannot
+  express). Library objects of the GRC / KPI types are only reachable through their scoped endpoints.
+- **HTTP:** pages (`page`, `pageSize` ≤ 200), `updatedSince` for incremental sync, `q`; weak ETag + Last-Modified
+  with 304 on `If-None-Match` / `If-Modified-Since`; JSON body limit 16 KB; SVG through the renderer (D-172,
+  503 `RENDERER_UNAVAILABLE` when off).
+- **Logging:** every call of a known key (also refused: revoked, expired, wrong address, rate limit, missing
+  scope) with method, route template (never ids or query strings), status, duration, address — batched writes,
+  kept `usageRetentionDays` (default 90); last-used time / address on the key; audit `CREATE`, `UPDATE`,
+  `ROTATE`, `REVOKE` (never the secret).
+- **Permissions:** managing keys needs `settings.manage` (Super Admin); new permission `integrations.read`
+  (Admin, Super Admin) shows keys, webhooks and their logs.
+- **Docs:** OpenAPI document of the public module only at `/api/public/docs` (`-json`), switched by
+  `ENABLE_PUBLIC_API_DOCS` independently of `ENABLE_SWAGGER` (default on outside production).

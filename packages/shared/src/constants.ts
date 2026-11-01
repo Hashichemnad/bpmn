@@ -105,6 +105,8 @@ export const PERMISSIONS = {
   IMPORT_OWN: 'import.own',
   /** Full export package of the whole repository (Super Admin). */
   EXPORT_FULL: 'export.full',
+  /** Phase 4.4: see API keys, webhooks, Teams destinations and their logs (managing them needs settings.manage). */
+  INTEGRATIONS_READ: 'integrations.read',
 } as const;
 export type Permission = (typeof PERMISSIONS)[keyof typeof PERMISSIONS];
 export const ALL_PERMISSIONS: Permission[] = Object.values(PERMISSIONS);
@@ -449,6 +451,9 @@ export const AUDIT_ACTIONS = [
   'REASSIGN',
   'CANCEL',
   'RETRY',
+  /** Phase 4.4: API key / webhook secret replaced, key revoked. */
+  'ROTATE',
+  'REVOKE',
 ] as const;
 export type AuditAction = (typeof AUDIT_ACTIONS)[number];
 
@@ -505,6 +510,9 @@ export const AUDIT_ENTITY_TYPES = [
   'WorkflowFile',
   'ImportBatch',
   'RepositoryExport',
+  'ApiKey',
+  'Webhook',
+  'ReportSubscription',
 ] as const;
 export type AuditEntityType = (typeof AUDIT_ENTITY_TYPES)[number];
 
@@ -539,6 +547,8 @@ export const SETTING_KEYS = {
   MINING_HOLIDAYS: 'mining.holidays',
   /** Workflow execution (Phase 5.2): working week, reminders, escalation. */
   WORKFLOW: 'workflow',
+  /** Phase 4.4: public API (longest key lifetime, call log retention). */
+  INTEGRATIONS_API: 'integrations.api',
 } as const;
 
 /** Logo upload limits. */

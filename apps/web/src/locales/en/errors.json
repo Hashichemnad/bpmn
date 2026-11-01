@@ -306,5 +306,9 @@
   "NOT_A_PACKAGE": "{{file}} is not a ProcessHub export package.",
   "PACKAGE_VERSION": "The package was made by a newer ProcessHub (format {{version}}).",
   "PACKAGE_CHECKSUM": "The package is damaged or was changed ({{path}}).",
-  "AI_IMPORTS_DISABLED": "AI on imported documents is turned off (Import settings)."
+  "AI_IMPORTS_DISABLED": "AI on imported documents is turned off (Import settings).",
+  "API_KEY_EXPIRY_TOO_LONG": "The expiry date is beyond the longest allowed key lifetime.",
+  "API_KEY_EXPIRY_PAST": "The expiry date must be in the future.",
+  "API_KEY_REVOKED": "This API key was revoked and cannot be changed.",
+  "INVALID_IP": "Enter IP addresses or CIDR ranges, e.g. 10.20.0.0/16."
 }

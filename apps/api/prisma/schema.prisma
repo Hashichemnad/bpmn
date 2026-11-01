@@ -364,38 +364,38 @@ model Department {
 }
 
 model Process {
-  id            String          @id @default(uuid()) @db.Uuid
+  id            String                   @id @default(uuid()) @db.Uuid
   code          String
-  nameEn        String          @default("")
-  nameAr        String          @default("")
-  descriptionEn String          @default("")
-  descriptionAr String          @default("")
+  nameEn        String                   @default("")
+  nameAr        String                   @default("")
+  descriptionEn String                   @default("")
+  descriptionAr String                   @default("")
   category      ProcessCategory
-  status        ProcessStatus   @default(DRAFT)
-  parentId      String?         @db.Uuid
-  parent        Process?        @relation("ProcessTree", fields: [parentId], references: [id], onDelete: Restrict)
-  children      Process[]       @relation("ProcessTree")
-  ownerId       String?         @db.Uuid
-  owner         User?           @relation("ProcessOwner", fields: [ownerId], references: [id], onDelete: SetNull)
-  departmentId  String?         @db.Uuid
-  department    Department?     @relation(fields: [departmentId], references: [id], onDelete: SetNull)
-  level         Int             @default(1)
-  sortOrder     Int             @default(0)
+  status        ProcessStatus            @default(DRAFT)
+  parentId      String?                  @db.Uuid
+  parent        Process?                 @relation("ProcessTree", fields: [parentId], references: [id], onDelete: Restrict)
+  children      Process[]                @relation("ProcessTree")
+  ownerId       String?                  @db.Uuid
+  owner         User?                    @relation("ProcessOwner", fields: [ownerId], references: [id], onDelete: SetNull)
+  departmentId  String?                  @db.Uuid
+  department    Department?              @relation(fields: [departmentId], references: [id], onDelete: SetNull)
+  level         Int                      @default(1)
+  sortOrder     Int                      @default(0)
   /// Approval workflow for this process only (null = category / global default).
-  workflowId    String?         @db.Uuid
-  workflow      Workflow?       @relation(fields: [workflowId], references: [id], onDelete: SetNull)
+  workflowId    String?                  @db.Uuid
+  workflow      Workflow?                @relation(fields: [workflowId], references: [id], onDelete: SetNull)
   /// Next periodic review of the published content.
   nextReviewAt  DateTime?
   /// The working model was produced by the AI assistant and not yet edited or approved by a person.
-  aiGenerated   Boolean         @default(false)
+  aiGenerated   Boolean                  @default(false)
   /// Created by an Import Center batch (the "Imported" flag, D-156).
-  importBatchId String?         @db.Uuid
+  importBatchId String?                  @db.Uuid
   /// Generated column (names + descriptions, English and Arabic stemming) for workspace search.
   searchVector  Unsupported("tsvector")?
-  createdAt     DateTime        @default(now())
-  updatedAt     DateTime        @updatedAt
-  createdById   String?         @db.Uuid
-  updatedById   String?         @db.Uuid
+  createdAt     DateTime                 @default(now())
+  updatedAt     DateTime                 @updatedAt
+  createdById   String?                  @db.Uuid
+  updatedById   String?                  @db.Uuid
   deletedAt     DateTime?
 
   model          ProcessModel?
@@ -2654,4 +2654,59 @@ model AiProposal {
   @@index([status, kind])
   @@index([sourceType, sourceId])
   @@index([batchId])
+}
+
+// ---------- Phase 4.4: integrations and exports (D-172 – ) ----------
+
+enum ApiKeyContent {
+  PUBLISHED
+  WORKSPACE
+}
+
+/// Key of the public REST API (/api/public/v1). Only a SHA-256 hash of the secret is stored (D-173).
+model ApiKey {
+  id                 String        @id @default(uuid()) @db.Uuid
+  name               String
+  description        String        @default("")
+  /// The 12-character id inside the key (`phk_<prefix>_<secret>`), used to find the row.
+  prefix             String        @unique
+  /// SHA-256 (hex) of the whole key.
+  secretHash         String
+  ownerId            String        @db.Uuid
+  scopes             String[]
+  content            ApiKeyContent @default(PUBLISHED)
+  departmentIds      String[]      @db.Uuid
+  ipAllowList        String[]
+  rateLimitPerMinute Int           @default(120)
+  expiresAt          DateTime
+  revokedAt          DateTime?
+  revokedById        String?       @db.Uuid
+  rotatedAt          DateTime?
+  lastUsedAt         DateTime?
+  lastUsedIp         String?
+  createdAt          DateTime      @default(now())
+  updatedAt          DateTime      @updatedAt
+  createdById        String?       @db.Uuid
+  updatedById        String?       @db.Uuid
+
+  usage ApiKeyUsage[]
+
+  @@index([ownerId])
+}
+
+/// One call of the public API (also refused ones of a known key). Kept for `integrations.api.usageRetentionDays`.
+model ApiKeyUsage {
+  id         String   @id @default(uuid()) @db.Uuid
+  keyId      String   @db.Uuid
+  key        ApiKey   @relation(fields: [keyId], references: [id], onDelete: Cascade)
+  method     String
+  /// Route template, e.g. /processes/:id/bpmn (no query string, no ids).
+  path       String
+  status     Int
+  durationMs Int
+  ip         String?
+  createdAt  DateTime @default(now())
+
+  @@index([keyId, createdAt])
+  @@index([createdAt])
 }

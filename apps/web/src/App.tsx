@@ -41,6 +41,10 @@ const ReviewQueuePage = lazyPage(
   'ReviewQueuePage',
 );
 const SettingsPage = lazyPage(() => import('@/features/settings/SettingsPage'), 'SettingsPage');
+const IntegrationsPage = lazyPage(
+  () => import('@/features/integrations/IntegrationsPage'),
+  'IntegrationsPage',
+);
 const RepositoryLayout = lazyPage(
   () => import('@/features/processes/RepositoryLayout'),
   'RepositoryLayout',
@@ -935,6 +939,14 @@ export const routes: RouteObject[] = [
                     element: (
                       <RequirePermission all={[P.SETTINGS_MANAGE]}>
                         <SettingsPage />
+                      </RequirePermission>
+                    ),
+                  },
+                  {
+                    path: 'settings/integrations',
+                    element: (
+                      <RequirePermission any={[P.SETTINGS_MANAGE, P.INTEGRATIONS_READ]}>
+                        <IntegrationsPage />
                       </RequirePermission>
                     ),
                   },

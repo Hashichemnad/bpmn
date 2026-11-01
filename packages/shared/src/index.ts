@@ -29,3 +29,4 @@ export * from './sipoc';
 export * from './mining';
 export * from './workflow';
 export * from './imports';
+export * from './integrations';

@@ -120,7 +120,9 @@
       "REASSIGN": "Reassign",
       "CANCEL": "Cancel",
       "RETRY": "Retry",
-      "UNDO": "Import undone"
+      "UNDO": "Import undone",
+      "ROTATE": "Secret replaced",
+      "REVOKE": "Revoked"
     },
     "entities": {
       "User": "User",
@@ -174,7 +176,10 @@
       "WorkflowTask": "Workflow task",
       "WorkflowFile": "Request file",
       "ImportBatch": "Import batch",
-      "RepositoryExport": "Repository export"
+      "RepositoryExport": "Repository export",
+      "ApiKey": "API key",
+      "Webhook": "Webhook / Teams destination",
+      "ReportSubscription": "Report subscription"
     }
   },
   "settings": {

@@ -120,7 +120,9 @@
       "REASSIGN": "إعادة إسناد",
       "CANCEL": "إلغاء",
       "RETRY": "إعادة المحاولة",
-      "UNDO": "تراجع عن استيراد"
+      "UNDO": "تراجع عن استيراد",
+      "ROTATE": "استبدال السر",
+      "REVOKE": "إلغاء"
     },
     "entities": {
       "User": "مستخدم",
@@ -174,7 +176,10 @@
       "WorkflowTask": "مهمة سير عمل",
       "WorkflowFile": "ملف طلب",
       "ImportBatch": "دفعة استيراد",
-      "RepositoryExport": "تصدير المستودع"
+      "RepositoryExport": "تصدير المستودع",
+      "ApiKey": "مفتاح الواجهة البرمجية",
+      "Webhook": "خطاف ويب / وجهة Teams",
+      "ReportSubscription": "اشتراك تقرير"
     }
   },
   "settings": {

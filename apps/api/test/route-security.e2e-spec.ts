@@ -53,6 +53,45 @@ describe('Route security declarations', () => {
     ]);
   });
 
+  it('every public API route (/api/public/v1) is read-only and needs the listed API key scope', () => {
+    const publicApi = routes
+      .filter((r) => r.path.startsWith('/api/public/'))
+      .map((r) => `${r.method} ${r.path.replace('/api/public/v1', '')} ${r.access}`)
+      .sort();
+    // Changing this list is a security decision: update docs/integrations/API.md as well.
+    expect(publicApi).toEqual(
+      [
+        'GET /applications apikey:ea:read',
+        'GET /capabilities apikey:ea:read',
+        'GET /controls apikey:grc:read',
+        'GET /diagrams apikey:diagrams:read',
+        'GET /diagrams/:id apikey:diagrams:read',
+        'GET /diagrams/:id/svg apikey:diagrams:read',
+        'GET /kpis apikey:kpis:read',
+        'GET /kpis/:id/measurements apikey:kpis:read',
+        'GET /me apikey:any',
+        'GET /objects apikey:objects:read',
+        'GET /pages apikey:pages:read',
+        'GET /pages/:id apikey:pages:read',
+        'GET /process-house apikey:processes:read',
+        'GET /processes apikey:processes:read',
+        'GET /processes/:id apikey:processes:read',
+        'GET /processes/:id/bpmn apikey:processes:read',
+        'GET /processes/:id/svg apikey:processes:read',
+        'GET /processes/:id/versions apikey:processes:read',
+        'GET /requirements apikey:grc:read',
+        'GET /risks apikey:grc:read',
+        'GET /spaces apikey:pages:read',
+        'GET /workflow/cases apikey:workflow:cases:read',
+        'GET /workflow/statistics apikey:workflow:read',
+      ].sort(),
+    );
+    // API key routes exist only under the public prefix, and nothing else lives there.
+    expect(
+      routes.filter((r) => r.access.startsWith('apikey:') !== r.path.startsWith('/api/public/')),
+    ).toEqual([]);
+  });
+
   it('every body, query and path parameter passes through a validation pipe', () => {
     const unvalidated = routes.flatMap((r) =>
       r.inputs.filter((i) => !i.validated).map((i) => `${r.method} ${r.path} ${i.kind}`),

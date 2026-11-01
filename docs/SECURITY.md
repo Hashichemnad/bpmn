@@ -223,7 +223,7 @@ zod / UUID pipe; file uploads are checked in the service (allow-list, content sn
 
 <!-- route-table:start -->
 
-| Method | Path (under `/api/v1`)                            | Access (server guard)                                          | Validated input                      | Rate limit |
+| Method | Path (under `/api/v1` unless shown)               | Access (server guard)                                          | Validated input                      | Rate limit |
 | ------ | ------------------------------------------------- | -------------------------------------------------------------- | ------------------------------------ | ---------- |
 | POST   | `/ai/analyse`                                     | authenticated                                                  | body                                 | default    |
 | POST   | `/ai/control-gaps`                                | authenticated                                                  | body                                 | default    |
@@ -239,6 +239,29 @@ zod / UUID pipe; file uploads are checked in the service (allow-list, content sn
 | POST   | `/ai/summarise`                                   | authenticated                                                  | body                                 | default    |
 | POST   | `/ai/translate`                                   | authenticated                                                  | body                                 | default    |
 | GET    | `/ai/usage`                                       | `ai.usage.read`                                                | query                                | default    |
+| GET    | `/api/public/v1/applications`                     | API key, scope `ea:read`                                       | query                                | default    |
+| GET    | `/api/public/v1/capabilities`                     | API key, scope `ea:read`                                       | query                                | default    |
+| GET    | `/api/public/v1/controls`                         | API key, scope `grc:read`                                      | query                                | default    |
+| GET    | `/api/public/v1/diagrams`                         | API key, scope `diagrams:read`                                 | query                                | default    |
+| GET    | `/api/public/v1/diagrams/:id`                     | API key, scope `diagrams:read`                                 | param `id`                           | default    |
+| GET    | `/api/public/v1/diagrams/:id/svg`                 | API key, scope `diagrams:read`                                 | param `id`, query                    | default    |
+| GET    | `/api/public/v1/kpis`                             | API key, scope `kpis:read`                                     | query                                | default    |
+| GET    | `/api/public/v1/kpis/:id/measurements`            | API key, scope `kpis:read`                                     | param `id`, query                    | default    |
+| GET    | `/api/public/v1/me`                               | API key, scope `any`                                           | —                                    | default    |
+| GET    | `/api/public/v1/objects`                          | API key, scope `objects:read`                                  | query                                | default    |
+| GET    | `/api/public/v1/pages`                            | API key, scope `pages:read`                                    | query                                | default    |
+| GET    | `/api/public/v1/pages/:id`                        | API key, scope `pages:read`                                    | param `id`, query                    | default    |
+| GET    | `/api/public/v1/process-house`                    | API key, scope `processes:read`                                | —                                    | default    |
+| GET    | `/api/public/v1/processes`                        | API key, scope `processes:read`                                | query                                | default    |
+| GET    | `/api/public/v1/processes/:id`                    | API key, scope `processes:read`                                | param `id`                           | default    |
+| GET    | `/api/public/v1/processes/:id/bpmn`               | API key, scope `processes:read`                                | param `id`, query                    | default    |
+| GET    | `/api/public/v1/processes/:id/svg`                | API key, scope `processes:read`                                | param `id`, query                    | default    |
+| GET    | `/api/public/v1/processes/:id/versions`           | API key, scope `processes:read`                                | param `id`                           | default    |
+| GET    | `/api/public/v1/requirements`                     | API key, scope `grc:read`                                      | query                                | default    |
+| GET    | `/api/public/v1/risks`                            | API key, scope `grc:read`                                      | query                                | default    |
+| GET    | `/api/public/v1/spaces`                           | API key, scope `pages:read`                                    | query                                | default    |
+| GET    | `/api/public/v1/workflow/cases`                   | API key, scope `workflow:cases:read`                           | query                                | default    |
+| GET    | `/api/public/v1/workflow/statistics`              | API key, scope `workflow:read`                                 | —                                    | default    |
 | GET    | `/assurance/dashboard`                            | any of `grc.read`, `audit.manage`, `issues.manage`             | query                                | default    |
 | GET    | `/assurance/dashboard/export`                     | any of `grc.read`, `audit.manage`, `issues.manage`             | query                                | default    |
 | DELETE | `/assurance/files/:id`                            | authenticated                                                  | param `id`                           | default    |
@@ -440,12 +463,22 @@ zod / UUID pipe; file uploads are checked in the service (allow-list, content sn
 | GET    | `/imports/settings`                               | any of `import.manage`, `import.own`, `settings.manage`        | —                                    | default    |
 | PUT    | `/imports/settings`                               | `settings.manage`                                              | body                                 | default    |
 | GET    | `/imports/templates/:kind`                        | any of `import.manage`, `import.own`                           | param `kind`, query                  | default    |
+| GET    | `/integrations/api-keys`                          | any of `settings.manage`, `integrations.read`                  | —                                    | default    |
+| POST   | `/integrations/api-keys`                          | `settings.manage`                                              | body                                 | default    |
+| GET    | `/integrations/api-keys/:id`                      | any of `settings.manage`, `integrations.read`                  | param `id`                           | default    |
+| PATCH  | `/integrations/api-keys/:id`                      | `settings.manage`                                              | body, param `id`                     | default    |
+| POST   | `/integrations/api-keys/:id/revoke`               | `settings.manage`                                              | param `id`                           | default    |
+| POST   | `/integrations/api-keys/:id/rotate`               | `settings.manage`                                              | param `id`                           | default    |
+| GET    | `/integrations/api-keys/:id/usage`                | any of `settings.manage`, `integrations.read`                  | param `id`, query                    | default    |
+| GET    | `/integrations/api-settings`                      | any of `settings.manage`, `integrations.read`                  | —                                    | default    |
+| PUT    | `/integrations/api-settings`                      | `settings.manage`                                              | body                                 | default    |
 | GET    | `/integrations/git`                               | `settings.manage`                                              | —                                    | default    |
 | PUT    | `/integrations/git`                               | `settings.manage`                                              | body                                 | default    |
 | POST   | `/integrations/git/items/:id/retry`               | `settings.manage`                                              | param `id`                           | default    |
 | GET    | `/integrations/git/status`                        | `settings.manage`                                              | —                                    | default    |
 | POST   | `/integrations/git/sync`                          | `settings.manage`                                              | body                                 | default    |
 | POST   | `/integrations/git/test`                          | `settings.manage`                                              | body                                 | default    |
+| GET    | `/integrations/renderer`                          | any of `settings.manage`, `integrations.read`                  | —                                    | default    |
 | GET    | `/integrations/salesforce`                        | any of `settings.manage`, `kpi.sync`                           | —                                    | default    |
 | PUT    | `/integrations/salesforce`                        | `settings.manage`                                              | body                                 | default    |
 | GET    | `/integrations/salesforce/describe/:object`       | `settings.manage`                                              | param `object`                       | default    |

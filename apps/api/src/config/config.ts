@@ -43,6 +43,11 @@ const envSchema = z.object({
   MINIO_BUCKET: z.string().default('processhub'),
 
   ENABLE_SWAGGER: bool(false),
+  /**
+   * OpenAPI document + UI of the public API at /api/public/docs (Phase 4.4). Independent of
+   * ENABLE_SWAGGER; default on except in production.
+   */
+  ENABLE_PUBLIC_API_DOCS: z.enum(['', 'true', 'false', '1', '0']).optional(),
 
   /** base64-encoded 32-byte key for AES-256-GCM encryption of integration tokens. */
   INTEGRATIONS_ENCRYPTION_KEY: z
@@ -106,6 +111,7 @@ export interface AppConfig extends Env {
   outboundAllowedHosts: string[];
   passwordPolicy: PasswordPolicy;
   isProduction: boolean;
+  publicApiDocs: boolean;
 }
 
 let cached: AppConfig | undefined;
@@ -126,6 +132,9 @@ export function loadConfig(source: NodeJS.ProcessEnv = process.env): AppConfig {
       .map((h) => h.trim())
       .filter(Boolean),
     isProduction: env.NODE_ENV === 'production',
+    publicApiDocs: !env.ENABLE_PUBLIC_API_DOCS
+      ? env.NODE_ENV !== 'production'
+      : env.ENABLE_PUBLIC_API_DOCS === 'true' || env.ENABLE_PUBLIC_API_DOCS === '1',
     passwordPolicy: {
       minLength: env.PASSWORD_MIN_LENGTH,
       requireUpper: env.PASSWORD_REQUIRE_UPPER,

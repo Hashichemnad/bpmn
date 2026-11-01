@@ -14,6 +14,7 @@ import { AppException } from './app-exception';
 import type { AuthUser } from './auth-user';
 import {
   ANY_PERMISSION_KEY,
+  API_SCOPE_KEY,
   AUTHENTICATED_KEY,
   IS_PUBLIC_KEY,
   PERMISSIONS_KEY,
@@ -46,6 +47,12 @@ export class JwtAuthGuard implements CanActivate {
       ctx.getHandler(),
       ctx.getClass(),
     ]);
+    // Public API routes are authenticated by ApiKeyGuard only: a browser session never counts there.
+    if (
+      this.reflector.getAllAndOverride(API_SCOPE_KEY, [ctx.getHandler(), ctx.getClass()]) !==
+      undefined
+    )
+      return true;
     const req = ctx.switchToHttp().getRequest<AuthRequest>();
     const token: unknown = req.cookies?.[ACCESS_COOKIE];
     if (typeof token !== 'string' || !token) {
@@ -76,6 +83,11 @@ export class PermissionsGuard implements CanActivate {
   canActivate(ctx: ExecutionContext): boolean {
     const targets = [ctx.getHandler(), ctx.getClass()];
     if (this.reflector.getAllAndOverride<boolean>(IS_PUBLIC_KEY, targets)) return true;
+    // Public API: ApiKeyGuard has authenticated the key and checked its scope.
+    if (this.reflector.getAllAndOverride(API_SCOPE_KEY, targets) !== undefined) {
+      if (ctx.switchToHttp().getRequest<AuthRequest & { apiKey?: unknown }>().apiKey) return true;
+      throw unauthenticated();
+    }
     const user = ctx.switchToHttp().getRequest<AuthRequest>().user;
     if (!user) throw unauthenticated();
 

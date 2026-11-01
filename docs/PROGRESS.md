@@ -30,9 +30,20 @@ Steps (tick as they are committed; a new session continues at the first unticked
       limits), `RENDERER_URL` / `RENDERER_TOKEN` / `RENDERER_TIMEOUT_MS` (`generate-secrets.sh` creates the
       token), release workflow publishes `processhub-renderer`. Checked locally: BPMN SVG (Arabic labels) and
       PNG, Arabic RTL PDF, external image request blocked, wrong token → 401.
-- [ ] 1. Public REST API with API keys (`/api/public/v1`, scopes, content / department filter, IP allow-list,
-      expiry, rotate / revoke, per-key rate limit, usage log, `/api/public/docs`, Settings → Integrations →
-      API keys; scope test listing every public route).
+- [x] 1. Public REST API with API keys (D-173): migration `*_integrations_api_keys` (`ApiKey`, `ApiKeyUsage`),
+      shared `integrations.ts` (scopes, schemas, DTOs), permission `integrations.read` (Admin + Super Admin),
+      audit actions `ROTATE` / `REVOKE`, entity types `ApiKey` / `Webhook` / `ReportSubscription`, Setting
+      `integrations.api`; API `apps/api/src/public-api/` — `api-keys.service.ts` (create / update / rotate /
+      revoke, SHA-256 + id lookup, owner / expiry / IP checks, per-key rate limit, batched call log, retention),
+      global `ApiKeyGuard` + `@RequireApiScope`, `api-usage.middleware.ts`, `public-api.service.ts` +
+      `public-api.controller.ts` (22 read-only routes under `/api/public/v1`, published / workspace content,
+      department filter, ETag / Last-Modified, SVG via the renderer), `public-api-docs.ts`
+      (`/api/public/docs`, `ENABLE_PUBLIC_API_DOCS`), management `/integrations/api-keys`, `/api-settings`,
+      `/renderer`; web Settings → Integrations (`features/integrations/`, namespace `integrations`, API keys
+      tab: create / edit / new secret / revoke, secret shown once, call log drawer, API settings, renderer
+      status). Tests: `test/public-api.e2e-spec.ts` (10), `api-keys.spec.ts`, route-security lists every public
+      route with its scope; Playwright `integrations.spec.ts` (create key → public API → call log → revoke →
+      401, passed locally against API + Vite). Docs: `docs/integrations/API.md`, SECURITY route table.
 - [ ] 2. Webhooks (events, HMAC-SHA256 signature + timestamp, persisted retries with backoff, auto-disable,
       delivery log, resend, test event, SSRF guard incl. redirects, allow-list).
 - [ ] 3. Power BI / reporting feed (`reporting:read`, flat paged JSON) + `docs/integrations/POWER-BI.md`.

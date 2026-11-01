@@ -38,6 +38,7 @@ import {
   ThunderboltOutlined,
   HeatMapOutlined,
   AlertOutlined,
+  ApiOutlined,
   SafetyOutlined,
   BankOutlined,
   ExperimentOutlined,
@@ -495,6 +496,13 @@ export function AppLayout() {
         label: <Link to="/settings/salesforce">{t('admin:salesforce.card')}</Link>,
       });
     }
+    if (canAny(PERMISSIONS.SETTINGS_MANAGE, PERMISSIONS.INTEGRATIONS_READ)) {
+      admin.push({
+        key: '/settings/integrations',
+        icon: <ApiOutlined />,
+        label: <Link to="/settings/integrations">{t('integrations:nav')}</Link>,
+      });
+    }
     if (admin.length) list.push({ type: 'group', label: t('nav.administration'), children: admin });
     return list;
   }, [can, canAny, t, taskCount]);
@@ -540,6 +548,7 @@ export function AppLayout() {
       '/settings/conventions',
       '/settings/portal',
       '/settings/grc',
+      '/settings/integrations',
       '/settings',
     ].find((k) => p.startsWith(k));
     return match ? [match] : [];

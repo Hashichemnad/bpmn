@@ -24,6 +24,7 @@ export const NAMESPACES = [
   'mining',
   'workflow',
   'imports',
+  'integrations',
 ] as const;
 
 // One chunk per language and namespace, fetched only for the active language (final session,
