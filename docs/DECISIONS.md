@@ -2708,7 +2708,7 @@ with the container fully hardened, and record it as an accepted risk for Final P
 - **Trivy** (pinned release container `aquasec/trivy:0.67.2`, not `trivy-action`, whose tags were hijacked in
   2026): the four images built by CI; High / Critical **with a fixed version** fail; accepted findings only
   in `.trivyignore` with a reason. Runtime images run `apk upgrade` and ship without npm / corepack; the web
-  image moved to nginx 1.28 (stable).
+  image moved to nginx 1.30 (stable, Alpine 3.24 — D-191).
 - **OWASP ZAP baseline** (pinned `zaproxy:2.16.1`) against the Compose stack after the Playwright suite;
   `.zap/rules.tsv` makes header / cookie rules FAIL; HSTS and Secure cookies are IGNORE on the plain-HTTP CI
   stack (Caddy sets them in production, `security.e2e-spec.ts` tests the cookie flags).
@@ -2786,3 +2786,28 @@ cookies without the `__Host-` prefix (sub-domain cookie tossing is covered by th
 CSRF cookie is readable by JavaScript by design (double submit); in-memory rate limits; password re-entry
 in the profile counted by the per-IP limit only; branch probabilities of simulations visible to mining readers;
 imported BPMN may carry execution settings (deploying needs workflow rights).
+
+## D-191 — Product owner answers on the final review decisions
+
+1. **Antivirus (D-184): agreed** — ClamAV on and fail-closed in production. Only the clamav container needs
+   outbound HTTPS, to `database.clamav.net`, so the firewall allows just that host; where outbound access is
+   not allowed, a private mirror (`cvdupdate`, `PrivateMirror` in `freshclam.conf`) or copied signature files
+   (DEPLOYMENT.md §10 "Antivirus"). Monitoring: `GET /api/v1/health/antivirus` (public, rate-limited) answers
+   503 when clamd is down (uploads are refused) or the signatures are older than 3 days; the uptime monitor
+   alerts on it. Not scanning event-log files above 25 MB is accepted.
+2. **"AI on imported documents" (D-189): agreed** — the strict rule (imported items stay covered after
+   edits) applies until DOF approves AI.
+3. **Workflow limits (D-187): agreed**; the files-per-case limit is configurable: Settings → Workflow
+   execution → Files per case (`maxFilesPerCase`, 1 – 1,000, default 100).
+4. **Sessions (D-188): agreed** — Admin passwords reset by Super Admins only; sessions without required 2FA end
+   at the next refresh.
+5. **Per-user rate limits (D-186): agreed**, including `USER_RATE_LIMIT_SCALE`.
+6. **Accepted risks (D-190): confirmed**, with corrections:
+   - SEC-08 (braces via Jest) **resolved**: the API runtime image holds production dependencies only (checked:
+     no Jest / braces in the deployed tree; Trivy clean). The first real Trivy run fixed two other findings:
+     nginx 1.28.2 in the web image (now nginx 1.30 on Alpine 3.24) and deepmerge-ts 7.1.5 in the migrate
+     image's Prisma CLI (npm override to 8).
+   - The two CSP `unsafe-inline` rows are merged into one.
+   - Logs with e-mail / IP addresses: **log retention ≤ 90 days** is a go-live checklist item.
+   - Cookies without the `__Host-` prefix: accepted **on condition that ProcessHub has its own host name**
+     (e.g. `processhub.dof.ajman.ae`) — go-live checklist item.

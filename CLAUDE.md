@@ -52,7 +52,7 @@ with no per-user licensing. Target: 50–500 users on a single server.
 | Design B2 | Modeler design — Part B2: smarter modeling and reports (Playwright e2e in CI, Dictionary with label autocomplete, Quick Model, step attributes and "colour by", handbook / RACI / object reports, modeling conventions) | ✅ Done (merged into `main`, D-083 – D-088) |
 | Deps | zod 3 → 4 (high advisory GHSA-mrhx-c7xc-m3w5, D-082) | ✅ Done (merged into `main`) |
 | Import | M15 Import tools / migration: Import Center (batches, preview, dry run, undo, re-import, upload security), process house / departments / users from Excel, BPMN / Visio / ARIS / DMN diagrams, Word / PDF / Confluence / Markdown into the wiki, AI-assisted migration, migration tracker and review queue, full export package and round-trip | ✅ Done (merged into `main`, D-155 – D-164) |
-| 6 | Hardening: SSO, performance, security review fixes, deployment guide | ✅ Done: parts 1–4 and final session part A merged into `main`; final session part B (security review SEC-12 – SEC-48, CI security scans, antivirus, key rotation, go-live checklist and pen-test note in `docs/DEPLOYMENT.md` §13–14, D-183 – D-190) on branch `final-b-security` |
+| 6 | Hardening: SSO, performance, security review fixes, deployment guide | ✅ Done: parts 1–4 and final session part A merged into `main`; final session part B (security review SEC-12 – SEC-48, CI security scans, antivirus, key rotation, go-live checklist and pen-test note in `docs/DEPLOYMENT.md` §13–14, D-183 – D-191) on branch `final-b-security` |
 
 Update this table and `docs/PROGRESS.md` at the end of every session.
 
@@ -325,6 +325,8 @@ Final session part B additions (security review, DECISIONS D-183 – D-190):
 - Limits: `UserRateLimit` guard (`USER_RATE_LIMIT_SCALE`), `UploadSlots` interceptor, 20 active jobs per user,
   30-minute worker limit, result-cache purge; workflow timers / call depth / variable size limits (shared
   `MIN_TIMER_*`, `MAX_VARIABLES_BYTES`)
+- Product owner answers (D-191): `GET /health/antivirus` (clamd down / signatures > 3 days → 503); workflow
+  setting `maxFilesPerCase`; web image on nginx 1.30 (Alpine 3.24)
 - CI: `.github/workflows/security.yml` (CodeQL, gitleaks), Trivy / ZAP / licence check / proxy config checks in
   `ci.yml`; `scripts/sarif-gate.mjs`, `scripts/check-licenses.mjs`, `.gitleaks.toml`, `.trivyignore`,
   `.zap/rules.tsv`

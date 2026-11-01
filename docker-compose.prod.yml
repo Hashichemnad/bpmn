@@ -162,6 +162,8 @@ services:
       CLAMAV_NO_MILTERD: 'true'
     volumes:
       - clamav-db:/var/lib/clamav
+      # Private signature mirror (no outbound access, docs/DEPLOYMENT.md §10 "Antivirus"):
+      # - ./deploy/freshclam.conf:/etc/clamav/freshclam.conf:ro
     networks: [backend, egress]
     healthcheck:
       test: ['CMD', 'clamdcheck.sh']

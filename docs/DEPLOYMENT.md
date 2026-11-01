@@ -825,16 +825,42 @@ backup, a new empty database volume and a restore — ask your ProcessHub develo
 
 ## 10. Monitoring
 
-| What                 | How                                                                                                                                                                                                                                  |
-| -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Is it up?            | Add `https://processhub.yourcompany.com/api/v1/health` to your uptime monitor (Azure Monitor availability test, AWS CloudWatch Synthetics, UptimeRobot, …). Healthy = HTTP 200 with `{"status":"ok"}` (it also checks the database). |
-| Container state      | `sudo docker compose ps` — all **(healthy)**. Containers restart automatically after crashes and reboots.                                                                                                                            |
-| Logs                 | `sudo docker compose logs --tail 100 api` (or `web`, `caddy`, `postgres`, `storage`); `-f` follows live. Docker keeps at most 5 × 20 MB per container.                                                                               |
-| Disk space           | `df -h /data` — alert at 80 %. `sudo docker system df` shows Docker's share.                                                                                                                                                         |
-| CPU / memory         | `sudo docker stats --no-stream`; cloud metrics (Azure Monitor / CloudWatch) with alerts at 85 % for 15 minutes.                                                                                                                      |
-| Backups              | `/var/log/processhub-backup.log` ends with "Backup complete" every day; off-site copy present.                                                                                                                                       |
-| Certificate          | Renewed automatically 30 days before expiry (Let's Encrypt). With your own certificate: put the renewal in your calendar.                                                                                                            |
-| Application activity | In ProcessHub: **Administration → Audit log** (sign-ins, changes, publications) and **AI usage**.                                                                                                                                    |
+| What                 | How                                                                                                                                                                                                                                                                                                                                              |
+| -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Is it up?            | Add `https://processhub.yourcompany.com/api/v1/health` to your uptime monitor (Azure Monitor availability test, AWS CloudWatch Synthetics, UptimeRobot, …). Healthy = HTTP 200 with `{"status":"ok"}` (it also checks the database).                                                                                                             |
+| Antivirus            | Add `https://processhub.yourcompany.com/api/v1/health/antivirus` to the uptime monitor as a second check and **alert on anything but HTTP 200** (D-191). It answers **503** when ClamAV is down — uploads are being refused — or when the virus signatures are older than **3 days** (`"status":"down"` / `"stale"`, with `signaturesAgeHours`). |
+| Container state      | `sudo docker compose ps` — all **(healthy)**. Containers restart automatically after crashes and reboots.                                                                                                                                                                                                                                        |
+| Logs                 | `sudo docker compose logs --tail 100 api` (or `web`, `caddy`, `postgres`, `storage`); `-f` follows live. Docker keeps at most 5 × 20 MB per container.                                                                                                                                                                                           |
+| Disk space           | `df -h /data` — alert at 80 %. `sudo docker system df` shows Docker's share.                                                                                                                                                                                                                                                                     |
+| CPU / memory         | `sudo docker stats --no-stream`; cloud metrics (Azure Monitor / CloudWatch) with alerts at 85 % for 15 minutes.                                                                                                                                                                                                                                  |
+| Backups              | `/var/log/processhub-backup.log` ends with "Backup complete" every day; off-site copy present.                                                                                                                                                                                                                                                   |
+| Certificate          | Renewed automatically 30 days before expiry (Let's Encrypt). With your own certificate: put the renewal in your calendar.                                                                                                                                                                                                                        |
+| Application activity | In ProcessHub: **Administration → Audit log** (sign-ins, changes, publications) and **AI usage**.                                                                                                                                                                                                                                                |
+
+### Antivirus (ClamAV): firewall, signature updates, private mirror
+
+- **Firewall.** Only the **clamav** container needs outbound internet access: HTTPS (443) to
+  **`database.clamav.net`** for the daily signature updates (freshclam). The API, database, storage, web and
+  renderer containers need no access to ClamAV's servers, so DOF's firewall can allow just that one host for
+  the server (D-191).
+- **Check.** `sudo docker compose exec clamav freshclam --version` shows the signature date;
+  `/api/v1/health/antivirus` reports `signaturesAgeHours`. The container's own health check restarts clamd
+  if it stops answering.
+- **Private mirror (no outbound access allowed).** Run ClamAV's official mirror tool **cvdupdate** on a host
+  that may reach `database.clamav.net` (e.g. in the DMZ), and point the server at it:
+  1. On the mirror host: `pip install cvdupdate`, `cvd update` (downloads `main.cvd`, `daily.cvd`,
+     `bytecode.cvd`; schedule it daily with cron), `cvd serve --port 8000` (or serve `~/.cvdupdate/database`
+     with any web server, HTTPS preferred).
+  2. On the ProcessHub server, create `deploy/freshclam.conf` with
+     the line `PrivateMirror https://<mirror-host>:8000` (and no `DatabaseMirror` line), and mount it in
+     `docker-compose.prod.yml` under `clamav` → `volumes`: `- ./deploy/freshclam.conf:/etc/clamav/freshclam.conf:ro`
+     (the line is prepared there as a comment); `sudo docker compose up -d clamav`.
+  3. Without any network path: copy the three `.cvd` files into the `clamav-db` volume
+     (`sudo docker compose cp main.cvd clamav:/var/lib/clamav/` …) at least every 3 days — the health check
+     alerts when they get older.
+- **When the alert fires.** `down`: `sudo docker compose ps clamav`, `logs --tail 100 clamav` (memory: 2 GB
+  limit, `CLAMAV_MEMORY`); uploads are refused until it answers (fail-closed, D-184). `stale`: check the
+  firewall rule or the mirror; uploads still work, but new malware may not be recognised.
 
 ## 11. Troubleshooting
 
@@ -894,6 +920,9 @@ guide; details of the security items are in [`SECURITY.md`](./SECURITY.md) §7.
 - [ ] Firewall / NSG: inbound **443** (and **80** for the redirect and Let's Encrypt) only; SSH only from the
       admin network or a bastion. Outbound: what is used — SMTP, Entra ID, ClamAV signature updates, AI
       provider only when approved, Git / Teams / webhooks receivers if configured.
+- [ ] ProcessHub has **its own host name** (e.g. `processhub.dof.ajman.ae`), not a path or a host shared with
+      other applications; no untrusted sibling applications set cookies for the parent domain (condition for
+      accepting cookies without the `__Host-` prefix, D-191).
 - [ ] HTTPS certificate in place (`CADDY_TLS`: Let's Encrypt, `internal` or the company certificate) and its
       renewal owner known; HSTS active (`curl -sI https://<domain>` shows `Strict-Transport-Security`).
 - [ ] Only Caddy publishes ports (`sudo docker compose ps`); database, storage, renderer and clamav are internal.
@@ -916,13 +945,18 @@ guide; details of the security items are in [`SECURITY.md`](./SECURITY.md) §7.
 - [ ] Daily backup scheduled (`deploy/processhub-backup.cron`), off-site copy in the same country (§7).
 - [ ] **Restore tested** on a separate machine (§8 or `scripts/backup-drill.sh`), date recorded.
 - [ ] Uptime monitor on `/api/v1/health`, disk alert at 80 %, CPU / memory alerts (§10); container log rotation
-      (5 × 20 MB per container, the compose default) and the server's log retention agreed with IT security.
+      (5 × 20 MB per container, the compose default).
+- [ ] **Log retention ≤ 90 days** for every copy of the logs (container logs, the server's journal, any log
+      collector / SIEM) — logs contain e-mail and IP addresses (D-191).
 - [ ] Access logs checked once: no API keys, CSRF tokens or invitation tokens in Caddy / nginx logs (SEC-39).
 
 **Antivirus**
 
 - [ ] `ANTIVIRUS=clamav` (default in `.env.example.prod`), `ANTIVIRUS_FAIL_OPEN=false`; `sudo docker compose ps`
       shows `clamav` **healthy**; an EICAR test file is refused as an attachment (D-184).
+- [ ] Firewall allows **only the clamav container** outbound HTTPS to `database.clamav.net` — or the private
+      mirror is configured (§10 "Antivirus") (D-191).
+- [ ] Uptime monitor alerts on `/api/v1/health/antivirus` ≠ 200 (clamd down / signatures older than 3 days).
 
 **Sign-in and access**
 

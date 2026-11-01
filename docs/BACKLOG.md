@@ -287,7 +287,8 @@ Other ideas from Part A:
   than one API instance.
 - Replace the MinIO client with `@aws-sdk/client-s3` (moderate stream-json advisories) and update exceljs when
   its uuid / archiver dependencies are fixed.
-- `__Host-` cookie prefix for the session cookies (needs `path=/` for the access cookie).
+- `__Host-` cookie prefix for the session cookies (needs `path=/` for the access cookie); accepted for now on
+  condition of a dedicated host name (D-191).
 - Count password re-entry in the profile (2FA settings, change password) towards the account lockout.
 - Self-service export of a user's own personal data (data subject requests).
 - Daily clean-up of unattached workflow draft uploads older than 24 hours.

@@ -17,7 +17,7 @@ Steps (tick as they are committed; a new session continues at the first unticked
 - [x] 1. CI security scans: `security.yml` (CodeQL with SARIF gate `scripts/sarif-gate.mjs`, gitleaks tree + history
       with `.gitleaks.toml`), `ci.yml` (licence check `scripts/check-licenses.mjs`, Trivy on the four images with
       `.trivyignore`, OWASP ZAP baseline with `.zap/rules.tsv`); Dockerfiles: `apk upgrade`, npm / corepack removed
-      from runtime images, nginx 1.28. CodeQL findings fixed (rich-text check, BPMN namespace).
+      from runtime images, nginx 1.30 (Alpine 3.24). CodeQL findings fixed (rich-text check, BPMN namespace).
 - [x] 2. Uploads: real uncompressed size of Office packages (SEC-12), restore package untrusted (SEC-13), parallel
       upload slots (SEC-14), macro check for Office attachments (SEC-17).
 - [x] 3. Authorisation: assurance comments / issue fields / audit verification / control-test four-eyes / diagram
@@ -38,6 +38,11 @@ Steps (tick as they are committed; a new session continues at the first unticked
 **Result:** 37 findings (SEC-12 – SEC-48), no High, 22 Medium, 15 Low / Info — all High / Medium fixed, the
 rest fixed or accepted (`docs/SECURITY.md` §2, §6; DECISIONS D-183 – D-190). Go-live checklist and pen-test
 readiness note: `docs/DEPLOYMENT.md` §13 – §14. Phase 6 is marked done in CLAUDE.md.
+
+**Product owner answers (D-191), done:** antivirus firewall / private mirror / health alert
+(`/api/v1/health/antivirus`), files per case in Settings → Workflow execution, SEC-08 resolved, CSP rows merged,
+go-live checklist: log retention ≤ 90 days and ProcessHub's own host name. Trivy's first real run: web image moved
+to nginx 1.30 (Alpine 3.24), Prisma CLI deepmerge-ts 8.
 
 **Next:** merge PR #25 after CI is green (CodeQL, gitleaks, Trivy, ZAP baseline, Playwright); then work through
 the go-live checklist with IT. Later items: `docs/BACKLOG.md` "From the final security review".
