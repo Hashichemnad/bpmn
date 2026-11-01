@@ -322,5 +322,13 @@
   "INVALID_TOKEN": "This link is not valid.",
   "PROCESS_REQUIRED": "Choose a process.",
   "ROLE_REQUIRED": "Choose a role.",
-  "DEPARTMENT_REQUIRED": "Choose a department."
+  "DEPARTMENT_REQUIRED": "Choose a department.",
+  "RATE_LIMITED": "Too many requests. Wait a moment and try again.",
+  "API_SCOPE_MISSING": "This API key does not have the permission (scope) needed for this request.",
+  "API_KEY_INVALID": "The API key is not valid or has been revoked.",
+  "API_KEY_EXPIRED": "The API key has expired.",
+  "API_KEY_OWNER_INACTIVE": "The owner of this API key is no longer active.",
+  "API_KEY_IP_NOT_ALLOWED": "Requests with this API key are not allowed from this IP address.",
+  "NO_IMAGE_FOR_TYPE": "No image is available for this type of content.",
+  "ROLE_NOT_FOUND": "The selected role was not found."
 }
