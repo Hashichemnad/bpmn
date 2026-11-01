@@ -59,7 +59,7 @@ export class AllExceptionsFilter implements ExceptionFilter {
     ) {
       body = { statusCode: 404, code: 'NOT_FOUND', message: 'Not found' };
     } else {
-      this.logger.error(exception instanceof Error ? exception.stack : String(exception));
+      this.logger.error(describeForLog(exception));
       body = {
         statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
         code: 'INTERNAL_ERROR',
@@ -68,4 +68,32 @@ export class AllExceptionsFilter implements ExceptionFilter {
     }
     res.status(body.statusCode).json(body);
   }
+}
+
+/**
+ * What an unexpected error writes to the log (final session part B, SEC-45). Prisma errors carry the
+ * query arguments in their message — password hashes, sealed secrets, form data — so only their class,
+ * code, model and the first stack frames of our own code are logged.
+ */
+export function describeForLog(exception: unknown): string {
+  if (
+    exception instanceof Prisma.PrismaClientKnownRequestError ||
+    exception instanceof Prisma.PrismaClientValidationError ||
+    exception instanceof Prisma.PrismaClientUnknownRequestError ||
+    exception instanceof Prisma.PrismaClientRustPanicError ||
+    exception instanceof Prisma.PrismaClientInitializationError
+  ) {
+    const code = 'code' in exception ? String((exception as { code?: unknown }).code ?? '') : '';
+    const model =
+      'meta' in exception
+        ? String((exception as { meta?: { modelName?: unknown } }).meta?.modelName ?? '')
+        : '';
+    const frames = (exception.stack ?? '')
+      .split('\n')
+      .filter((l) => l.trim().startsWith('at ') && !l.includes('node_modules'))
+      .slice(0, 5)
+      .join('\n');
+    return `${exception.name}${code ? ` ${code}` : ''}${model ? ` (${model})` : ''} — details withheld\n${frames}`;
+  }
+  return exception instanceof Error ? (exception.stack ?? exception.message) : String(exception);
 }
