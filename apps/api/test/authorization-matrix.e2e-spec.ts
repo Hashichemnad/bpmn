@@ -348,6 +348,12 @@ describe('Authorisation matrix (e2e)', () => {
     'PATCH /diagrams/:id': { nameEn: 'Hacked' },
     'POST /diagrams': { type: 'VALUE_CHAIN', nameEn: 'Hacked' },
     'POST /diagrams/:id/convert-to-bpmn': { code: 'HACK.1', category: 'CORE' },
+    // Final session part B (SEC-23, SEC-30): comments on assurance items and cases need comment
+    // rights or involvement — a valid body, so the service check runs (an empty body is a 400).
+    'POST /issues/:id/comments': { body: 'x' },
+    'POST /control-tests/:id/comments': { body: 'x' },
+    'POST /workflow/cases/:id/comments': { body: 'x' },
+    'POST /grc/items/:id/comments': { body: 'x' },
   };
 
   /** Self-service writes every signed-in user may make (own session, profile, notifications). */
@@ -366,7 +372,12 @@ describe('Authorisation matrix (e2e)', () => {
     /^PUT \/workflow\/out-of-office$/,
   ];
   /** Reviewers comment and decide on review steps assigned to them (governance tests cover it). */
-  const REVIEWER_ALLOWED = [/^POST \/comments\/:type\/:id$/, /^POST \/reviews\/:id\/decision$/];
+  const REVIEWER_ALLOWED = [
+    /^POST \/comments\/:type\/:id$/,
+    /^POST \/reviews\/:id\/decision$/,
+    // Reviewers hold comments.write and read Risk & Compliance: they may comment on its items.
+    /^POST \/(issues|control-tests|grc\/items)\/:id\/comments$/,
+  ];
 
   const mutating = () => routes.filter((r) => r.method !== 'GET');
 

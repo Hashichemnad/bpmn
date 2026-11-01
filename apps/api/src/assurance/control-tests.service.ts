@@ -715,11 +715,31 @@ export class ControlTestsService implements OnModuleInit {
     return this.get(id, actor);
   }
 
+  /**
+   * Whether the user started, recorded results of or submitted this test at any time (SEC-26):
+   * `executedById` only holds the last person, so the audit trail of the executions is checked.
+   */
+  private async hasExecuted(testId: string, userId: string) {
+    const hit = await this.prisma.auditLog.findFirst({
+      where: {
+        entityType: 'ControlTest',
+        entityId: testId,
+        userId,
+        OR: [
+          { action: 'SUBMIT' },
+          { action: 'UPDATE', summary: { path: ['status', 'to'], equals: 'IN_PROGRESS' } },
+        ],
+      },
+      select: { id: true },
+    });
+    return !!hit;
+  }
+
   /** Reviewer signs off (the conclusion becomes the control's operating effectiveness) or returns. */
   async review(id: string, input: TestReviewInput, actor: AuthUser, meta: RequestMeta) {
     const t = await this.row(id);
     if (t.status !== 'SUBMITTED') throw conflict('INVALID_TRANSITION');
-    if (t.executedById === actor.id)
+    if (t.executedById === actor.id || (await this.hasExecuted(id, actor.id)))
       throw forbidden('Nobody may review a test they executed (four-eyes)');
     if (!this.mayReview(t, actor)) throw forbidden('You are not the reviewer of this test');
     if (input.decision === 'RETURN') {
@@ -816,6 +836,14 @@ export class ControlTestsService implements OnModuleInit {
   async comment(id: string, body: string, actor: AuthUser, meta: RequestMeta) {
     const t = await this.row(id);
     if (!this.canRead(t, actor)) throw notFound('Control test');
+    // Read-only GRC readers (Auditor) do not comment: comment rights, or the test's own tester /
+    // reviewer / Risk & Compliance editors (SEC-23).
+    const involved =
+      this.manages(actor) ||
+      t.executedById === actor.id ||
+      (actor.permissions.has(PERMISSIONS.CONTROLS_TEST) && isAssignee(this.tester(t), actor)) ||
+      (actor.permissions.has(PERMISSIONS.CONTROLS_REVIEW) && isAssignee(this.reviewer(t), actor));
+    if (!involved && !actor.permissions.has(PERMISSIONS.COMMENTS_WRITE)) throw forbidden();
     await this.prisma.$transaction(async (tx) => {
       const e = await this.events.add(tx, ENTITY, id, 'COMMENT', {}, body, actor.id);
       await this.audit.log(

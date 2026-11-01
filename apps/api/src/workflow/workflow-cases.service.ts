@@ -500,7 +500,12 @@ export class WorkflowCasesService {
       user.permissions.has(PERMISSIONS.WORKFLOW_MONITOR) &&
       ((!!c.process.departmentId && c.process.departmentId === user.departmentId) ||
         (cfg?.monitorUserIds ?? []).includes(user.id));
-    const canAct = participant || isWorkflowAdmin(user) || deptMonitor;
+    // Read-only monitors (Auditor: workflow.monitor without comment rights) see cases but neither
+    // comment nor upload (SEC-30).
+    const canAct =
+      participant ||
+      isWorkflowAdmin(user) ||
+      (deptMonitor && user.permissions.has(PERMISSIONS.COMMENTS_WRITE));
     return { c, cfg, involved, canAct, admin: isWorkflowAdmin(user) };
   }
 
