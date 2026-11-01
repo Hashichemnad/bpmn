@@ -8,6 +8,7 @@ import { CSRF_HEADER, SETTING_KEYS, type SystemRoleKey } from '@processhub/share
 import { AppModule } from '../src/app.module';
 import { configureApp } from '../src/bootstrap';
 import { PrismaService } from '../src/prisma/prisma.service';
+import { RendererService } from '../src/renderer/renderer.service';
 import { StorageService } from '../src/storage/storage.service';
 import { hashPassword } from '../src/auth/argon';
 import { AUTH_DEFAULTS } from '../src/auth/auth-settings.service';
@@ -126,7 +127,41 @@ export function parseSse(body: string): SseEvent[] {
     .filter((e): e is SseEvent => !!e);
 }
 
+/** Stands in for the renderer container: a tiny SVG / PNG / PDF per call (calls are logged). */
+export class FakeRenderer {
+  calls: { kind: string; locale?: string; format?: string }[] = [];
+  on = true;
+  enabled() {
+    return this.on;
+  }
+  async diagram(input: { kind: string; locale: string; format: 'svg' | 'png'; source: string }) {
+    if (!this.on) return null;
+    this.calls.push({ kind: input.kind, locale: input.locale, format: input.format });
+    const data =
+      input.format === 'svg'
+        ? Buffer.from(
+            `<svg xmlns="http://www.w3.org/2000/svg" width="400" height="200"><text>${input.locale}</text></svg>`,
+          )
+        : PNG_BYTES;
+    return {
+      data,
+      contentType: input.format === 'svg' ? 'image/svg+xml' : 'image/png',
+      width: 400,
+      height: 200,
+    };
+  }
+  async pdf(html: string) {
+    if (!this.on) return null;
+    this.calls.push({ kind: 'pdf' });
+    return Buffer.from(`%PDF-1.7 fake ${html.length}`);
+  }
+  async health() {
+    return this.on ? 'OK' : 'OFF';
+  }
+}
+
 export interface TestContext {
+  renderer: FakeRenderer;
   app: INestApplication;
   prisma: PrismaService;
   storage: MemoryStorage;
@@ -258,6 +293,7 @@ export async function createApp(): Promise<TestContext> {
   const ai = new FakeAi();
   const salesforce = new FakeSalesforce();
   salesforce.reset();
+  const renderer = new FakeRenderer();
   const moduleRef = await Test.createTestingModule({ imports: [AppModule] })
     .overrideProvider(StorageService)
     .useValue(storage)
@@ -269,6 +305,8 @@ export async function createApp(): Promise<TestContext> {
     .useValue({ client: () => ai })
     .overrideProvider(SalesforceHttp)
     .useValue(salesforce)
+    .overrideProvider(RendererService)
+    .useValue(renderer)
     .overrideProvider(GitHttp)
     .useValue({
       request: () => {
@@ -282,10 +320,17 @@ export async function createApp(): Promise<TestContext> {
   });
   configureApp(app);
   await app.init();
-  return { app, prisma: app.get(PrismaService), storage, git, mail, ai, salesforce };
+  return { app, prisma: app.get(PrismaService), storage, git, mail, ai, salesforce, renderer };
 }
 
 const TABLES = [
+  'ReportUnsubscribe',
+  'ReportDelivery',
+  'ReportSubscription',
+  'WebhookDelivery',
+  'Webhook',
+  'ApiKeyUsage',
+  'ApiKey',
   'ImportItem',
   'ImportFile',
   'ImportBatch',

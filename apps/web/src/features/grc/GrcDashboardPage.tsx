@@ -18,8 +18,9 @@ import {
   TreeSelect,
   Typography,
 } from 'antd';
-import { DownloadOutlined } from '@ant-design/icons';
+import { DownloadOutlined, FilePptOutlined } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
+import { ExportDialog, type ExportRequest } from '@/features/exports/ExportDialog';
 import {
   PROCESS_ELEMENT_ID,
   type GrcBreakdownRow,
@@ -48,6 +49,7 @@ type Matrix = 'inherent' | 'residual' | 'tested';
  * control, and the risk–control matrix export.
  */
 export function GrcDashboardPage() {
+  const [exportReq, setExportReq] = useState<ExportRequest | null>(null);
   const { t } = useTranslation();
   const loc = useLocalized();
   const { locale } = useLocale();
@@ -196,9 +198,23 @@ export function GrcDashboardPage() {
             <Button icon={<DownloadOutlined />} onClick={() => void exportRcm()}>
               {t('grc:dashboard.exportRcm')}
             </Button>
+            <Button
+              icon={<FilePptOutlined />}
+              onClick={() =>
+                setExportReq({
+                  format: 'pptx',
+                  scope: 'RISK_SUMMARY',
+                  id: scope.departmentId,
+                  title: t('integrations:export.riskSummary'),
+                })
+              }
+            >
+              {t('integrations:export.menuPptx')}
+            </Button>
           </Space>
         }
       />
+      <ExportDialog request={exportReq} onClose={() => setExportReq(null)} />
       <Breadcrumb
         style={{ marginBlockEnd: 16 }}
         items={[

@@ -365,7 +365,10 @@
       "WORKFLOW_withdrawn": "{{actor}} withdrew the request {{title}}",
       "WORKFLOW_cancelled": "{{actor}} cancelled the request {{title}}",
       "WORKFLOW_incident": "Request stuck at “{{step}}”: {{title}}",
-      "WORKFLOW_message": "{{msgSubject}}"
+      "WORKFLOW_message": "{{msgSubject}}",
+      "INTEGRATION": "Integration: {{title}}",
+      "INTEGRATION_webhookDisabled": "Integration switched off after repeated failures: {{title}}",
+      "INTEGRATION_reportFailed": "Scheduled report failed: {{title}}"
     }
   },
   "prefs": {
@@ -393,7 +396,8 @@
       "AUDIT": "Audit engagements and findings",
       "SURVEY": "Questionnaires to answer",
       "KPI": "KPI values due and Salesforce sync failures",
-      "WORKFLOW": "Workflow tasks and requests (assigned, due, escalations, outcomes)"
+      "WORKFLOW": "Workflow tasks and requests (assigned, due, escalations, outcomes)",
+      "INTEGRATION": "Integrations switched off and scheduled reports that failed"
     }
   },
   "feedback": {

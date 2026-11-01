@@ -1,4 +1,4 @@
-import type { ContentType } from '@processhub/shared';
+import type { ContentType, WebhookEventType } from '@processhub/shared';
 import { Global, Injectable, Logger, Module } from '@nestjs/common';
 
 /** Events other modules (e.g. the Git integration) react to. Payloads carry ids only. */
@@ -16,7 +16,24 @@ export type DomainEvent =
       entityType: ContentType;
       entityId: string;
       actorId: string;
-    };
+    }
+  /** Something webhooks / Teams destinations can subscribe to (Phase 4.4, D-174). */
+  | IntegrationEvent;
+
+export interface IntegrationEvent {
+  type: 'integration';
+  event: WebhookEventType;
+  entity: { type: string; id: string; code: string | null; nameEn: string; nameAr: string };
+  /** For the department filter of a destination. */
+  departmentId: string | null;
+  /** The process the item belongs to (process-house branch filter). */
+  processId: string | null;
+  ownerId?: string | null;
+  /** In-app path (absolute links are built from APP_URL). */
+  link: string;
+  /** Small facts only (status, version, outcome) — never form data or secrets. */
+  data?: Record<string, string | number | boolean | null>;
+}
 
 type Listener = (event: DomainEvent) => void | Promise<void>;
 

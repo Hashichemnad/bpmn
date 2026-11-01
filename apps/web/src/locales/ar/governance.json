@@ -380,7 +380,10 @@
       "WORKFLOW_withdrawn": "سحب {{actor}} الطلب {{title}}",
       "WORKFLOW_cancelled": "ألغى {{actor}} الطلب {{title}}",
       "WORKFLOW_incident": "الطلب متوقف عند «{{step}}»: {{title}}",
-      "WORKFLOW_message": "{{msgSubject}}"
+      "WORKFLOW_message": "{{msgSubject}}",
+      "INTEGRATION": "تكامل: {{title}}",
+      "INTEGRATION_webhookDisabled": "تم إيقاف التكامل بعد تكرار الفشل: {{title}}",
+      "INTEGRATION_reportFailed": "تعذّر إرسال التقرير المجدول: {{title}}"
     }
   },
   "prefs": {
@@ -408,7 +411,8 @@
       "AUDIT": "مهام ونتائج التدقيق",
       "SURVEY": "استبيانات للإجابة",
       "KPI": "مواعيد قيم المؤشرات وأخطاء مزامنة Salesforce",
-      "WORKFLOW": "مهام وطلبات سير العمل (الإسناد والاستحقاق والتصعيد والنتائج)"
+      "WORKFLOW": "مهام وطلبات سير العمل (الإسناد والاستحقاق والتصعيد والنتائج)",
+      "INTEGRATION": "إيقاف التكاملات وفشل التقارير المجدولة"
     }
   },
   "feedback": {

@@ -16,9 +16,10 @@ import {
   TreeSelect,
   Typography,
 } from 'antd';
-import { DownloadOutlined } from '@ant-design/icons';
+import { DownloadOutlined, FilePptOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import { useTranslation } from 'react-i18next';
+import { ExportDialog, type ExportRequest } from '@/features/exports/ExportDialog';
 import type { KpiDto, KpiRag } from '@processhub/shared';
 import { useKpi, useScorecard } from '@/api/kpi';
 import { apiDownload } from '@/api/client';
@@ -49,6 +50,7 @@ export function KpiDashboardPage() {
   const processes = useProcessTreeOptions('');
   const [params, setParams] = useSearchParams();
   const [open, setOpen] = useState<string | null>(null);
+  const [exportReq, setExportReq] = useState<ExportRequest | null>(null);
   const q: Record<string, string | undefined> = {};
   for (const k of KEYS) q[k] = params.get(k) ?? undefined;
   const card = useScorecard(q);
@@ -123,11 +125,27 @@ export function KpiDashboardPage() {
         title={t('kpi:dashboard.title')}
         subtitle={t('kpi:dashboard.subtitle')}
         extra={
-          <Button icon={<DownloadOutlined />} onClick={() => void exportExcel()}>
-            {t('grc:excel.export')}
-          </Button>
+          <Space wrap>
+            <Button icon={<DownloadOutlined />} onClick={() => void exportExcel()}>
+              {t('grc:excel.export')}
+            </Button>
+            <Button
+              icon={<FilePptOutlined />}
+              onClick={() =>
+                setExportReq({
+                  format: 'pptx',
+                  scope: 'KPI_SUMMARY',
+                  id: q.departmentId,
+                  title: t('integrations:export.kpiSummary'),
+                })
+              }
+            >
+              {t('integrations:export.menuPptx')}
+            </Button>
+          </Space>
         }
       />
+      <ExportDialog request={exportReq} onClose={() => setExportReq(null)} />
       <Card style={{ marginBlockEnd: 16 }}>
         <Flex gap={8} wrap="wrap">
           <TreeSelect

@@ -44,7 +44,7 @@ with no per-user licensing. Target: 50–500 users on a single server.
 | 4.2 | M10 assurance: approval of GRC changes, control testing, issues and actions, audits, questionnaires, assurance dashboard | ✅ Done (merged into `main`, D-098 – D-106) |
 | 4.3 | M11 EA (application catalogue, interfaces, data objects, capability map, traceability); M12 KPIs, dashboards + Salesforce KPI link | ✅ Done (merged into `main`, D-107 – D-119); the Salesforce KPI sync stays in the code but is not used (KPIs and risks are managed in ProcessHub) |
 | Diagrams | More diagram types (ARIS / GBTEC / Signavio parity, DOF RFP modeling items): shared diagram framework (Diagram entity, versions, governance, portal, links), value chain, organisation chart, DMN decision tables, EPC (+ conversion to BPMN), SIPOC | ✅ Done (merged into `main`, D-120 – D-127) |
-| 4.4 | Integration & export: Oracle Fusion Risk Management overlay, Salesforce risk / other connectors, API keys, webhooks, Word/HTML/XPDL export | ⬜ (later phase, see BACKLOG) |
+| 4.4 | Integration & export (product owner scope): server-side diagram renderer, public REST API with API keys, webhooks, Power BI / reporting feed, Microsoft Teams channel notifications, static HTML export, PowerPoint export, scheduled report e-mails (D-172 – D-179). Out of scope (BACKLOG): SCIM, XPDL, SharePoint, Salesforce risk / Oracle connectors, external workflow calls, automatic event-log feeds, two-way Git sync | ✅ Done on branch `integrations-exports` (PR #23), awaiting review / merge |
 | 5.1 | M13 Process mining and simulation: event log import (CSV / Excel / XES, ProcessHub reviews), discovery (process map, variants, filters, statistics, bottlenecks, heuristics miner → BPMN), conformance (token replay, overlay on BPMN, mining KPIs, step attribute suggestions), discrete-event simulation with scenarios | ✅ Done (merged into `main`, D-128 – D-143) |
 | 5.2 | M14 Workflow execution: run approved processes as task flows (forms, assignments, approvals, SLAs, monitoring, live event log) | ✅ Done (merged into `main`, D-144 – D-154) |
 | Design A | Modeler design upgrade — Part A: look and feel (colour theme as BPMN-in-Color, renderer, colour picker, fonts/RTL, apply theme) | ✅ Done (merged into `main`, D-067 – D-073) |
@@ -52,7 +52,7 @@ with no per-user licensing. Target: 50–500 users on a single server.
 | Design B2 | Modeler design — Part B2: smarter modeling and reports (Playwright e2e in CI, Dictionary with label autocomplete, Quick Model, step attributes and "colour by", handbook / RACI / object reports, modeling conventions) | ✅ Done (merged into `main`, D-083 – D-088) |
 | Deps | zod 3 → 4 (high advisory GHSA-mrhx-c7xc-m3w5, D-082) | ✅ Done (merged into `main`) |
 | Import | M15 Import tools / migration: Import Center (batches, preview, dry run, undo, re-import, upload security), process house / departments / users from Excel, BPMN / Visio / ARIS / DMN diagrams, Word / PDF / Confluence / Markdown into the wiki, AI-assisted migration, migration tracker and review queue, full export package and round-trip | ✅ Done (merged into `main`, D-155 – D-164) |
-| 6 | Hardening: SSO, performance, security review fixes, deployment guide | 🟡 Parts 1–4 merged into `main` (security review `docs/SECURITY.md`, production stack and backups `docs/DEPLOYMENT.md`, SSO with Entra ID / OIDC and TOTP 2FA, product owner decisions: 2FA for admins, break-glass, roles in ProcessHub, 24 h sessions, Node 22). Final session part A (performance, reliability, accessibility, images, restore drill, D-165 – D-171) done on branch `final-a-performance`, awaiting review / merge |
+| 6 | Hardening: SSO, performance, security review fixes, deployment guide | 🟡 Parts 1–4 merged into `main` (security review `docs/SECURITY.md`, production stack and backups `docs/DEPLOYMENT.md`, SSO with Entra ID / OIDC and TOTP 2FA, product owner decisions: 2FA for admins, break-glass, roles in ProcessHub, 24 h sessions, Node 22). Final session part A (performance, reliability, accessibility, images, restore drill, D-165 – D-171) merged into `main`; part B (security review) follows Phase 4.4 |
 
 Update this table and `docs/PROGRESS.md` at the end of every session.
 
@@ -290,6 +290,23 @@ Final session part A additions (DECISIONS D-165 – D-171):
 - Volume seed `apps/api/prisma/seed-volume.ts` + `perf-api.ts` / `perf-schedulers.ts`; images `processhub-api`,
   `processhub-api-migrate` (compose service `migrate`), `processhub-web` (unprivileged, port 8080) published to GHCR on
   version tags; `scripts/backup-drill.sh`, `scripts/check-i18n.mjs` in CI
+
+Phase 4.4 additions (integrations and exports, DECISIONS D-172 – D-179):
+
+- Container `renderer` (`apps/renderer`, headless Chromium, internal network, token) + web renderer page
+  `apps/web/render.html` (`vite.render.config.ts`); API `RendererService` (`RENDERER_URL` / `RENDERER_TOKEN`,
+  image cache `render-cache/<sha256>` in the file storage)
+- `ApiKey` (prefix + SHA-256, owner, scopes, content PUBLISHED | WORKSPACE, departments, IP allow-list, rate
+  limit, expiry, revoked / rotated / last used) + `ApiKeyUsage`; public API `/api/public/v1` (`@RequireApiScope`,
+  global `ApiKeyGuard`, reporting feed `/reporting/<table>`); permission `integrations.read`; Settings
+  `integrations.api`; audit actions `ROTATE`, `REVOKE`; entity types `ApiKey`, `Webhook`, `ReportSubscription`
+- `Webhook` (kind WEBHOOK | TEAMS, encrypted URL / secret, events, departments, process branch, language,
+  switch-off) + `WebhookDelivery` (persisted queue and log); domain event `integration`; notification type
+  `INTEGRATION`; Setting `integrations.webhooks`
+- Exports `POST /exports/html` (offline site ZIP) and `POST /exports/pptx` (`pptxgenjs`); Setting
+  `branding.exportTemplate`
+- `ReportSubscription` + `ReportDelivery` + `ReportUnsubscribe`; job kind `REPORT_SEND`; Setting `reports`;
+  shared `packages/shared/src/integrations.ts` (scopes, events, schemas, `nextReportRun`)
 
 ## 10. Definition of Done (every phase)
 

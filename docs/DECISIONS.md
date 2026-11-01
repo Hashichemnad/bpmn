@@ -2426,3 +2426,226 @@ on their Node 24 majors and pnpm through Corepack (replaces `pnpm/action-setup`,
 translation check step. Schedulers never run twice at once (`common/periodic.ts`); issue reminders send the
 overdue notice before the escalation in the same run (an issue first seen past its escalation date — e.g.
 after downtime — used to get the overdue notice one run later).
+
+## D-172 — Server-side diagram rendering in a separate renderer container (Phase 4.4)
+
+**Context:** HTML / PowerPoint exports and scheduled report e-mails must draw BPMN and the other diagram types
+without a user's browser (until now every image was drawn client-side, D-087). bpmn-js / diagram-js need a real
+browser layout engine (text measurement), so Node-only rendering (jsdom) is not an option.
+
+**Decision:** a separate internal container `renderer` (`apps/renderer`, Node 22 + Alpine's Chromium driven by
+`playwright-core`) instead of Chromium inside the API image: the API image stays slim (553 MB, D-169), a
+browser crash or memory spike cannot take the API down, and the browser gets its own limits.
+
+- The page code is the web app's own renderer: `apps/web/render.html` → `src/render/render-core.ts` reuses
+  `createDiagram` / `translateModule` / `applyLanguage` (BPMN) and the diagram kit (value chain, organisation
+  chart, EPC) with the self-hosted Inter / IBM Plex Sans Arabic fonts embedded — exports look exactly like the
+  app, Arabic labels and RTL included. Built by `vite build -c vite.render.config.ts` into `dist-render/` and
+  copied into the image. DMN decision tables and SIPOC are tables, not drawings: exports render them as HTML /
+  slide tables from the stored content.
+- Endpoints `POST /render` (SVG or PNG) and `POST /pdf` (HTML → A4 / A3 PDF; used by scheduled reports), token
+  header `x-renderer-token` (`RENDERER_TOKEN`, constant-time compare), `GET /health`.
+- Isolation: only on the internal Compose network `render` (no internet, nothing published; the API joins it),
+  read-only root file system, `/tmp` tmpfs, all capabilities dropped, `no-new-privileges`, memory / CPU / PID
+  limits. Inside, every browser request is intercepted: files of the bundle are served from disk, everything
+  else is aborted, and Chromium's proxy points to a closed port. Documents printed to PDF get
+  `script-src 'none'`. Chromium runs with `--no-sandbox` (no user namespaces in an unprivileged container);
+  the container boundary above replaces it — noted in SECURITY.md.
+- Limits: 16 MB request body, 45 s per job, 2 jobs at a time, browser recycled after 200 jobs / relaunched after
+  a crash.
+- API side: `RendererService` (`apps/api/src/renderer/`) with `RENDERER_URL` / `RENDERER_TOKEN` /
+  `RENDERER_TIMEOUT_MS`. Images are cached in the file storage under `render-cache/<sha256>` of (cache
+  version, kind, language, format, width, theme for graph notations, source) — i.e. once per published
+  process version, language and format. When the renderer is off or fails, callers get `null`: exports show
+  "Diagram image not available", PDF report e-mails fall back to a link.
+- Release images: `processhub-renderer` is published with the other three.
+
+## D-173 — Public REST API with API keys (Phase 4.4)
+
+**Decision:** a separate, versioned, read-only API under `/api/public/v1` (outside the internal `/api/v1`
+prefix, which keeps changing with the UI) authenticated only by API keys.
+
+- **Keys:** `phk_<12-character id>_<43-character secret>` (256 random bits). Only the SHA-256 hash and the id
+  are stored; the full key is shown once on create / rotate. Rotate issues a new id and secret (the old key stops
+  at once); revoke is permanent (no delete, so the audit trail and call log stay). Every key has a responsible
+  **owner** (active user — a deactivated owner disables the key), an **expiry** (default 1 year, at most
+  `integrations.api.maxKeyDays`, default 730), optional **IP / CIDR allow-list**, a **per-key rate limit**
+  (default 120 / minute, fixed one-minute windows in memory — single API instance; the IP-based global limit
+  still applies), **scopes** and a **content filter** (published content only — default — or workspace
+  drafts) plus an optional **department filter** (items without a department are then left out).
+- **Scopes (read-only):** `processes:read`, `pages:read`, `diagrams:read`, `objects:read`, `grc:read`, `ea:read`,
+  `kpis:read`, `workflow:read` (aggregated statistics), `workflow:cases:read` (case list with requester names —
+  personal data, separate on purpose), `reporting:read` (step 3). No write scopes: none was listed by the product
+  owner; they can be added later per endpoint.
+- **Guards:** routes declare `@RequireApiScope(scope)`. `JwtAuthGuard` ignores those routes (a browser session
+  never authenticates the public API — no CSRF surface), the global `ApiKeyGuard` checks the key, address,
+  owner, rate limit and scope, `PermissionsGuard` keeps deny-by-default. `route-security.e2e-spec.ts` lists every
+  public route with its scope and fails when one is added, changed or not read-only.
+- **Content rules:** published mode reads the current publication (title / description snapshot, BPMN of the
+  published version, page / diagram version); GRC and KPIs only `ACTIVE`, dictionary terms only `APPROVED`;
+  wiki pages of view-restricted spaces are never returned (spaces have per-user grants that keys cannot
+  express). Library objects of the GRC / KPI types are only reachable through their scoped endpoints.
+- **HTTP:** pages (`page`, `pageSize` ≤ 200), `updatedSince` for incremental sync, `q`; weak ETag + Last-Modified
+  with 304 on `If-None-Match` / `If-Modified-Since`; JSON body limit 16 KB; SVG through the renderer (D-172,
+  503 `RENDERER_UNAVAILABLE` when off).
+- **Logging:** every call of a known key (also refused: revoked, expired, wrong address, rate limit, missing
+  scope) with method, route template (never ids or query strings), status, duration, address — batched writes,
+  kept `usageRetentionDays` (default 90); last-used time / address on the key; audit `CREATE`, `UPDATE`,
+  `ROTATE`, `REVOKE` (never the secret).
+- **Permissions:** managing keys needs `settings.manage` (Super Admin); new permission `integrations.read`
+  (Admin, Super Admin) shows keys, webhooks and their logs.
+- **Docs:** OpenAPI document of the public module only at `/api/public/docs` (`-json`), switched by
+  `ENABLE_PUBLIC_API_DOCS` independently of `ENABLE_SWAGGER` (default on outside production).
+
+## D-174 — Webhooks: persisted queue, HMAC signatures, SSRF guard (Phase 4.4)
+
+**Decision:** one `Webhook` table for both generic webhooks and Microsoft Teams destinations (`kind`), and one
+`WebhookDelivery` table that is the queue and the delivery log at once.
+
+- **Events** (16): process / page / diagram published or archived, review submitted / approved / rejected
+  (rejected also covers "changes requested", `data.status` tells which), workflow case started / completed /
+  overdue (top-level cases only), issue raised / overdue, KPI turned red (first value of a period that is red),
+  import batch completed. Sources emit an `integration` domain event after their transaction; published /
+  archived come from the existing `content.published` / `content.unpublished` events. Pages of view-restricted
+  spaces are never announced.
+- **Filters:** departments (events without a department are left out when set) and a process-house branch
+  (the event's process or one of its ancestors).
+- **Payload:** `{ id, type, occurredAt, entity { type, id, code, nameEn, nameAr }, links { app, portal, api },
+data }` — ids, links and a few facts (version, status, outcome, severity, period, value). Never form data,
+  descriptions, comments or secrets.
+- **Signature:** `X-ProcessHub-Signature: sha256=<hex HMAC-SHA256(secret, "<timestamp>.<raw body>")>` with
+  `X-ProcessHub-Timestamp` (Unix seconds; receivers refuse > 5 minutes), plus `X-ProcessHub-Event` and
+  `X-ProcessHub-Delivery` (event id, the same for every retry and destination — receivers deduplicate on it).
+  The secret (`whsec_…`, 256 bits) is shown once and stored encrypted (AES-256-GCM, like Git tokens); the URL
+  is encrypted too (Teams URLs carry their signature in the query string) and shown without query string.
+- **Delivery:** a worker claims due rows (`lockedAt`, stale after 5 minutes) — on every new event and every
+  `WEBHOOK_POLL_SECONDS` (15) — so deliveries survive restarts. Retries after 1, 5, 15 minutes, 1, 4, 12 and
+  24 hours, then `GAVE_UP`. After `WEBHOOK_DISABLE_AFTER` (10) failed attempts in a row the destination is
+  switched off (`disabledAt`, reason), waiting deliveries are dropped and Super Admins plus the creator get the
+  new notification type `INTEGRATION` (in-app + e-mail, EN / AR). Switching it on again resets the counter.
+  "Send test event" and "Resend" make one immediate attempt and report the result; they never count towards the
+  switch-off. Delivery log kept `integrations.webhooks.retentionDays` (30).
+- **SSRF:** checked when saving and before every delivery: HTTPS only (plain http and internal addresses only
+  for hosts in `OUTBOUND_ALLOWED_HOSTS`, i.e. test receivers), no credentials in URLs, optional host allow-list
+  for webhooks (`integrations.webhooks.allowedHosts`, exact or `*.domain`), Teams limited to Power Automate
+  hosts (`*.logic.azure.com`, `*.environment.api.powerplatform.com`, `*.webhook.office.com` + `teamsHosts`);
+  every resolved address must be public (loopback, private, link-local / metadata, CGNAT, NAT64, IPv4-mapped /
+  -compatible IPv6 refused; the IPv4-compatible `::/96` range was added to the shared block list). The sender
+  (`safeFetch`) connects to the checked address (no DNS rebinding), never follows redirects (a 3xx is a failed
+  attempt "REDIRECT_NOT_FOLLOWED"), stops after `WEBHOOK_TIMEOUT_MS` (10 s) and 64 KB of response.
+- **Access:** managing destinations needs `settings.manage`; `integrations.read` (Admins) shows them and the
+  delivery log. Audit `CREATE`, `UPDATE`, `DELETE`, `ROTATE` (secret), `RETRY` (resend).
+- **Dev / CI:** Compose service `webhook-receiver` (records requests at `localhost:8090/received`) for the demo
+  webhook and the Playwright test; it is listed in the dev `OUTBOUND_ALLOWED_HOSTS` and not part of the
+  production stack.
+
+## D-175 — Reporting feed for Power BI: flat paged JSON, guide instead of a .pbit (Phase 4.4)
+
+**Context:** Power BI and Excel should read ProcessHub data on a schedule (on-premises gateway). OData v4 was
+considered: the Node options (`odata-v4-server`, `@phrygia/odata-server`, Nest adapters) are unmaintained or
+tied to other ORMs, and Power BI's OData connector does not send custom headers for API keys on scheduled
+refresh without a custom connector.
+
+**Decision:** read-only **flat JSON tables** under `/api/public/v1/reporting/<table>` (scope `reporting:read`):
+`processes`, `reviews`, `kpis`, `kpi-measurements` (with target and RAG), `risks`, `controls`, `risk-coverage`
+(per process: risks, controls, steps with a risk but no control), `control-tests`, `issues`, `audit-findings`,
+`workflow-cases-monthly` and `workflow-sla` (aggregated per process / month and per step: tasks, late,
+overdue, on-time %, average hours — no case data, no names), `mining-logs`. Rows have scalar columns only
+(bilingual pairs `…En` / `…Ar`), pages of up to 1,000 rows (`page`, `pageSize`, `updatedSince`), ETag /
+Last-Modified. Power Query reads them with `Web.Contents` + `RelativePath` / `Query` and the key in the
+`X-API-Key` header (credentials "Anonymous" — works with scheduled refresh through the gateway). The key's
+content filter and department filter apply (published keys: published processes only; reviews of processes
+only when a filter is set).
+
+A Power BI template (.pbit) is a binary, versioned file that cannot be produced and tested reliably here, so
+`docs/integrations/POWER-BI.md` ships a step-by-step guide with the M queries (a paging function plus one query
+per table), relationships and the field names in English and Arabic.
+
+## D-176 — Microsoft Teams channel notifications through Teams Workflows webhooks (Phase 4.4)
+
+**Decision:** Teams channels are destinations of kind `TEAMS` in the webhook machinery (D-174: same events,
+filters, persisted retries, switch-off, delivery log, SSRF rules) posting to a **Teams "Workflows" webhook URL**
+("When a Teams webhook request is received" → "Post card in a chat or channel"), the replacement of the retired
+Office 365 connectors. No Teams app, no Graph permissions.
+
+- Body: `{ type: "message", attachments: [ Adaptive Card 1.5 ] }` — title of the event, code and name of the
+  item, owner, facts (version, status, outcome, severity, period, value), buttons "Open in ProcessHub" /
+  "Open in the Knowledge Portal". Language per destination: English, Arabic (card `rtl: true`) or both (two
+  containers, the Arabic one `rtl`). Texts are sanitised (control and bidi-override characters removed, one
+  line, length-limited, Markdown link syntax broken up); only ProcessHub's own absolute links become buttons.
+  The card stored in the delivery log is exactly what was sent.
+- The URL (its query string holds the workflow's signature) is stored encrypted and shown without the query;
+  no extra signing secret. Hosts allowed by default: `*.logic.azure.com`, `*.environment.api.powerplatform.com`,
+  `*.webhook.office.com`; more in `integrations.webhooks.teamsHosts`.
+- Personal Teams chats / activity feed need a Teams app with Graph permissions → BACKLOG; personal
+  notifications stay e-mail (and in-app).
+
+## D-177 — Static HTML export: self-contained offline website (Phase 4.4)
+
+**Decision:** `POST /exports/html` (`PROCESS` | `BRANCH` | `VALUE_CHAIN` | `SPACE`) returns a ZIP with a static
+site: `index.html` (process / page tree, client-side search over an inline index, value chain picture),
+`processes/<id>.html` (diagram per language, facts — category, owner, department, version, approval date and
+approvers, publication —, step table with roles, systems, documents and time attributes, linked documents and
+SOP pages) and `pages/<id>.html`. Built by a pure function (`exports/html-site.ts`) on the data of the handbook
+(`ReportDataService`, same visibility rules) — at most 40 processes like the handbook.
+
+- **Offline and safe:** every page has its CSS and a small language / search script inline and a CSP
+  (`default-src 'none'; img-src data:; …`), so nothing can load from a network; diagrams (renderer SVG,
+  sanitised) and attachment images of wiki pages (≤ 2 MB, raster or sanitised SVG) are `data:` images; other
+  images are removed, in-app links become plain text, external links get `rel=noopener noreferrer`; all texts
+  are HTML-escaped, wiki HTML goes through the server sanitiser again, the search index is inline JSON with
+  `<`, `>`, `&`, U+2028/9 escaped. A Playwright test opens the extracted copy from disk and counts zero requests.
+- **Languages:** both languages in every page (`lang` blocks), a switch at the top (remembered in
+  `localStorage`), Arabic right to left.
+- **Content:** published versions by default; `drafts: true` only for users with workspace access
+  (`processes.read`, spaces: `docs.read` + space visibility) — every page then carries a "Draft" watermark and
+  banner. Unpublished items are not exported (404 `NOT_PUBLISHED`). Branding: logo and organisation name from
+  Settings, colours from the new Setting `branding.exportTemplate`. Audited (`EXPORT`, scope, counts).
+- Without the renderer the pages say "Diagram image not available".
+
+## D-178 — PowerPoint export with pptxgenjs (Phase 4.4)
+
+**Decision:** `POST /exports/pptx` (`PROCESS` | `VALUE_CHAIN` | `KPI_SUMMARY` | `RISK_SUMMARY`, locale EN / AR)
+built with `pptxgenjs` 4 (MIT, no native code): a branded master (bars in the export template's main / accent
+colours, logo on every slide or only on the title slide, slide numbers), title slide, diagram as PNG from the
+renderer (fitted, 2,400 px), process facts, step table split over slides (10 rows each, header repeated),
+risks / controls of the steps, KPIs of the process (latest value and RAG colour); value chains add the list of
+their processes; summaries list active KPIs (latest value, target, RAG cell colour) or active risks (overview per
+rating band, table sorted by residual score with band colours) — `kpi.read` / `grc.read` required. Arabic decks
+set `rtl` on every paragraph, align right and mirror table columns (PowerPoint tables have no RTL flag in
+pptxgenjs). File names are ASCII (process / diagram code). Audited.
+
+- `pptxgenjs` depends on `image-size` 1.x, which has high advisories (DoS in exotic formats); the library never
+  calls it for our in-memory images, and a pnpm override pins `image-size` ≥ 2.0.3 (`pnpm audit` clean).
+- Its lazy `import('node:fs')` needs Jest to compile the package to CommonJS (`transformIgnorePatterns`).
+
+## D-179 — Scheduled report e-mails on the job runner, with the recipient's permissions (Phase 4.4)
+
+**Decision:** `ReportSubscription` (report, filters, format, schedule, language, audience), `ReportDelivery`
+(one row per recipient and run = delivery log + secure link) and `ReportUnsubscribe`.
+
+- **Reports:** KPI dashboard, governance overdue reviews (approval reviews past due + overdue periodic
+  reviews), open issues, workflow SLA per step, migration progress, process handbook of a branch. Each report
+  needs its permission (`kpi.read`, `governance.dashboard`, `grc.read` / `issues.manage`, `workflow.monitor` /
+  `workflow.admin`, `import.manage`, `processes.read` / `portal.read`) and is **built with the recipient's
+  permissions** at send time: a recipient without the permission gets no e-mail (`SKIPPED`, `NO_PERMISSION`),
+  issues are limited to the recipient's own unless they manage issues, workflow monitors see their department's
+  processes, the handbook follows the handbook's visibility (published content for portal users).
+- **Audience:** every user subscribes themselves (only to reports they may see); role and department audiences
+  need `users.manage` (Admins). Recipients see role / department subscriptions in their list and can
+  unsubscribe / subscribe again.
+- **Schedule:** daily / weekly (ISO weekday, default Sunday) / monthly (day 1–28) at a wall-clock time in
+  **Asia/Dubai** (`nextReportRun`, shared and unit-tested); "skip holidays" moves weekly / monthly runs on a
+  non-working day (workflow working week + central holiday list) to the next working day and skips such days
+  for daily runs. A one-minute scheduler claims due subscriptions by moving `nextRunAt` and enqueues
+  `REPORT_SEND` on the existing job runner (D-128), which generates and mails per recipient.
+- **Formats:** PDF (HTML printed by the renderer, D-172; falls back to Excel with a note when the renderer is
+  off), Excel (exceljs, right-to-left sheets in Arabic) or link only (an Excel file behind the link). The file is
+  stored (`report-deliveries/<id>/…`) and the e-mail carries the summary and a **secure link**
+  (`/reports/deliveries/<id>`: sign-in required, only the recipient, valid `reports.linkDays` = 30, then the
+  file is purged); attachments only when Setting `reports.allowAttachments` is on (default off) and the file is
+  ≤ 10 MB. Every e-mail has an unsubscribe link (HMAC token from `JWT_ACCESS_SECRET`, public endpoint with the
+  login rate limit) and a `List-Unsubscribe` header. "Send to me now" sends a run to the signed-in user only.
+- **Failures:** `FAILED` delivery with the error; the subscription owner gets an `INTEGRATION` notification
+  (`reportFailed`, once per hour and subscription). No SMTP configured → `SKIPPED` (`SMTP_NOT_CONFIGURED`).
+- Audit: create / update / delete of subscriptions, unsubscribe, file downloads (`EXPORT`).

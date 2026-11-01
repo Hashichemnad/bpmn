@@ -21,6 +21,7 @@ import {
 } from '@processhub/shared';
 import { PrismaService } from '../prisma/prisma.service';
 import { AuditService } from '../audit/audit.service';
+import { DomainEvents } from '../events/domain-events';
 import { NotificationsService } from '../notifications/notifications.service';
 import { badRequest, conflict, forbidden, notFound } from '../common/app-exception';
 import type { AuthUser, RequestMeta } from '../common/auth-user';
@@ -74,7 +75,35 @@ export class IssuesService implements OnModuleInit {
     private readonly events: AssuranceEventsService,
     private readonly settings: AssuranceSettingsService,
     private readonly assignees: AssigneeResolver,
+    private readonly domainEvents: DomainEvents,
   ) {}
+
+  /** Webhook / Teams event of an issue (Phase 4.4): code, title, severity — no description. */
+  private issueEvent(
+    event: 'issue.raised' | 'issue.overdue',
+    i: {
+      id: string;
+      code: string;
+      titleEn: string;
+      titleAr: string;
+      severity: string;
+      departmentId: string | null;
+      processId: string | null;
+      ownerId: string | null;
+      dueAt: Date | null;
+    },
+  ) {
+    this.domainEvents.emit({
+      type: 'integration',
+      event,
+      entity: { type: 'ISSUE', id: i.id, code: i.code, nameEn: i.titleEn, nameAr: i.titleAr },
+      departmentId: i.departmentId,
+      processId: i.processId,
+      ownerId: i.ownerId,
+      link: issueLink(i.id),
+      data: { severity: i.severity, due: i.dueAt ? i.dueAt.toISOString().slice(0, 10) : null },
+    });
+  }
 
   onModuleInit() {
     this.files.register('ISSUE', {
@@ -599,6 +628,7 @@ export class IssuesService implements OnModuleInit {
     }
     if (!id) throw conflict('CONFLICT');
     const created = await this.row(id);
+    this.issueEvent('issue.raised', created);
     await this.notify(created, 'assigned', [created.ownerId], actor?.id ?? null);
     for (const a of created.actions)
       await this.notify(created, 'action_assigned', [a.ownerId], actor?.id ?? null, a);
@@ -1052,6 +1082,7 @@ export class IssuesService implements OnModuleInit {
           `ISSUE:overdue:${i.id}:${stamp(due)}`,
         );
         await this.prisma.issue.update({ where: { id: i.id }, data: { overdueNotifiedAt: now } });
+        this.issueEvent('issue.overdue', i);
       }
       if (due < late && !i.escalatedAt) {
         sent += await this.notify(

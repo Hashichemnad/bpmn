@@ -20,10 +20,13 @@ import {
   DeleteOutlined,
   DownOutlined,
   EditOutlined,
+  FilePptOutlined,
   FormOutlined,
+  GlobalOutlined,
   HistoryOutlined,
 } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
+import { ExportDialog, type ExportRequest } from '@/features/exports/ExportDialog';
 import { useComments, useGovernance } from '@/api/governance';
 import {
   useDeleteDiagram,
@@ -63,6 +66,7 @@ export function DiagramDetailPage() {
   const remove = useDeleteDiagram();
   const [editing, setEditing] = useState(false);
   const [history, setHistory] = useState(false);
+  const [exportReq, setExportReq] = useState<ExportRequest | null>(null);
   const tab = params.get('tab') ?? 'overview';
 
   if (diagram.isLoading) return <LoadingState />;
@@ -212,6 +216,34 @@ export function DiagramDetailPage() {
                     label: t('diagrams:exportPdf'),
                     onClick: () => window.open(`/print/diagrams/${d.id}`, '_blank', 'noopener'),
                   },
+                  ...(d.type === 'VALUE_CHAIN'
+                    ? [
+                        {
+                          key: 'html',
+                          icon: <GlobalOutlined />,
+                          label: t('integrations:export.menuHtml'),
+                          onClick: () =>
+                            setExportReq({
+                              format: 'html',
+                              scope: 'VALUE_CHAIN',
+                              id: d.id,
+                              title: loc(d),
+                            }),
+                        },
+                        {
+                          key: 'pptx',
+                          icon: <FilePptOutlined />,
+                          label: t('integrations:export.menuPptx'),
+                          onClick: () =>
+                            setExportReq({
+                              format: 'pptx',
+                              scope: 'VALUE_CHAIN',
+                              id: d.id,
+                              title: loc(d),
+                            }),
+                        },
+                      ]
+                    : []),
                   ...(d.canDelete
                     ? [
                         { type: 'divider' as const },
@@ -330,6 +362,7 @@ export function DiagramDetailPage() {
         canEdit={d.canEditContent}
         onClose={() => setHistory(false)}
       />
+      <ExportDialog request={exportReq} onClose={() => setExportReq(null)} />
     </>
   );
 }

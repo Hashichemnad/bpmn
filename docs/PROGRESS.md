@@ -2,7 +2,137 @@
 
 Read this together with `CLAUDE.md` at the start of every session.
 
-## Current state — 2026-11-01 (Final session, Part A — performance, reliability and polish, branch `final-a-performance`)
+## Current state — 2026-11-01 (Phase 4.4 — Integrations and exports, branch `integrations-exports`)
+
+All feature phases and Final Part A are merged into `main`. This branch builds the integration and export scope
+the product owner decided (in: public API with API keys, webhooks, Power BI / reporting feed, Microsoft Teams
+channel notifications, static HTML export, PowerPoint export, scheduled report e-mails; out — BACKLOG: SCIM,
+XPDL, SharePoint / OneDrive, Salesforce risk and Oracle connectors, workflow steps calling external systems,
+automatic event-log feeds, two-way Git sync; the Salesforce KPI sync stays as it is, off). It runs before Final
+Part B (security review), so that review covers this code. The session works on the harness branch
+`claude/dazzling-pascal-sgx8t7` and pushes the same commits to `integrations-exports`.
+
+Local setup: as in Final Part A below (PostgreSQL 16, role `processhub` / `devpassword`, databases `processhub`
+and `processhub_test`, build the shared package first). Renderer locally: `cd apps/web && npx vite build -c
+vite.render.config.ts`, then `cd apps/renderer && npx tsc && RENDERER_TOKEN=<16+ chars>
+BUNDLE_DIR=../web/dist-render CHROMIUM_PATH=<chrome> PORT=3100 node dist/server.js`; the API uses it with
+`RENDERER_URL=http://localhost:3100` and the same `RENDERER_TOKEN`. No Docker daemon in the sandbox — CI builds
+the images (now four: api, api-migrate, web, renderer) and runs the Playwright suite.
+
+Steps (tick as they are committed; a new session continues at the first unticked one):
+
+- [x] 0. Server-side rendering (D-172): `apps/renderer` (Node + Alpine Chromium via `playwright-core`;
+      `POST /render` SVG / PNG, `POST /pdf`, token, request interception, no network, limits), web renderer
+      page `apps/web/render.html` + `src/render/render-core.ts` (reuses the modeler / diagram kit code and
+      fonts; `vite.render.config.ts` → `dist-render/`, part of `pnpm build`), API `RendererService` with the
+      image cache in the file storage (`render-cache/<sha256>`) + unit test `renderer.service.spec.ts`;
+      Compose (dev and prod) service `renderer` on the internal network `render` (read-only, no capabilities,
+      limits), `RENDERER_URL` / `RENDERER_TOKEN` / `RENDERER_TIMEOUT_MS` (`generate-secrets.sh` creates the
+      token), release workflow publishes `processhub-renderer`. Checked locally: BPMN SVG (Arabic labels) and
+      PNG, Arabic RTL PDF, external image request blocked, wrong token → 401.
+- [x] 1. Public REST API with API keys (D-173): migration `*_integrations_api_keys` (`ApiKey`, `ApiKeyUsage`),
+      shared `integrations.ts` (scopes, schemas, DTOs), permission `integrations.read` (Admin + Super Admin),
+      audit actions `ROTATE` / `REVOKE`, entity types `ApiKey` / `Webhook` / `ReportSubscription`, Setting
+      `integrations.api`; API `apps/api/src/public-api/` — `api-keys.service.ts` (create / update / rotate /
+      revoke, SHA-256 + id lookup, owner / expiry / IP checks, per-key rate limit, batched call log, retention),
+      global `ApiKeyGuard` + `@RequireApiScope`, `api-usage.middleware.ts`, `public-api.service.ts` +
+      `public-api.controller.ts` (22 read-only routes under `/api/public/v1`, published / workspace content,
+      department filter, ETag / Last-Modified, SVG via the renderer), `public-api-docs.ts`
+      (`/api/public/docs`, `ENABLE_PUBLIC_API_DOCS`), management `/integrations/api-keys`, `/api-settings`,
+      `/renderer`; web Settings → Integrations (`features/integrations/`, namespace `integrations`, API keys
+      tab: create / edit / new secret / revoke, secret shown once, call log drawer, API settings, renderer
+      status). Tests: `test/public-api.e2e-spec.ts` (10), `api-keys.spec.ts`, route-security lists every public
+      route with its scope; Playwright `integrations.spec.ts` (create key → public API → call log → revoke →
+      401, passed locally against API + Vite). Docs: `docs/integrations/API.md`, SECURITY route table.
+- [x] 2. Webhooks (D-174): migration `*_integrations_webhooks` (`Webhook` — kind WEBHOOK / TEAMS, encrypted
+      URL and secret —, `WebhookDelivery` = persisted queue + log), shared events / schemas / DTOs, Setting
+      `integrations.webhooks`, notification type `INTEGRATION` (EN / AR e-mail + in-app); domain event
+      `integration` emitted by reviews (submitted / approved / rejected), workflow (case started / completed /
+      overdue via `AfterCommit.events`), issues (raised / overdue), KPIs (turned red), imports (completed), plus
+      `content.published` / `unpublished`; API `apps/api/src/webhooks/` — `destination-guard.ts` (HTTPS, host
+      allow-lists, resolved-address check), `webhook-http.ts` (safeFetch: pinned address, no redirects, 10 s,
+      64 KB), `webhook-signature.ts`, `payloads.ts` (payload + Teams Adaptive Card), `webhook-dispatcher.service.ts`
+      (filters, claim / send / backoff / switch-off / notification / retention), `webhooks.service.ts` +
+      controller (CRUD, secret, test, resend, log, settings); `outbound.ts` also blocks `::/96`. Web: Webhooks
+      and Microsoft Teams tabs (`DestinationsTab.tsx`: form with event groups, departments, branch, language;
+      delivery log drawer with payload / resend; test event; switch on again; delivery settings). Compose dev
+      service `webhook-receiver` (`apps/e2e/receiver/server.mjs`). Tests: `test/webhooks.e2e-spec.ts` (7: CRUD
+      and permissions, signed delivery, filters, retries → switch-off → notification → resend / test,
+      redirect / timeout / size limits, SSRF refusals incl. metadata / mapped IPv6 / allow-lists, real issue and
+      KPI flows), `webhooks.spec.ts` (18 unit), `outbound.spec.ts`; Playwright: publish → signed delivery at the
+      receiver → delivery log → test event (passed locally). Docs: `docs/integrations/WEBHOOKS.md`.
+- [x] 3. Power BI / reporting feed (D-175): `apps/api/src/public-api/reporting.service.ts` — 13 flat paged tables
+      under `/api/public/v1/reporting/<table>` (scope `reporting:read`, ≤ 1,000 rows per page, key content and
+      department filters, aggregated workflow volumes / SLA per step, no case data); shared
+      `REPORTING_TABLES`, `reportingQuerySchema`; test in `public-api.e2e-spec.ts` (all tables, RAG of KPI
+      values, flat rows, filters); route list updated. `docs/integrations/POWER-BI.md`: key, tables, M paging
+      function + table queries, relationships, DAX measures, scheduled refresh through the gateway, Excel, field
+      names EN / AR, troubleshooting (a .pbit is not shipped, D-175).
+- [x] 4. Microsoft Teams channel notifications (D-176): destinations of kind `TEAMS` in the webhook machinery
+      (step 2) — Adaptive Card 1.5 (`payloads.ts` `teamsCard`: EN / AR / both, Arabic `rtl`, sanitised texts,
+      own links only), Power Automate host allow-list + `teamsHosts`, encrypted URL shown without its
+      signature; web tab "Microsoft Teams" (card language). Tests: unit (card), Playwright (non-Teams host
+      refused, Arabic RTL test card at the receiver, URL signature hidden; passed locally). Docs:
+      `docs/integrations/TEAMS.md`; personal Teams notifications → BACKLOG.
+- [x] 5. Static HTML export (D-177): `apps/api/src/exports/` — `export-data.service.ts` (visibility via the
+      handbook's `ReportDataService` / portal publications, drafts only with workspace access, branding, renderer
+      images, offline wiki HTML with embedded attachment images), `html-site.ts` (pure site builder: index with
+      tree + inline search, process and page files, both languages + switch, RTL, CSP without network, draft
+      watermark), `html-export.service.ts` (ZIP, audit); `POST /exports/html`; Setting `branding.exportTemplate`
+      (`GET / PUT /exports/template`, card in Settings); web `features/exports/ExportDialog.tsx` + menus on the
+      process page, portal process page, value chain diagrams, space home. Tests: `test/exports.e2e-spec.ts`
+      (offline / sanitised / both languages, drafts and permissions, space, no renderer), Playwright (portal →
+      ZIP → opened from disk with zero network requests, Arabic switch). Checked with the real renderer: site and
+      screenshots in AR / EN.
+- [x] 6. PowerPoint export (D-178): `pptx-export.service.ts` (`pptxgenjs` 4.0.1; branded master, title,
+      diagram PNG, facts, step tables over slides, risks / controls, KPIs; value chain; KPI and risk summaries;
+      Arabic RTL with mirrored tables; ASCII file names; audit), `POST /exports/pptx`; menus on process /
+      portal / value chain pages, buttons on the KPI and GRC dashboards; pnpm override `image-size` ≥ 2.0.3;
+      Jest compiles `pptxgenjs` (lazy `import()`). Tests: exports e2e (Arabic deck with `rtl="1"`, media, KPI /
+      risk permissions, audit), Playwright (portal → Arabic deck). Checked: deck opened in LibreOffice (5
+      slides, RTL tables).
+- [x] 7. Scheduled report e-mails (D-179): migration `*_report_subscriptions` (`ReportSubscription`,
+      `ReportDelivery`, `ReportUnsubscribe`), shared schemas + `nextReportRun` (Asia/Dubai, skip holidays; unit
+      tests in `integrations.test.ts`), job kind `REPORT_SEND`, Setting `reports` (attachments, link days);
+      `apps/api/src/scheduled-reports/` — `report-builders.ts` (6 reports, recipient permissions),
+      `report-render.ts` (Excel, PDF HTML for the renderer, e-mail with summary / secure link / unsubscribe),
+      `subscriptions.service.ts` (CRUD, audiences, scheduler → job runner, per-recipient delivery, PDF fallback,
+      attachments setting, failure notification, secure download, unsubscribe tokens, purge) +
+      controller (public `POST /report-subscriptions/unsubscribe` with the login rate limit); mail transport
+      supports attachments / headers. Web: "My report e-mails" (`/reports/subscriptions`: list, form with
+      report / filters / format / schedule / language / audience, send now, delivery log, settings card),
+      public `/unsubscribe/:token`, `/reports/deliveries/:id` (secure download). Tests:
+      `test/report-subscriptions.e2e-spec.ts` (4: permissions and audiences, scheduled run through the job
+      runner with recipient rights + secure link + unsubscribe, PDF / attachments / fallback / failure
+      notification, all six reports), Playwright (subscription → send now → log; Mailpit link in CI; passed
+      locally with an SMTP sink and the real renderer).
+- [x] 8. Demo data, tests, docs, screenshots: `prisma/seed-integrations.ts` (demo only, once: read-only API key
+      for published content — printed in README "A short tour of Phase 4.4", revoke before go-live —, webhook to
+      the Compose `webhook-receiver`, switched-off Teams channel, weekly KPI report e-mail for the performance
+      officer; `seed.e2e` covers it); authorization matrix knows `/report-subscriptions`; Playwright
+      `integrations.spec.ts` (6 flows: key → API → revoke → 401; publish → signed webhook → log → test event;
+      Teams Arabic card; offline HTML site opened from disk with zero requests + Arabic deck; scheduled report →
+      send now → log / Mailpit link) and `screenshots-integrations.spec.ts`; screenshots EN / AR in
+      `docs/screenshots/integrations/` (API keys, webhook delivery log, Teams destination + rendered Teams cards,
+      subscriptions list and form, offline HTML export, PowerPoint diagram and step slides). Docs:
+      `docs/integrations/API.md`, `WEBHOOKS.md`, `TEAMS.md`, `POWER-BI.md`; SECURITY (integrations section, rate
+      limits, remaining risks, go-live checklist, route table), DEPLOYMENT (renderer in the architecture, go-live
+      step 13), README (feature row, docs, tour, phases), BACKLOG, CLAUDE.md (phase table, data model).
+
+Local verification on 2026-11-01: format, lint, translations (5,408 keys), type-check (all workspaces), the full
+`pnpm test` (shared, web unit 30 files / 231 tests, API unit + e2e — two suites failed only under parallel load
+from a Playwright run: `imports-documents` (timeout) and `authorization-matrix` (the new viewer-readable
+`/report-subscriptions`, fixed); both re-run green), `pnpm build` incl. the renderer page, bundle budget,
+`pnpm audit --audit-level high --prod` (no high / critical); Playwright `integrations.spec.ts` against API + Vite
+
+- the real renderer (local Chromium) + s3rver + an SMTP sink; renderer checked with Arabic BPMN SVG / PNG,
+  Arabic RTL PDF, offline site, PowerPoint opened in LibreOffice. No Docker daemon here — CI builds the four images
+  and runs the Compose stack (renderer, webhook receiver, Mailpit) with the full Playwright suite.
+
+Next: merge review of PR [Hashichemnad/bpmn#23](https://github.com/Hashichemnad/bpmn/pull/23); then Final Part B
+(security review), which should include the Phase 4.4 surface (SECURITY.md "Integrations and exports").
+
+## Previous state — 2026-11-01 (Final session, Part A — performance, reliability and polish, branch `final-a-performance`)
 
 All feature phases (1 – 5.2, AI, diagram types, import tools) are merged into `main`. This branch is the Phase 6
 remainder: measurement-driven performance work, reliability, accessibility / polish and production images —

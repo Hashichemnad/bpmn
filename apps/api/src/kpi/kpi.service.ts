@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { Prisma, type KpiMeasurement, type PrismaClient } from '@prisma/client';
+import { Prisma, type Kpi, type KpiMeasurement, type PrismaClient } from '@prisma/client';
 import {
   PERMISSIONS,
   PROCESS_ELEMENT_ID,
@@ -38,6 +38,7 @@ import {
   type UpdateKpiInput,
   type UpdateObjectiveInput,
 } from '@processhub/shared';
+import { DomainEvents } from '../events/domain-events';
 import { PrismaService } from '../prisma/prisma.service';
 import { AuditService, diffFields } from '../audit/audit.service';
 import { badRequest, conflict, forbidden, notFound } from '../common/app-exception';
@@ -230,6 +231,7 @@ export class KpiService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly audit: AuditService,
+    private readonly domainEvents: DomainEvents,
   ) {}
 
   // ---------- Access ----------
@@ -814,7 +816,37 @@ export class KpiService {
       );
       return m;
     });
+    await this.announceRed(o, input.period, before?.value ?? null, input.value);
     return saved;
+  }
+
+  /** Webhook / Teams event when a value turns a KPI red for its period (Phase 4.4). */
+  private async announceRed(
+    o: {
+      id: string;
+      code: string | null;
+      nameEn: string;
+      nameAr: string;
+      ownerId: string | null;
+      kpi: Kpi;
+    },
+    period: string,
+    before: number | null,
+    value: number,
+  ) {
+    const targets = await this.prisma.kpiPeriodTarget.findMany({ where: { kpiId: o.id } });
+    const t = thresholdsFor(o.kpi, period, targets);
+    if (kpiRag(value, t) !== 'RED' || kpiRag(before, t) === 'RED') return;
+    this.domainEvents.emit({
+      type: 'integration',
+      event: 'kpi.red',
+      entity: { type: 'KPI', id: o.id, code: o.code, nameEn: o.nameEn, nameAr: o.nameAr },
+      departmentId: o.kpi.departmentId,
+      processId: o.kpi.calculatedProcessId,
+      ownerId: o.ownerId,
+      link: `/kpis/${o.id}`,
+      data: { period, value: `${value}${o.kpi.unit ? ` ${o.kpi.unit}` : ''}` },
+    });
   }
 
   async removeMeasurement(id: string, measurementId: string, actor: AuthUser, meta: RequestMeta) {

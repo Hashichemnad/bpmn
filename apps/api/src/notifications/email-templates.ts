@@ -73,6 +73,7 @@ const TEMPLATES: Record<Locale, Record<NotificationType, Template>> = {
     SURVEY: BY_KIND,
     KPI: BY_KIND,
     WORKFLOW: BY_KIND,
+    INTEGRATION: BY_KIND,
   },
   ar: {
     REVIEW_REQUESTED: {
@@ -130,6 +131,7 @@ const TEMPLATES: Record<Locale, Record<NotificationType, Template>> = {
     SURVEY: BY_KIND,
     KPI: BY_KIND,
     WORKFLOW: BY_KIND,
+    INTEGRATION: BY_KIND,
   },
 };
 
@@ -310,6 +312,14 @@ export const KIND_TEMPLATES: Record<Locale, Record<string, { subject: string; bo
     'KPI:due': {
       subject: 'KPI value due: {title}',
       body: 'The actual value of “{title}” for {comment} is due. Please enter it in ProcessHub (My tasks).',
+    },
+    'INTEGRATION:webhookDisabled': {
+      subject: 'Integration switched off: {title}',
+      body: 'ProcessHub switched off the destination “{title}” after repeated failed deliveries ({comment}). Check the delivery log in Settings → Integrations and switch it on again when the receiver works.',
+    },
+    'INTEGRATION:reportFailed': {
+      subject: 'Scheduled report failed: {title}',
+      body: 'The scheduled report “{title}” could not be sent: {comment}. Open Reports → Subscriptions for the delivery log.',
     },
     'KPI:syncFailed': {
       subject: 'Salesforce KPI sync failed',
@@ -492,6 +502,14 @@ export const KIND_TEMPLATES: Record<Locale, Record<string, { subject: string; bo
     'KPI:due': {
       subject: 'موعد إدخال قيمة المؤشر: {title}',
       body: 'حان موعد إدخال القيمة الفعلية لـ «{title}» عن الفترة {comment}. يرجى إدخالها في بروسس هب (مهامي).',
+    },
+    'INTEGRATION:webhookDisabled': {
+      subject: 'تم إيقاف التكامل: {title}',
+      body: 'أوقف ProcessHub الوجهة «{title}» بعد تكرار فشل الإرسال ({comment}). راجع سجل الإرسال في الإعدادات ← التكاملات وأعد تشغيلها عندما يعمل المستقبِل.',
+    },
+    'INTEGRATION:reportFailed': {
+      subject: 'تعذّر إرسال التقرير المجدول: {title}',
+      body: 'تعذّر إرسال التقرير المجدول «{title}»: {comment}. افتح التقارير ← الاشتراكات لعرض سجل الإرسال.',
     },
     'KPI:syncFailed': {
       subject: 'فشلت مزامنة مؤشرات Salesforce',

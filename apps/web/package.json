@@ -6,7 +6,8 @@
   "description": "ProcessHub web client (React + Vite + Ant Design)",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -p tsconfig.json && vite build",
+    "build": "tsc -p tsconfig.json && vite build && vite build -c vite.render.config.ts",
+    "build:render": "vite build -c vite.render.config.ts",
     "preview": "vite preview",
     "typecheck": "tsc -p tsconfig.json",
     "test": "vitest run"

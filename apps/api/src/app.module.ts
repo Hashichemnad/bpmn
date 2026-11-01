@@ -7,6 +7,7 @@ import { PrismaModule } from './prisma/prisma.module';
 import { AuditModule } from './audit/audit.module';
 import { AuthModule } from './auth/auth.module';
 import { StorageModule } from './storage/storage.module';
+import { RendererModule } from './renderer/renderer.module';
 import { UsersModule } from './users/users.module';
 import { RolesModule } from './roles/roles.module';
 import { DepartmentsModule } from './departments/departments.module';
@@ -35,6 +36,11 @@ import { SalesforceModule } from './salesforce/salesforce.module';
 import { MiningModule } from './mining/mining.module';
 import { WorkflowModule } from './workflow/workflow.module';
 import { ImportsModule } from './imports/imports.module';
+import { ApiKeysModule, PublicApiModule } from './public-api/public-api.module';
+import { WebhooksModule } from './webhooks/webhooks.module';
+import { ExportsModule } from './exports/exports.module';
+import { ScheduledReportsModule } from './scheduled-reports/scheduled-reports.module';
+import { ApiKeyGuard } from './public-api/api-key.guard';
 import { HealthController } from './health/health.controller';
 import { CsrfGuard, JwtAuthGuard, PermissionsGuard } from './common/guards';
 import { AllExceptionsFilter } from './common/http-exception.filter';
@@ -57,6 +63,7 @@ import { AllExceptionsFilter } from './common/http-exception.filter';
     NotificationsModule,
     AuthModule,
     StorageModule,
+    RendererModule,
     UsersModule,
     RolesModule,
     DepartmentsModule,
@@ -76,6 +83,11 @@ import { AllExceptionsFilter } from './common/http-exception.filter';
     MiningModule,
     WorkflowModule,
     ImportsModule,
+    ApiKeysModule,
+    WebhooksModule,
+    ExportsModule,
+    ScheduledReportsModule,
+    PublicApiModule,
     DocsModule,
     SearchModule,
     IntegrationsModule,
@@ -86,9 +98,11 @@ import { AllExceptionsFilter } from './common/http-exception.filter';
   ],
   controllers: [HealthController],
   providers: [
-    // Order matters: rate limit → authenticate → CSRF → authorise.
+    // Order matters: rate limit → authenticate (session cookie or, on /api/public, API key) →
+    // CSRF → authorise.
     { provide: APP_GUARD, useClass: ThrottlerGuard },
     { provide: APP_GUARD, useClass: JwtAuthGuard },
+    { provide: APP_GUARD, useClass: ApiKeyGuard },
     { provide: APP_GUARD, useClass: CsrfGuard },
     { provide: APP_GUARD, useClass: PermissionsGuard },
     { provide: APP_FILTER, useClass: AllExceptionsFilter },

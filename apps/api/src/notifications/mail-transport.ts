@@ -18,6 +18,10 @@ export interface MailMessage {
   subject: string;
   html: string;
   text: string;
+  /** Scheduled reports (Phase 4.4): file attachments, only when Setting `reports` allows them. */
+  attachments?: { filename: string; content: Buffer; contentType: string }[];
+  /** Extra headers, e.g. List-Unsubscribe. */
+  headers?: Record<string, string>;
 }
 
 /**
@@ -52,6 +56,8 @@ export class MailTransport {
         subject: msg.subject,
         html: msg.html,
         text: msg.text,
+        attachments: msg.attachments,
+        headers: msg.headers,
       });
     } finally {
       transport.close();

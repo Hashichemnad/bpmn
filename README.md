@@ -38,6 +38,7 @@
 | **Simulation** | Discrete-event what-if simulation from the step attributes: distributions, lanes as resources with capacity, Sun–Thu working calendar with UAE holidays, branch probabilities (from mining), as-is and to-be scenarios on any process version, validation, side-by-side comparison with charts and Excel, bottleneck view on the model, AI explanation and proposals | ✅ 5.1 |
 | **Workflow execution** | Published processes run as requests: execution settings in the modeler (forms with an editor and bilingual preview, assignment rules, due times in working time, four-eyes, approval outcomes, S-FEEL conditions, timers, DMN business rules, notifications, Word documents, call activities, error paths), executable check, deployment of the published version (cases pinned to their version), service catalogue and start forms in the portal, inbox with claim / delegate / out-of-office, approve / reject / return, case page with highlighted diagram, timeline, files and comments, reminders and escalation, workflow monitor (retry, cancel, reassign) and dashboard with Excel, live event log for process mining. See [`docs/WORKFLOWS.md`](./docs/WORKFLOWS.md) | ✅ 5.2 |
 | **Import tools / migration** | Import Center: every import is a batch — upload, background read with progress and cancel, preview with column / shape mapping and a validation report, dry run, apply, Excel result report, undo while drafts, safe re-import (matching by code, e-mail, external id, file name). Process house, departments and users (invitations, no passwords) from Excel / CSV; BPMN (ZIP, Signavio / Camunda / Bizagi / ARIS exports, Arabic label detection, auto-layout), Visio `.vsdx`, ARIS AML (EPC, value chains, roles, systems), DMN; Word, PDF, Confluence HTML exports and Markdown into the wiki with process links; the existing register imports as batches; AI proposals (SOP → BPMN, risks and controls, translation) in a review queue; migration dashboard and review queue with bulk actions; full export package and restore. Upload security: content sniffing, ZIP-slip / zip-bomb limits, no XXE, macros refused. See [`docs/MIGRATION.md`](./docs/MIGRATION.md) | ✅ Import |
+| **Integrations & exports** | Public REST API (`/api/public/v1`, read-only) with API keys — scopes, published or workspace content, department filter, IP allow-list, expiry, rotate / revoke, per-key rate limit, call log, OpenAPI at `/api/public/docs`; Power BI / Excel reporting feed (13 flat tables); webhooks (16 events, HMAC-signed, retries with backoff, automatic switch-off, delivery log, resend, SSRF guard); Microsoft Teams channel cards (Teams Workflows, English / Arabic RTL); offline HTML website export (process, branch, value chain, wiki space — works without network); PowerPoint export (process, value chain, KPI and risk summaries, Arabic RTL slides); scheduled report e-mails (six reports, PDF / Excel / link, Dubai time, built with each recipient's permissions, unsubscribe); internal headless-Chromium renderer for server-side diagram images and PDFs. See [`docs/integrations/`](./docs/integrations/) | ✅ 4.4 |
 | **Operations & performance** | Production stack with automatic HTTPS (Caddy), slim images published to the GitHub Container Registry on every release (API, one-shot migrations, unprivileged web), checksummed backups with restore and an automated restore drill, 24-hour idle and 7-day absolute session limits, optional MFA check of single sign-on tokens; measured on a production-size volume seed (2,000 processes, 5,000 pages, 1M mining events, 10,000 requests): every screen's API call under 300 ms at P95, first page load 238 KB of JavaScript (gzip) with Brotli assets; keyboard and screen-reader support (WCAG 2.1 AA colours, skip link, announced form errors) and a CI check that English and Arabic stay complete | ✅ 6 |
 
 ## Documentation
@@ -49,6 +50,7 @@
 | [`docs/WORKFLOWS.md`](./docs/WORKFLOWS.md) | Process owners and admins: making a process executable, forms, assignments, SLAs, monitoring |
 | [`docs/MIGRATION.md`](./docs/MIGRATION.md) | Migration team: preparing files, import order, review queue, go-live checklist |
 | [`docs/AI-DEMO.md`](./docs/AI-DEMO.md) | A guided demo of the AI assistant |
+| [`docs/integrations/API.md`](./docs/integrations/API.md) · [`WEBHOOKS.md`](./docs/integrations/WEBHOOKS.md) · [`TEAMS.md`](./docs/integrations/TEAMS.md) · [`POWER-BI.md`](./docs/integrations/POWER-BI.md) | IT / integrators: API keys and endpoints (curl, Power Query), webhook payloads and signature check, Teams channel setup, Power BI reporting feed |
 | [`docs/PROGRESS.md`](./docs/PROGRESS.md) · [`docs/DECISIONS.md`](./docs/DECISIONS.md) · [`docs/BACKLOG.md`](./docs/BACKLOG.md) | Developers: what is done (with measurements), why, and what comes later |
 
 ### Build phases
@@ -65,8 +67,8 @@
 | Diagrams | Value chain, organisation chart, DMN, EPC, SIPOC | ✅ |
 | 5.1 / 5.2 | Process mining and simulation, workflow execution | ✅ |
 | Import | Import tools / migration | ✅ |
-| 6 | Hardening: security review, production deployment, SSO / 2FA, performance, accessibility, images, restore drill | 🟡 final review on `final-a-performance` |
-| 4.4 | Integrations & export (Oracle Fusion Risk, Salesforce risks, API keys, webhooks, Word / HTML / XPDL) | ⬜ later |
+| 4.4 | Integrations & export: public API with keys, webhooks, Power BI feed, Teams, HTML / PowerPoint export, scheduled report e-mails | 🟡 review on `integrations-exports` |
+| 6 | Hardening: security review, production deployment, SSO / 2FA, performance, accessibility, images, restore drill | 🟡 final security review (part B) after 4.4 |
 
 ## Quick start (Docker)
 
@@ -113,6 +115,25 @@ content in every lifecycle state, comments, notifications and portal feedback.
 
 Demo users are only created on a demo installation (`SEED_DEMO_DATA=true`, the default). **Emails** sent by
 the demo installation go to the bundled **Mailpit** at **http://localhost:8025** — nothing leaves the machine.
+
+### A short tour of Phase 4.4 — integrations and exports
+
+Demo installations seed a read-only API key for published content, a webhook to the local test receiver, a
+switched-off Teams channel and a weekly KPI report e-mail for Perla. **Demo only — revoke the key before
+go-live.**
+
+1. **Public API:** `curl -H "X-API-Key: phk_DemoKey00001_ProcessHubDemoKeyForPublishedContentOnly000"
+   http://localhost:8080/api/public/v1/processes?pageSize=5` — published processes with English and Arabic names;
+   the interactive documentation is at <http://localhost:8080/api/public/docs>.
+2. Sign in as the admin → **Settings → Integrations**: API keys (create one — the secret is shown once —, call
+   log, new secret, revoke), **Webhooks** (the demo receiver; "Send test event", delivery log with the payload),
+   **Microsoft Teams** (card language, switched-off demo channel). Requests the receiver got:
+   <http://localhost:8090/received>.
+3. Publish a process (or approve a review) and watch the signed delivery arrive at the receiver.
+4. On a process page (workspace or portal): **Reports → Offline website (HTML)** — unzip and open
+   `index.html` without network, switch to Arabic — and **PowerPoint** in English or Arabic.
+5. Sign in as `performance@processhub.local` → user menu → **My report e-mails**: the weekly KPI dashboard,
+   "Send to me now", the e-mail in Mailpit (<http://localhost:8025>) with its secure link, delivery log.
 
 ### A short tour of the import tools (migration)
 

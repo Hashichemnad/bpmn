@@ -1,8 +1,9 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Button, Card, Col, Descriptions, List, Row, Typography } from 'antd';
-import { FileTextOutlined, PlusOutlined } from '@ant-design/icons';
+import { Button, Card, Col, Descriptions, List, Row, Space, Typography } from 'antd';
+import { FileTextOutlined, GlobalOutlined, PlusOutlined } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
+import { ExportDialog, type ExportRequest } from '@/features/exports/ExportDialog';
 import { usePageTree } from '@/api/docs';
 import { PageHeader } from '@/components/PageHeader';
 import { EmptyState } from '@/components/states';
@@ -16,6 +17,7 @@ export function SpaceHomePage() {
   const formatDate = useFormatDate();
   const { space, newPage } = useSpaceContext();
   const tree = usePageTree(space.id);
+  const [exportReq, setExportReq] = useState<ExportRequest | null>(null);
   const recent = useMemo(
     () => [...(tree.data ?? [])].sort((a, b) => b.updatedAt.localeCompare(a.updatedAt)).slice(0, 8),
     [tree.data],
@@ -35,13 +37,24 @@ export function SpaceHomePage() {
         }
         subtitle={loc(space, 'description')}
         extra={
-          space.canEdit && (
-            <Button type="primary" icon={<PlusOutlined />} onClick={() => newPage(null)}>
-              {t('docs:pages.new')}
+          <Space wrap>
+            <Button
+              icon={<GlobalOutlined />}
+              onClick={() =>
+                setExportReq({ format: 'html', scope: 'SPACE', id: space.id, title: loc(space) })
+              }
+            >
+              {t('integrations:export.menuHtml')}
             </Button>
-          )
+            {space.canEdit && (
+              <Button type="primary" icon={<PlusOutlined />} onClick={() => newPage(null)}>
+                {t('docs:pages.new')}
+              </Button>
+            )}
+          </Space>
         }
       />
+      <ExportDialog request={exportReq} onClose={() => setExportReq(null)} />
       {!tree.isLoading && !tree.data?.length ? (
         <Card>
           <EmptyState

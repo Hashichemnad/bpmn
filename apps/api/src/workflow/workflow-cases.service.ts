@@ -41,7 +41,12 @@ import { pageArgs, paginated } from '../common/pagination';
 import { userRefSelect } from '../governance/content.service';
 import { detectAttachmentType, safeFileName } from '../docs/attachment-type';
 import { WorkflowConfigService } from './workflow-config.service';
-import { WorkflowRunnerService, caseLink, type AfterCommit } from './workflow-runner.service';
+import {
+  WorkflowRunnerService,
+  caseEvent,
+  caseLink,
+  type AfterCommit,
+} from './workflow-runner.service';
 import {
   canMonitorProcess,
   canSeeCase,
@@ -326,6 +331,8 @@ export class WorkflowCasesService {
         },
       });
       const c = await this.runner.claim(tx, created.id);
+      // Before the run: a case that ends at once still reports started → completed in order.
+      if (!created.parentCaseId) after.events.push(caseEvent('workflow.case.started', created));
       await this.runner.run(
         tx,
         c,

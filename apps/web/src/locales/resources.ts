@@ -21,6 +21,7 @@ import enDiagrams from './en/diagrams.json';
 import enMining from './en/mining.json';
 import enWorkflow from './en/workflow.json';
 import enImports from './en/imports.json';
+import enIntegrations from './en/integrations.json';
 import arCommon from './ar/common.json';
 import arAdmin from './ar/admin.json';
 import arProcesses from './ar/processes.json';
@@ -40,6 +41,7 @@ import arDiagrams from './ar/diagrams.json';
 import arMining from './ar/mining.json';
 import arWorkflow from './ar/workflow.json';
 import arImports from './ar/imports.json';
+import arIntegrations from './ar/integrations.json';
 
 export const resources = {
   en: {
@@ -62,6 +64,7 @@ export const resources = {
     mining: enMining,
     workflow: enWorkflow,
     imports: enImports,
+    integrations: enIntegrations,
   },
   ar: {
     common: arCommon,
@@ -83,6 +86,7 @@ export const resources = {
     mining: arMining,
     workflow: arWorkflow,
     imports: arImports,
+    integrations: arIntegrations,
   },
 } as const;
 
@@ -106,4 +110,5 @@ export const NAMESPACES = [
   'mining',
   'workflow',
   'imports',
+  'integrations',
 ] as const;

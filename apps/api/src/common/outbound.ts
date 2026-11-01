@@ -37,7 +37,8 @@ for (const [net, prefix] of [
   BLOCKED.addSubnet(net, prefix, 'ipv4');
 }
 for (const [net, prefix] of [
-  ['::', 128],
+  // Unspecified, loopback and the deprecated IPv4-compatible range (::a.b.c.d) — Phase 4.4.
+  ['::', 96],
   ['::1', 128],
   ['64:ff9b::', 96],
   ['100::', 64],

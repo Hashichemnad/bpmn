@@ -105,6 +105,8 @@ export const PERMISSIONS = {
   IMPORT_OWN: 'import.own',
   /** Full export package of the whole repository (Super Admin). */
   EXPORT_FULL: 'export.full',
+  /** Phase 4.4: see API keys, webhooks, Teams destinations and their logs (managing them needs settings.manage). */
+  INTEGRATIONS_READ: 'integrations.read',
 } as const;
 export type Permission = (typeof PERMISSIONS)[keyof typeof PERMISSIONS];
 export const ALL_PERMISSIONS: Permission[] = Object.values(PERMISSIONS);
@@ -449,6 +451,9 @@ export const AUDIT_ACTIONS = [
   'REASSIGN',
   'CANCEL',
   'RETRY',
+  /** Phase 4.4: API key / webhook secret replaced, key revoked. */
+  'ROTATE',
+  'REVOKE',
 ] as const;
 export type AuditAction = (typeof AUDIT_ACTIONS)[number];
 
@@ -505,6 +510,9 @@ export const AUDIT_ENTITY_TYPES = [
   'WorkflowFile',
   'ImportBatch',
   'RepositoryExport',
+  'ApiKey',
+  'Webhook',
+  'ReportSubscription',
 ] as const;
 export type AuditEntityType = (typeof AUDIT_ENTITY_TYPES)[number];
 
@@ -539,6 +547,14 @@ export const SETTING_KEYS = {
   MINING_HOLIDAYS: 'mining.holidays',
   /** Workflow execution (Phase 5.2): working week, reminders, escalation. */
   WORKFLOW: 'workflow',
+  /** Phase 4.4: public API (longest key lifetime, call log retention). */
+  INTEGRATIONS_API: 'integrations.api',
+  /** Phase 4.4: webhook / Teams host allow-lists, delivery log retention. */
+  INTEGRATIONS_WEBHOOKS: 'integrations.webhooks',
+  /** Phase 4.4: colours of PowerPoint / offline HTML exports. */
+  EXPORT_TEMPLATE: 'branding.exportTemplate',
+  /** Phase 4.4: scheduled report e-mails (attachments allowed, link lifetime). */
+  REPORTS: 'reports',
 } as const;
 
 /** Logo upload limits. */
@@ -757,6 +773,11 @@ export const NOTIFICATION_TYPES = [
    * case completed / returned / rejected / withdrawn / cancelled, template notification (params.kind).
    */
   'WORKFLOW',
+  /**
+   * Integrations (Phase 4.4): webhook / Teams destination switched off after repeated failures,
+   * scheduled report failed (params.kind: webhookDisabled | reportFailed).
+   */
+  'INTEGRATION',
 ] as const;
 export type NotificationType = (typeof NOTIFICATION_TYPES)[number];
 

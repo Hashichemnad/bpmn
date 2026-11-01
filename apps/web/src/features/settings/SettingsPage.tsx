@@ -29,6 +29,7 @@ import { EmailSettingsCard } from './EmailSettingsCard';
 import { AiSettingsCard } from './AiSettingsCard';
 import { AuthSettingsCard } from './AuthSettingsCard';
 import { DiagramThemeCard } from './DiagramThemeCard';
+import { ExportTemplateCard } from './ExportTemplateCard';
 import { HolidaysModal } from '@/features/mining/HolidaysModal';
 
 export function SettingsPage() {
@@ -175,6 +176,9 @@ export function SettingsPage() {
         </Col>
         <Col span={24}>
           <DiagramThemeCard />
+        </Col>
+        <Col span={24}>
+          <ExportTemplateCard />
         </Col>
         <Col span={24}>
           <AuthSettingsCard />

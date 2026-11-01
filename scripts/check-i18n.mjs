@@ -28,6 +28,7 @@ const ALLOWED_SAME = new Set([
   'governance:reviewState.NONE',
   'governance:notifications.title.WORKFLOW_message',
   'imports:visio.type',
+  'integrations:tabs.teams',
   'kpi:dataSource.SALESFORCE',
   'kpi:calculated.none',
   'mining:mapping.formats.iso',

@@ -260,6 +260,27 @@ Other ideas from Part A:
   2,000 coloured diagrams: 1.8 s); the governance reminder scheduler still reads all current publication IDs
   (4.6 s per run on the volume seed, background job).
 
+## From Phase 4.4 (integrations and exports) — decided out of scope or later
+
+- **Out of scope by product owner decision (keep, do not build yet):** SCIM user provisioning; XPDL export;
+  SharePoint / OneDrive publishing; Salesforce risk and Oracle Fusion Risk Management connectors (the Salesforce
+  KPI sync stays as it is, off); workflow steps calling external systems; automatic event-log feeds for process
+  mining; two-way Git sync.
+- **Personal Microsoft Teams notifications** (chat / activity feed to one person) need a Teams app with
+  Microsoft Graph permissions; personal notifications stay e-mail and in-app (D-176).
+- Write scopes for the public API (e.g. KPI values from another system) — none requested yet (D-173).
+- Per-key rate limits and webhook claim locks are per API instance (in memory / row locks); Redis before scaling
+  out.
+- A Power BI template (.pbit) built and tested in Power BI Desktop (the guide has the M queries, D-175);
+  OData v4 if a maintained Node library appears.
+- Webhook payload versioning (`schemaVersion`) and event filters by process status; delivery statistics
+  per destination.
+- Renderer: a pool of warm pages (each job opens a new page, ~0.5–2 s per BPMN diagram, cached per version),
+  DMN decision-table and SIPOC images (exported as tables today).
+- Scheduled reports: Word handbook as a format, charts in the PDF, per-recipient filters (e.g. "my department"
+  as a dynamic filter), CSV.
+- HTML export: attachments other than images (PDF / Office files) in the offline site; per-step deep links.
+
 ## Nice to have
 
 - Resize external BPMN labels when switching language (text is re-rendered, bounds are kept).

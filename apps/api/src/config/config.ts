@@ -43,6 +43,11 @@ const envSchema = z.object({
   MINIO_BUCKET: z.string().default('processhub'),
 
   ENABLE_SWAGGER: bool(false),
+  /**
+   * OpenAPI document + UI of the public API at /api/public/docs (Phase 4.4). Independent of
+   * ENABLE_SWAGGER; default on except in production.
+   */
+  ENABLE_PUBLIC_API_DOCS: z.enum(['', 'true', 'false', '1', '0']).optional(),
 
   /** base64-encoded 32-byte key for AES-256-GCM encryption of integration tokens. */
   INTEGRATIONS_ENCRYPTION_KEY: z
@@ -87,6 +92,20 @@ const envSchema = z.object({
   AUTH_FORCE_LOCAL_LOGIN: bool(false),
   /** Timeout for calls to the single sign-on identity provider, in milliseconds. */
   SSO_HTTP_TIMEOUT_MS: z.coerce.number().int().min(1000).default(15000),
+  /**
+   * Internal diagram / PDF renderer (Phase 4.4, D-172), e.g. http://renderer:3100. Empty = no
+   * server-side diagram images (exports carry a note, PDF reports fall back to a link).
+   */
+  RENDERER_URL: z
+    .string()
+    .default('')
+    .transform((v) => v.replace(/\/+$/, '')),
+  RENDERER_TOKEN: z.string().default(''),
+  /** Timeout of one webhook / Teams delivery, in milliseconds (Phase 4.4). */
+  WEBHOOK_TIMEOUT_MS: z.coerce.number().int().min(1000).max(60000).default(10000),
+  /** How often due webhook deliveries (retries) are checked, in seconds; 0 = only on new events. */
+  WEBHOOK_POLL_SECONDS: z.coerce.number().int().min(0).max(3600).default(15),
+  RENDERER_TIMEOUT_MS: z.coerce.number().int().min(1000).default(60000),
 });
 
 export type Env = z.infer<typeof envSchema>;
@@ -96,6 +115,7 @@ export interface AppConfig extends Env {
   outboundAllowedHosts: string[];
   passwordPolicy: PasswordPolicy;
   isProduction: boolean;
+  publicApiDocs: boolean;
 }
 
 let cached: AppConfig | undefined;
@@ -116,6 +136,9 @@ export function loadConfig(source: NodeJS.ProcessEnv = process.env): AppConfig {
       .map((h) => h.trim())
       .filter(Boolean),
     isProduction: env.NODE_ENV === 'production',
+    publicApiDocs: !env.ENABLE_PUBLIC_API_DOCS
+      ? env.NODE_ENV !== 'production'
+      : env.ENABLE_PUBLIC_API_DOCS === 'true' || env.ENABLE_PUBLIC_API_DOCS === '1',
     passwordPolicy: {
       minLength: env.PASSWORD_MIN_LENGTH,
       requireUpper: env.PASSWORD_REQUIRE_UPPER,

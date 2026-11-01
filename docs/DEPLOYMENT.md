@@ -23,7 +23,7 @@ Contents
 
 ## 1. What you are installing
 
-ProcessHub runs as five Docker containers on **one Linux server**, started together with Docker Compose
+ProcessHub runs as six Docker containers on **one Linux server**, started together with Docker Compose
 from the file `docker-compose.prod.yml`:
 
 ```
@@ -34,14 +34,15 @@ from the file `docker-compose.prod.yml`:
                                      │
                                      ▼
                                     api       the ProcessHub server ──► internet: AI provider, GitHub/GitLab,
-                                   │    │                                         e-mail server (optional)
-                                   ▼    ▼
-                           postgres      storage
-                           database      uploaded files (attachments, logos)
+                                   │  │  │                                 e-mail server, webhooks / Teams (optional)
+                                   ▼  ▼  ▼
+                           postgres  storage  renderer
+                           database  files    headless browser: diagram images and PDF reports (no internet)
 ```
 
 - Only **caddy** is reachable from outside, on ports **80** and **443**. The database and the file storage
-  are on an internal network: they have no published ports and no internet access.
+  are on an internal network: they have no published ports and no internet access. The **renderer** (Phase
+  4.4) is on its own internal network that only the API joins (read-only, no capabilities, no internet).
 - All data lives in Docker **volumes** on the server: `postgres-data` (database), `storage-data` (files),
   `caddy-data` (HTTPS certificates), `api-data`.
 - Your settings and secrets live in one file: **`.env`** in the ProcessHub folder.
@@ -318,7 +319,13 @@ Caddy handles HTTPS. Choose one option with `CADDY_TLS` in `.env`, then run `sud
     each executable process set the **form data retention** (process page → Execution) from the records-retention
     policy; the product keeps form data until a period is set. `WORKFLOW_POLL_SECONDS` (default 15) controls how
     often timers, reminders and generated documents are processed.
-13. Go through the go-live checklist in [`docs/SECURITY.md`](./SECURITY.md) §7.
+13. **Integrations** (Phase 4.4): **Settings → Integrations** — the header shows _Diagram renderer: Running_
+    (the `renderer` container draws diagrams for exports and PDF report e-mails; without it exports show a note
+    and PDF reports fall back to Excel). Revoke the demo API key if demo data was seeded, create one key per
+    consuming system (docs/integrations/API.md, Power BI: POWER-BI.md), add webhook / Teams destinations
+    (WEBHOOKS.md, TEAMS.md) and keep **Report e-mail settings → Attach files** off unless agreed. Outbound
+    webhooks and Teams use the API's `egress` network; the renderer has no network.
+14. Go through the go-live checklist in [`docs/SECURITY.md`](./SECURITY.md) §7.
 
 ### 6.1 Single sign-on with Microsoft Entra ID (Azure AD)
 

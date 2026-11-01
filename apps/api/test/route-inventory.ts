@@ -7,6 +7,7 @@ import { THROTTLER_LIMIT, THROTTLER_SKIP } from '@nestjs/throttler/dist/throttle
 import { AppModule } from '../src/app.module';
 import {
   ANY_PERMISSION_KEY,
+  API_SCOPE_KEY,
   AUTHENTICATED_KEY,
   IS_PUBLIC_KEY,
   PERMISSIONS_KEY,
@@ -55,15 +56,18 @@ export async function collectRoutes(): Promise<RouteInfo[]> {
       const targets = [handler, metatype];
       const all = reflector.getAllAndOverride<string[] | undefined>(PERMISSIONS_KEY, targets);
       const any = reflector.getAllAndOverride<string[] | undefined>(ANY_PERMISSION_KEY, targets);
+      const scope = reflector.getAllAndOverride<string | null | undefined>(API_SCOPE_KEY, targets);
       const access = reflector.getAllAndOverride(IS_PUBLIC_KEY, targets)
         ? 'public'
-        : all
-          ? `all:${all.join(',')}`
-          : any
-            ? `any:${any.join(',')}`
-            : reflector.getAllAndOverride(AUTHENTICATED_KEY, targets)
-              ? 'authenticated'
-              : 'NONE';
+        : scope !== undefined
+          ? `apikey:${scope ?? 'any'}`
+          : all
+            ? `all:${all.join(',')}`
+            : any
+              ? `any:${any.join(',')}`
+              : reflector.getAllAndOverride(AUTHENTICATED_KEY, targets)
+                ? 'authenticated'
+                : 'NONE';
 
       const args = (Reflect.getMetadata(ROUTE_ARGS_METADATA, metatype, name) ?? {}) as Record<
         string,
@@ -110,12 +114,14 @@ const ACCESS_LABEL = (access: string) =>
           .join(', ')
       : access === 'public'
         ? '**public**'
-        : access;
+        : access.startsWith('apikey:')
+          ? `API key, scope \`${access.slice(7)}\``
+          : access;
 
 /** The endpoint table of docs/SECURITY.md (kept in sync by route-security.e2e-spec.ts). */
 export function routeTable(routes: RouteInfo[]): string {
   const lines = [
-    '| Method | Path (under `/api/v1`) | Access (server guard) | Validated input | Rate limit |',
+    '| Method | Path (under `/api/v1` unless shown) | Access (server guard) | Validated input | Rate limit |',
     '| --- | --- | --- | --- | --- |',
   ];
   for (const r of routes) {
