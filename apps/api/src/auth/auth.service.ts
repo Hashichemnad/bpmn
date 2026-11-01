@@ -17,7 +17,7 @@ import { AppException, badRequest } from '../common/app-exception';
 import type { AuthUser, RequestMeta } from '../common/auth-user';
 import { PasswordService } from './password.service';
 import { AuthUserLoader } from './auth-user.loader';
-import { isLocked, registerFailure } from './lockout';
+import { isLocked } from './lockout';
 import { AuthSettingsService } from './auth-settings.service';
 import { MfaService } from './mfa.service';
 
@@ -112,28 +112,14 @@ export class AuthService {
       });
     }
 
+    // The attempt is counted before the (slow) password check, atomically: parallel requests cannot
+    // all read the same counter and so exceed the lockout limit (SEC-36).
+    if (!(await this.reserveAttempt(user.id, meta))) throw this.lockedError(user.id, meta);
     const valid = await this.passwords.verify(user.passwordHash, input.password);
+    // A correct password gives its reservation back; the counter is reset only after every factor.
+    if (valid) await this.releaseAttempt(user.id);
     if (!valid || user.status !== 'ACTIVE') {
-      if (!valid) {
-        const next = registerFailure(user, {
-          maxAttempts: this.config.LOGIN_MAX_ATTEMPTS,
-          lockoutMinutes: this.config.LOGIN_LOCKOUT_MINUTES,
-        });
-        await this.prisma.user.update({
-          where: { id: user.id },
-          data: { failedLoginCount: next.failedLoginCount, lockedUntil: next.lockedUntil },
-        });
-        if (next.justLocked) {
-          await this.audit.log({
-            action: 'LOCKOUT',
-            entityType: 'User',
-            entityId: user.id,
-            userId: user.id,
-            summary: { lockedUntil: next.lockedUntil },
-            meta,
-          });
-        }
-      }
+      if (!valid) await this.lockIfExhausted(user.id, meta);
       await this.audit.log({
         action: 'LOGIN_FAILED',
         entityType: 'Auth',
@@ -174,6 +160,7 @@ export class AuthService {
   async loginMfa(challenge: string | undefined, input: MfaVerifyInput, meta: RequestMeta) {
     const user = await this.challengedUser(challenge, 'VERIFY', meta);
     let method: 'TOTP' | 'RECOVERY_CODE';
+    if (!(await this.reserveAttempt(user.id, meta))) throw this.lockedError(user.id, meta);
     try {
       method = await this.mfa.verifyLogin(user, input);
     } catch (err) {
@@ -186,18 +173,23 @@ export class AuthService {
   /** 2FA is required for the user's role but not set up yet: start enrolment during sign-in. */
   async loginMfaSetup(challenge: string | undefined, meta: RequestMeta): Promise<MfaSetupDto> {
     const user = await this.challengedUser(challenge, 'SETUP', meta);
+    // Enrolment during sign-in only while 2FA is still off (SEC-38): a SETUP challenge kept from
+    // before cannot replace a secret the user has set up in the meantime.
+    if (user.totpEnabledAt) throw challengeExpired();
     return this.mfa.startSetup(user);
   }
 
   async loginMfaSetupConfirm(challenge: string | undefined, code: string, meta: RequestMeta) {
     const user = await this.challengedUser(challenge, 'SETUP', meta);
+    if (user.totpEnabledAt) throw challengeExpired();
+    if (!(await this.reserveAttempt(user.id, meta))) throw this.lockedError(user.id, meta);
     let recoveryCodes: string[];
     try {
       ({ recoveryCodes } = await this.mfa.confirmSetup(user.id, code, meta));
     } catch (err) {
       if (err instanceof AppException && err.code === 'MFA_CODE_INVALID') {
         await this.registerMfaFailure(user, meta);
-      }
+      } else await this.releaseAttempt(user.id);
       throw err;
     }
     const result = await this.completeLogin(user.id, meta, { method: 'PASSWORD', mfa: 'TOTP' });
@@ -267,28 +259,76 @@ export class AuthService {
   }
 
   /** A wrong second factor counts towards the same lockout as a wrong password. */
+  /**
+   * Counts one sign-in attempt atomically (SEC-36). False when the account is locked or the attempt
+   * exceeds the limit (it is then locked). An expired lock starts a fresh counting window.
+   */
+  private async reserveAttempt(userId: string, meta: RequestMeta): Promise<boolean> {
+    const now = new Date();
+    await this.prisma.user.updateMany({
+      where: { id: userId, lockedUntil: { lte: now } },
+      data: { failedLoginCount: 0, lockedUntil: null },
+    });
+    const u = await this.prisma.user.update({
+      where: { id: userId },
+      data: { failedLoginCount: { increment: 1 } },
+      select: { failedLoginCount: true, lockedUntil: true },
+    });
+    if (isLocked(u, now)) return false;
+    if (u.failedLoginCount > this.config.LOGIN_MAX_ATTEMPTS) {
+      await this.lockIfExhausted(userId, meta);
+      return false;
+    }
+    return true;
+  }
+
+  private async releaseAttempt(userId: string) {
+    await this.prisma.user.updateMany({
+      where: { id: userId, failedLoginCount: { gt: 0 } },
+      data: { failedLoginCount: { decrement: 1 } },
+    });
+  }
+
+  /** After a failed attempt: locks the account once the counted attempts reach the limit. */
+  private async lockIfExhausted(userId: string, meta: RequestMeta) {
+    const now = new Date();
+    const lockedUntil = new Date(now.getTime() + this.config.LOGIN_LOCKOUT_MINUTES * 60_000);
+    const res = await this.prisma.user.updateMany({
+      where: {
+        id: userId,
+        failedLoginCount: { gte: this.config.LOGIN_MAX_ATTEMPTS },
+        OR: [{ lockedUntil: null }, { lockedUntil: { lte: now } }],
+      },
+      data: { failedLoginCount: 0, lockedUntil },
+    });
+    if (res.count)
+      await this.audit.log({
+        action: 'LOCKOUT',
+        entityType: 'User',
+        entityId: userId,
+        userId,
+        summary: { lockedUntil },
+        meta,
+      });
+  }
+
+  private lockedError(userId: string, meta: RequestMeta) {
+    void this.audit.log({
+      action: 'LOGIN_FAILED',
+      entityType: 'Auth',
+      entityId: userId,
+      userId,
+      summary: { reason: 'LOCKED' },
+      meta,
+    });
+    return new AppException(HttpStatus.UNAUTHORIZED, 'ACCOUNT_LOCKED', 'Account is locked');
+  }
+
   private async registerMfaFailure(
     user: { id: string; failedLoginCount: number; lockedUntil: Date | null },
     meta: RequestMeta,
   ) {
-    const next = registerFailure(user, {
-      maxAttempts: this.config.LOGIN_MAX_ATTEMPTS,
-      lockoutMinutes: this.config.LOGIN_LOCKOUT_MINUTES,
-    });
-    await this.prisma.user.update({
-      where: { id: user.id },
-      data: { failedLoginCount: next.failedLoginCount, lockedUntil: next.lockedUntil },
-    });
-    if (next.justLocked) {
-      await this.audit.log({
-        action: 'LOCKOUT',
-        entityType: 'User',
-        entityId: user.id,
-        userId: user.id,
-        summary: { lockedUntil: next.lockedUntil },
-        meta,
-      });
-    }
+    await this.lockIfExhausted(user.id, meta);
     await this.audit.log({
       action: 'LOGIN_FAILED',
       entityType: 'Auth',

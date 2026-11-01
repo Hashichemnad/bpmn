@@ -104,6 +104,21 @@ describe('Auth (e2e)', () => {
     expect(await ctx.prisma.auditLog.count({ where: { action: 'LOCKOUT' } })).toBe(1);
   });
 
+  it('parallel guesses cannot exceed the lockout limit (SEC-36)', async () => {
+    const clients = await Promise.all(Array.from({ length: 12 }, () => new Client(ctx.app).init()));
+    const results = await Promise.all(
+      clients.map((c) => c.login('admin@test.local', 'Wrong-Password1')),
+    );
+    expect(results.every((r) => r.status === 401)).toBe(true);
+    // At most LOGIN_MAX_ATTEMPTS (3) passwords were actually checked; the rest were refused as locked.
+    const checked = await ctx.prisma.auditLog.count({
+      where: { action: 'LOGIN_FAILED', summary: { path: ['reason'], equals: 'BAD_PASSWORD' } },
+    });
+    expect(checked).toBeLessThanOrEqual(3);
+    const res = await (await new Client(ctx.app).init()).login('admin@test.local');
+    expect(res.body.code).toBe('ACCOUNT_LOCKED');
+  });
+
   it('inactive users cannot log in', async () => {
     await createUser(ctx.prisma, 'gone@test.local', ['VIEWER'], { status: 'INACTIVE' });
     const res = await (await new Client(ctx.app).init()).login('gone@test.local');
