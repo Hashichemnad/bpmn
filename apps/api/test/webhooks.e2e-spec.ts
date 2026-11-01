@@ -34,7 +34,7 @@ class Receiver {
         else res.writeHead(this.mode).end(this.mode < 300 ? 'ok' : 'nope');
       });
     });
-    await new Promise<void>((r) => this.server.listen(0, '127.0.0.1', r));
+    await new Promise<void>((r) => this.server.listen(0, 'localhost', r));
     this.url = `http://localhost:${(this.server.address() as AddressInfo).port}`;
   }
   stop() {
