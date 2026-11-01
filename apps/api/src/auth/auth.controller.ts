@@ -160,6 +160,19 @@ export class AuthController {
     clearAuthCookies(res, this.config);
   }
 
+  /** Ends all of the user's sessions on every device, including this one (SEC-38). */
+  @Post('sessions/revoke-all')
+  @Authenticated()
+  @HttpCode(204)
+  async logoutEverywhere(
+    @CurrentUser() user: AuthUser,
+    @ReqMeta() meta: RequestMeta,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    await this.auth.logoutEverywhere(user, meta);
+    clearAuthCookies(res, this.config);
+  }
+
   @Get('mfa')
   @Authenticated()
   mfaStatus(@CurrentUser() user: AuthUser) {

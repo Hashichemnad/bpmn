@@ -364,6 +364,7 @@ zod / UUID pipe; file uploads are checked in the service (allow-list, content sn
 | POST   | `/auth/mfa/setup`                                          | authenticated                                                  | body                                 | login      |
 | GET    | `/auth/options`                                            | **public**                                                     | —                                    | default    |
 | POST   | `/auth/refresh`                                            | **public**                                                     | —                                    | login      |
+| POST   | `/auth/sessions/revoke-all`                                | authenticated                                                  | —                                    | default    |
 | GET    | `/auth/sso/callback`                                       | **public**                                                     | query                                | login      |
 | GET    | `/auth/sso/start`                                          | **public**                                                     | query                                | login      |
 | DELETE | `/comments/:commentId`                                     | `comments.write`                                               | param `commentId`                    | default    |
@@ -800,6 +801,7 @@ zod / UUID pipe; file uploads are checked in the service (allow-list, content sn
 | POST   | `/users/:id/invitation`                                    | `users.manage`                                                 | param `id`                           | default    |
 | POST   | `/users/:id/mfa/reset`                                     | `users.manage`                                                 | param `id`                           | default    |
 | POST   | `/users/:id/reset-password`                                | `users.manage`                                                 | body, param `id`                     | default    |
+| POST   | `/users/:id/sessions/revoke`                               | `users.manage`                                                 | param `id`                           | default    |
 | POST   | `/users/:id/unlock`                                        | `users.manage`                                                 | param `id`                           | default    |
 | GET    | `/users/directory`                                         | any of `comments.write`, `governance.manage`                   | query                                | default    |
 | GET    | `/workflow/cases`                                          | authenticated                                                  | query                                | default    |

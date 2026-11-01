@@ -27,9 +27,9 @@ import { OutOfOfficeCard } from '@/features/workflow/OutOfOfficeCard';
 
 export function ProfilePage() {
   const { t } = useTranslation();
-  const { user, setUser } = useAuth();
+  const { user, setUser, logout } = useAuth();
   const { setLocale } = useLocale();
-  const { message } = App.useApp();
+  const { message, modal } = App.useApp();
   const errorMessage = useErrorMessage();
   const [profileForm] = Form.useForm();
   const [passwordForm] = Form.useForm();
@@ -55,6 +55,25 @@ export function ProfilePage() {
       message.error(errorMessage(err));
     }
   };
+
+  // Ends every session of the user, on all devices, including this one (SEC-38).
+  const signOutEverywhere = () =>
+    modal.confirm({
+      title: t('profile.signOutEverywhereTitle'),
+      content: t('profile.signOutEverywhereText'),
+      okText: t('profile.signOutEverywhere'),
+      okButtonProps: { danger: true },
+      cancelText: t('cancel'),
+      onOk: async () => {
+        try {
+          await api('/auth/sessions/revoke-all', { method: 'POST' });
+        } catch (err) {
+          message.error(errorMessage(err));
+          return;
+        }
+        await logout().catch(() => undefined);
+      },
+    });
 
   return (
     <>
@@ -149,6 +168,14 @@ export function ProfilePage() {
           <div style={{ marginTop: 24 }}>
             <TwoFactorCard />
           </div>
+          <Card title={t('profile.sessions')} style={{ marginTop: 24 }}>
+            <Typography.Paragraph type="secondary">
+              {t('profile.sessionsText')}
+            </Typography.Paragraph>
+            <Button danger onClick={signOutEverywhere}>
+              {t('profile.signOutEverywhere')}
+            </Button>
+          </Card>
         </Col>
         <Col xs={24} lg={12}>
           <OutOfOfficeCard />

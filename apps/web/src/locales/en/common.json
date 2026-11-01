@@ -162,7 +162,12 @@
     "passwordChanged": "Password changed. Other sessions have been signed out.",
     "ssoAccount": "Your account signs in with single sign-on; its password is managed by your organisation.",
     "signIn": "Sign-in",
-    "ssoLinked": "Single sign-on"
+    "ssoLinked": "Single sign-on",
+    "sessions": "Sessions",
+    "sessionsText": "Signed in on a computer or phone you no longer use, or think someone else has your session? End all your sessions on every device.",
+    "signOutEverywhere": "Sign out everywhere",
+    "signOutEverywhereTitle": "Sign out on all devices?",
+    "signOutEverywhereText": "All your sessions end at once, including this one. You sign in again afterwards."
   },
   "close": "Close",
   "confirm": "Confirm",

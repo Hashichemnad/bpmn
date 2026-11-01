@@ -22,6 +22,7 @@ import {
   EditOutlined,
   KeyOutlined,
   LockOutlined,
+  LogoutOutlined,
   MoreOutlined,
   PlusOutlined,
   SafetyCertificateOutlined,
@@ -45,7 +46,7 @@ import {
   useUsers,
 } from '@/api/hooks';
 import { useAuth } from '@/auth/AuthProvider';
-import { useResetUserMfa } from '@/api/auth';
+import { useResetUserMfa, useRevokeUserSessions } from '@/api/auth';
 import { PageHeader } from '@/components/PageHeader';
 import { BilingualFields } from '@/components/BilingualFields';
 import { ErrorState } from '@/components/states';
@@ -83,6 +84,7 @@ export function UsersPage() {
   const resetPassword = useResetPassword();
   const invite = useInviteUser();
   const resetMfa = useResetUserMfa();
+  const revokeSessions = useRevokeUserSessions();
   const departmentTree = useDepartmentTreeData();
   const [editing, setEditing] = useState<UserDto | 'new' | null>(null);
   const [resetting, setResetting] = useState<UserDto | null>(null);
@@ -168,6 +170,20 @@ export function UsersPage() {
       onOk: () =>
         resetMfa.mutateAsync(u.id).then(
           () => message.success(t('admin:users.mfaReset')),
+          (e) => message.error(errorMessage(e)),
+        ),
+    });
+
+  const confirmRevokeSessions = (u: UserDto) =>
+    modal.confirm({
+      title: t('admin:users.revokeSessionsTitle', { name: loc(u) || u.email }),
+      content: t('admin:users.revokeSessionsText'),
+      okText: t('admin:users.revokeSessions'),
+      okButtonProps: { danger: true },
+      cancelText: t('cancel'),
+      onOk: () =>
+        revokeSessions.mutateAsync(u.id).then(
+          () => message.success(t('admin:users.sessionsRevoked')),
           (e) => message.error(errorMessage(e)),
         ),
     });
@@ -267,6 +283,12 @@ export function UsersPage() {
                     },
                   ]
                 : []),
+              {
+                key: 'sessions',
+                icon: <LogoutOutlined />,
+                label: t('admin:users.revokeSessions'),
+                onClick: () => confirmRevokeSessions(u),
+              },
               ...(u.mfaEnabled
                 ? [
                     {
