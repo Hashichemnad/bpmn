@@ -3,6 +3,7 @@ import {
   Controller,
   Delete,
   Get,
+  HttpCode,
   Patch,
   Post,
   Put,
@@ -22,15 +23,40 @@ import {
   type DiagramThemeInput,
   type UpdateSettingsInput,
 } from '@processhub/shared';
-import { CurrentUser, Public, ReqMeta, RequirePermissions } from '../common/decorators';
+import {
+  CurrentUser,
+  Public,
+  ReqMeta,
+  RequireAnyPermission,
+  RequirePermissions,
+} from '../common/decorators';
 import type { AuthUser, RequestMeta } from '../common/auth-user';
 import { ZodPipe } from '../common/zod.pipe';
 import { SettingsService } from './settings.service';
+import { DemoStatusService } from './demo-status.service';
 
 @ApiTags('settings')
 @Controller('settings')
 export class SettingsController {
-  constructor(private readonly settings: SettingsService) {}
+  constructor(
+    private readonly settings: SettingsService,
+    private readonly demo: DemoStatusService,
+  ) {}
+
+  /** Demo installation warning for administrators (D-180). */
+  @Get('demo-status')
+  @RequireAnyPermission(PERMISSIONS.USERS_MANAGE, PERMISSIONS.SETTINGS_MANAGE)
+  demoStatus() {
+    return this.demo.status();
+  }
+
+  /** Super Admin: the demo content was removed (go-live checklist). */
+  @Post('demo-status/clear')
+  @HttpCode(200)
+  @RequirePermissions(PERMISSIONS.SETTINGS_MANAGE)
+  clearDemo(@CurrentUser() user: AuthUser, @ReqMeta() meta: RequestMeta) {
+    return this.demo.clear(user, meta);
+  }
 
   /** Branding needed before login (org name, default language, logo flag). */
   @Get('public')

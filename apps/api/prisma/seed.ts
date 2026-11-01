@@ -25,6 +25,7 @@ import { seedEaKpiDemo } from './seed-ea-kpi';
 import { seedMiningDemo } from './seed-mining';
 import { seedWorkflowDemo } from './seed-workflow';
 import { seedIntegrationsDemo } from './seed-integrations';
+import { recordDemoInstallation } from './seed-demo-marker';
 
 const prisma = new PrismaClient();
 
@@ -445,7 +446,9 @@ export async function main() {
       const { AppModule } = await import('../src/app.module');
       return NestFactory.createApplicationContext(AppModule, { logger: ['error', 'warn'] });
     });
-    await seedIntegrationsDemo(prisma, adminId);
+    const integrations = await seedIntegrationsDemo(prisma, adminId);
+    // Demo marker (D-180): administrators see a warning until the demo is removed before go-live.
+    await recordDemoInstallation(prisma, { apiKeyIds: integrations.apiKeyIds });
   }
   // After the demo data: the governance demo only seeds into an installation without workflows.
   await ensureGrcChangeWorkflow(prisma, adminId);

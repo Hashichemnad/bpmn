@@ -67,7 +67,7 @@
 | Diagrams | Value chain, organisation chart, DMN, EPC, SIPOC | ✅ |
 | 5.1 / 5.2 | Process mining and simulation, workflow execution | ✅ |
 | Import | Import tools / migration | ✅ |
-| 4.4 | Integrations & export: public API with keys, webhooks, Power BI feed, Teams, HTML / PowerPoint export, scheduled report e-mails | 🟡 review on `integrations-exports` |
+| 4.4 | Integrations & export: public API with keys, webhooks, Power BI feed, Teams, HTML / PowerPoint export, scheduled report e-mails | ✅ merged into `main` |
 | 6 | Hardening: security review, production deployment, SSO / 2FA, performance, accessibility, images, restore drill | 🟡 final security review (part B) after 4.4 |
 
 ## Quick start (Docker)
@@ -119,12 +119,14 @@ the demo installation go to the bundled **Mailpit** at **http://localhost:8025**
 ### A short tour of Phase 4.4 — integrations and exports
 
 Demo installations seed a read-only API key for published content, a webhook to the local test receiver, a
-switched-off Teams channel and a weekly KPI report e-mail for Perla. **Demo only — revoke the key before
-go-live.**
+switched-off Teams channel and a weekly KPI report e-mail for Perla. The demo key is **random and shown only
+once**, in the seed output — find it with `docker compose logs migrate | grep -A1 "Demo API key"` (D-180).
+While demo data exists, admins see a warning banner; remove the demo before go-live (go-live checklist).
 
-1. **Public API:** `curl -H "X-API-Key: phk_DemoKey00001_ProcessHubDemoKeyForPublishedContentOnly000"
+1. **Public API:** `curl -H "X-API-Key: <demo key from the seed output>"
    http://localhost:8080/api/public/v1/processes?pageSize=5` — published processes with English and Arabic names;
-   the interactive documentation is at <http://localhost:8080/api/public/docs>.
+   the interactive documentation is at <http://localhost:8080/api/public/docs>. Lost the key? Create a new one
+   in Settings → Integrations → API keys.
 2. Sign in as the admin → **Settings → Integrations**: API keys (create one — the secret is shown once —, call
    log, new secret, revoke), **Webhooks** (the demo receiver; "Send test event", delivery log with the payload),
    **Microsoft Teams** (card language, switched-off demo channel). Requests the receiver got:

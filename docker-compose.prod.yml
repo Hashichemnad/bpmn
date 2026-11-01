@@ -152,12 +152,17 @@ services:
     restart: unless-stopped
     environment:
       RENDERER_TOKEN: ${RENDERER_TOKEN:?Set RENDERER_TOKEN in .env (scripts/generate-secrets.sh)}
+      # Chromium's own sandbox (D-180): auto = on when the host allows user namespaces (with the
+      # seccomp profile below), else --no-sandbox in this hardened container; on = required.
+      RENDERER_SANDBOX: ${RENDERER_SANDBOX:-auto}
+    # Unprivileged user (Dockerfile), no capabilities, read-only, internal network only.
     networks: [render]
     read_only: true
     tmpfs:
       - /tmp:size=256m
     cap_drop: [ALL]
-    security_opt: ['no-new-privileges:true']
+    # Docker's default seccomp profile + the namespace calls Chromium's sandbox needs (no capabilities).
+    security_opt: ['no-new-privileges:true', 'seccomp=./deploy/renderer-seccomp.json']
     shm_size: 256mb
     deploy:
       resources:

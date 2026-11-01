@@ -321,7 +321,12 @@ Caddy handles HTTPS. Choose one option with `CADDY_TLS` in `.env`, then run `sud
     often timers, reminders and generated documents are processed.
 13. **Integrations** (Phase 4.4): **Settings → Integrations** — the header shows _Diagram renderer: Running_
     (the `renderer` container draws diagrams for exports and PDF report e-mails; without it exports show a note
-    and PDF reports fall back to Excel). Revoke the demo API key if demo data was seeded, create one key per
+    and PDF reports fall back to Excel). The renderer uses Chromium's own sandbox through the seccomp profile
+    `deploy/renderer-seccomp.json` (keep the `deploy/` folder next to the compose file): check
+    `docker compose exec renderer wget -qO- http://127.0.0.1:3100/health` shows `"sandbox":true`, then set
+    `RENDERER_SANDBOX=on` in `.env` (D-181). No demo data in production (`SEED_DEMO_DATA=false`); if demo data
+    was seeded, the admin warning banner lists what remains — revoke the demo API key, deactivate the demo users,
+    remove the demo content and confirm (D-180). Create one key per
     consuming system (docs/integrations/API.md, Power BI: POWER-BI.md), add webhook / Teams destinations
     (WEBHOOKS.md, TEAMS.md) and keep **Report e-mail settings → Attach files** off unless agreed. Outbound
     webhooks and Teams use the API's `egress` network; the renderer has no network.

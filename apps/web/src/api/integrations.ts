@@ -6,6 +6,7 @@ import type {
   ApiKeyUpdateInput,
   ApiKeyUsageDto,
   ApiSettings,
+  DemoStatusDto,
   Paginated,
   WebhookCreateInput,
   WebhookDeliveryDto,
@@ -195,5 +196,25 @@ export function useUpdateWebhookSettings() {
     mutationFn: (body: WebhookSettings) =>
       api<WebhookSettings>('/integrations/webhook-settings', { method: 'PUT', body }),
     onSuccess: invalidate,
+  });
+}
+
+// ---------- Demo installation warning (D-180) ----------
+
+export const demoStatusKey = ['settings', 'demo-status'] as const;
+
+export const useDemoStatus = (enabled: boolean) =>
+  useQuery({
+    queryKey: demoStatusKey,
+    queryFn: () => api<DemoStatusDto>('/settings/demo-status'),
+    enabled,
+    staleTime: 60_000,
+  });
+
+export function useClearDemo() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: () => api<DemoStatusDto>('/settings/demo-status/clear', { method: 'POST' }),
+    onSuccess: (data) => qc.setQueryData(demoStatusKey, data),
   });
 }
