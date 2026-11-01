@@ -298,4 +298,34 @@ describe('Mining — simulation (e2e)', () => {
     const audit = await ctx.prisma.auditLog.findFirst({ where: { entityId: 'mining.holidays' } });
     expect(audit?.summary).toMatchObject({ added: ['2026-11-30'] });
   });
+  it('only the owner, the process department or administrators change a simulation (SEC-19)', async () => {
+    const sim = (
+      await analyst.post('/simulations').send({ processId, nameEn: 'Private plan' }).expect(201)
+    ).body;
+    const other = await ctx.prisma.department.create({
+      data: { nameEn: 'Finance', nameAr: 'المالية' },
+    });
+    await createUser(ctx.prisma, 'outsider@test.local', ['PERFORMANCE_OFFICER', 'MODELER'], {
+      departmentId: other.id,
+    });
+    const outsider = await loggedIn(ctx.app, 'outsider@test.local');
+    await outsider.patch(`/simulations/${sim.id}`).send({ nameEn: 'Hacked' }).expect(403);
+    await outsider.delete(`/simulations/${sim.id}`).expect(403);
+    await outsider.post(`/simulations/${sim.id}/run`).send({}).expect(403);
+    const detail = (await outsider.get(`/simulations/${sim.id}`).expect(200)).body;
+    expect(detail.canManage).toBe(false);
+    // A log the user cannot see is not linked.
+    const foreignLog = await ctx.prisma.eventLog.findFirstOrThrow();
+    await ctx.prisma.eventLog.update({
+      where: { id: foreignLog.id },
+      data: { departmentId: null },
+    });
+    const res = await outsider
+      .post('/simulations')
+      .send({ processId, nameEn: 'Peek', logId: foreignLog.id });
+    expect(res.status).toBe(404);
+    expect((await ctx.prisma.simulation.findUniqueOrThrow({ where: { id: sim.id } })).nameEn).toBe(
+      'Private plan',
+    );
+  });
 });

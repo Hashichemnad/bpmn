@@ -41,7 +41,7 @@ import { ConformanceService } from './conformance.service';
 
 const userRef = { select: { id: true, email: true, nameEn: true, nameAr: true } } as const;
 const SIM_INCLUDE = {
-  process: { select: { id: true, code: true, nameEn: true, nameAr: true } },
+  process: { select: { id: true, code: true, nameEn: true, nameAr: true, departmentId: true } },
   scenarios: { orderBy: [{ sortOrder: 'asc' as const }, { createdAt: 'asc' as const }] },
 } satisfies Prisma.SimulationInclude;
 
@@ -84,8 +84,27 @@ export class SimulationService implements OnModuleInit {
     if (!user.permissions.has(PERMISSIONS.PROCESSES_READ)) throw forbidden();
   }
 
-  private canManage(user: AuthUser) {
-    return user.permissions.has(PERMISSIONS.MINING_MANAGE);
+  /**
+   * Who changes, runs or deletes a simulation (SEC-19): its owner, mining managers of the process's
+   * department, or administrators with settings rights — not every mining manager.
+   */
+  private canManage(
+    user: AuthUser,
+    s?: { ownerId: string | null; process: { departmentId: string | null } },
+  ) {
+    if (user.permissions.has(PERMISSIONS.SETTINGS_MANAGE)) return true;
+    if (!user.permissions.has(PERMISSIONS.MINING_MANAGE)) return false;
+    if (!s) return true;
+    return (
+      s.ownerId === user.id || (!!user.departmentId && s.process.departmentId === user.departmentId)
+    );
+  }
+
+  /** The simulation if the user may change it (403 otherwise). */
+  private async findManaged(id: string, user: AuthUser) {
+    const s = await this.find(id);
+    if (!this.canManage(user, s)) throw forbidden('You may not change this simulation');
+    return s;
   }
 
   private async find(id: string) {
@@ -212,7 +231,7 @@ export class SimulationService implements OnModuleInit {
       owner,
       createdAt: s.createdAt.toISOString(),
       updatedAt: s.updatedAt.toISOString(),
-      canManage: this.canManage(user),
+      canManage: this.canManage(user, s),
       scenarios,
       model: this.modelFacts(graph, versions),
       job: job ? toJobDto(job) : null,
@@ -341,6 +360,12 @@ export class SimulationService implements OnModuleInit {
       where: { id: input.processId, deletedAt: null },
     });
     if (!proc) throw badRequest('PROCESS_NOT_FOUND');
+    // Only a log the user may see is linked (SEC-19); otherwise 404 like the log itself.
+    if (
+      input.logId &&
+      !(await this.conformance.processLogs(proc.id, actor)).some((l) => l.id === input.logId)
+    )
+      throw notFound('Event log');
     const params = await this.initialParams(proc.id, actor, input.logId);
     const sim = await this.prisma.$transaction(async (tx) => {
       const s = await tx.simulation.create({
@@ -382,7 +407,7 @@ export class SimulationService implements OnModuleInit {
   }
 
   async update(id: string, input: UpdateSimulationInput, actor: AuthUser) {
-    await this.find(id);
+    await this.findManaged(id, actor);
     await this.prisma.simulation.update({
       where: { id },
       data: { ...input, updatedById: actor.id },
@@ -391,7 +416,7 @@ export class SimulationService implements OnModuleInit {
   }
 
   async remove(id: string, actor: AuthUser, meta: RequestMeta) {
-    const s = await this.find(id);
+    const s = await this.findManaged(id, actor);
     await this.prisma.simulation.delete({ where: { id } });
     await this.audit.log({
       action: 'DELETE',
@@ -404,7 +429,7 @@ export class SimulationService implements OnModuleInit {
   }
 
   async addScenario(id: string, input: ScenarioInput, actor: AuthUser) {
-    const s = await this.find(id);
+    const s = await this.findManaged(id, actor);
     const source = input.copyFrom
       ? s.scenarios.find((x) => x.id === input.copyFrom)
       : s.scenarios[0];
@@ -427,7 +452,7 @@ export class SimulationService implements OnModuleInit {
   }
 
   async updateScenario(id: string, scenarioId: string, input: ScenarioInput, actor: AuthUser) {
-    const s = await this.find(id);
+    const s = await this.findManaged(id, actor);
     if (!s.scenarios.some((x) => x.id === scenarioId)) throw notFound('Scenario');
     if (input.processVersion) await this.modelXml(s.processId, input.processVersion);
     await this.prisma.simulationScenario.update({
@@ -445,7 +470,7 @@ export class SimulationService implements OnModuleInit {
   }
 
   async removeScenario(id: string, scenarioId: string, actor: AuthUser) {
-    const s = await this.find(id);
+    const s = await this.findManaged(id, actor);
     if (!s.scenarios.some((x) => x.id === scenarioId)) throw notFound('Scenario');
     if (s.scenarios.length === 1) throw badRequest('LAST_SCENARIO');
     await this.prisma.simulationScenario.delete({ where: { id: scenarioId } });
@@ -500,6 +525,7 @@ export class SimulationService implements OnModuleInit {
   // ---------- Runs ----------
 
   async start(id: string, scenarioIds: string[] | undefined, actor: AuthUser, meta: RequestMeta) {
+    await this.findManaged(id, actor);
     const dto = await this.detail(id, actor);
     const chosen = dto.scenarios.filter((x) => !scenarioIds || scenarioIds.includes(x.id));
     const blocked = chosen.filter((x) => x.issues.some((i) => i.severity === 'error'));

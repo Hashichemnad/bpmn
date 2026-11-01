@@ -352,7 +352,17 @@ export class LogImportService implements OnModuleInit {
     language: 'en' | 'ar';
   }): AsyncGenerator<MiningEventInput> {
     const ar = params.language === 'ar';
-    const reviews = await this.prisma.review.findMany({
+    // Pages of view-restricted spaces never go into a log (SEC-20): the log is shared with the
+    // owner's department and grantees, who may not see those pages or their review history.
+    const restricted = new Set(
+      (
+        await this.prisma.page.findMany({
+          where: { space: { viewRestricted: true } },
+          select: { id: true },
+        })
+      ).map((p) => p.id),
+    );
+    const allReviews = await this.prisma.review.findMany({
       where: {
         entityType: { in: params.itemTypes },
         submittedAt: {
@@ -363,6 +373,9 @@ export class LogImportService implements OnModuleInit {
       include: { tasks: true, publications: { select: { publishedAt: true } } },
       orderBy: { submittedAt: 'asc' },
     });
+    const reviews = allReviews.filter(
+      (r) => !(r.entityType === 'PAGE' && restricted.has(r.entityId)),
+    );
     const userIds = new Set<string>();
     for (const r of reviews) {
       if (r.submittedById) userIds.add(r.submittedById);

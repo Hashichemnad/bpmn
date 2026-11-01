@@ -423,6 +423,24 @@ describe('Mining — event logs (e2e)', () => {
           },
         });
     }
+    // A review of a page in a view-restricted space never reaches the log (SEC-20).
+    const closed = await ctx.prisma.space.create({
+      data: { key: 'HRX', nameEn: 'HR', viewRestricted: true },
+    });
+    const secret = await ctx.prisma.page.create({
+      data: { spaceId: closed.id, titleEn: 'Secret dismissal procedure', version: 1 },
+    });
+    await ctx.prisma.review.create({
+      data: {
+        entityType: 'PAGE',
+        entityId: secret.id,
+        versionNumber: 1,
+        status: 'APPROVED',
+        steps: [],
+        submittedById: owner.id,
+        submittedAt: new Date(t0),
+      },
+    });
     const log = (
       await analyst.post('/mining/logs/processhub').send({ nameEn: 'Reviews' }).expect(201)
     ).body;

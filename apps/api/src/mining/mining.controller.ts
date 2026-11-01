@@ -182,7 +182,12 @@ export class MiningController {
   @RequirePermissions(READ)
   async cancel(@Param('id', UuidPipe()) id: string, @CurrentUser() user: AuthUser) {
     const job = await this.assertJobAccess(id, user);
-    if (job.createdById !== user.id && !user.permissions.has(MANAGE)) throw forbidden();
+    if (job.createdById !== user.id) {
+      if (!user.permissions.has(MANAGE)) throw forbidden();
+      // Someone else's job on a log: only who may manage that log (not read-only grantees, SEC-46).
+      if (job.logId && !this.logs.canManage(await this.logs.visible(job.logId, user), user))
+        throw forbidden();
+    }
     return toJobDto(await this.jobs.cancel(id));
   }
 
