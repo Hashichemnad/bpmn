@@ -1,6 +1,8 @@
 import { createServer, type Server } from 'node:net';
 import type { AddressInfo } from 'node:net';
-import { AntivirusService, clamdScan } from './antivirus.service';
+import { AntivirusService, clamdScan, parseClamdVersion } from './antivirus.service';
+
+let versionDate = 'Sun Nov  1 07:52:51 2026';
 import type { AppConfig } from '../config/config';
 
 /** A tiny clamd stand-in: reads INSTREAM chunks and flags the EICAR test string. */
@@ -11,6 +13,10 @@ function fakeClamd(behaviour: 'scan' | 'silent' = 'scan'): Promise<Server> {
       socket.on('data', (c: Buffer) => {
         if (behaviour === 'silent') return;
         buf = Buffer.concat([buf, c]);
+        if (buf.toString('latin1').startsWith('zVERSION\0')) {
+          socket.end(`ClamAV 1.4.2/27443/${versionDate}\0`);
+          return;
+        }
         const cmd = 'zINSTREAM\0';
         if (buf.length < cmd.length) return;
         let p = cmd.length;
@@ -86,5 +92,29 @@ describe('Antivirus (clamd INSTREAM, D-184)', () => {
     silent.close();
     const off = new AntivirusService({ ...config, ANTIVIRUS: 'off' } as AppConfig);
     await expect(off.assertClean(Buffer.from(EICAR), 'e.txt')).resolves.toBeUndefined();
+  });
+
+  it('reports the signature age for monitoring: ok, stale, down, off (D-191)', async () => {
+    expect(parseClamdVersion('ClamAV 1.4.2/27443/Sun Nov  1 07:52:51 2026')).toEqual({
+      version: 'ClamAV 1.4.2',
+      updatedAt: new Date('2026-11-01T07:52:51Z'),
+    });
+    const server = await fakeClamd();
+    const { port } = server.address() as AddressInfo;
+    const config = {
+      ANTIVIRUS: 'clamav',
+      CLAMAV_HOST: '127.0.0.1',
+      CLAMAV_PORT: port,
+    } as unknown as AppConfig;
+    const av = new AntivirusService(config);
+    const now = new Date('2026-11-02T07:52:51Z');
+    expect(await av.status(now)).toMatchObject({ status: 'ok', signaturesAgeHours: 24 });
+    versionDate = 'Wed Oct 28 07:52:51 2026';
+    expect(await av.status(now)).toMatchObject({ status: 'stale', signaturesAgeHours: 120 });
+    server.close();
+    await new Promise((r) => setTimeout(r, 50));
+    expect(await av.status(now)).toMatchObject({ status: 'down' });
+    const off = new AntivirusService({ ...config, ANTIVIRUS: 'off' } as AppConfig);
+    expect(await off.status()).toMatchObject({ status: 'off', enabled: false });
   });
 });

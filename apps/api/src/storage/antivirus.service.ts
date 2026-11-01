@@ -50,6 +50,52 @@ export function clamdScan(
   });
 }
 
+/** Sends one clamd command (z-prefixed, NUL-terminated) and returns the answer. */
+export function clamdCommand(
+  host: string,
+  port: number,
+  command: string,
+  timeoutMs: number,
+): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const socket = connect({ host, port });
+    let answer = '';
+    socket.setTimeout(timeoutMs, () => {
+      socket.destroy();
+      reject(new Error('antivirus timeout'));
+    });
+    socket.on('error', reject);
+    socket.on('connect', () => socket.write(`z${command}\0`));
+    socket.on('data', (c: Buffer) => {
+      answer += c.toString('utf8');
+      if (answer.includes('\0')) socket.end();
+    });
+    socket.on('close', () => resolve(answer.replace(/\0/g, '').trim()));
+  });
+}
+
+/** Signatures older than this make the antivirus health check fail (D-191). */
+export const SIGNATURES_MAX_AGE_HOURS = 72;
+
+export interface AntivirusStatus {
+  enabled: boolean;
+  /** ok | stale (signatures older than 3 days) | down (clamd unreachable: uploads are refused). */
+  status: 'off' | 'ok' | 'stale' | 'down';
+  version: string | null;
+  signaturesUpdatedAt: string | null;
+  signaturesAgeHours: number | null;
+}
+
+/**
+ * Parses clamd's VERSION answer, e.g. "ClamAV 1.4.2/27443/Sat Nov  1 07:52:51 2026": engine,
+ * signature database version and the database's build time.
+ */
+export function parseClamdVersion(answer: string): { version: string; updatedAt: Date | null } {
+  const [version = answer, , date] = answer.split('/');
+  const t = date ? Date.parse(`${date.replace(/\s+/g, ' ').trim()} UTC`) : NaN;
+  return { version: version.trim(), updatedAt: Number.isNaN(t) ? null : new Date(t) };
+}
+
 /** Scans user uploads before they are stored (StorageService.put). */
 @Injectable()
 export class AntivirusService {
@@ -59,6 +105,47 @@ export class AntivirusService {
 
   get enabled() {
     return this.config.ANTIVIRUS === 'clamav';
+  }
+
+  /**
+   * State for monitoring (GET /health/antivirus, D-191): down when clamd does not answer — uploads
+   * are refused then —, stale when the signatures are older than SIGNATURES_MAX_AGE_HOURS.
+   */
+  async status(now = new Date()): Promise<AntivirusStatus> {
+    if (!this.enabled)
+      return {
+        enabled: false,
+        status: 'off',
+        version: null,
+        signaturesUpdatedAt: null,
+        signaturesAgeHours: null,
+      };
+    try {
+      const answer = await clamdCommand(
+        this.config.CLAMAV_HOST,
+        this.config.CLAMAV_PORT,
+        'VERSION',
+        5000,
+      );
+      const { version, updatedAt } = parseClamdVersion(answer);
+      const age = updatedAt ? (now.getTime() - updatedAt.getTime()) / 3_600_000 : null;
+      return {
+        enabled: true,
+        status: age === null || age > SIGNATURES_MAX_AGE_HOURS ? 'stale' : 'ok',
+        version,
+        signaturesUpdatedAt: updatedAt?.toISOString() ?? null,
+        signaturesAgeHours: age === null ? null : Math.round(age),
+      };
+    } catch (e) {
+      this.logger.error(`Antivirus not reachable: ${(e as Error).message}`);
+      return {
+        enabled: true,
+        status: 'down',
+        version: null,
+        signaturesUpdatedAt: null,
+        signaturesAgeHours: null,
+      };
+    }
   }
 
   /**

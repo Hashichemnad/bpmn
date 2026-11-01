@@ -577,6 +577,7 @@ zod / UUID pipe; file uploads are checked in the service (allow-list, content sn
 | PUT    | `/grc/settings`                                            | `grc.admin`                                                    | body                                 | default    |
 | GET    | `/grc/template/:kind`                                      | `grc.edit`                                                     | param `kind`, query                  | default    |
 | GET    | `/health`                                                  | **public**                                                     | —                                    | skip       |
+| GET    | `/health/antivirus`                                        | **public**                                                     | —                                    | default    |
 | GET    | `/imports`                                                 | any of `import.manage`, `import.own`                           | query                                | default    |
 | POST   | `/imports`                                                 | any of `import.manage`, `import.own`                           | body                                 | default    |
 | DELETE | `/imports/:id`                                             | any of `import.manage`, `import.own`                           | param `id`                           | default    |

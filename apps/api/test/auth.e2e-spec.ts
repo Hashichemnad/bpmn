@@ -27,6 +27,11 @@ describe('Auth (e2e)', () => {
     await new Client(ctx.app).get('/health').expect(200, { status: 'ok' });
   });
 
+  it('GET /health/antivirus is public and reports off in the trial stack (D-191)', async () => {
+    const res = await request(ctx.app.getHttpServer()).get('/api/v1/health/antivirus').expect(200);
+    expect(res.body).toMatchObject({ enabled: false, status: 'off' });
+  });
+
   it('sets security headers and hides x-powered-by', async () => {
     const res = await new Client(ctx.app).get('/health');
     expect(res.headers['x-content-type-options']).toBe('nosniff');
