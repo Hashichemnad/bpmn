@@ -25,6 +25,7 @@ import { WorkflowConfigService } from './workflow-config.service';
 import {
   WorkflowRunnerService,
   caseEvent,
+  caseLink,
   caseTitleParams,
   taskLink,
 } from './workflow-runner.service';
@@ -662,10 +663,13 @@ export class WorkflowJobsService implements OnApplicationBootstrap, OnModuleDest
           completedAt: { lt: before },
           dataPurgedAt: null,
         },
-        select: { id: true, variables: true },
+        select: { id: true, variables: true, number: true },
         take: 500,
       });
       for (const c of cases) {
+        const taskIds = (
+          await this.prisma.workflowTask.findMany({ where: { caseId: c.id }, select: { id: true } })
+        ).map((t) => t.id);
         const files = await this.prisma.workflowFile.findMany({
           where: { caseId: c.id },
           select: { storageKey: true },
@@ -690,6 +694,10 @@ export class WorkflowJobsService implements OnApplicationBootstrap, OnModuleDest
                   'TASK_REASSIGNED',
                   'COMMENT',
                   'FILE_ADDED',
+                  // Rendered notification texts and free-text reasons hold form data too (SEC-32).
+                  'NOTIFICATION_SENT',
+                  'WITHDRAWN',
+                  'CANCELLED',
                 ],
               },
             },
@@ -702,8 +710,16 @@ export class WorkflowJobsService implements OnApplicationBootstrap, OnModuleDest
                 case: v.case ?? null,
                 process: v.process ?? null,
               } as Prisma.InputJsonValue,
+              // The title is the first text field of the start form; the case number stays.
+              titleEn: c.number,
+              titleAr: c.number,
+              closedReason: null,
               dataPurgedAt: now,
             },
+          }),
+          // In-app notifications about the case and its tasks carry rendered form data (SEC-32).
+          this.prisma.notification.deleteMany({
+            where: { link: { in: [caseLink(c.id), ...taskIds.map(taskLink)] } },
           }),
         ]);
         purged++;

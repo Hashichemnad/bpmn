@@ -947,5 +947,12 @@ describe('Workflow execution (e2e)', () => {
     const purged = (await requester.get(`/workflow/cases/${caseId}`).expect(200)).body;
     expect(purged).toMatchObject({ dataPurged: true, startData: null, files: [] });
     expect(purged.tasks.every((t: { data: unknown }) => t.data === null)).toBe(true);
+    // The title (first text field of the start form) and notifications about the case go too (SEC-32).
+    const row = await ctx.prisma.workflowCase.findUniqueOrThrow({ where: { id: caseId } });
+    expect(row.titleEn).toBe(row.number);
+    expect(row.closedReason).toBeNull();
+    expect(
+      await ctx.prisma.notification.count({ where: { link: `/workflow/cases/${caseId}` } }),
+    ).toBe(0);
   });
 });

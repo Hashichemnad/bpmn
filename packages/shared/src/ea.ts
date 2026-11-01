@@ -210,7 +210,7 @@ export const updateCapabilitySchema = z.object(capabilityFields).superRefine(req
 export type UpdateCapabilityInput = z.infer<typeof updateCapabilitySchema>;
 
 const listBase = z.object({
-  page: z.coerce.number().int().min(1).default(1),
+  page: z.coerce.number().int().min(1).max(10_000).default(1),
   pageSize: z.coerce.number().int().min(1).max(500).default(20),
   sort: trimmed(50).optional(),
   order: z.enum(['asc', 'desc']).default('asc'),

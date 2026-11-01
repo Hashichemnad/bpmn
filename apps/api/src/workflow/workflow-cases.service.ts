@@ -819,6 +819,9 @@ export class WorkflowCasesService {
         });
         if (!t) throw notFound('Task');
       }
+      // At most 100 files per case (SEC-48): a participant cannot fill the storage without end.
+      if ((await this.prisma.workflowFile.count({ where: { caseId } })) >= 100)
+        throw badRequest('TOO_MANY_FILES');
     } else {
       // Draft upload for a start form: at most 20 unattached files per user.
       const drafts = await this.prisma.workflowFile.count({

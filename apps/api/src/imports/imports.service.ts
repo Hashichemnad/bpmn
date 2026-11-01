@@ -192,7 +192,8 @@ export class ImportsService implements OnModuleInit {
     const total = files.reduce((s, f) => s + f.size, 0);
     if (total > IMPORT_LIMITS.batchBytes) throw badRequest('FILE_TOO_LARGE');
     const checked = files.map((f) => {
-      const fileName = safeFileName(f.originalname);
+      // Multer reads the multipart file name as latin1: Arabic names need the UTF-8 decoding.
+      const fileName = safeFileName(Buffer.from(f.originalname, 'latin1').toString('utf8'));
       try {
         const { type } = checkUpload(fileName, f.buffer, info.extensions);
         return { fileName, data: f.buffer, type };
