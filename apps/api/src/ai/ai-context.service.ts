@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { assertAiAllowedOnItem } from '../imports/import-settings';
 import { SETTING_KEYS, resolveDiagramTheme, type DiagramTheme } from '@processhub/shared';
 import { PrismaService } from '../prisma/prisma.service';
 import { badRequest, notFound } from '../common/app-exception';
@@ -50,7 +51,13 @@ export class AiContextService {
     };
   }
 
+  /** Refuses imported content while AI on imported documents is off (SEC-35). */
+  assertAllowedOn(type: 'PROCESS' | 'PAGE' | 'DIAGRAM', id: string) {
+    return assertAiAllowedOnItem(this.prisma, type, id);
+  }
+
   async process(processId: string, source: ProcessSource = { kind: 'working' }) {
+    await assertAiAllowedOnItem(this.prisma, 'PROCESS', processId);
     const p = await this.record(processId);
     let xml: string | null = null;
     if (source.kind === 'working') xml = p.model?.bpmnXml ?? null;

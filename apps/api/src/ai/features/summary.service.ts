@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { assertAiAllowedOnItem } from '../../imports/import-settings';
 import {
   AI_DOCUMENT_MAX_CHARS,
   type AiSummariseInput,
@@ -74,6 +75,7 @@ export class SummaryService {
     }
     // 404 unless the user may read the item (pages: space restrictions apply).
     await this.content.load(type, id, user);
+    await assertAiAllowedOnItem(this.prisma, type, id);
     if (range && range.from >= range.to) throw badRequest('INVALID_RANGE');
     const material =
       type === 'PROCESS'

@@ -222,6 +222,37 @@ describe('AI features (e2e)', () => {
         .send({ pageId: secret.id, language: 'en' });
       expect([403, 404]).toContain(res.status);
     });
+
+    it('does not send imported documents while "AI on imported documents" is off (SEC-35)', async () => {
+      const space = await ctx.prisma.space.create({ data: { key: 'IMP', nameEn: 'Imported' } });
+      const batch = await ctx.prisma.importBatch.create({ data: { kind: 'WORD' } });
+      const page = await ctx.prisma.page.create({
+        data: {
+          spaceId: space.id,
+          titleEn: 'Imported SOP',
+          contentEn: '<p>Confidential imported text.</p>',
+          version: 1,
+          importBatchId: batch.id,
+        },
+      });
+      const before = ctx.ai.requests.length;
+      const res = await modeler
+        .post('/ai/doc-to-process')
+        .send({ pageId: page.id, language: 'en' })
+        .expect(403);
+      expect(res.body.code).toBe('AI_IMPORTS_DISABLED');
+      await ctx.prisma.process.update({
+        where: { id: processId },
+        data: { importBatchId: batch.id },
+      });
+      const sum = await modeler
+        .post('/ai/summarise')
+        .send({ type: 'PROCESS', id: processId, language: 'en' })
+        .expect(403);
+      expect(sum.body.code).toBe('AI_IMPORTS_DISABLED');
+      expect(ctx.ai.requests.length).toBe(before);
+      await ctx.prisma.process.update({ where: { id: processId }, data: { importBatchId: null } });
+    });
   });
 
   describe('summaries', () => {
