@@ -1,4 +1,6 @@
 import { Body, Controller, Get, HttpCode, Post, Put, Query, Req, Res } from '@nestjs/common';
+import { UseGuards } from '@nestjs/common';
+import { UserRateLimit } from '../common/user-rate-limit.guard';
 import { ApiTags } from '@nestjs/swagger';
 import type { Request, Response } from 'express';
 import {
@@ -112,6 +114,8 @@ export class AiAdminController {
 @ApiTags('ai')
 @Controller('ai')
 @Authenticated()
+// Per-user rate limit on top of the daily AI limits (SEC-15, SEC-21).
+@UseGuards(UserRateLimit('AI', 20))
 export class AiController {
   constructor(
     private readonly gateway: AiGatewayService,

@@ -1,4 +1,6 @@
 import { Body, Controller, Get, HttpCode, Post, Put, Res, StreamableFile } from '@nestjs/common';
+import { UseGuards } from '@nestjs/common';
+import { UserRateLimit } from '../common/user-rate-limit.guard';
 import { ApiTags } from '@nestjs/swagger';
 import type { Response } from 'express';
 import {
@@ -64,6 +66,7 @@ export class ExportsController {
     return this.data.updateTemplate(body, user, meta);
   }
 
+  @UseGuards(UserRateLimit('export', 10))
   @Post('html')
   @HttpCode(200)
   @RequireAnyPermission(PERMISSIONS.PROCESSES_READ, PERMISSIONS.PORTAL_READ)
@@ -76,6 +79,7 @@ export class ExportsController {
     return download(res, await this.html.export(body, user, meta));
   }
 
+  @UseGuards(UserRateLimit('export', 10))
   @Post('pptx')
   @HttpCode(200)
   @RequireAnyPermission(

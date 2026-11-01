@@ -1,4 +1,5 @@
 import {
+  HttpStatus,
   Inject,
   Injectable,
   Logger,
@@ -9,7 +10,7 @@ import { Prisma, type MiningJob } from '@prisma/client';
 import type { MiningJobDto, MiningJobKind } from '@processhub/shared';
 import { APP_CONFIG, type AppConfig } from '../../config/config';
 import { PrismaService } from '../../prisma/prisma.service';
-import { notFound } from '../../common/app-exception';
+import { AppException, notFound } from '../../common/app-exception';
 import { MiningSettingsService } from '../mining-settings.service';
 import { MiningAbortError, runInWorker, type WorkerOptions } from './worker-runner';
 import type { MiningTaskName } from '@processhub/shared';
@@ -55,6 +56,9 @@ export const toJobDto = (j: MiningJob): MiningJobDto => ({
  * and CPU work in worker threads. Cancel aborts the running handler; jobs interrupted by a restart
  * are marked failed at start-up.
  */
+/** Waiting + running background jobs one user may have at a time (SEC-15). */
+export const MAX_ACTIVE_JOBS_PER_USER = 20;
+
 @Injectable()
 export class MiningJobsService implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(MiningJobsService.name);
@@ -91,6 +95,19 @@ export class MiningJobsService implements OnModuleInit, OnModuleDestroy {
   }
 
   async enqueue(input: EnqueueInput): Promise<MiningJob> {
+    // Per-user quota of waiting / running jobs (SEC-15): the queue is shared by analyses, imports,
+    // simulations and report e-mails, so one user must not fill it for everyone.
+    if (input.userId) {
+      const active = await this.prisma.miningJob.count({
+        where: { createdById: input.userId, status: { in: ['QUEUED', 'RUNNING'] } },
+      });
+      if (active >= MAX_ACTIVE_JOBS_PER_USER)
+        throw new AppException(
+          HttpStatus.TOO_MANY_REQUESTS,
+          'TOO_MANY_REQUESTS',
+          'Too many background jobs are waiting — try again when they have finished',
+        );
+    }
     const job = await this.prisma.miningJob.create({
       data: {
         kind: input.kind,

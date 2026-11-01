@@ -134,7 +134,7 @@ jobs:
         # The mock Salesforce of the e2e suite runs on the runner (host.docker.internal); secrets
         # of the Salesforce settings need an encryption key.
         run: |
-          printf 'LOGIN_RATE_LIMIT_MAX=1000\nRATE_LIMIT_MAX=5000\n' > .env
+          printf 'LOGIN_RATE_LIMIT_MAX=1000\nRATE_LIMIT_MAX=5000\nUSER_RATE_LIMIT_SCALE=100\n' > .env
           printf 'OUTBOUND_ALLOWED_HOSTS=mailpit,host.docker.internal,webhook-receiver\n' >> .env
           printf 'INTEGRATIONS_ENCRYPTION_KEY=%s\n' "$(openssl rand -base64 32)" >> .env
       - name: Start the stack

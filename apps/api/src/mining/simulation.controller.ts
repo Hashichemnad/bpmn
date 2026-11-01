@@ -11,6 +11,8 @@ import {
   Query,
   Res,
 } from '@nestjs/common';
+import { UseGuards } from '@nestjs/common';
+import { UserRateLimit } from '../common/user-rate-limit.guard';
 import { ApiTags } from '@nestjs/swagger';
 import type { Response } from 'express';
 import { z } from 'zod';
@@ -151,6 +153,7 @@ export class SimulationController {
   }
 
   /** Runs the scenarios (all, or the given ones) as jobs; validation errors block the run. */
+  @UseGuards(UserRateLimit('simulation', 10))
   @Post(':id/run')
   @RequirePermissions(MANAGE)
   run(
@@ -174,6 +177,7 @@ export class SimulationController {
   }
 
   /** AI: explanation of the results (text, nothing is changed). */
+  @UseGuards(UserRateLimit('AI', 20))
   @Post(':id/ai/explain')
   @HttpCode(200)
   @RequirePermissions(READ)
@@ -186,6 +190,7 @@ export class SimulationController {
   }
 
   /** AI: improvement scenarios as proposals; the user creates a scenario from one if wanted. */
+  @UseGuards(UserRateLimit('AI', 20))
   @Post(':id/ai/suggest')
   @HttpCode(200)
   @RequirePermissions(READ)

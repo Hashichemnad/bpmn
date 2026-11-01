@@ -10,6 +10,8 @@ import {
   Res,
   StreamableFile,
 } from '@nestjs/common';
+import { UseGuards } from '@nestjs/common';
+import { UserRateLimit } from '../common/user-rate-limit.guard';
 import { ApiTags } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
 import type { Response } from 'express';
@@ -140,6 +142,7 @@ export class SubscriptionsController {
     return this.subs.deliveries(id, user);
   }
 
+  @UseGuards(UserRateLimit('report e-mail', 5))
   @Post(':id/send-now')
   @HttpCode(200)
   @Authenticated()

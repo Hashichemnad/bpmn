@@ -13,6 +13,8 @@ import {
   UploadedFile,
   UseInterceptors,
 } from '@nestjs/common';
+import { UseGuards } from '@nestjs/common';
+import { UserRateLimit } from '../common/user-rate-limit.guard';
 import { UploadSlots } from '../common/upload-slots.interceptor';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { ApiTags } from '@nestjs/swagger';
@@ -359,6 +361,7 @@ export class MiningController {
   // ---------- Analysis (step 2) ----------
 
   /** Map, variants, statistics and bottlenecks of the filtered log (cached; a job when large). */
+  @UseGuards(UserRateLimit('mining analysis', 30))
   @Post('logs/:id/analysis')
   @HttpCode(200)
   @RequirePermissions(READ)
@@ -370,6 +373,7 @@ export class MiningController {
     return this.analysis.analyse(id, body, user);
   }
 
+  @UseGuards(UserRateLimit('mining analysis', 30))
   @Post('logs/:id/export')
   @HttpCode(200)
   @RequirePermissions(READ)
@@ -407,6 +411,7 @@ export class MiningController {
   }
 
   /** "Generate BPMN from log": heuristics miner → a new draft process for review. */
+  @UseGuards(UserRateLimit('mining analysis', 30))
   @Post('logs/:id/discover')
   @RequirePermissions(MANAGE, PERMISSIONS.PROCESSES_CREATE)
   discover(
@@ -420,6 +425,7 @@ export class MiningController {
 
   // ---------- Conformance (step 3) ----------
 
+  @UseGuards(UserRateLimit('mining analysis', 30))
   @Post('logs/:id/conformance')
   @HttpCode(200)
   @RequirePermissions(READ)
