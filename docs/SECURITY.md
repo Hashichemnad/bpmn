@@ -1077,17 +1077,17 @@ seed provides these).
 
 ## 9. Security scans and supply chain (CI)
 
-| Check                     | Where                                               | Gate                                                                                   |
-| ------------------------- | --------------------------------------------------- | -------------------------------------------------------------------------------------- |
-| Dependency audit          | `ci.yml` → `pnpm audit --audit-level high --prod`   | High / Critical fail                                                                   |
-| Licences                  | `ci.yml` → `scripts/check-licenses.mjs`             | Copyleft or unreviewed licence in production dependencies fails                        |
-| Static analysis (CodeQL)  | `security.yml` (also weekly)                        | SARIF security-severity ≥ 7.0 fails (`scripts/sarif-gate.mjs`); report as artifact     |
-| Secret scanning           | `security.yml` → gitleaks (tree and full history)   | Any finding fails; fake test values allow-listed in `.gitleaks.toml`                   |
-| Container images (Trivy)  | `ci.yml` docker job, the four images                | High / Critical with a fixed version fail; accepted ones in `.trivyignore` with reason |
-| DAST (OWASP ZAP baseline) | `ci.yml` e2e job, against the running Compose stack | Rules marked FAIL in `.zap/rules.tsv` (headers, cookies, errors, version leaks)        |
-| Proxy configuration       | `ci.yml` docker job → `caddy validate`, `nginx -t`  | Invalid configuration fails                                                            |
-| Route guards              | `route-security.e2e-spec.ts`                        | Route without access declaration, unvalidated input or missing from §5 fails           |
-| Authorisation sweep       | `authorization-matrix.e2e-spec.ts`                  | Any mutating route succeeding for Viewer / Auditor / Reviewer fails                    |
+| Check                     | Where                                               | Gate                                                                                                                                                                          |
+| ------------------------- | --------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Dependency audit          | `ci.yml` → `pnpm audit --audit-level high --prod`   | High / Critical fail                                                                                                                                                          |
+| Licences                  | `ci.yml` → `scripts/check-licenses.mjs`             | Copyleft or unreviewed licence in production dependencies fails                                                                                                               |
+| Static analysis (CodeQL)  | `security.yml` (also weekly)                        | SARIF security-severity ≥ 7.0 fails (`scripts/sarif-gate.mjs`); report as artifact; reviewed exceptions only in `.github/codeql/accepted-results.json` (rule + file + reason) |
+| Secret scanning           | `security.yml` → gitleaks (tree and full history)   | Any finding fails; fake test values allow-listed in `.gitleaks.toml`                                                                                                          |
+| Container images (Trivy)  | `ci.yml` docker job, the four images                | High / Critical with a fixed version fail; accepted ones in `.trivyignore` with reason                                                                                        |
+| DAST (OWASP ZAP baseline) | `ci.yml` e2e job, against the running Compose stack | Rules marked FAIL in `.zap/rules.tsv` (headers, cookies, errors, version leaks)                                                                                               |
+| Proxy configuration       | `ci.yml` docker job → `caddy validate`, `nginx -t`  | Invalid configuration fails                                                                                                                                                   |
+| Route guards              | `route-security.e2e-spec.ts`                        | Route without access declaration, unvalidated input or missing from §5 fails                                                                                                  |
+| Authorisation sweep       | `authorization-matrix.e2e-spec.ts`                  | Any mutating route succeeding for Viewer / Auditor / Reviewer fails                                                                                                           |
 
 **Licences.** Production dependencies are MIT, ISC, BSD, Apache-2.0, 0BSD, Unlicense, BlueOak, MIT-0, PSF and
 the OFL fonts. Dual-licensed packages are used under their permissive option (jszip: MIT; DOMPurify:
