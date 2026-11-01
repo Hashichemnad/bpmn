@@ -90,6 +90,25 @@ const envSchema = z.object({
   WORKFLOW_POLL_SECONDS: z.coerce.number().int().min(0).max(3600).default(15),
   /** Timeout for one SMTP delivery, in milliseconds. */
   SMTP_TIMEOUT_MS: z.coerce.number().int().min(1000).default(15000),
+  /**
+   * Antivirus scan of uploads before they are stored (final session part B, D-184): `clamav` = the
+   * ClamAV daemon of the production stack (clamd INSTREAM), `off` = no scan (trial stack, tests).
+   */
+  ANTIVIRUS: z.enum(['off', 'clamav']).default('off'),
+  CLAMAV_HOST: z.string().default('clamav'),
+  CLAMAV_PORT: z.coerce.number().int().min(1).max(65535).default(3310),
+  ANTIVIRUS_TIMEOUT_MS: z.coerce.number().int().min(1000).default(60000),
+  /** Files above this size are not sent to the scanner (clamd StreamMaxLength, default 25 MB). */
+  ANTIVIRUS_MAX_BYTES: z.coerce
+    .number()
+    .int()
+    .min(1024)
+    .default(25 * 1024 * 1024),
+  /** true = store uploads when the scanner cannot be reached (not recommended). */
+  ANTIVIRUS_FAIL_OPEN: z
+    .enum(['true', 'false'])
+    .default('false')
+    .transform((v) => v === 'true'),
   /** Timeout for one call to the AI provider, in milliseconds (generation can take a while). */
   AI_HTTP_TIMEOUT_MS: z.coerce.number().int().min(1000).default(180000),
   /**

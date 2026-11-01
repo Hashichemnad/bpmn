@@ -394,7 +394,7 @@ export class WorkflowJobsService implements OnApplicationBootstrap, OnModuleDest
       .slice(0, 100);
     const id = randomUUID();
     const storageKey = `workflow/${c.id}/${id}`;
-    await this.storage.put(storageKey, buffer, DOCX);
+    await this.storage.put(storageKey, buffer, DOCX, { generated: true });
     await this.runner.execute(
       c.id,
       { type: 'JOB_DONE', tokenId: job.tokenId, variables: { [`${job.elementId}_document`]: id } },
