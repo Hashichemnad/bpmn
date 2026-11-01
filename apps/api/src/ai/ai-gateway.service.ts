@@ -45,6 +45,9 @@ export interface AiSession {
   meta: RequestMeta;
 }
 
+/** Parallel AI calls per user (SEC-21). */
+export const AI_MAX_IN_FLIGHT_PER_USER = 2;
+
 const startOfUtcDay = (d = new Date()) =>
   new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()));
 const startOfUtcMonth = (d = new Date()) =>
@@ -142,6 +145,63 @@ export class AiGatewayService {
    * one chance to correct it. Usage of all attempts is logged as one request.
    */
   async call<T = string>(session: AiSession, opts: AiCallOptions<T>): Promise<T> {
+    await this.reserveCall(session, opts.feature === 'TEST_CONNECTION');
+    try {
+      return await this.callReserved(session, opts);
+    } finally {
+      this.endCall(session.user.id);
+    }
+  }
+
+  private readonly inFlight = new Map<string, number>();
+
+  /**
+   * Counts the call as running BEFORE checking the limits again (SEC-21): usage rows are written
+   * when a call ends, so without this a burst of parallel requests would all pass begin()'s check
+   * and overshoot the daily / monthly limits. At most AI_MAX_IN_FLIGHT_PER_USER calls per user run
+   * at the same time.
+   */
+  private async reserveCall(session: AiSession, connectionTest = false) {
+    const userId = session.user.id;
+    const running = (this.inFlight.get(userId) ?? 0) + 1;
+    this.inFlight.set(userId, running);
+    try {
+      if (running > AI_MAX_IN_FLIGHT_PER_USER)
+        throw deny(
+          HttpStatus.TOO_MANY_REQUESTS,
+          'TOO_MANY_REQUESTS',
+          'Wait until your other AI requests have finished',
+        );
+      const s = session.settings;
+      if (connectionTest) return;
+      if (s.userDailyLimit > 0 && (await this.usedToday(userId)) + running > s.userDailyLimit)
+        throw deny(HttpStatus.TOO_MANY_REQUESTS, 'AI_USER_LIMIT', 'Daily AI request limit reached');
+      if (s.orgMonthlyLimit > 0) {
+        let all = 0;
+        for (const v of this.inFlight.values()) all += v;
+        const month = await this.prisma.aiUsage.count({
+          where: { createdAt: { gte: startOfUtcMonth() }, feature: { not: 'TEST_CONNECTION' } },
+        });
+        if (month + all > s.orgMonthlyLimit)
+          throw deny(
+            HttpStatus.TOO_MANY_REQUESTS,
+            'AI_ORG_LIMIT',
+            'The organisation’s monthly AI limit is reached',
+          );
+      }
+    } catch (e) {
+      this.endCall(userId);
+      throw e;
+    }
+  }
+
+  private endCall(userId: string) {
+    const left = (this.inFlight.get(userId) ?? 1) - 1;
+    if (left > 0) this.inFlight.set(userId, left);
+    else this.inFlight.delete(userId);
+  }
+
+  private async callReserved<T>(session: AiSession, opts: AiCallOptions<T>): Promise<T> {
     const started = Date.now();
     const model = opts.fast ? session.settings.fastModel : session.settings.model;
     const used = { inputTokens: 0, outputTokens: 0, model };
