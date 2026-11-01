@@ -384,3 +384,54 @@ export const reportingQuerySchema = z.object({
 });
 export type ReportingQuery = z.infer<typeof reportingQuerySchema>;
 export const reportingTableParamSchema = z.enum(REPORTING_TABLES);
+
+// ---------- Exports: static HTML site, PowerPoint (D-177, D-178) ----------
+
+export const HTML_EXPORT_SCOPES = ['PROCESS', 'BRANCH', 'VALUE_CHAIN', 'SPACE'] as const;
+export type HtmlExportScope = (typeof HTML_EXPORT_SCOPES)[number];
+
+export const htmlExportSchema = z.object({
+  scope: z.enum(HTML_EXPORT_SCOPES),
+  /** Process (PROCESS / BRANCH), value chain diagram (VALUE_CHAIN) or space (SPACE). */
+  id: z.uuid(),
+  /** Workspace drafts instead of the published versions (users who may see them; watermarked). */
+  drafts: z.boolean().default(false),
+});
+export type HtmlExportInput = z.infer<typeof htmlExportSchema>;
+
+export const PPTX_EXPORT_SCOPES = [
+  'PROCESS',
+  'VALUE_CHAIN',
+  'KPI_SUMMARY',
+  'RISK_SUMMARY',
+] as const;
+export type PptxExportScope = (typeof PPTX_EXPORT_SCOPES)[number];
+
+export const pptxExportSchema = z.object({
+  scope: z.enum(PPTX_EXPORT_SCOPES),
+  /** Process (PROCESS), value chain diagram (VALUE_CHAIN); optional department for summaries. */
+  id: z.uuid().optional(),
+  locale: z.enum(['en', 'ar']).default('en'),
+  drafts: z.boolean().default(false),
+});
+export type PptxExportInput = z.infer<typeof pptxExportSchema>;
+
+/** Setting `branding.exportTemplate`: colours of exported slides and offline sites. */
+export const exportTemplateSchema = z.object({
+  primaryColor: z
+    .string()
+    .regex(/^#[0-9a-fA-F]{6}$/, 'INVALID_COLOUR')
+    .default('#1F4E79'),
+  accentColor: z
+    .string()
+    .regex(/^#[0-9a-fA-F]{6}$/, 'INVALID_COLOUR')
+    .default('#B28704'),
+  /** Show the logo on every slide (not only the title slide). */
+  logoOnEverySlide: z.boolean().default(true),
+});
+export type ExportTemplate = z.infer<typeof exportTemplateSchema>;
+export const DEFAULT_EXPORT_TEMPLATE: ExportTemplate = {
+  primaryColor: '#1F4E79',
+  accentColor: '#B28704',
+  logoOnEverySlide: true,
+};

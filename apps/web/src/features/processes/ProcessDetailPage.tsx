@@ -23,9 +23,11 @@ import {
   DeleteOutlined,
   DownOutlined,
   EditOutlined,
-  PlusOutlined,
   FileExcelOutlined,
+  FilePptOutlined,
   FileWordOutlined,
+  GlobalOutlined,
+  PlusOutlined,
 } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
 import { PERMISSIONS, type ObjectLinkDto } from '@processhub/shared';
@@ -45,6 +47,7 @@ import { ProcessTotalsCard } from './ProcessTotalsCard';
 import { useProcessKpis } from '@/api/kpi';
 import { ProcessKpisCard } from '@/features/kpi/ProcessKpis';
 import { ReportDialog, type ReportKind } from '@/features/reports/ReportDialog';
+import { ExportDialog, type ExportRequest } from '@/features/exports/ExportDialog';
 import { useRelatedPages } from '@/api/docs';
 import { useComments, useGovernance } from '@/api/governance';
 import { GovernancePanel } from '@/features/governance/GovernancePanel';
@@ -74,6 +77,7 @@ export function ProcessDetailPage() {
   const [modalState, setModalState] = useState<'edit' | 'sub' | null>(null);
   const [docOpen, setDocOpen] = useState(false);
   const [report, setReport] = useState<ReportKind | null>(null);
+  const [exportReq, setExportReq] = useState<ExportRequest | null>(null);
   const [feedbackRequest, setFeedbackRequest] = useState(false);
   const tab = (params.get('tab') as Tab) || 'overview';
 
@@ -129,6 +133,31 @@ export function ProcessDetailPage() {
             icon: <FileExcelOutlined />,
             label: t('processes:reports.raci'),
             onClick: () => setReport('raci'),
+          },
+          {
+            key: 'html',
+            icon: <GlobalOutlined />,
+            label: t('integrations:export.menuHtml'),
+            onClick: () =>
+              setExportReq({
+                format: 'html',
+                scope: 'PROCESS',
+                id: p.id,
+                title: `${p.code} ${loc(p)}`,
+                hasChildren: p.children.length > 0,
+              }),
+          },
+          {
+            key: 'pptx',
+            icon: <FilePptOutlined />,
+            label: t('integrations:export.menuPptx'),
+            onClick: () =>
+              setExportReq({
+                format: 'pptx',
+                scope: 'PROCESS',
+                id: p.id,
+                title: `${p.code} ${loc(p)}`,
+              }),
           },
           { type: 'divider' as const },
         ]
@@ -429,6 +458,7 @@ export function ProcessDetailPage() {
           onClose={() => setReport(null)}
         />
       )}
+      <ExportDialog request={exportReq} onClose={() => setExportReq(null)} />
     </>
   );
 }

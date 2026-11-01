@@ -2579,3 +2579,42 @@ Office 365 connectors. No Teams app, no Graph permissions.
   `*.webhook.office.com`; more in `integrations.webhooks.teamsHosts`.
 - Personal Teams chats / activity feed need a Teams app with Graph permissions → BACKLOG; personal
   notifications stay e-mail (and in-app).
+
+## D-177 — Static HTML export: self-contained offline website (Phase 4.4)
+
+**Decision:** `POST /exports/html` (`PROCESS` | `BRANCH` | `VALUE_CHAIN` | `SPACE`) returns a ZIP with a static
+site: `index.html` (process / page tree, client-side search over an inline index, value chain picture),
+`processes/<id>.html` (diagram per language, facts — category, owner, department, version, approval date and
+approvers, publication —, step table with roles, systems, documents and time attributes, linked documents and
+SOP pages) and `pages/<id>.html`. Built by a pure function (`exports/html-site.ts`) on the data of the handbook
+(`ReportDataService`, same visibility rules) — at most 40 processes like the handbook.
+
+- **Offline and safe:** every page has its CSS and a small language / search script inline and a CSP
+  (`default-src 'none'; img-src data:; …`), so nothing can load from a network; diagrams (renderer SVG,
+  sanitised) and attachment images of wiki pages (≤ 2 MB, raster or sanitised SVG) are `data:` images; other
+  images are removed, in-app links become plain text, external links get `rel=noopener noreferrer`; all texts
+  are HTML-escaped, wiki HTML goes through the server sanitiser again, the search index is inline JSON with
+  `<`, `>`, `&`, U+2028/9 escaped. A Playwright test opens the extracted copy from disk and counts zero requests.
+- **Languages:** both languages in every page (`lang` blocks), a switch at the top (remembered in
+  `localStorage`), Arabic right to left.
+- **Content:** published versions by default; `drafts: true` only for users with workspace access
+  (`processes.read`, spaces: `docs.read` + space visibility) — every page then carries a "Draft" watermark and
+  banner. Unpublished items are not exported (404 `NOT_PUBLISHED`). Branding: logo and organisation name from
+  Settings, colours from the new Setting `branding.exportTemplate`. Audited (`EXPORT`, scope, counts).
+- Without the renderer the pages say "Diagram image not available".
+
+## D-178 — PowerPoint export with pptxgenjs (Phase 4.4)
+
+**Decision:** `POST /exports/pptx` (`PROCESS` | `VALUE_CHAIN` | `KPI_SUMMARY` | `RISK_SUMMARY`, locale EN / AR)
+built with `pptxgenjs` 4 (MIT, no native code): a branded master (bars in the export template's main / accent
+colours, logo on every slide or only on the title slide, slide numbers), title slide, diagram as PNG from the
+renderer (fitted, 2,400 px), process facts, step table split over slides (10 rows each, header repeated),
+risks / controls of the steps, KPIs of the process (latest value and RAG colour); value chains add the list of
+their processes; summaries list active KPIs (latest value, target, RAG cell colour) or active risks (overview per
+rating band, table sorted by residual score with band colours) — `kpi.read` / `grc.read` required. Arabic decks
+set `rtl` on every paragraph, align right and mirror table columns (PowerPoint tables have no RTL flag in
+pptxgenjs). File names are ASCII (process / diagram code). Audited.
+
+- `pptxgenjs` depends on `image-size` 1.x, which has high advisories (DoS in exotic formats); the library never
+  calls it for our in-memory images, and a pnpm override pins `image-size` ≥ 2.0.3 (`pnpm audit` clean).
+- Its lazy `import('node:fs')` needs Jest to compile the package to CommonJS (`transformIgnorePatterns`).

@@ -551,6 +551,8 @@ export const SETTING_KEYS = {
   INTEGRATIONS_API: 'integrations.api',
   /** Phase 4.4: webhook / Teams host allow-lists, delivery log retention. */
   INTEGRATIONS_WEBHOOKS: 'integrations.webhooks',
+  /** Phase 4.4: colours of PowerPoint / offline HTML exports. */
+  EXPORT_TEMPLATE: 'branding.exportTemplate',
 } as const;
 
 /** Logo upload limits. */

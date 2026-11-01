@@ -1,5 +1,7 @@
 import { createHmac } from 'node:crypto';
-import { readFileSync } from 'node:fs';
+import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { dirname, join } from 'node:path';
+import JSZip from 'jszip';
 import { expect, test, type Page } from '@playwright/test';
 import { DEMO, apiCall, createSampleProcess, login, loginAdmin, sample } from './helpers';
 
@@ -194,4 +196,56 @@ test('a Teams channel gets an Adaptive Card in Arabic (right to left)', async ({
   await row.getByRole('button', { name: 'Delete' }).click();
   await page.getByRole('tooltip').getByRole('button', { name: 'OK' }).click();
   await expect(row).toBeHidden();
+});
+
+test('a process exports as an offline website that opens without network, and as PowerPoint', async ({
+  page,
+  browser,
+}, testInfo) => {
+  await login(page, DEMO.viewer);
+  await page.goto('/portal/processes');
+  await page.locator('a[href^="/portal/processes/"]').first().click();
+  await expect(page).toHaveURL(/\/portal\/processes\/[0-9a-f-]{36}/);
+  await page.getByRole('button', { name: /Reports/ }).click();
+  await page.getByRole('menuitem', { name: 'Offline website (HTML)' }).click();
+  const [zipDownload] = await Promise.all([
+    page.waitForEvent('download'),
+    page.getByRole('dialog').getByRole('button', { name: 'Download' }).click(),
+  ]);
+  expect(zipDownload.suggestedFilename()).toMatch(/\.zip$/);
+  const zip = await JSZip.loadAsync(readFileSync((await zipDownload.path())!));
+  const dir = testInfo.outputPath('site');
+  for (const [name, entry] of Object.entries(zip.files)) {
+    if (entry.dir) continue;
+    const target = join(dir, name);
+    mkdirSync(dirname(target), { recursive: true });
+    writeFileSync(target, await entry.async('nodebuffer'));
+  }
+  const index = Object.keys(zip.files).find((n) => n.endsWith('/index.html'))!;
+  // Open the copy from disk with every network request counted.
+  const offline = await browser.newContext();
+  const requests: string[] = [];
+  offline.on('request', (r) => {
+    if (!/^(file|data):/.test(r.url())) requests.push(r.url());
+  });
+  const site = await offline.newPage();
+  await site.goto(`file://${join(dir, index)}`);
+  await site.locator('ul.tree a').first().click();
+  await expect(site.locator('.diagram img').first()).toBeVisible();
+  await site.getByRole('button', { name: 'العربية' }).click();
+  await expect(site.locator('html')).toHaveAttribute('dir', 'rtl');
+  expect(requests).toEqual([]);
+  await offline.close();
+
+  await page.getByRole('button', { name: /Reports/ }).click();
+  await page.getByRole('menuitem', { name: 'PowerPoint' }).click();
+  await page.getByRole('dialog').getByText('العربية').click();
+  const [deck] = await Promise.all([
+    page.waitForEvent('download'),
+    page.getByRole('dialog').getByRole('button', { name: 'Download' }).click(),
+  ]);
+  expect(deck.suggestedFilename()).toMatch(/_ar\.pptx$/);
+  const pptx = await JSZip.loadAsync(readFileSync((await deck.path())!));
+  const slide = await pptx.file('ppt/slides/slide1.xml')!.async('string');
+  expect(slide).toContain('rtl="1"');
 });

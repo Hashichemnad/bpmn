@@ -5,14 +5,15 @@ const base = {
     '^.+\\.ts$': ['ts-jest', { tsconfig: '<rootDir>/tsconfig.json', diagnostics: false }],
     // ESM-only dependencies (openid-client and its helpers; decode-uri-component, forced to the
     // patched ESM release under minio → query-string) are compiled to CommonJS for Jest;
-    // at runtime Node loads them natively (require of ES modules, Node >= 22.12).
+    // at runtime Node loads them natively (require of ES modules, Node >= 22.12). pptxgenjs: its
+    // lazy import('node:fs') becomes a require, which Jest's VM accepts (Phase 4.4).
     '^.+\\.js$': [
       'ts-jest',
       { tsconfig: { allowJs: true, module: 'CommonJS', target: 'ES2022' }, diagnostics: false },
     ],
   },
   transformIgnorePatterns: [
-    '/node_modules/(?!\\.pnpm/|openid-client/|oauth4webapi/|jose/|decode-uri-component/|marked/)',
+    '/node_modules/(?!\\.pnpm/|openid-client/|oauth4webapi/|jose/|decode-uri-component/|marked/|pptxgenjs/)',
   ],
   testEnvironment: 'node',
   moduleNameMapper: { '^@processhub/shared$': '<rootDir>/../../packages/shared/src/index.ts' },

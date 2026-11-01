@@ -395,6 +395,10 @@ zod / UUID pipe; file uploads are checked in the service (allow-list, content sn
 | GET    | `/ea/template/:kind`                                       | `ea.edit`                                                      | param `kind`, query                  | default    |
 | GET    | `/ea/trace`                                                | `ea.read`                                                      | query                                | default    |
 | GET    | `/ea/trace/export`                                         | `ea.read`                                                      | query                                | default    |
+| POST   | `/exports/html`                                            | any of `processes.read`, `portal.read`                         | body                                 | default    |
+| POST   | `/exports/pptx`                                            | any of `processes.read`, `portal.read`, `kpi.read`, `grc.read` | body                                 | default    |
+| GET    | `/exports/template`                                        | `settings.manage`                                              | —                                    | default    |
+| PUT    | `/exports/template`                                        | `settings.manage`                                              | body                                 | default    |
 | GET    | `/feedback`                                                | authenticated                                                  | query                                | default    |
 | POST   | `/feedback`                                                | `portal.read`                                                  | body                                 | default    |
 | PATCH  | `/feedback/:id`                                            | authenticated                                                  | body, param `id`                     | default    |

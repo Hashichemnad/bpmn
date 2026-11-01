@@ -194,5 +194,30 @@
     "teamsHosts": "Additional Teams hosts",
     "teamsHostsHint": "Always allowed: {{hosts}}.",
     "retention": "Keep delivery log (days)"
+  },
+  "export": {
+    "menuHtml": "Offline website (HTML)",
+    "menuPptx": "PowerPoint",
+    "htmlTitle": "Export as offline website",
+    "pptxTitle": "Export as PowerPoint",
+    "htmlHint": "A ZIP file with a website that works without network: diagrams, steps, documents and procedures in English and Arabic, with search.",
+    "pptxHint": "Slides with the diagram, the steps, owner, version and approval, KPIs and risks.",
+    "language": "Slide language",
+    "includeChildren": "Include the sub-processes",
+    "version": "Version",
+    "published": "Published (official) version",
+    "drafts": "Working drafts (marked as draft)",
+    "download": "Download",
+    "preparing": "Preparing the export…",
+    "done": "Export downloaded",
+    "kpiSummary": "KPI summary (PowerPoint)",
+    "riskSummary": "Risk summary (PowerPoint)"
+  },
+  "template": {
+    "title": "Export template",
+    "hint": "Colours of PowerPoint slides and offline websites. The logo and organisation name come from this page.",
+    "primary": "Main colour",
+    "accent": "Accent colour",
+    "logoOnEverySlide": "Logo on every slide"
   }
 }

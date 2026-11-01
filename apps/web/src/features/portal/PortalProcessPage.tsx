@@ -6,8 +6,10 @@ import {
   DownOutlined,
   FileExcelOutlined,
   FilePdfOutlined,
+  FilePptOutlined,
   FileTextOutlined,
   FileWordOutlined,
+  GlobalOutlined,
 } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
 import { usePortalProcess } from '@/api/portal';
@@ -26,6 +28,7 @@ import { PortalKpis } from '@/features/kpi/PortalKpis';
 import { PortalPerformance } from '@/features/mining/PortalPerformance';
 import { portalItemLink } from './portal-links';
 import { ReportDialog, type ReportKind } from '@/features/reports/ReportDialog';
+import { ExportDialog, type ExportRequest } from '@/features/exports/ExportDialog';
 
 /** A published process: official version, diagram with step details, sub-processes, documentation. */
 export function PortalProcessPage() {
@@ -37,6 +40,7 @@ export function PortalProcessPage() {
   const process = usePortalProcess(processId);
   const [step, setStep] = useState<StepInfo | null>(null);
   const [report, setReport] = useState<ReportKind | null>(null);
+  const [exportReq, setExportReq] = useState<ExportRequest | null>(null);
   const selectedId = step?.id ?? params.get('step');
 
   if (process.isLoading) return <LoadingState />;
@@ -102,6 +106,31 @@ export function PortalProcessPage() {
                     icon: <FileExcelOutlined />,
                     label: t('processes:reports.raci'),
                     onClick: () => setReport('raci'),
+                  },
+                  {
+                    key: 'html',
+                    icon: <GlobalOutlined />,
+                    label: t('integrations:export.menuHtml'),
+                    onClick: () =>
+                      setExportReq({
+                        format: 'html',
+                        scope: 'PROCESS',
+                        id: p.id,
+                        title: `${p.code} ${loc(p)}`,
+                        hasChildren: p.children.length > 0,
+                      }),
+                  },
+                  {
+                    key: 'pptx',
+                    icon: <FilePptOutlined />,
+                    label: t('integrations:export.menuPptx'),
+                    onClick: () =>
+                      setExportReq({
+                        format: 'pptx',
+                        scope: 'PROCESS',
+                        id: p.id,
+                        title: `${p.code} ${loc(p)}`,
+                      }),
                   },
                 ],
               }}
@@ -214,6 +243,7 @@ export function PortalProcessPage() {
           onClose={() => setReport(null)}
         />
       )}
+      <ExportDialog request={exportReq} publishedOnly onClose={() => setExportReq(null)} />
     </>
   );
 }

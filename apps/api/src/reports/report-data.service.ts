@@ -27,6 +27,7 @@ export interface ReportProcess {
   category: ProcessCategory;
   status: ProcessStatus;
   level: number;
+  parentId: string | null;
   owner: UserRef | null;
   department: { nameEn: string; nameAr: string } | null;
   /** Working: latest saved version; published: the published version. */
@@ -274,6 +275,7 @@ export class ReportDataService {
       category: p.category as ProcessCategory,
       status: p.status as ProcessStatus,
       level: p.level,
+      parentId: p.parentId,
       owner: p.ownerId ? (users.get(p.ownerId) ?? null) : null,
       department: p.department,
     };

@@ -74,8 +74,23 @@ Steps (tick as they are committed; a new session continues at the first unticked
       signature; web tab "Microsoft Teams" (card language). Tests: unit (card), Playwright (non-Teams host
       refused, Arabic RTL test card at the receiver, URL signature hidden; passed locally). Docs:
       `docs/integrations/TEAMS.md`; personal Teams notifications → BACKLOG.
-- [ ] 5. Static HTML export (process, branch, value chain path, wiki space → offline ZIP site).
-- [ ] 6. PowerPoint export (`pptxgenjs`).
+- [x] 5. Static HTML export (D-177): `apps/api/src/exports/` — `export-data.service.ts` (visibility via the
+      handbook's `ReportDataService` / portal publications, drafts only with workspace access, branding, renderer
+      images, offline wiki HTML with embedded attachment images), `html-site.ts` (pure site builder: index with
+      tree + inline search, process and page files, both languages + switch, RTL, CSP without network, draft
+      watermark), `html-export.service.ts` (ZIP, audit); `POST /exports/html`; Setting `branding.exportTemplate`
+      (`GET / PUT /exports/template`, card in Settings); web `features/exports/ExportDialog.tsx` + menus on the
+      process page, portal process page, value chain diagrams, space home. Tests: `test/exports.e2e-spec.ts`
+      (offline / sanitised / both languages, drafts and permissions, space, no renderer), Playwright (portal →
+      ZIP → opened from disk with zero network requests, Arabic switch). Checked with the real renderer: site and
+      screenshots in AR / EN.
+- [x] 6. PowerPoint export (D-178): `pptx-export.service.ts` (`pptxgenjs` 4.0.1; branded master, title,
+      diagram PNG, facts, step tables over slides, risks / controls, KPIs; value chain; KPI and risk summaries;
+      Arabic RTL with mirrored tables; ASCII file names; audit), `POST /exports/pptx`; menus on process /
+      portal / value chain pages, buttons on the KPI and GRC dashboards; pnpm override `image-size` ≥ 2.0.3;
+      Jest compiles `pptxgenjs` (lazy `import()`). Tests: exports e2e (Arabic deck with `rtl="1"`, media, KPI /
+      risk permissions, audit), Playwright (portal → Arabic deck). Checked: deck opened in LibreOffice (5
+      slides, RTL tables).
 - [ ] 7. Scheduled report e-mails (subscriptions, recipient permissions, PDF / Excel / link, Asia/Dubai
       schedule, unsubscribe, delivery log).
 - [ ] 8. Demo data, e2e, screenshots, docs (`docs/integrations/API.md`, `WEBHOOKS.md`), SECURITY /
