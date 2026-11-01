@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import JSZip from 'jszip';
@@ -147,6 +148,16 @@ describe('HTML and PowerPoint exports (e2e)', () => {
     expect(page).toContain('طلب البرنامج');
     expect(page).toContain('&lt;script&gt;alert(1)&lt;/script&gt;');
     expect(page).not.toContain('<script>alert(1)');
+    // Scripts: only the one static script, allowed by its hash (SEC-44); the index is a data block.
+    const csp = /Content-Security-Policy" content="([^"]+)"/.exec(page)![1];
+    expect(csp).not.toMatch(/script-src[^;]*unsafe-inline/);
+    const scripts = [...page.matchAll(/<script>([\s\S]*?)<\/script>/g)].map((m) => m[1]);
+    expect(scripts).toHaveLength(1);
+    const hash = createHash('sha256').update(scripts[0], 'utf8').digest('base64');
+    expect(csp).toContain(`'sha256-${hash}'`);
+    const index = await zip.file(`${root}/index.html`)!.async('string');
+    const data = /<script type="application\/json" id="ph-index">([\s\S]*?)<\/script>/.exec(index);
+    expect(Array.isArray(JSON.parse(data![1]))).toBe(true);
     // Diagram images in both languages from the renderer, embedded as data: URIs.
     expect(
       ctx.renderer.calls

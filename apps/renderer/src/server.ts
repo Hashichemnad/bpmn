@@ -121,7 +121,10 @@ async function serveBundle(route: Route): Promise<void> {
   }
 }
 
-async function withContext<T>(fn: (ctx: BrowserContext) => Promise<T>): Promise<T> {
+async function withContext<T>(
+  fn: (ctx: BrowserContext) => Promise<T>,
+  options: { javaScriptEnabled?: boolean } = {},
+): Promise<T> {
   if (active >= CONCURRENCY) await new Promise<void>((r) => waiting.push(r));
   active++;
   let ctx: BrowserContext | null = null;
@@ -134,6 +137,7 @@ async function withContext<T>(fn: (ctx: BrowserContext) => Promise<T>): Promise<
       offline: false,
       serviceWorkers: 'block',
       acceptDownloads: false,
+      javaScriptEnabled: options.javaScriptEnabled ?? true,
     });
     await ctx.route('**/*', serveBundle);
     const current = ctx;
@@ -241,20 +245,29 @@ async function pdf(req: PdfBody): Promise<Buffer> {
     // Scripts never run in documents printed to PDF.
     `<meta http-equiv="Content-Security-Policy" content="script-src 'none'; object-src 'none'">` +
     (await fontsHead());
-  const html = /<head[^>]*>/i.test(req.html)
-    ? req.html.replace(/<head[^>]*>/i, (m) => `${m}${head}`)
+  // `<head>` exactly (not `<header>`), so the policy really lands in the document head (SEC-43).
+  const headTag = /<head(\s[^>]*)?>/i;
+  const html = headTag.test(req.html)
+    ? req.html.replace(headTag, (m) => `${m}${head}`)
     : `<!doctype html><html><head>${head}</head><body>${req.html}</body></html>`;
-  return withContext(async (ctx) => {
-    const page = await ctx.newPage();
-    await page.setContent(html, { waitUntil: 'load' });
-    await page.evaluate(() => document.fonts.ready.then(() => undefined));
-    return page.pdf({
-      format: req.format,
-      landscape: req.landscape,
-      printBackground: true,
-      margin: { top: '12mm', bottom: '14mm', left: '12mm', right: '12mm' },
-    });
-  });
+  // Documents printed to PDF are plain HTML: the context runs no page JavaScript at all (SEC-43),
+  // in addition to the CSP above and the request interception.
+  return withContext(
+    async (ctx) => {
+      const page = await ctx.newPage();
+      await page.setContent(html, { waitUntil: 'load' });
+      await page
+        .evaluate(() => document.fonts.ready.then(() => undefined))
+        .catch(() => page.waitForTimeout(300));
+      return page.pdf({
+        format: req.format,
+        landscape: req.landscape,
+        printBackground: true,
+        margin: { top: '12mm', bottom: '14mm', left: '12mm', right: '12mm' },
+      });
+    },
+    { javaScriptEnabled: false },
+  );
 }
 
 // ---------- HTTP ----------

@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import type { Locale } from '@processhub/shared';
 import type { ReportStep } from '../reports/report-steps';
 import { reportTexts, minutesText } from '../reports/report-i18n';
@@ -119,9 +120,6 @@ const fmtDate = (d: Date, locale: Locale) =>
 export const processFile = (p: { id: string }) => `processes/${p.id}.html`;
 export const pageFile = (p: { id: string }) => `pages/${p.id}.html`;
 
-const CSP =
-  "default-src 'none'; img-src data:; style-src 'unsafe-inline'; script-src 'unsafe-inline'; font-src data:; base-uri 'none'; form-action 'none'";
-
 function css(b: SiteBranding) {
   const primary = safeColour(b.primary, '#1F4E79');
   const accent = safeColour(b.accent, '#B28704');
@@ -153,11 +151,18 @@ const SCRIPT = `
 (function(){var k='ph.export.lang';var l='en';try{l=localStorage.getItem(k)||document.documentElement.getAttribute('data-lang')||'en'}catch(e){}
 function set(v){l=v;document.documentElement.setAttribute('data-lang',v);document.documentElement.setAttribute('lang',v);document.documentElement.setAttribute('dir',v==='ar'?'rtl':'ltr');try{localStorage.setItem(k,v)}catch(e){}}
 set(l);document.addEventListener('DOMContentLoaded',function(){var b=document.querySelector('button.lang');if(b)b.addEventListener('click',function(){set(l==='ar'?'en':'ar')});
-var s=document.querySelector('input.search');var r=document.getElementById('results');var idx=window.PH_INDEX||[];
+var s=document.querySelector('input.search');var r=document.getElementById('results');var idx=[];try{var d=document.getElementById('ph-index');if(d)idx=JSON.parse(d.textContent||'[]')}catch(e){}
 if(s&&r){s.addEventListener('input',function(){var q=s.value.trim().toLowerCase();r.textContent='';if(!q)return;var n=0;
 for(var i=0;i<idx.length&&n<50;i++){var e=idx[i];if((e.t+' '+e.x).toLowerCase().indexOf(q)>=0){var a=document.createElement('a');a.href=e.u;a.textContent=(e.c?e.c+' ':'')+(l==='ar'?(e.ta||e.te):(e.te||e.ta));r.appendChild(a);n++}}
 if(!n){var p=document.createElement('p');p.className='muted';p.textContent=r.getAttribute('data-none-'+l);r.appendChild(p)}})}})})();
 `;
+
+/**
+ * Only the one static script above may run (its SHA-256 hash, final session part B, SEC-44): even
+ * if sanitised wiki HTML ever let a script through, the browser would not execute it. The search
+ * index travels as a JSON data block, which is not executed.
+ */
+const CSP = `default-src 'none'; img-src data:; style-src 'unsafe-inline'; script-src 'sha256-${createHash('sha256').update(SCRIPT, 'utf8').digest('base64')}'; font-src data:; base-uri 'none'; form-action 'none'`;
 
 function shell(
   site: SiteInput,
@@ -359,7 +364,7 @@ ${
     { en: site.titleEn, ar: site.titleAr },
     body,
     0,
-    `<script>window.PH_INDEX=${inlineJson(index)};</script>`,
+    `<script type="application/json" id="ph-index">${inlineJson(index)}</script>`,
   );
 }
 
