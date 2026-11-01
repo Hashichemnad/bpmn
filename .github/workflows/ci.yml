@@ -84,7 +84,11 @@ jobs:
           docker run --rm -e DOMAIN=processhub.example.com -e CADDY_TLS=internal \
             -v "$PWD/deploy/Caddyfile:/etc/caddy/Caddyfile:ro" caddy:2.11-alpine \
             caddy validate --config /etc/caddy/Caddyfile --adapter caddyfile
-          docker run --rm --entrypoint nginx "$(docker compose config --images | grep -E -- '-web$' | head -1)" -t
+          project="$(docker compose config --format json | jq -r .name)"
+          web_image="${project}-web"
+          docker image inspect "$web_image" > /dev/null
+          echo "nginx -t in $web_image"
+          docker run --rm --entrypoint nginx "$web_image" -t
       - name: Shell scripts (shellcheck)
         run: shellcheck -x -s sh scripts/*.sh
       # Trivy (pinned release image, not the GitHub action) on the four images built above: OS packages
@@ -93,8 +97,11 @@ jobs:
       - name: Image scan (Trivy, High / Critical with a fix)
         run: |
           mkdir -p trivy-reports
-          images="$(docker compose config --images | grep -E -- '-(api|migrate|web|renderer)$' | sort -u)"
+          # Compose names built images <project>-<service>.
+          project="$(docker compose config --format json | jq -r .name)"
+          images="$(docker images --format '{{.Repository}}:{{.Tag}}' | grep -E "^${project}-(api|migrate|web|renderer):" | sort -u)"
           echo "Scanning: $images"
+          if [ "$(printf '%s\n' $images | grep -c .)" -lt 4 ]; then echo 'Expected the four built images'; exit 1; fi
           status=0
           for image in $images; do
             docker run --rm -v /var/run/docker.sock:/var/run/docker.sock -v "$PWD:/work" -w /work \
