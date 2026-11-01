@@ -43,7 +43,12 @@ export default tseslint.config(
     },
   },
   {
-    files: ['apps/api/prisma/seed*.ts', 'apps/api/prisma/perf*.ts', 'apps/api/src/main.ts'],
+    files: [
+      'apps/api/prisma/seed*.ts',
+      'apps/api/prisma/perf*.ts',
+      'apps/api/prisma/reencrypt-secrets.ts',
+      'apps/api/src/main.ts',
+    ],
     rules: { 'no-console': 'off' },
   },
   {
