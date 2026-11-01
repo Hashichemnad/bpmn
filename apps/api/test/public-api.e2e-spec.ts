@@ -344,4 +344,69 @@ describe('Public REST API with API keys (e2e)', () => {
       name: 'X-API-Key',
     });
   });
+
+  it('serves the reporting feed (reporting:read): flat paged tables for Power BI', async () => {
+    const plain = await newKey();
+    await pub('/reporting/processes', plain.secret).expect(403);
+    const { secret } = await newKey({ scopes: ['reporting:read'], content: 'WORKSPACE' });
+    const tables = (await pub('/reporting', secret).expect(200)).body as { name: string }[];
+    expect(tables.map((t) => t.name)).toContain('workflow-sla');
+    for (const t of tables) {
+      const res = await pub(`/reporting/${t.name}?pageSize=1000`, secret).expect(200);
+      expect(res.body).toMatchObject({ page: 1, pageSize: 1000 });
+      expect(Array.isArray(res.body.items)).toBe(true);
+    }
+    await pub('/reporting/unknown', secret).expect(400);
+    await pub('/reporting/processes?pageSize=5000', secret).expect(400);
+
+    const processes = (await pub('/reporting/processes', secret).expect(200)).body;
+    expect(processes.total).toBe(3);
+    const row = processes.items.find((r: { processId: string }) => r.processId === published);
+    expect(row).toMatchObject({
+      code: 'C.01',
+      status: 'PUBLISHED',
+      publishedVersion: 1,
+      lastApprovedAt: '2026-10-01T08:00:00.000Z',
+      departmentEn: 'Finance',
+      departmentAr: 'المالية',
+    });
+    // Flat rows only: no nested objects (Power BI expands columns directly).
+    expect(Object.values(row).every((v) => v === null || typeof v !== 'object')).toBe(true);
+
+    // KPI values carry their RAG status.
+    const kpi = await ctx.prisma.repoObject.create({
+      data: {
+        type: 'KPI',
+        code: 'KPI-1',
+        nameEn: 'On time',
+        nameAr: 'في الوقت',
+        kpi: {
+          create: {
+            unit: '%',
+            target: 95,
+            redThreshold: 80,
+            status: 'ACTIVE',
+            departmentId: deptA,
+          },
+        },
+      },
+    });
+    await ctx.prisma.kpiMeasurement.create({
+      data: { kpiId: kpi.id, period: '2026-09', periodStart: new Date('2026-09-01'), value: 70 },
+    });
+    const values = (await pub('/reporting/kpi-measurements', secret).expect(200)).body;
+    expect(values.items[0]).toMatchObject({
+      kpiId: kpi.id,
+      period: '2026-09',
+      value: 70,
+      target: 95,
+      rag: 'RED',
+    });
+
+    // A published-content key with a department filter sees less.
+    const narrow = await newKey({ scopes: ['reporting:read'], departmentIds: [deptB] });
+    const few = (await pub('/reporting/processes', narrow.secret).expect(200)).body;
+    expect(few.items.map((r: { processId: string }) => r.processId)).toEqual([otherDept]);
+    expect((await pub('/reporting/kpis', narrow.secret).expect(200)).body.total).toBe(0);
+  });
 });

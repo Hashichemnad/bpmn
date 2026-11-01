@@ -3,6 +3,7 @@ import { ApiKeysController } from './api-keys.controller';
 import { ApiKeysService } from './api-keys.service';
 import { PublicApiController } from './public-api.controller';
 import { PublicApiService } from './public-api.service';
+import { ReportingService } from './reporting.service';
 
 /** API key management (Settings → Integrations) and the key guard's service (Phase 4.4, D-173). */
 @Module({
@@ -19,6 +20,6 @@ export class ApiKeysModule {}
 @Module({
   imports: [ApiKeysModule],
   controllers: [PublicApiController],
-  providers: [PublicApiService],
+  providers: [PublicApiService, ReportingService],
 })
 export class PublicApiModule {}

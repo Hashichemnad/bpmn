@@ -355,3 +355,32 @@ export interface WebhookPayload {
   /** Small event-specific facts (status, version, outcome …) — never form data or secrets. */
   data: Record<string, string | number | boolean | null>;
 }
+
+// ---------- Reporting feed (Power BI / Excel, D-175) ----------
+
+export const REPORTING_TABLES = [
+  'processes',
+  'reviews',
+  'kpis',
+  'kpi-measurements',
+  'risks',
+  'controls',
+  'risk-coverage',
+  'control-tests',
+  'issues',
+  'audit-findings',
+  'workflow-cases-monthly',
+  'workflow-sla',
+  'mining-logs',
+] as const;
+export type ReportingTable = (typeof REPORTING_TABLES)[number];
+
+export const REPORTING_MAX_PAGE_SIZE = 1000;
+
+export const reportingQuerySchema = z.object({
+  page: z.coerce.number().int().min(1).max(100000).default(1),
+  pageSize: z.coerce.number().int().min(1).max(REPORTING_MAX_PAGE_SIZE).default(500),
+  updatedSince: z.iso.datetime({ offset: true }).optional(),
+});
+export type ReportingQuery = z.infer<typeof reportingQuerySchema>;
+export const reportingTableParamSchema = z.enum(REPORTING_TABLES);

@@ -34,7 +34,7 @@ function portalPath(entity: IntegrationEvent['entity']): string | null {
 export function buildPayload(
   e: IntegrationEvent,
   appUrl: string,
-  eventId = randomUUID(),
+  eventId: string = randomUUID(),
   occurredAt = new Date(),
 ): WebhookPayload {
   const links: Record<string, string> = { app: `${appUrl}${e.link}` };

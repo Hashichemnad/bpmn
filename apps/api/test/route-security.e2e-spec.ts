@@ -79,6 +79,8 @@ describe('Route security declarations', () => {
         'GET /processes/:id/bpmn apikey:processes:read',
         'GET /processes/:id/svg apikey:processes:read',
         'GET /processes/:id/versions apikey:processes:read',
+        'GET /reporting apikey:reporting:read',
+        'GET /reporting/:table apikey:reporting:read',
         'GET /requirements apikey:grc:read',
         'GET /risks apikey:grc:read',
         'GET /spaces apikey:pages:read',

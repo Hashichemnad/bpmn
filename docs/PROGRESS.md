@@ -61,7 +61,13 @@ Steps (tick as they are committed; a new session continues at the first unticked
       redirect / timeout / size limits, SSRF refusals incl. metadata / mapped IPv6 / allow-lists, real issue and
       KPI flows), `webhooks.spec.ts` (18 unit), `outbound.spec.ts`; Playwright: publish → signed delivery at the
       receiver → delivery log → test event (passed locally). Docs: `docs/integrations/WEBHOOKS.md`.
-- [ ] 3. Power BI / reporting feed (`reporting:read`, flat paged JSON) + `docs/integrations/POWER-BI.md`.
+- [x] 3. Power BI / reporting feed (D-175): `apps/api/src/public-api/reporting.service.ts` — 13 flat paged tables
+      under `/api/public/v1/reporting/<table>` (scope `reporting:read`, ≤ 1,000 rows per page, key content and
+      department filters, aggregated workflow volumes / SLA per step, no case data); shared
+      `REPORTING_TABLES`, `reportingQuerySchema`; test in `public-api.e2e-spec.ts` (all tables, RAG of KPI
+      values, flat rows, filters); route list updated. `docs/integrations/POWER-BI.md`: key, tables, M paging
+      function + table queries, relationships, DAX measures, scheduled refresh through the gateway, Excel, field
+      names EN / AR, troubleshooting (a .pbit is not shipped, D-175).
 - [ ] 4. Microsoft Teams channel notifications (Workflows webhook URL, Adaptive Cards AR / EN, same delivery
       log / retries / SSRF, host allow-list) + `docs/integrations/TEAMS.md`.
 - [ ] 5. Static HTML export (process, branch, value chain path, wiki space → offline ZIP site).

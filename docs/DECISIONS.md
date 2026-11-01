@@ -2538,3 +2538,25 @@ data }` — ids, links and a few facts (version, status, outcome, severity, peri
 - **Dev / CI:** Compose service `webhook-receiver` (records requests at `localhost:8090/received`) for the demo
   webhook and the Playwright test; it is listed in the dev `OUTBOUND_ALLOWED_HOSTS` and not part of the
   production stack.
+
+## D-175 — Reporting feed for Power BI: flat paged JSON, guide instead of a .pbit (Phase 4.4)
+
+**Context:** Power BI and Excel should read ProcessHub data on a schedule (on-premises gateway). OData v4 was
+considered: the Node options (`odata-v4-server`, `@phrygia/odata-server`, Nest adapters) are unmaintained or
+tied to other ORMs, and Power BI's OData connector does not send custom headers for API keys on scheduled
+refresh without a custom connector.
+
+**Decision:** read-only **flat JSON tables** under `/api/public/v1/reporting/<table>` (scope `reporting:read`):
+`processes`, `reviews`, `kpis`, `kpi-measurements` (with target and RAG), `risks`, `controls`, `risk-coverage`
+(per process: risks, controls, steps with a risk but no control), `control-tests`, `issues`, `audit-findings`,
+`workflow-cases-monthly` and `workflow-sla` (aggregated per process / month and per step: tasks, late,
+overdue, on-time %, average hours — no case data, no names), `mining-logs`. Rows have scalar columns only
+(bilingual pairs `…En` / `…Ar`), pages of up to 1,000 rows (`page`, `pageSize`, `updatedSince`), ETag /
+Last-Modified. Power Query reads them with `Web.Contents` + `RelativePath` / `Query` and the key in the
+`X-API-Key` header (credentials "Anonymous" — works with scheduled refresh through the gateway). The key's
+content filter and department filter apply (published keys: published processes only; reviews of processes
+only when a filter is set).
+
+A Power BI template (.pbit) is a binary, versioned file that cannot be produced and tested reliably here, so
+`docs/integrations/POWER-BI.md` ships a step-by-step guide with the M queries (a paging function plus one query
+per table), relationships and the field names in English and Arabic.

@@ -257,6 +257,8 @@ zod / UUID pipe; file uploads are checked in the service (allow-list, content sn
 | GET    | `/api/public/v1/processes/:id/bpmn`                        | API key, scope `processes:read`                                | param `id`, query                    | default    |
 | GET    | `/api/public/v1/processes/:id/svg`                         | API key, scope `processes:read`                                | param `id`, query                    | default    |
 | GET    | `/api/public/v1/processes/:id/versions`                    | API key, scope `processes:read`                                | param `id`                           | default    |
+| GET    | `/api/public/v1/reporting`                                 | API key, scope `reporting:read`                                | —                                    | default    |
+| GET    | `/api/public/v1/reporting/:table`                          | API key, scope `reporting:read`                                | param `table`, query                 | default    |
 | GET    | `/api/public/v1/requirements`                              | API key, scope `grc:read`                                      | query                                | default    |
 | GET    | `/api/public/v1/risks`                                     | API key, scope `grc:read`                                      | query                                | default    |
 | GET    | `/api/public/v1/spaces`                                    | API key, scope `pages:read`                                    | query                                | default    |

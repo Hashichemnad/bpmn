@@ -18,6 +18,10 @@ import {
   publicPageQuerySchema,
   publicProcessQuerySchema,
   publicSvgQuerySchema,
+  reportingQuerySchema,
+  reportingTableParamSchema,
+  type ReportingQuery,
+  type ReportingTable,
 } from '@processhub/shared';
 import type { z } from 'zod';
 import { RequireApiScope } from '../common/decorators';
@@ -25,6 +29,7 @@ import { UuidPipe, ZodPipe } from '../common/zod.pipe';
 import type { ApiRequest } from './api-key.guard';
 import { sendConditional } from './conditional';
 import { PublicApiService } from './public-api.service';
+import { ReportingService } from './reporting.service';
 
 type ListQ = z.infer<typeof publicListQuerySchema>;
 
@@ -51,7 +56,10 @@ const List = (): MethodDecorator => (target, key, desc) => {
 @ApiSecurity('apiKey')
 @Controller('api/public/v1')
 export class PublicApiController {
-  constructor(private readonly api: PublicApiService) {}
+  constructor(
+    private readonly api: PublicApiService,
+    private readonly reporting: ReportingService,
+  ) {}
 
   @Get('me')
   @RequireApiScope(null)
@@ -342,5 +350,30 @@ export class PublicApiController {
     @Query(new ZodPipe(publicCaseQuerySchema)) q: z.infer<typeof publicCaseQuerySchema>,
   ) {
     sendConditional(req, res, await this.api.workflowCases(req.apiKey!, q));
+  }
+
+  // ---------- Reporting feed (Power BI / Excel) ----------
+
+  @Get('reporting')
+  @RequireApiScope('reporting:read')
+  @ApiOperation({ summary: 'Tables of the reporting feed (Power BI / Excel)' })
+  reportingTables() {
+    return this.reporting.tables();
+  }
+
+  @Get('reporting/:table')
+  @RequireApiScope('reporting:read')
+  @ApiParam({ name: 'table', enum: reportingTableParamSchema.options })
+  @ApiQuery({ name: 'page', required: false, type: Number })
+  @ApiQuery({ name: 'pageSize', required: false, type: Number, description: '1–1000, default 500' })
+  @ApiQuery({ name: 'updatedSince', required: false })
+  @ApiOperation({ summary: 'One flat table of the reporting feed, paged' })
+  async reportingTable(
+    @Req() req: ApiRequest,
+    @Res() res: Response,
+    @Param('table', new ZodPipe(reportingTableParamSchema)) table: ReportingTable,
+    @Query(new ZodPipe(reportingQuerySchema)) q: ReportingQuery,
+  ) {
+    sendConditional(req, res, await this.reporting.table(req.apiKey!, table, q));
   }
 }
