@@ -88,7 +88,7 @@ jobs:
           web_image="${project}-web"
           docker image inspect "$web_image" > /dev/null
           echo "nginx -t in $web_image"
-          docker run --rm --entrypoint nginx "$web_image" -t
+          docker run --rm --add-host api:127.0.0.1 --entrypoint nginx "$web_image" -t
       - name: Shell scripts (shellcheck)
         run: shellcheck -x -s sh scripts/*.sh
       # Trivy (pinned release image, not the GitHub action) on the four images built above: OS packages
