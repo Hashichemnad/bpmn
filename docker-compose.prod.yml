@@ -81,6 +81,8 @@ services:
       # Required in production (generate-secrets.sh), so they live in .env and are backed up with it.
       JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET:?Set JWT_ACCESS_SECRET in .env (scripts/generate-secrets.sh)}
       INTEGRATIONS_ENCRYPTION_KEY: ${INTEGRATIONS_ENCRYPTION_KEY:?Set INTEGRATIONS_ENCRYPTION_KEY in .env (scripts/generate-secrets.sh)}
+      # Only during a key rotation (docs/DEPLOYMENT.md "Key rotation", SEC-40).
+      INTEGRATIONS_ENCRYPTION_KEY_PREVIOUS: ${INTEGRATIONS_ENCRYPTION_KEY_PREVIOUS:-}
       COOKIE_SECURE: 'true'
       APP_URL: https://${DOMAIN}
       CORS_ORIGINS: ${CORS_ORIGINS:-https://${DOMAIN}}

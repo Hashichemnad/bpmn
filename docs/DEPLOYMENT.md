@@ -641,6 +641,41 @@ production: backup grows with the data (the volume database of 2,000 processes, 
 log — 554 MB in PostgreSQL — dumps to 81 MB in 12 s on the development machine), restore takes about as long
 as the dump plus about a minute for the restart.
 
+### Key rotation (`INTEGRATIONS_ENCRYPTION_KEY`, `JWT_ACCESS_SECRET`)
+
+Rotate a key when it may have been exposed (a copy of `.env` outside the password manager, a departing
+administrator with vault access) and otherwise once a year (final session part B, D-185). Do it in a
+maintenance window; take a backup first (section 7).
+
+**`INTEGRATIONS_ENCRYPTION_KEY`** — encrypts the AI key, SSO client secret, SMTP password, Git token,
+Salesforce secrets, webhook / Teams URLs and secrets, and users' 2FA secrets.
+
+1. `openssl rand -base64 32` → the new key. In `.env`: move the current value to
+   `INTEGRATIONS_ENCRYPTION_KEY_PREVIOUS`, put the new one in `INTEGRATIONS_ENCRYPTION_KEY`.
+2. `sudo docker compose up -d` — the API encrypts with the new key and still reads values encrypted with the
+   old one.
+3. Re-encrypt everything stored:
+   `sudo docker compose run --rm --entrypoint node api dist/prisma/reencrypt-secrets.js`
+   (add `--check` first to only count). It must end with "0 value(s) cannot be decrypted"; any value listed
+   there is re-entered in Settings.
+4. `… reencrypt-secrets.js --check` → "0 still on a previous key". Then empty
+   `INTEGRATIONS_ENCRYPTION_KEY_PREVIOUS`, `sudo docker compose up -d`.
+5. Update the `.env` entry in the password manager and take a new backup (backups made before step 3 need the
+   old key — keep it in the vault, marked "for backups before <date>", for `BACKUP_KEEP_DAYS` plus the off-site
+   retention).
+
+Side effect: the pseudonyms of the live workflow event log (D-150) are derived from this key; events
+recorded after the rotation get new pseudonyms (existing events keep theirs). Rotate between reporting
+periods if pseudonymised logs are analysed across the change.
+
+**`JWT_ACCESS_SECRET`** — signs sessions, 2FA sign-in challenges and the unsubscribe links of report e-mails.
+`openssl rand -base64 48` → `.env`, `sudo docker compose up -d`. Everybody is signed out (sign in again), and
+unsubscribe links in e-mails sent before the change stop working (recipients unsubscribe in **My report
+e-mails** instead). No data is lost.
+
+**`RENDERER_TOKEN`, `POSTGRES_PASSWORD`, `MINIO_SECRET_KEY`** — change in `.env` (the database password also
+with `ALTER USER processhub PASSWORD '…'` in the `postgres` container first), then `sudo docker compose up -d`.
+
 ## 8. Restore
 
 > **Disaster recovery = `scripts/backup.sh` / `scripts/restore.sh`** (database + files, with the keys from

@@ -37,3 +37,18 @@ describe('SecretBox', () => {
     expect(() => new SecretBox(randomBytes(16).toString('base64'))).toThrow();
   });
 });
+
+describe('SecretBox key rotation (SEC-40)', () => {
+  it('decrypts with previous keys and tells which values still use one', () => {
+    const oldKey = randomBytes(32).toString('base64');
+    const newKey = randomBytes(32).toString('base64');
+    const sealedOld = new SecretBox(oldKey, '').encrypt('smtp-password');
+    const rotated = new SecretBox(newKey, `${randomBytes(32).toString('base64')}, ${oldKey}`);
+    expect(rotated.decrypt(sealedOld)).toBe('smtp-password');
+    expect(rotated.usesPreviousKey(sealedOld)).toBe(true);
+    const sealedNew = rotated.encrypt('smtp-password');
+    expect(rotated.usesPreviousKey(sealedNew)).toBe(false);
+    expect(() => new SecretBox(newKey, '').decrypt(sealedOld)).toThrow();
+    expect(() => new SecretBox(newKey, 'short').decrypt(sealedNew)).toThrow(/32 bytes/);
+  });
+});

@@ -57,6 +57,19 @@ const envSchema = z.object({
       (v) => v === '' || Buffer.from(v, 'base64').length === 32,
       'INTEGRATIONS_ENCRYPTION_KEY must be 32 bytes, base64-encoded (openssl rand -base64 32)',
     ),
+  /** Previous keys (comma-separated) still accepted for decryption during a key rotation (SEC-40). */
+  INTEGRATIONS_ENCRYPTION_KEY_PREVIOUS: z
+    .string()
+    .default('')
+    .refine(
+      (v) =>
+        v
+          .split(',')
+          .map((k) => k.trim())
+          .filter(Boolean)
+          .every((k) => Buffer.from(k, 'base64').length === 32),
+      'INTEGRATIONS_ENCRYPTION_KEY_PREVIOUS must list 32-byte base64 keys, separated by commas',
+    ),
   /** Timeout for calls to GitHub / GitLab, in milliseconds. */
   GIT_HTTP_TIMEOUT_MS: z.coerce.number().int().min(1000).default(20000),
   /** Timeout for calls to Salesforce (KPI link), in milliseconds. */
