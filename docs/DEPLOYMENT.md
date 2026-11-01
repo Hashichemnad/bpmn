@@ -18,12 +18,14 @@ Contents
 10. [Monitoring](#10-monitoring)
 11. [Troubleshooting](#11-troubleshooting)
 12. [Reference](#12-reference)
+13. [Go-live checklist](#13-go-live-checklist)
+14. [Penetration test readiness note](#14-penetration-test-readiness-note-for-dofs-security-team)
 
 ---
 
 ## 1. What you are installing
 
-ProcessHub runs as six Docker containers on **one Linux server**, started together with Docker Compose
+ProcessHub runs as seven Docker containers on **one Linux server**, started together with Docker Compose
 from the file `docker-compose.prod.yml`:
 
 ```
@@ -36,13 +38,16 @@ from the file `docker-compose.prod.yml`:
                                     api       the ProcessHub server ──► internet: AI provider, GitHub/GitLab,
                                    │  │  │                                 e-mail server, webhooks / Teams (optional)
                                    ▼  ▼  ▼
-                           postgres  storage  renderer
-                           database  files    headless browser: diagram images and PDF reports (no internet)
+                           postgres  storage  renderer   clamav
+                           database  files    headless   antivirus: scans every upload before it is
+                                              browser    stored (signature updates via the internet)
 ```
 
 - Only **caddy** is reachable from outside, on ports **80** and **443**. The database and the file storage
   are on an internal network: they have no published ports and no internet access. The **renderer** (Phase
   4.4) is on its own internal network that only the API joins (read-only, no capabilities, no internet).
+  **clamav** (final review, D-184) scans every upload; it downloads virus signatures from the internet
+  (database.clamav.net — allow it in the firewall or configure a mirror) and needs about 1.5 GB of RAM.
 - All data lives in Docker **volumes** on the server: `postgres-data` (database), `storage-data` (files),
   `caddy-data` (HTTPS certificates), `api-data`.
 - Your settings and secrets live in one file: **`.env`** in the ProcessHub folder.
@@ -53,6 +58,9 @@ from the file `docker-compose.prod.yml`:
 | ------------- | ------------------------ | ---- | ----- | --------- | ----------------- | ------------------ |
 | up to 250     | up to 50                 | 4    | 8 GB  | 128 GB    | `Standard_D4s_v5` | `m6i.xlarge`       |
 | 250 – 500     | up to 120                | 8    | 16 GB | 256 GB    | `Standard_D8s_v5` | `m6i.2xlarge`      |
+
+The antivirus container adds about 1.5 GB of RAM; with 8 GB keep the defaults, or choose 16 GB if large
+event logs are analysed at the same time.
 
 - **Operating system:** Ubuntu Server 24.04 LTS (64-bit, x86). Other Linux distributions with Docker work too,
   but this guide uses Ubuntu.
@@ -330,7 +338,7 @@ Caddy handles HTTPS. Choose one option with `CADDY_TLS` in `.env`, then run `sud
     consuming system (docs/integrations/API.md, Power BI: POWER-BI.md), add webhook / Teams destinations
     (WEBHOOKS.md, TEAMS.md) and keep **Report e-mail settings → Attach files** off unless agreed. Outbound
     webhooks and Teams use the API's `egress` network; the renderer has no network.
-14. Go through the go-live checklist in [`docs/SECURITY.md`](./SECURITY.md) §7.
+14. Go through the go-live checklist in §13 of this guide.
 
 ### 6.1 Single sign-on with Microsoft Entra ID (Azure AD)
 
@@ -848,6 +856,8 @@ backup, a new empty database volume and a restore — ask your ProcessHub develo
 | Disk full                                                                                    | Old images, large backups                                                                                                          | `sudo docker image prune -a -f`; lower `BACKUP_KEEP_DAYS`; enlarge the data disk.                                                                                                                         |
 | AI requests fail or time out                                                                 | No outbound internet, wrong key, provider limits                                                                                   | **Settings → AI → Test connection**; `sudo docker compose logs api`.                                                                                                                                      |
 | Restore warns "not the key this backup was made with"                                        | `.env` is not the one from the vault                                                                                               | Copy `INTEGRATIONS_ENCRYPTION_KEY` from the vault copy into `.env` and run the restore again.                                                                                                             |
+| Uploads fail with "The virus scanner is not available"                                       | The `clamav` container is starting (first signature download takes minutes) or cannot reach database.clamav.net                    | `sudo docker compose ps` (wait for **healthy**), `sudo docker compose logs --tail 50 clamav`; allow outbound HTTPS to database.clamav.net or configure a mirror.                                          |
+| "The file contains malware and was not stored"                                               | ClamAV found a virus (the signature is in the API log)                                                                             | Ask the user to clean the file; check the source computer.                                                                                                                                                |
 | Everything is down after a reboot                                                            | Docker did not start                                                                                                               | `sudo systemctl enable --now docker`, then `sudo docker compose ps`.                                                                                                                                      |
 
 Still stuck? Collect `sudo docker compose ps`, `sudo docker compose logs --tail 200 > processhub-logs.txt`
@@ -856,16 +866,168 @@ not passwords — share them only internally.)
 
 ## 12. Reference
 
-| File / command                                                             | Purpose                                                                                                                |
-| -------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
-| `.env`                                                                     | All settings and secrets of this installation (keep a copy in the vault)                                               |
-| `.env.example.prod`                                                        | Template with explanations of every production setting                                                                 |
-| `docker-compose.prod.yml`                                                  | The five services, networks, limits, health checks                                                                     |
-| `deploy/Caddyfile`                                                         | HTTPS / reverse proxy configuration                                                                                    |
-| `deploy/certs/`                                                            | Your own certificate files (optional)                                                                                  |
-| `deploy/processhub-backup.cron`                                            | Daily backup schedule                                                                                                  |
-| `scripts/generate-secrets.sh`                                              | Fill in random secrets in `.env`                                                                                       |
-| `scripts/backup.sh` / `scripts/restore.sh`                                 | Backup / restore                                                                                                       |
-| `scripts/migrate-minio-storage.sh`                                         | One-time file migration from the old MinIO container                                                                   |
-| `sudo docker compose ps` / `logs` / `restart <service>` / `up -d` / `down` | Status, logs, restart, start/apply changes, stop (`down` keeps the data; **never** use `down -v`, it deletes all data) |
-| [`docs/SECURITY.md`](./SECURITY.md)                                        | Security controls and the go-live checklist                                                                            |
+| File / command                                                                   | Purpose                                                                                                                |
+| -------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| `.env`                                                                           | All settings and secrets of this installation (keep a copy in the vault)                                               |
+| `.env.example.prod`                                                              | Template with explanations of every production setting                                                                 |
+| `docker-compose.prod.yml`                                                        | The five services, networks, limits, health checks                                                                     |
+| `deploy/Caddyfile`                                                               | HTTPS / reverse proxy configuration                                                                                    |
+| `deploy/certs/`                                                                  | Your own certificate files (optional)                                                                                  |
+| `deploy/processhub-backup.cron`                                                  | Daily backup schedule                                                                                                  |
+| `scripts/generate-secrets.sh`                                                    | Fill in random secrets in `.env`                                                                                       |
+| `scripts/backup.sh` / `scripts/restore.sh`                                       | Backup / restore                                                                                                       |
+| `scripts/migrate-minio-storage.sh`                                               | One-time file migration from the old MinIO container                                                                   |
+| `sudo docker compose ps` / `logs` / `restart <service>` / `up -d` / `down`       | Status, logs, restart, start/apply changes, stop (`down` keeps the data; **never** use `down -v`, it deletes all data) |
+| `docker compose run --rm --entrypoint node api dist/prisma/reencrypt-secrets.js` | Re-encrypt stored secrets after a key rotation (§7)                                                                    |
+| [`docs/SECURITY.md`](./SECURITY.md)                                              | Security controls and the go-live checklist                                                                            |
+
+## 13. Go-live checklist
+
+One list of everything decided during the project (DECISIONS D-054 – D-190). Tick each item before the
+production go-live and keep the completed copy with the change record. Section references point to this
+guide; details of the security items are in [`SECURITY.md`](./SECURITY.md) §7.
+
+**Server, network and certificates**
+
+- [ ] Server in the UAE region, sized as in §2 (+1.5 GB for antivirus); OS updates and unattended security
+      updates on (§9).
+- [ ] Firewall / NSG: inbound **443** (and **80** for the redirect and Let's Encrypt) only; SSH only from the
+      admin network or a bastion. Outbound: what is used — SMTP, Entra ID, ClamAV signature updates, AI
+      provider only when approved, Git / Teams / webhooks receivers if configured.
+- [ ] HTTPS certificate in place (`CADDY_TLS`: Let's Encrypt, `internal` or the company certificate) and its
+      renewal owner known; HSTS active (`curl -sI https://<domain>` shows `Strict-Transport-Security`).
+- [ ] Only Caddy publishes ports (`sudo docker compose ps`); database, storage, renderer and clamav are internal.
+
+**Secrets and data**
+
+- [ ] **No demo data:** production starts from an empty database with `SEED_DEMO_DATA=false`; no demo key, no
+      demo users; the demo banner is absent (D-180). Where demo data was loaded: revoke the demo API key,
+      deactivate the demo users, remove the demo content, **Confirm demo removed**.
+- [ ] Secrets generated with `scripts/generate-secrets.sh` (JWT secret, encryption key, renderer token, database
+      and storage passwords); `SEED_ADMIN_PASSWORD` changed after the first sign-in.
+- [ ] The complete `.env` stored in the company **password manager** (who has vault access recorded); the
+      **encryption key backed up with the data** — a restore needs backup + `.env` (§7).
+- [ ] Key rotation owner and yearly date set (§7 "Key rotation", D-185).
+- [ ] `ENABLE_SWAGGER=false`, `ENABLE_PUBLIC_API_DOCS` off unless wanted; `AUTH_FORCE_LOCAL_LOGIN` not set;
+      `OUTBOUND_ALLOWED_HOSTS` lists only the internal SMTP / Git servers really needed (no `webhook-receiver`).
+
+**Backups and monitoring**
+
+- [ ] Daily backup scheduled (`deploy/processhub-backup.cron`), off-site copy in the same country (§7).
+- [ ] **Restore tested** on a separate machine (§8 or `scripts/backup-drill.sh`), date recorded.
+- [ ] Uptime monitor on `/api/v1/health`, disk alert at 80 %, CPU / memory alerts (§10); container log rotation
+      (5 × 20 MB per container, the compose default) and the server's log retention agreed with IT security.
+- [ ] Access logs checked once: no API keys, CSRF tokens or invitation tokens in Caddy / nginx logs (SEC-39).
+
+**Antivirus**
+
+- [ ] `ANTIVIRUS=clamav` (default in `.env.example.prod`), `ANTIVIRUS_FAIL_OPEN=false`; `sudo docker compose ps`
+      shows `clamav` **healthy**; an EICAR test file is refused as an attachment (D-184).
+
+**Sign-in and access**
+
+- [ ] SSO with Entra ID configured and tested (§6.1); **group mappings** set; allowed e-mail domains = company
+      domains; **Update roles at every sign-in off** (roles managed in ProcessHub, D-063).
+- [ ] Entra ID Conditional Access "Require MFA – ProcessHub" **On** (not report-only) and tested; then Settings →
+      Authentication → **Require MFA from the identity provider** on, once a test sign-in's audit entry shows
+      `amr` with `mfa` (D-166).
+- [ ] 2FA required for **Super Admin and Admin** (default, D-061).
+- [ ] Password sign-in **off** after the SSO roll-out, with **one break-glass Super Admin** (2FA on, password and
+      recovery codes in the password manager, sign-in tested — §6.3, D-062).
+- [ ] `REFRESH_TOKEN_TTL_HOURS=24`, `SESSION_MAX_HOURS=168` (or the agreed values, D-065, D-165).
+- [ ] Leaver process: deactivate the user in ProcessHub (and **End sessions** for urgent cases) until automatic
+      de-provisioning exists.
+- [ ] User accounts reviewed: only intended Super Admins / Admins; demo or test accounts removed.
+
+**Governance, GRC and portal settings**
+
+- [ ] Settings → Risk & Compliance → **Approval of changes on** for risks and controls with the workflow
+      "GRC change approval", at least two Risk & Compliance Officers (D-106).
+- [ ] Settings → Knowledge Portal: **start page** empty until the real enterprise value chain is approved and
+      published, then set to it (D-127); **KPIs** in the portal off unless agreed (D-113); **risks / controls**
+      portal visibility as agreed (default none, D-092); **Performance** section off until real event logs exist
+      (D-143).
+- [ ] Process mining: **event log retention** set from the records-retention policy (suggested 24 months);
+      pseudonymisation where names are not needed; access by owner / department / grant only (D-143).
+- [ ] Workflow execution: **form data retention** set per executable process; start rights and monitors
+      reviewed; working week and escalation checked (D-152).
+- [ ] **Central public holiday list** checked for the year (Process mining → Settings, used by simulation and
+      workflow calendars, D-143).
+
+**AI and integrations**
+
+- [ ] **AI off** (Settings → AI) unless DOF has approved sending content to a provider outside the UAE; if
+      approved: roles, limits and notice reviewed.
+- [ ] Import settings: **"Allow AI on imported documents" off** unless separately approved (D-164, D-189);
+      welcome e-mail for imported users as agreed for the SSO roll-out.
+- [ ] API keys: demo key revoked, every key with an owner, narrowest scopes, IP allow-list where possible,
+      expiry ≤ 1 year (D-173).
+- [ ] Webhooks / Teams: only HTTPS receivers of known systems, allowed hosts set, demo destinations deleted.
+- [ ] Report e-mails: **attachments off** unless agreed (D-179, D-182); link lifetime agreed.
+- [ ] Renderer running with a generated `RENDERER_TOKEN`; `/health` shows `"sandbox":true`, then
+      `RENDERER_SANDBOX=on` (D-181).
+- [ ] Salesforce KPI sync stays off (not used; KPIs and risks are managed in ProcessHub).
+
+**Before opening to users**
+
+- [ ] CI green on the release commit (tests, CodeQL, gitleaks, Trivy, ZAP baseline, licence check); images
+      pulled by version tag (§9).
+- [ ] External penetration test done or scheduled with DOF's security team (§14); findings tracked.
+
+## 14. Penetration test readiness note (for DOF's security team)
+
+**Purpose.** What a tester needs to plan a grey-box test of ProcessHub. The full control description and
+endpoint list are in [`SECURITY.md`](./SECURITY.md); this note summarises them.
+
+**Architecture**
+
+```
+ Internet / intranet
+        │ 443 (80 → redirect)
+   ┌────▼────┐   edge network
+   │  caddy  │  TLS, HSTS, access log (secrets filtered)
+   └────┬────┘
+   ┌────▼────┐   backend network (internal, no internet)
+   │   web   │  nginx: SPA, security headers, /api → api
+   └────┬────┘
+   ┌────▼────┐──────────► egress network: SMTP, Entra ID (OIDC), AI provider (only if enabled),
+   │   api   │            Git, webhooks / Teams (only if configured) — SSRF policy, address pinned
+   └┬──┬──┬──┘
+    │  │  └──► renderer (render network, internal; headless Chromium, token)
+    │  └─────► clamav (clamd 3310; freshclam via egress)
+    └────────► postgres (5432) · storage (S3 API 7070) — internal only
+```
+
+**Data flows.** Browser ↔ API: JSON over HTTPS, session in httpOnly / Secure / SameSite=Strict cookies,
+double-submit CSRF token + Origin check. Uploads → antivirus → S3 storage; downloads with `Content-Disposition:
+attachment`, sandbox CSP, `nosniff`. Public API (`/api/public/v1`): API keys only, read-only. Outbound: e-mails
+(notifications, report links), webhooks / Teams cards, optional AI requests (content of the item the user
+works on), OIDC sign-in with Entra ID. No other third parties; fonts and libraries self-hosted.
+
+**Roles.** Super Admin, Admin, Process Owner, Modeler / Editor, Reviewer, Auditor (read-only workspace), Risk &
+Compliance Officer, Internal Audit, Enterprise Architect, Performance Officer, Viewer (portal only) —
+permission matrix in CLAUDE.md §6; checked on the server for every request.
+
+**Endpoints.** About 540 routes under `/api/v1` and 22 read-only routes under `/api/public/v1`; the generated
+table with each route's guard, validation and rate limit is SECURITY.md §5 (OpenAPI at `/api/docs` when
+`ENABLE_SWAGGER=true` on the test environment; public API docs at `/api/public/docs` with
+`ENABLE_PUBLIC_API_DOCS=true`).
+
+**Test environment.** Use a separate server or VM (never production data):
+
+1. Install as in §4 with `docker-compose.prod.yml`, a test domain and `CADDY_TLS=internal` (or a test
+   certificate); set `SEED_DEMO_DATA=true` — the demo seed creates content in every lifecycle state, a
+   view-restricted space and one user per role (password printed in the seed log; demo API key shown once).
+2. Optional for the test: `ENABLE_SWAGGER=true`, `ENABLE_PUBLIC_API_DOCS=true`; AI with a test key only if AI is
+   in scope.
+3. Give the testers: the URL, one account per role and two users in different departments (demo seed), an API key
+   per scope, and the time window. Tell IT security the source addresses (rate limits and lockout apply:
+   `LOGIN_RATE_LIMIT_MAX`, `USER_RATE_LIMIT_SCALE` may be raised for the test and reset afterwards).
+4. After the test: destroy the VM (or `docker compose down -v`), revoke keys, rotate secrets that were shared.
+
+**Scope suggestions.** SECURITY.md §8 (authentication and sessions, SSO, 2FA, authorisation / IDOR per role,
+stored XSS, uploads and archives, XML, SSRF through integration settings, workflow expressions, AI prompt
+injection, configuration and headers, denial of service). Out of scope: the hosting platform and Entra ID itself.
+
+**Contacts and evidence.** Audit log (Administration → Audit log), container logs (`docker compose logs`),
+CI security reports (CodeQL / Trivy / ZAP artifacts) of the tested version.

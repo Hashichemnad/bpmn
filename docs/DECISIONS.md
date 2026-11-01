@@ -2696,3 +2696,93 @@ with the container fully hardened, and record it as an accepted risk for Final P
 - **Public API:** read-only. Write scopes only when a partner system needs them (BACKLOG).
 - **Teams:** channel messages through Teams Workflows only; personal messages stay in the BACKLOG.
 - Demo API key → D-180; renderer sandbox → D-181.
+
+## D-183 — Security scans in CI: CodeQL, gitleaks, Trivy, OWASP ZAP baseline, licence check (Final Part B)
+
+- **CodeQL** (`security.yml`, default query suite, shipped code only — `.github/codeql/codeql-config.yml`): the
+  SARIF report goes through `scripts/sarif-gate.mjs`, which fails on security-severity ≥ 7.0 (High / Critical)
+  and lists every result in the job summary; the upload to code scanning is best effort (works without
+  GitHub Advanced Security on private repositories). Weekly scheduled run for new queries.
+- **gitleaks** (pinned release container, not the action — no licence key needed): working tree and full
+  history; `.gitleaks.toml` = default rules minus test fixtures and documentation with fake values.
+- **Trivy** (pinned release container `aquasec/trivy:0.67.2`, not `trivy-action`, whose tags were hijacked in
+  2026): the four images built by CI; High / Critical **with a fixed version** fail; accepted findings only
+  in `.trivyignore` with a reason. Runtime images run `apk upgrade` and ship without npm / corepack; the web
+  image moved to nginx 1.28 (stable).
+- **OWASP ZAP baseline** (pinned `zaproxy:2.16.1`) against the Compose stack after the Playwright suite;
+  `.zap/rules.tsv` makes header / cookie rules FAIL; HSTS and Secure cookies are IGNORE on the plain-HTTP CI
+  stack (Caddy sets them in production, `security.e2e-spec.ts` tests the cookie flags).
+- **Licences** (`scripts/check-licenses.mjs`): production dependencies must be permissive; SPDX `OR`
+  expressions pass when one side is allowed (jszip → MIT, DOMPurify → Apache-2.0). The bpmn.io licence of
+  bpmn-js / dmn-js (MIT-style, watermark must stay visible) is reviewed by name; the watermark is not hidden.
+- Also in CI: the Caddyfile (`caddy validate`) and the nginx configuration (`nginx -t`).
+
+## D-184 — Antivirus: ClamAV scans every upload before it is stored, on by default in production
+
+**Decision:** yes, by default in production (`docker-compose.prod.yml`), fail-closed.
+
+- One choke point: `StorageService.put` streams the file to clamd (INSTREAM over TCP, nothing on disk)
+  before storing it — attachments, Import Center files and the images extracted from them, event logs,
+  workflow files, assurance evidence, KPI evidence, logos, package restores. Only files ProcessHub generates
+  itself (rendered images, snapshots, report files, generated Word documents) pass `{ generated: true }`.
+- Infected → `FILE_INFECTED` (422, logged with the signature); scanner unreachable → `ANTIVIRUS_UNAVAILABLE`
+  (503) unless `ANTIVIRUS_FAIL_OPEN=true` (not recommended). Files above `ANTIVIRUS_MAX_BYTES` (25 MB, clamd's
+  stream limit) are not sent — only large event logs, which are parsed as data and never offered for download.
+- GRC / EA / KPI Excel imports are parsed in the request and never stored: archive and macro checks only.
+- `clamav/clamav:1.4` container (backend + egress network for freshclam, health check, 2 GB memory limit);
+  the trial stack and the tests keep `ANTIVIRUS=off`. Sizing: +1.5 GB RAM on the server.
+
+## D-185 — Key rotation procedure for INTEGRATIONS_ENCRYPTION_KEY and JWT_ACCESS_SECRET
+
+- `INTEGRATIONS_ENCRYPTION_KEY_PREVIOUS` (comma-separated): decryption tries the current key, then the
+  previous ones; encryption always uses the current key. `prisma/reencrypt-secrets.ts` (`--check` to count)
+  moves every sealed value — settings, users' 2FA secrets, webhook URLs / secrets — to the current key and
+  lists values no key opens. Procedure in DEPLOYMENT.md §7 "Key rotation" (yearly, or when exposed).
+- `JWT_ACCESS_SECRET`: change and restart; everybody signs in again, unsubscribe links of older report
+  e-mails stop working. No previous-secret support (sessions are short).
+
+## D-186 — Per-user limits on expensive routes and a background job quota
+
+- Per-user sliding window (after authentication; the global throttler counts per IP, which a company proxy
+  shares): mining analyses / conformance / export / discovery 30 per minute, simulation runs 10, imports 10,
+  HTML / PowerPoint exports 10, AI 20, report e-mails sent now 5. `USER_RATE_LIMIT_SCALE` multiplies them.
+- At most 20 waiting or running background jobs per user (shared queue); worker threads stop after 30 minutes;
+  analysis results unused for 30 days and finished jobs older than that are deleted.
+- At most two parallel AI calls per user; running calls count towards the daily / monthly limits.
+- Parallel in-memory uploads: event logs 1 per user / 2 in total, imports 2 / 6. Space exports ≤ 300 pages.
+- In memory, like the other limits (one API instance); Redis before scaling out (BACKLOG).
+
+## D-187 — Workflow engine limits
+
+Timers: durations ≥ 1 minute, cycles ≥ every 5 minutes and ≤ 1,000 repetitions (deploy check, clamped at run
+time for older deployments). Call activities: no recursion through other processes, ≤ 5 nested calls. Case
+variables ≤ 1 MB serialised; S-FEEL has a work budget, a 200,000-character text limit, a bracket-nesting limit
+and own-property lookups only. Files per case ≤ 100. Monitors, retention and pseudonymisation of a live process
+need deploy rights. Retention also clears the case title, close reason, notification texts and the in-app
+notifications of the case.
+
+## D-188 — Sessions: sign out everywhere, admin revocation, 2FA policy on live sessions
+
+- "Sign out everywhere" (profile) and **Users → End sessions** (Super Admin sessions only by a Super Admin)
+  revoke all refresh tokens and all access tokens issued until then (`User.sessionsRevokedAt`).
+- A user whose role requires 2FA but who has not set it up loses the session at the next refresh (role granted
+  later, policy changed); the next password sign-in starts enrolment. SSO users: MFA from Entra ID (D-064).
+- Only a Super Admin resets the password of an Admin. Lockout counting is atomic (attempts reserved before the
+  password / code check).
+
+## D-189 — "AI on imported documents" covers every imported item
+
+The setting (off until DOF approves, D-164) now applies to every AI feature that sends server-loaded content —
+document → process, summaries, SOP generation, analysis, control gaps — for processes, pages and diagrams that
+carry the import flag (`importBatchId`), not only to the AI migration queue. Content typed or pasted by the
+user (translation of form fields) is the user's own choice and not covered.
+
+## D-190 — Accepted risks of the final review
+
+Recorded in docs/SECURITY.md §6 with their mitigations: `style-src 'unsafe-inline'` (Ant Design); the
+renderer's hardened `--no-sandbox` fallback (D-181, re-reviewed — sandbox `on` recommended once the host is
+confirmed); moderate advisories without a reachable path (minio → stream-json, exceljs → uuid / minimatch);
+cookies without the `__Host-` prefix (sub-domain cookie tossing is covered by the CSRF Origin check); the
+CSRF cookie is readable by JavaScript by design (double submit); in-memory rate limits; password re-entry
+in the profile counted by the per-IP limit only; branch probabilities of simulations visible to mining readers;
+imported BPMN may carry execution settings (deploying needs workflow rights).

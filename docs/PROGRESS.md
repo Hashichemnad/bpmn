@@ -25,19 +25,30 @@ Steps (tick as they are committed; a new session continues at the first unticked
       documents (SEC-35); simulations, ProcessHub logs, job cancel (SEC-19, SEC-20, SEC-46).
 - [x] 4. Workflow engine limits (SEC-28, SEC-29, SEC-31, SEC-33, SEC-47).
 - [x] 5. Abuse limits: per-user rate limits + job quota (SEC-15), worker time limit and cache purge (SEC-16, SEC-18).
-- [ ] 6. Auth / sessions: atomic lockout counter (SEC-36), sessions revoked on role / 2FA changes + refresh check
+- [x] 6. Auth / sessions: atomic lockout counter (SEC-36), sessions revoked on role / 2FA changes + refresh check
       (SEC-37), sign out everywhere + admin revoke (SEC-38), Caddy log redaction (SEC-39).
-- [ ] 7. Secrets: key rotation (`INTEGRATIONS_ENCRYPTION_KEY_PREVIOUS`, re-encrypt script, docs, SEC-40), exception
+- [x] 7. Secrets: key rotation (`INTEGRATIONS_ENCRYPTION_KEY_PREVIOUS`, re-encrypt script, docs, SEC-40), exception
       filter logging, audit scrub (SEC-45); outbound total timeouts (SEC-41), SMTP requireTLS (SEC-42), renderer PDF
       without JavaScript (SEC-43), HTML export CSP hash (SEC-44); AI limit reservation (SEC-21); space export cap
       (SEC-22); nodemailer update.
-- [ ] 8. Antivirus (ClamAV container, scan in `StorageService.put` + Excel imports; decision D-183).
-- [ ] 9. Docs: SECURITY.md (findings table, UAE context, CSP, licences, scans), DEPLOYMENT.md (consolidated go-live
+- [x] 8. Antivirus (ClamAV container, scan in `StorageService.put` + Excel imports; decision D-183).
+- [x] 9. Docs: SECURITY.md (findings table, UAE context, CSP, licences, scans), DEPLOYMENT.md (consolidated go-live
       checklist, key rotation, pen-test readiness note), DECISIONS (D-183 …), README, CLAUDE.md (Phase 6 done).
 
-Findings still open from the review (to fix or accept in the remaining steps): see the scratch list above and
-`docs/SECURITY.md` once written — W5 retention leftovers, W8 upload / comment counts, W10 user directory, G6
-Salesforce host change, I7 / I8, S6 / S7 / S12.
+**Result:** 37 findings (SEC-12 – SEC-48), no High, 22 Medium, 15 Low / Info — all High / Medium fixed, the
+rest fixed or accepted (`docs/SECURITY.md` §2, §6; DECISIONS D-183 – D-190). Go-live checklist and pen-test
+readiness note: `docs/DEPLOYMENT.md` §13 – §14. Phase 6 is marked done in CLAUDE.md.
+
+**Next:** merge PR #25 after CI is green (CodeQL, gitleaks, Trivy, ZAP baseline, Playwright); then work through
+the go-live checklist with IT. Later items: `docs/BACKLOG.md` "From the final security review".
+
+**Known issues / notes**
+
+- ClamAV is not part of the trial stack (`docker-compose.yml`) or the tests (fake clamd in unit tests); the
+  production compose file runs it. Its first start downloads signatures (minutes) — uploads answer
+  "virus scanner not available" until it is healthy.
+- Trivy, ZAP and gitleaks run only in CI (no Docker daemon in the development sandbox).
+- Rate limits, lockout counters, upload slots and AI in-flight counts are per API instance (in memory).
 
 ## Previous state — 2026-11-01 (Phase 4.4 — Integrations and exports, branch `integrations-exports`)
 

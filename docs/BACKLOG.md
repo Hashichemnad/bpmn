@@ -281,6 +281,21 @@ Other ideas from Part A:
   as a dynamic filter), CSV.
 - HTML export: attachments other than images (PDF / Office files) in the offline site; per-step deep links.
 
+## From the final security review (part B) — later
+
+- Redis storage for rate limits, lockout counters, upload slots and AI in-flight counts before running more
+  than one API instance.
+- Replace the MinIO client with `@aws-sdk/client-s3` (moderate stream-json advisories) and update exceljs when
+  its uuid / archiver dependencies are fixed.
+- `__Host-` cookie prefix for the session cookies (needs `path=/` for the access cookie).
+- Count password re-entry in the profile (2FA settings, change password) towards the account lockout.
+- Self-service export of a user's own personal data (data subject requests).
+- Daily clean-up of unattached workflow draft uploads older than 24 hours.
+- Antivirus for event-log files above 25 MB (clamd `StreamMaxLength` configuration).
+- Ask for the Salesforce secret again when the instance URL changes.
+- nginx `proxy_read_timeout` for the long-running mining discovery / export requests (they wait up to 120 s).
+- Optional ClamAV service (profile) in the trial stack.
+
 ## Nice to have
 
 - Resize external BPMN labels when switching language (text is re-rendered, bounds are kept).

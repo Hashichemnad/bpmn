@@ -52,7 +52,7 @@ with no per-user licensing. Target: 50–500 users on a single server.
 | Design B2 | Modeler design — Part B2: smarter modeling and reports (Playwright e2e in CI, Dictionary with label autocomplete, Quick Model, step attributes and "colour by", handbook / RACI / object reports, modeling conventions) | ✅ Done (merged into `main`, D-083 – D-088) |
 | Deps | zod 3 → 4 (high advisory GHSA-mrhx-c7xc-m3w5, D-082) | ✅ Done (merged into `main`) |
 | Import | M15 Import tools / migration: Import Center (batches, preview, dry run, undo, re-import, upload security), process house / departments / users from Excel, BPMN / Visio / ARIS / DMN diagrams, Word / PDF / Confluence / Markdown into the wiki, AI-assisted migration, migration tracker and review queue, full export package and round-trip | ✅ Done (merged into `main`, D-155 – D-164) |
-| 6 | Hardening: SSO, performance, security review fixes, deployment guide | 🟡 Parts 1–4 merged into `main` (security review `docs/SECURITY.md`, production stack and backups `docs/DEPLOYMENT.md`, SSO with Entra ID / OIDC and TOTP 2FA, product owner decisions: 2FA for admins, break-glass, roles in ProcessHub, 24 h sessions, Node 22). Final session part A (performance, reliability, accessibility, images, restore drill, D-165 – D-171) merged into `main`; part B (security review) follows Phase 4.4 |
+| 6 | Hardening: SSO, performance, security review fixes, deployment guide | ✅ Done: parts 1–4 and final session part A merged into `main`; final session part B (security review SEC-12 – SEC-48, CI security scans, antivirus, key rotation, go-live checklist and pen-test note in `docs/DEPLOYMENT.md` §13–14, D-183 – D-190) on branch `final-b-security` |
 
 Update this table and `docs/PROGRESS.md` at the end of every session.
 
@@ -313,6 +313,21 @@ Phase 4.4 additions (integrations and exports, DECISIONS D-172 – D-182):
   (`RENDERER_SANDBOX` auto | on | off, seccomp profile `deploy/renderer-seccomp.json`), hardened `--no-sandbox`
   fallback as an accepted risk; report attachments off, public API read-only, Teams channel messages only
 
+
+Final session part B additions (security review, DECISIONS D-183 – D-190):
+
+- `User.sessionsRevokedAt` (sign out everywhere / admin session revocation: tokens issued before are invalid);
+  routes `POST /auth/sessions/revoke-all`, `POST /users/:id/sessions/revoke`
+- Antivirus: `AntivirusService` (clamd INSTREAM) called by `StorageService.put` (`{ generated: true }` skips it
+  for ProcessHub's own files); env `ANTIVIRUS` (`off` | `clamav`), `CLAMAV_HOST/PORT`, `ANTIVIRUS_FAIL_OPEN`,
+  `ANTIVIRUS_MAX_BYTES`; compose service `clamav` in production
+- Key rotation: `INTEGRATIONS_ENCRYPTION_KEY_PREVIOUS`, `prisma/reencrypt-secrets.ts`
+- Limits: `UserRateLimit` guard (`USER_RATE_LIMIT_SCALE`), `UploadSlots` interceptor, 20 active jobs per user,
+  30-minute worker limit, result-cache purge; workflow timers / call depth / variable size limits (shared
+  `MIN_TIMER_*`, `MAX_VARIABLES_BYTES`)
+- CI: `.github/workflows/security.yml` (CodeQL, gitleaks), Trivy / ZAP / licence check / proxy config checks in
+  `ci.yml`; `scripts/sarif-gate.mjs`, `scripts/check-licenses.mjs`, `.gitleaks.toml`, `.trivyignore`,
+  `.zap/rules.tsv`
 
 ## 10. Definition of Done (every phase)
 
