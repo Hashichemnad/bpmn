@@ -22,6 +22,7 @@ import { StorageService } from '../storage/storage.service';
 import { AuditService } from '../audit/audit.service';
 import type { AuthUser, RequestMeta } from '../common/auth-user';
 import { badRequest, conflict } from '../common/app-exception';
+import { ImportFileError, checkMiningWorkbook } from '../imports/safe-upload';
 import { EventLogsService } from './event-logs.service';
 import { MiningJobsService, type JobContext } from './jobs/mining-jobs.service';
 import { SnapshotService } from './snapshot.service';
@@ -109,6 +110,19 @@ export class LogImportService implements OnModuleInit {
     if (file.size > this.maxBytes) throw badRequest('FILE_TOO_LARGE');
     const format = detectFileFormat(file.buffer.subarray(0, 4096), file.originalname);
     if (!format) throw badRequest('UNSUPPORTED_FILE_TYPE', 'CSV, Excel (.xlsx) or XES files only');
+    if (format === 'XLSX') {
+      // Archive structure, macros and the real size of the shared strings (SEC-12).
+      try {
+        await checkMiningWorkbook(file.buffer, file.originalname);
+      } catch (e) {
+        if (!(e instanceof ImportFileError)) throw e;
+        throw badRequest(
+          e.code === 'ZIP_TOO_LARGE' || e.code === 'ZIP_RATIO'
+            ? 'FILE_TOO_LARGE'
+            : 'UNSUPPORTED_FILE_TYPE',
+        );
+      }
+    }
     const log = await this.logs.create(
       input,
       {

@@ -1,8 +1,10 @@
 import JSZip from 'jszip';
 import {
   ImportFileError,
+  checkMiningWorkbook,
   checkOfficePackage,
   checkUpload,
+  checkWorkbookUpload,
   decodeText,
   inspectZip,
   openSafeZip,
@@ -156,6 +158,53 @@ describe('ZIP archives (zip-slip, zip bombs, D-157)', () => {
     );
     const ok = await zipOf({ '[Content_Types].xml': '<Types/>', 'word/document.xml': '<d/>' });
     expect(await codeOf(() => checkOfficePackage(ok, 'x.docx', 'word/document.xml'))).toBe('OK');
+  });
+});
+
+describe('Office packages parsed by third-party libraries (SEC-12)', () => {
+  /** A workbook whose shared strings declare 1 KB but inflate to 5 MB (ExcelJS would trust it). */
+  const lyingWorkbook = async () => {
+    const buf = await zipOf({
+      '[Content_Types].xml': '<Types/>',
+      'xl/workbook.xml': '<workbook/>',
+      'xl/sharedStrings.xml': Buffer.alloc(5_000_000, 65),
+    });
+    // Central directory entry of xl/sharedStrings.xml: declared size 1,000 bytes.
+    let p = buf.indexOf(Buffer.from([0x50, 0x4b, 0x01, 0x02]));
+    while (p >= 0) {
+      const nameLen = buf.readUInt16LE(p + 28);
+      if (buf.toString('utf8', p + 46, p + 46 + nameLen) === 'xl/sharedStrings.xml')
+        buf.writeUInt32LE(1000, p + 24);
+      p = buf.indexOf(Buffer.from([0x50, 0x4b, 0x01, 0x02]), p + 4);
+    }
+    return buf;
+  };
+
+  it('decompresses every entry with the budget before ExcelJS / mammoth see the file', async () => {
+    const buf = await lyingWorkbook();
+    expect(await codeOf(() => checkOfficePackage(buf, 'x.xlsx', 'xl/workbook.xml'))).toMatch(
+      /ZIP_TOO_LARGE|ZIP_INVALID/,
+    );
+    expect(await codeOf(() => checkWorkbookUpload(buf))).toMatch(/ZIP_TOO_LARGE|ZIP_INVALID/);
+    expect(await codeOf(() => checkMiningWorkbook(buf, 'log.xlsx'))).toMatch(
+      /ZIP_TOO_LARGE|ZIP_INVALID/,
+    );
+  });
+
+  it('applies the smaller budget to in-request workbook imports', async () => {
+    const big = await zipOf(
+      {
+        '[Content_Types].xml': '<Types/>',
+        'xl/workbook.xml': '<workbook/>',
+        // Honest sizes, 70 MB in total (ratio below the per-entry limit: random-ish data).
+        ...Object.fromEntries(
+          Array.from({ length: 7 }, (_, i) => [`xl/media/${i}.bin`, Buffer.alloc(10_000_000, i)]),
+        ),
+      },
+      { compression: 'STORE' },
+    );
+    expect(await codeOf(() => checkWorkbookUpload(big))).toBe('ZIP_TOO_LARGE');
+    expect(await codeOf(() => checkMiningWorkbook(big, 'log.xlsx'))).toBe('OK');
   });
 });
 

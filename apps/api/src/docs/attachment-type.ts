@@ -1,4 +1,5 @@
 import { ATTACHMENT_TYPES } from '@processhub/shared';
+import { hasMacroParts, inspectZip } from '../imports/safe-upload';
 
 const startsWith = (buf: Buffer, bytes: number[]) =>
   buf.length >= bytes.length && bytes.every((b, i) => buf[i] === b);
@@ -52,7 +53,22 @@ export function detectAttachmentType(buf: Buffer, fileName: string): string | nu
   if (declared.startsWith('image/') || declared === 'application/pdf') {
     return sniffed === declared ? declared : null;
   }
-  if (['docx', 'xlsx', 'pptx'].includes(ext)) return sniffed === 'zip' ? declared : null;
+  if (['docx', 'xlsx', 'pptx'].includes(ext))
+    return sniffed === 'zip' && isCleanOfficePackage(buf) ? declared : null;
   // txt, csv, md, bpmn
   return !sniffed && isText(buf) ? declared : null;
+}
+
+/**
+ * Office attachments (page attachments, workflow files, evidence): a well-formed package within the
+ * archive limits (no unsafe paths, encrypted entries or zip-bomb ratios) and without a VBA project —
+ * a renamed .docm / .xlsm / .pptm is refused (final session part B, SEC-17).
+ */
+function isCleanOfficePackage(buf: Buffer): boolean {
+  try {
+    const entries = inspectZip(buf);
+    return entries.some((e) => e.path === '[Content_Types].xml') && !hasMacroParts(entries);
+  } catch {
+    return false;
+  }
 }

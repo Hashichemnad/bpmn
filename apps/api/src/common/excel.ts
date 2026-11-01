@@ -1,6 +1,24 @@
 import ExcelJS from 'exceljs';
 import type { Locale } from '@processhub/shared';
 import { badRequest } from './app-exception';
+import { ImportFileError, checkWorkbookUpload } from '../imports/safe-upload';
+
+/**
+ * Archive checks before ExcelJS loads an uploaded workbook in the request: ZIP structure, macros
+ * and the real uncompressed size (zip bombs with lying headers — final session part B, SEC-12).
+ */
+export async function assertSafeWorkbook(buffer: Buffer): Promise<void> {
+  try {
+    await checkWorkbookUpload(buffer);
+  } catch (e) {
+    if (!(e instanceof ImportFileError)) throw e;
+    throw badRequest(
+      e.code === 'ZIP_TOO_LARGE' || e.code === 'ZIP_RATIO' || e.code === 'ZIP_TOO_MANY_ENTRIES'
+        ? 'FILE_TOO_LARGE'
+        : 'INVALID_FILE_TYPE',
+    );
+  }
+}
 
 /**
  * Small Excel helpers shared by the catalogues of Phase 4.3 (architecture, KPIs): a column list
@@ -136,6 +154,7 @@ export async function readUpload<T>(
   if (file.size > EXCEL_IMPORT_MAX_BYTES) throw badRequest('FILE_TOO_LARGE');
   if (file.buffer.subarray(0, 4).toString('hex') !== '504b0304')
     throw badRequest('INVALID_FILE_TYPE');
+  await assertSafeWorkbook(file.buffer);
   const wb = new ExcelJS.Workbook();
   try {
     await wb.xlsx.load(file.buffer as unknown as ArrayBuffer);
